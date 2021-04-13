@@ -3,8 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "SDL.h"
-#include "SDL_opengl.h"
+#include <GLFW/glfw3.h>
 
 class Camera
 {
@@ -17,7 +16,7 @@ public:
 
 	glm::mat4 ortho;
 
-	SDL_Window* window;
+	GLFWwindow* window;
 	float zoom = 1;
 	float zoomInc = 0.2;
 	float dragSmth = 0.5f;
@@ -27,7 +26,7 @@ public:
 	glm::vec2* dragTo = new glm::vec2(0, 0);
 
 	int* mouseData;
-	Camera(glm::vec2 pos, int* mouseData, SDL_Window *window);
+	Camera(glm::vec2 pos, int* mouseData, GLFWwindow *window);
 	void update();
 	glm::vec2 getCameraCoords(glm::vec2 p);
 	glm::vec2 getMouseCoords();

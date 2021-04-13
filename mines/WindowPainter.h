@@ -10,8 +10,8 @@ class WindowPainter
 public:
 	int* mouseData = (int*)calloc(7, sizeof(int));
 	int* lastMousePos = (int*)calloc(2, sizeof(int));
-	SDL_Window* window;
-	glm::vec2 lastWindowSizes = glm::vec2(1600, 900);
+	GLFWwindow* window;
+	glm::vec2 windowSizes = glm::vec2(1600, 900);
 	Camera* cam;
 	float currentColor[4] = {1, 1, 1, 1};
 	bool releaseQueue[3] = {false, false, false};
@@ -23,4 +23,11 @@ public:
 	void massInit();
 	bool looper();
 	void clearMouseData();
+
+	static void mouseEventCallback(GLFWwindow*, double, double);
+	static void buttonEventCallback(GLFWwindow*, int, int, int);
+	static void scrollEventCallback(GLFWwindow*, double, double);
+	static void glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	static void windowSizeEventCallback(GLFWwindow*, int, int);
+	static void glfwWindowFocusCallback(GLFWwindow*, int);
 };

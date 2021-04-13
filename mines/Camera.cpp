@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-Camera::Camera(glm::vec2 pos, int* mouseData, SDL_Window *window) {
+Camera::Camera(glm::vec2 pos, int* mouseData, GLFWwindow *window) {
 	this->pos = pos;
 	this->mouseData = mouseData;
 	this->window = window;
@@ -51,7 +51,7 @@ void Camera::update() {
 	updateOrtho();
 
 	int width, height;
-	SDL_GetWindowSize(this->window, &width, &height);
+	glfwGetFramebufferSize(this->window, &width, &height);
 
 	this->dragFunc(width, height);
 	if (this->mouseData[5] != 0) {
@@ -81,14 +81,14 @@ void Camera::dragFunc(int width, int height) {
 	}
 
 
-	if (this->mouseData[3] == 2) {
+	if (this->mouseData[4] == 2) {
 		this->lastPos->x = this->mouseData[0];
 		this->lastPos->y = this->mouseData[1];
 
 		this->dragTo->x = this->mouseData[0];
 		this->dragTo->y = this->mouseData[1];
 	}
-	if (this->mouseData[3] == 1) {
+	if (this->mouseData[4] == 1) {
 		dragTo->x = this->mouseData[0];
 		dragTo->y = this->mouseData[1];
 	}
@@ -96,7 +96,7 @@ void Camera::dragFunc(int width, int height) {
 
 glm::vec2 Camera::getMouseCoords() {
 	int width, height;
-	SDL_GetWindowSize(this->window, &width, &height);
+	glfwGetFramebufferSize(this->window, &width, &height);
 	float xPerct = this->mouseData[0] / (float)width;
 	float yPerct = 1 - this->mouseData[1] / (float)height;
 
@@ -114,7 +114,7 @@ glm::vec2 Camera::getMouseCoords() {
 
 glm::vec2 Camera::getCameraCoords(glm::vec2 p) {
 	int width, height;
-	SDL_GetWindowSize(this->window, &width, &height);
+	glfwGetFramebufferSize(this->window, &width, &height);
 	float xPerct = p.x / width;
 	float yPerct = p.y / height;
 

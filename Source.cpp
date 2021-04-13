@@ -91,7 +91,7 @@ int main(void)
 
         glm::vec2 mp = cam->getMouseCoords();
 
-        if (wh->mouseData[4] == 2) {
+        if (wh->mouseData[3] == 2) {
             clicks[0] = clicks[1];
             clicks[1] = new glm::vec2(mp.x, mp.y);
         }
@@ -122,8 +122,9 @@ int main(void)
 
         world->DebugDraw();
             
-        SDL_GL_SetSwapInterval(1);
-        SDL_GL_SwapWindow(wh->window);
+        glfwSwapInterval(1);
+
+        glfwSwapBuffers(wh->window);
     }
 
     return 0;

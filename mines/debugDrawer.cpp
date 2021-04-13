@@ -1,5 +1,5 @@
 #include "debugDrawer.h"
-#include <SDL_opengl.h>
+#include <GLFW/glfw3.h>
 
 void debugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
 	glColor4f(color.r, color.g, color.b, 0.5f);

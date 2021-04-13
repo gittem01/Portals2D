@@ -27,57 +27,88 @@ void WindowPainter::clearMouseData() {
 
 bool WindowPainter::looper() {
     int width, height;
-    SDL_GetWindowSize(window, &width, &height);
-
-    if (width != lastWindowSizes.x || height != lastWindowSizes.y){
-        glViewport(0, 0, width, height);
-    }
-    lastWindowSizes.x = width; lastWindowSizes.y = height;
-
+    glfwGetFramebufferSize(window, &width, &height);
 
     this->clearMouseData();
     lastMousePos[0] = mouseData[0];
-    lastMousePos[1] = mouseData[1];
+    lastMousePos[1] = mouseData[1];  
+    
+    glfwPollEvents();
 
-    bool done = false;    
-    SDL_Event event;
-    while (SDL_PollEvent(&event) > 0) {
-        if (event.type == SDL_QUIT) {
-            done = 1;
-        }
-        else if (event.type == SDL_MOUSEMOTION){
-            mouseData[0] = event.motion.x;
-            mouseData[1] = event.motion.y;
-        }
-        else if (event.type == SDL_MOUSEBUTTONDOWN){
-            mouseData[event.button.button + 1] = 2;
-        }
-        else if (event.type == SDL_MOUSEBUTTONUP){
-            releaseQueue[event.button.button - 1] = true;
-        }
-        else if (event.type == SDL_MOUSEWHEEL){
-            mouseData[5] = event.wheel.y;
-        }
-    }
+    bool done = glfwWindowShouldClose(window);  
 
     return done;
 }
 
 
 void WindowPainter::massInit() {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL: %s\n", SDL_GetError());
-        exit(1);
+    if (!glfwInit()) {
+        printf("GLFW init error\n");
+        std::exit(-1);
     }
 
-    window = SDL_CreateWindow("window", 0, 0, lastWindowSizes.x, lastWindowSizes.y,
-     SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    window = glfwCreateWindow(windowSizes.x, windowSizes.y, "Window", 0, 0);
+    if (!window)
+    {
+        glfwTerminate();
+        printf("Window creation error\n");
+        std::exit(-1);
+    }
 
-    SDL_GLContext ctx =  SDL_GL_CreateContext(window);
-    
-    glViewport(0, 0, lastWindowSizes.x, lastWindowSizes.y);
+    glfwMakeContextCurrent(window);
+    glfwSetCursorPosCallback(this->window, WindowPainter::mouseEventCallback);
+    glfwSetMouseButtonCallback(this->window, WindowPainter::buttonEventCallback);
+    glfwSetScrollCallback(this->window, WindowPainter::scrollEventCallback);
+    glfwSetWindowFocusCallback(this->window, WindowPainter::glfwWindowFocusCallback);
+    glfwSetKeyCallback(this->window, WindowPainter::glfwKeyEventCallback);
+    glfwSetWindowSizeCallback(this->window, WindowPainter::windowSizeEventCallback);
+    glfwSetWindowUserPointer(window, this);
+
+    glViewport(0, 0, windowSizes.x, windowSizes.y);
     glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
     glLoadIdentity();
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+
+void WindowPainter::mouseEventCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
+    thisClass->mouseData[0] = (int)xpos;
+    thisClass->mouseData[1] = (int)ypos;
+}
+
+void WindowPainter::buttonEventCallback(GLFWwindow* window, int button, int action, int mods) {
+    WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
+    if (action){
+        thisClass->mouseData[button + 2] = 2;
+    }
+    else {
+        thisClass->releaseQueue[button] = true;
+    }
+}
+
+void WindowPainter::scrollEventCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
+    thisClass->mouseData[5] = (int)yoffset;
+}
+
+void WindowPainter::glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+
+}
+
+void WindowPainter::glfwWindowFocusCallback(GLFWwindow* window, int isFocused) {
+    WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
+    if (!isFocused) {
+        thisClass->clearMouseData();
+    }
+}
+
+void WindowPainter::windowSizeEventCallback(GLFWwindow* window, int width, int height) {
+    WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
+    glViewport(0, 0, width, height);
+    thisClass->windowSizes.x = width;
+    thisClass->windowSizes.y = height;
 }
