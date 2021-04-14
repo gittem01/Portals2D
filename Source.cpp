@@ -59,9 +59,9 @@ int main(void)
     world->SetContactListener(&cl);
     world->SetAllowSleeping(false);
 
-    (new polygon(world, b2Vec2(0.0f, 16.05f)))->createBox(b2Vec2(16, 0.05), b2_staticBody);
+    (new polygon(world, b2Vec2(0.0f, 16.05f)))->createBox(b2Vec2(16.1, 0.05), b2_staticBody);
     (new polygon(world, b2Vec2(-16.05f, 0.0f)))->createBox(b2Vec2(0.05, 16), b2_staticBody);
-    (new polygon(world, b2Vec2(0.0f, -16.05f)))->createBox(b2Vec2(16, 0.05), b2_staticBody);
+    (new polygon(world, b2Vec2(0.0f, -16.05f)))->createBox(b2Vec2(16.1, 0.05), b2_staticBody);
     (new polygon(world, b2Vec2(16.05f, 0.0f)))->createBox(b2Vec2(0.05f, 16), b2_staticBody);
 
     for (int i=0; i<100; i++){
@@ -79,7 +79,6 @@ int main(void)
 
     glm::vec2* clicks[2] = { NULL, NULL };
 
-
     bool done = false;
     while (!done)
     {
@@ -91,7 +90,7 @@ int main(void)
 
         glm::vec2 mp = cam->getMouseCoords();
 
-        if (wh->mouseData[3] == 2) {
+        if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
             clicks[0] = clicks[1];
             clicks[1] = new glm::vec2(mp.x, mp.y);
         }
@@ -115,6 +114,9 @@ int main(void)
         }
         else if (wh->mouseData[2] == 0 && mouseJoint){
             world->DestroyJoint(mouseJoint);
+            mouseJoint = NULL;
+        }
+        else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2){
             mouseJoint = NULL;
         }
 

@@ -56,7 +56,7 @@ void debugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color&
 }
 
 void debugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
-	glPointSize(size*2);
+	glPointSize(size);
 	glColor4f(color.r, color.g, color.b, 1.0f);
 	glBegin(GL_POINTS);
 	glVertex2d(p.x, p.y);
