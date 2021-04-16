@@ -1,6 +1,17 @@
 #include "debugDrawer.h"
 #include <GLFW/glfw3.h>
 
+void debugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color){
+	glLineWidth(1.0f);
+	glColor4f(color.r, color.g, color.b, color.a);
+	glBegin(GL_LINES);
+	for (int i = 0; i < vertexCount; i++) {
+		glVertex2d((vertices + i)->x, (vertices + i)->y);
+		glVertex2d((vertices + (i + 1) % vertexCount)->x, (vertices + (i + 1) % vertexCount)->y);
+	}
+	glEnd();
+}
+
 void debugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
 	glColor4f(color.r, color.g, color.b, 0.5f);
 	glBegin(GL_POLYGON);

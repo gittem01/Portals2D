@@ -7,7 +7,7 @@
 class debugDrawer : public b2Draw
 {
 public:
-    void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) { printf("polygon\n"); }
+    void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
     void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
     void DrawCircle(const b2Vec2& center, float radius, const b2Color& color) { printf("circle\n"); }
     void DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color);

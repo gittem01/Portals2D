@@ -12,6 +12,6 @@ public:
 	b2Body* body;
 
 	polygon(b2World* world, b2Vec2 pos);
-	void createBox(b2Vec2 size, b2BodyType bodyType);
+	void createBox(b2Vec2 size, b2BodyType bodyType, void* userData);
 };
 

@@ -2,18 +2,18 @@
 #include "polygon.h"
 #include "WindowPainter.h"
 #include "ContactListener.h"
+#include "Portal.h"
 
 b2MouseJoint* mouseJoint = NULL;
 float frequencyHz = 5.0f;
 float dampingRatio = 0.7f;
-
-b2Body* groundBody;
 
 void mouseJointHandler(glm::vec2 mp, b2World* world){
     b2Vec2 target = b2Vec2(mp.x, mp.y);
 
     b2Body* clickedBody = NULL;
     for (b2Body* body = world->GetBodyList(); body; body = body->GetNext()){
+        if (body->GetType() != b2_dynamicBody) continue;
         for (b2Fixture* fixture = body->GetFixtureList(); fixture; fixture = fixture->GetNext()){
             bool isIn = fixture->TestPoint(target);
             if (isIn){ 
@@ -25,6 +25,9 @@ void mouseJointHandler(glm::vec2 mp, b2World* world){
     endFor:
 
     if (clickedBody){
+        b2BodyDef bodyDef;
+        b2Body* groundBody = world->CreateBody(&bodyDef);
+        
         b2MouseJointDef jd;
         jd.bodyA = groundBody;
         jd.bodyB = clickedBody;
@@ -49,25 +52,36 @@ int main(void)
 
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, 0.0f));
-    b2BodyDef bodyDef;
-    groundBody = world->CreateBody(&bodyDef);
-
+    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
 
     ContactListener cl;
 
     world->SetContactListener(&cl);
-    world->SetAllowSleeping(false);
+    world->SetContinuousPhysics(false);
+    //world->SetAllowSleeping(false);
 
-    (new polygon(world, b2Vec2(0.0f, 16.05f)))->createBox(b2Vec2(16.1, 0.05), b2_staticBody);
-    (new polygon(world, b2Vec2(-16.05f, 0.0f)))->createBox(b2Vec2(0.05, 16), b2_staticBody);
-    (new polygon(world, b2Vec2(0.0f, -16.05f)))->createBox(b2Vec2(16.1, 0.05), b2_staticBody);
-    (new polygon(world, b2Vec2(16.05f, 0.0f)))->createBox(b2Vec2(0.05f, 16), b2_staticBody);
+    float boxSize = 4.0f;
+    float width = 0.05f;
 
-    for (int i=0; i<100; i++){
-        polygon* poly = new polygon(world, b2Vec2(getRand() * 32, getRand() * 32));
-        poly->createBox(b2Vec2((getRand() + 0.8f) / 2.0f, (getRand() + 0.8f) / 2.0f), b2_dynamicBody);
+    Portal* portal = new Portal(b2Vec2(0.0f, -4.0f), b2Vec2(0.0f, 1.0f), 6.0f, world);
+
+    polygon* poly = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
+    poly->createBox(b2Vec2((getRand() + 0.8f) / 2.0f, (getRand() + 0.8f) / 2.0f), b2_dynamicBody, portal);
+    poly->body->SetAngularVelocity(5.0f);
+
+    for(int i=0; i<10; i++){
+        polygon* poly2 = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
+        poly2->createBox(b2Vec2((getRand() + 0.8f) / 2.0f, (getRand() + 0.8f) / 2.0f), b2_dynamicBody, portal);
     }
+
+    (new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
+        b2Vec2(boxSize + width*2, width), b2_staticBody, NULL);
+    (new polygon(world, b2Vec2(-(boxSize + width), 0.0f)))->createBox(
+        b2Vec2(width, boxSize), b2_staticBody, NULL);
+    (new polygon(world, b2Vec2(0.0f, -(boxSize + width))))->createBox(
+        b2Vec2(boxSize + width*2, width), b2_staticBody, NULL);
+    (new polygon(world, b2Vec2(boxSize + width, 0.0f)))->createBox(
+        b2Vec2(width, boxSize), b2_staticBody, NULL);
 
     debugDrawer* drawer = new debugDrawer();
 
@@ -113,7 +127,10 @@ int main(void)
             mouseJointHandler(mp, world);
         }
         else if (wh->mouseData[2] == 0 && mouseJoint){
-            world->DestroyJoint(mouseJoint);
+            for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()){
+                if (joint == mouseJoint) world->DestroyJoint(mouseJoint);
+                break;
+            }
             mouseJoint = NULL;
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2){
@@ -123,7 +140,10 @@ int main(void)
         world->Step(1.0f/60.0f, 10, 10);
 
         world->DebugDraw();
-            
+        portal->draw();
+
+        portal->update();
+
         glfwSwapInterval(1);
 
         glfwSwapBuffers(wh->window);
