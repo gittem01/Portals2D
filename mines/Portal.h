@@ -6,12 +6,14 @@
 #include <stdio.h>
 #include <algorithm>
 #include <vector>
+#include <map>
 #include <set>
 
 typedef enum{
     BEGIN_CONTACT = 1,
     END_CONTACT = 2,
 } contactType;
+
 
 class Portal
 {
@@ -22,7 +24,9 @@ public:
     b2Fixture* midFixture;
     b2Fixture* yFix[2];
 
-    std::vector<b2Body*> destroyQueue;
+    std::set<b2Body*> destroyQueue;
+
+    std::map<b2Fixture*, std::set<b2Contact*>> unhandledCollisions;
 
     b2Vec2 points[2];
     b2Vec2 pos;
@@ -40,12 +44,14 @@ public:
 
     void calculatePoints();
     void createPhysicalBody(b2World* world);
-    void handleCollision(b2Fixture* fix1, b2Fixture* fix2, contactType type);
+    void handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type);
     void handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2Manifold* oldManifold);
     bool shouldCollide(b2WorldManifold wManifold, int numOfPoints);
     void update();
     void draw();
     void connect(Portal* portal2);
 
+    void onContact(b2Body* body);
+    void newBody(b2Body* body);
     bool isColliding(b2Fixture* fixture);
 };

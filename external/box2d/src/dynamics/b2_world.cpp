@@ -39,6 +39,7 @@
 #include "box2d/b2_world.h"
 
 #include <new>
+#include <stdio.h>
 
 b2World::b2World(const b2Vec2& gravity)
 {

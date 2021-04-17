@@ -3,6 +3,7 @@
 #include <box2d/box2d.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 class debugDrawer : public b2Draw
 {

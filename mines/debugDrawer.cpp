@@ -42,7 +42,7 @@ void debugDrawer::DrawSolidCircle(const b2Vec2& center, float radius,
 		b2Vec2 pos = b2Vec2(sin(angle) * radius + center.x, cos(angle) * radius + center.y);
 		positions[i] = pos;
 		glVertex2d(pos.x, pos.y);
-		angle = (M_PI * i * 2) / n;
+		angle = (b2_pi * i * 2) / n;
 	}
 	glEnd();
 
