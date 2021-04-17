@@ -1,6 +1,7 @@
 #pragma once
 
 #include <box2d/box2d.h>
+#include <stdlib.h>
 
 struct teleportData {
 	b2Transform transform;

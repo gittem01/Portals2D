@@ -2,10 +2,6 @@
 #include "Portal.h"
 
 void ContactListener::BeginContact(b2Contact* contact){
-    //printf("Begin contact\n");
-    //printf("P: %p\n", contact->GetFixtureA());
-    //printf("P: %p\n", contact->GetFixtureB());
-    //printf("Contact: %p\n", contact);
     uintptr_t p1 = contact->GetFixtureA()->GetUserData().pointer;
     uintptr_t p2 = contact->GetFixtureB()->GetUserData().pointer;
 
@@ -48,10 +44,6 @@ void ContactListener::EndContact(b2Contact* contact){
 }
 
 void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold){
-    //printf("Presolve\n");
-    //printf("P: %p\n", contact->GetFixtureA());
-    //printf("P: %p\n", contact->GetFixtureB());
-    //printf("Contact: %p\n", contact);
     uintptr_t p1 = contact->GetFixtureA()->GetBody()->GetUserData().pointer;
     uintptr_t p2 = contact->GetFixtureB()->GetBody()->GetUserData().pointer;
 

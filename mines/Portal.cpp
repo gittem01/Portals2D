@@ -10,7 +10,7 @@ bool isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c){
 
 float calcAngle(b2Vec2 vec){
     float angle = atan2(vec.y, vec.x);
-    //if (angle < 0) angle += M_PI * 2.0f;
+    if (angle < 0) angle += b2_pi * 2.0f;
 
     return angle;
 }
@@ -38,7 +38,7 @@ void normalize(b2Vec2* vec){
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
     this->pos = pos;
     this->dir = dir;
-    normalize(&dir);
+    normalize(&this->dir);
     this->size = size;
     calculatePoints();
     createPhysicalBody(world);
@@ -88,6 +88,7 @@ void Portal::createPhysicalBody(b2World* world){
 void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type){
     if (type == BEGIN_CONTACT) {
         collidingFixtures.insert(fix1);
+        
         if (unhandledCollisions.find(fix1) != unhandledCollisions.end()) {
             //printf("Hereeeeeeee\n");
             for (b2Contact* contact0 : unhandledCollisions[fix1]) {
@@ -95,21 +96,23 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             }
         }
 
-        if (connectedPortal && 
-            connectedPortal->collidingFixtures.find(fix1) == connectedPortal->collidingFixtures.end()) {
+        if (connectedPortal && newFixtures.find(fix1) == newFixtures.end()) {
             b2Body* body = fix1->GetBody();
             b2World* world = body->GetWorld();
-            float angle = vecAngle(this->dir, connectedPortal->dir);
+            float angle0 = vecAngle(this->dir, -connectedPortal->dir);
+            angle0 = -calcAngle(this->dir) + calcAngle(-connectedPortal->dir);
+
             float angularVelocity = body->GetAngularVelocity();
-            b2Vec2 posDiff = body->GetPosition() - this->pos;
+            b2Vec2 posDiff = body->GetPosition() - this->pos;            
+
             b2Vec2 linearVelocity = body->GetLinearVelocity();
-            rotateVec(&linearVelocity, angle);
-            rotateVec(&posDiff, -angle);
+            rotateVec(&linearVelocity, angle0);
+            rotateVec(&posDiff, b2_pi + angle0);
 
             polygon* poly = new polygon(world, connectedPortal->pos + posDiff);
             b2Transform transform;
             transform.p = poly->pos;
-            transform.q.Set(angle + body->GetAngle());
+            transform.q.Set(angle0 + body->GetAngle());
             teleportData* data = (teleportData*)malloc(sizeof(teleportData));
             *data = { transform, linearVelocity, angularVelocity, *(b2PolygonShape*)fix1->GetShape() };
             poly->setData(data);
@@ -126,6 +129,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             destroyQueue.insert(fix1->GetBody());
         }
         collidingFixtures.erase(fix1);
+        newFixtures.erase(fix1);
         //printf("End\n");
     }
 }
@@ -143,7 +147,6 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     else {
         return;
     }
-
     b2Fixture* otherFixture;
     if (contact->GetFixtureA()->GetBody() != fixture->GetBody()){
         otherFixture = contact->GetFixtureA();
@@ -193,12 +196,13 @@ bool Portal::shouldCollide(b2WorldManifold wManifold, int numOfPoints){
 }
 
 void Portal::update(){
-    for (b2Body* destroyBody: destroyQueue){
-        destroyBody->GetWorld()->DestroyBody(destroyBody);
-    }
     for (polygon* poly : addPolygons) {
-        //printf("Herexx\n");
         poly->applyData(connectedPortal);
+        connectedPortal->newFixtures.insert(poly->body->GetFixtureList());
+        //connectedPortal->collidingFixtures.insert(poly->body->GetFixtureList());
+    }
+    for (b2Body* destroyBody : destroyQueue) {
+        destroyBody->GetWorld()->DestroyBody(destroyBody);
     }
     addPolygons.clear();
     unhandledCollisions.clear();
@@ -216,14 +220,7 @@ void Portal::draw(){
 
 void Portal::connect(Portal* portal2){
     connectedPortal = portal2;
+    this->id = 1;
+    connectedPortal->id = 2;
     portal2->connectedPortal = this;
-}
-
-void Portal::onContact(b2Body* body){
-    if (!connectedPortal) return;
-    connectedPortal->newBody(body);
-}
-
-void Portal::newBody(b2Body* body){
-    
 }

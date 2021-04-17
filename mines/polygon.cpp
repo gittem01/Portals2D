@@ -48,4 +48,5 @@ void polygon::applyData(void* userData) {
     body->SetTransform(data->transform.p, data->transform.q.GetAngle());
     body->SetLinearVelocity(data->linearVelocity);
     body->SetAngularVelocity(data->angularVelocity);
+    free(this->data);
 }

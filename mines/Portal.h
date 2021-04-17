@@ -25,6 +25,7 @@ public:
     b2Fixture* yFix[2];
 
     std::set<b2Body*> destroyQueue;
+    std::set<b2Fixture*> newFixtures;
     std::vector<polygon*> addPolygons;
 
     std::map<b2Fixture*, std::set<b2Contact*>> unhandledCollisions;
@@ -34,6 +35,8 @@ public:
     b2Vec2 dir;
     float size;
     float angle;
+
+    int id;
 
     std::set<b2Fixture*> collidingFixtures;
 
