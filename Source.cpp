@@ -52,20 +52,20 @@ int main(void)
 
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -1.0f));
 
     ContactListener cl;
 
     world->SetContactListener(&cl);
-    //world->SetContinuousPhysics(false);
+    world->SetContinuousPhysics(false);
     //world->SetAllowSleeping(false);
 
     float boxSize = 8.0f;
     float width = 0.05f;
 
-    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize + 1.0f), b2Vec2(0.0f, 1.0f), 2.0f, world);
+    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), 6.0f, world);
 
-    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 6.0f, world);
+    Portal* portal2 = new Portal(b2Vec2(boxSize + width * 2.0f, 0.0f), b2Vec2(1.0f, 0.0f), 6.0f, world);
 
     portal->connect(portal2);
 

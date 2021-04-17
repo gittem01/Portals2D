@@ -20,8 +20,10 @@ float vecAngle(b2Vec2 v1, b2Vec2 v2){
 }
 
 void rotateVec(b2Vec2* vec, float angle){
-    vec->x = cos(angle) * vec->x - sin(angle) * vec->y;
-    vec->y = sin(angle) * vec->x + cos(angle) * vec->y;
+    float x = cos(angle) * vec->x - sin(angle) * vec->y;
+    float y = sin(angle) * vec->x + cos(angle) * vec->y;
+    vec->x = x;
+    vec->y = y;
 }
 
 void normalize(b2Vec2* vec){
@@ -70,7 +72,7 @@ void Portal::createPhysicalBody(b2World* world){
 
     midFixture = portalBody->CreateFixture(&midPortal);
     midFixture->SetSensor(true);
-    printf("Here: %p\n", midFixture);
+    //printf("Here: %p\n", midFixture);
 
     b2Vec2 pVec = points[1] - points[0];
     normalize(&pVec);
@@ -87,12 +89,34 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
     if (type == BEGIN_CONTACT) {
         collidingFixtures.insert(fix1);
         if (unhandledCollisions.find(fix1) != unhandledCollisions.end()) {
-            printf("Hereeeeeeee\n");
+            //printf("Hereeeeeeee\n");
             for (b2Contact* contact0 : unhandledCollisions[fix1]) {
                 handlePreCollision(fix1, contact0, NULL);
             }
         }
-        printf("Begin\n");
+
+        if (connectedPortal && 
+            connectedPortal->collidingFixtures.find(fix1) == connectedPortal->collidingFixtures.end()) {
+            b2Body* body = fix1->GetBody();
+            b2World* world = body->GetWorld();
+            float angle = vecAngle(this->dir, connectedPortal->dir);
+            float angularVelocity = body->GetAngularVelocity();
+            b2Vec2 posDiff = body->GetPosition() - this->pos;
+            b2Vec2 linearVelocity = body->GetLinearVelocity();
+            rotateVec(&linearVelocity, angle);
+            rotateVec(&posDiff, -angle);
+
+            polygon* poly = new polygon(world, connectedPortal->pos + posDiff);
+            b2Transform transform;
+            transform.p = poly->pos;
+            transform.q.Set(angle + body->GetAngle());
+            teleportData* data = (teleportData*)malloc(sizeof(teleportData));
+            *data = { transform, linearVelocity, angularVelocity, *(b2PolygonShape*)fix1->GetShape() };
+            poly->setData(data);
+            addPolygons.push_back(poly);
+        }
+
+        //printf("Begin\n");
     }
     else if (type == END_CONTACT) {
         if (isLeft(points[0], points[1], fix1->GetBody()->GetPosition())){
@@ -102,7 +126,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             destroyQueue.insert(fix1->GetBody());
         }
         collidingFixtures.erase(fix1);
-        printf("End\n");
+        //printf("End\n");
     }
 }
 
@@ -153,7 +177,7 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     }
 
     for (int i=0; i<contact->GetManifold()->pointCount; i++){
-        world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
+        //world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
     }
 }
 
@@ -172,7 +196,11 @@ void Portal::update(){
     for (b2Body* destroyBody: destroyQueue){
         destroyBody->GetWorld()->DestroyBody(destroyBody);
     }
-    //printf("Unhandled size: %d\n", unhandledCollisions.size());
+    for (polygon* poly : addPolygons) {
+        //printf("Herexx\n");
+        poly->applyData(connectedPortal);
+    }
+    addPolygons.clear();
     unhandledCollisions.clear();
     destroyQueue.clear();
 }
