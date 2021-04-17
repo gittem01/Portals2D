@@ -11,6 +11,7 @@ void polygon::createShape(b2PolygonShape shape, b2BodyType bodyType, void* userD
 
     bodyDef.userData.pointer = (uintptr_t)userData;
     bodyDef.type = bodyType;
+    bodyDef.linearDamping = 0.3f;
     body = world->CreateBody(&bodyDef);
 
     b2FixtureDef fixtureDef;
@@ -27,6 +28,7 @@ void polygon::createBox(b2Vec2 size, b2BodyType bodyType, void* userData0) {
     bodyDef.userData.pointer = (uintptr_t)userData0;
     bodyDef.type = bodyType;
     bodyDef.position.Set(pos.x, pos.y);
+    bodyDef.linearDamping = 0.3f;
     body = world->CreateBody(&bodyDef);
     
     b2PolygonShape Box;

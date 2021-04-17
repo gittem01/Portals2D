@@ -63,12 +63,16 @@ int main(void)
     float boxSize = 8.0f;
     float width = 0.05f;
 
-    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), 6.0f, world);
+    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), 3.0f, world);
 
     //Portal* portal2 = new Portal(b2Vec2(-boxSize + width * 2.0f * 0, 0.0f), b2Vec2(1.0f, 0.0f), 6.0f, world);
-    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 6.0f, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), 6.0f, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 3.0f, world);
+    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), 6.0f, world);
+    Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), 3.0f, world);
+    Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), 3.0f, world);
+
     portal->connect(portal2);
+    portal3->connect(portal4);
 
     /*(new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
         b2Vec2(boxSize + width*2, width), b2_staticBody, NULL);*/
@@ -104,6 +108,7 @@ int main(void)
     bool done = false;
     while (!done)
     {
+        Portal::portals.size();
         glClear( GL_COLOR_BUFFER_BIT );
 
         done = wh->looper();
@@ -150,13 +155,15 @@ int main(void)
         }
 
         world->DebugDraw();
-        portal->draw();
-        portal2->draw();
+        for (Portal* p : Portal::portals) {
+            p->draw();
+        }
 
         world->Step(1.0f / 60.0f, 10, 10);
 
-        portal->update();
-        portal2->update();
+        for (Portal* p : Portal::portals) {
+            p->update();
+        }
 
         glfwSwapInterval(1);
 

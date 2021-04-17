@@ -20,6 +20,8 @@ class Portal
 private:
 
 public:
+    static std::set<Portal*> portals;
+
     b2Body* portalBody;
     b2Fixture* midFixture;
     b2Fixture* yFix[2];

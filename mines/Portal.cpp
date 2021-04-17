@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include <GLFW/glfw3.h>
 
+std::set<Portal*> Portal::portals;
 
 bool isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c){
-     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= 0.03f;
+     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= 0.00f; // check this
 }
 
 float calcAngle(b2Vec2 vec){
@@ -45,6 +46,8 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
     
     this->connectedPortal = NULL;
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
+
+    portals.insert(this);
 }
 
 
@@ -199,7 +202,6 @@ void Portal::update(){
     for (polygon* poly : addPolygons) {
         poly->applyData(connectedPortal);
         connectedPortal->newFixtures.insert(poly->body->GetFixtureList());
-        //connectedPortal->collidingFixtures.insert(poly->body->GetFixtureList());
     }
     for (b2Body* destroyBody : destroyQueue) {
         destroyBody->GetWorld()->DestroyBody(destroyBody);
