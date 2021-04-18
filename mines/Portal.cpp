@@ -75,7 +75,6 @@ void Portal::createPhysicalBody(b2World* world){
 
     midFixture = portalBody->CreateFixture(&midPortal);
     midFixture->SetSensor(true);
-    //printf("Here: %p\n", midFixture);
 
     b2Vec2 pVec = points[1] - points[0];
     normalize(&pVec);
@@ -93,7 +92,6 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         collidingFixtures.insert(fix1);
         
         if (unhandledCollisions.find(fix1) != unhandledCollisions.end()) {
-            //printf("Hereeeeeeee\n");
             for (b2Contact* contact0 : unhandledCollisions[fix1]) {
                 handlePreCollision(fix1, contact0, NULL);
             }
@@ -102,11 +100,11 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         if (connectedPortal && newFixtures.find(fix1) == newFixtures.end()) {
             b2Body* body = fix1->GetBody();
             b2World* world = body->GetWorld();
-            float angle0 = vecAngle(this->dir, -connectedPortal->dir);
-            angle0 = -calcAngle(this->dir) + calcAngle(-connectedPortal->dir);
+
+            float angle0 = -calcAngle(this->dir) + calcAngle(-connectedPortal->dir);
 
             float angularVelocity = body->GetAngularVelocity();
-            b2Vec2 posDiff = body->GetPosition() - this->pos;            
+            b2Vec2 posDiff = this->pos - body->GetPosition();
 
             b2Vec2 linearVelocity = body->GetLinearVelocity();
             rotateVec(&linearVelocity, angle0);
@@ -122,7 +120,6 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             addPolygons.push_back(poly);
         }
 
-        //printf("Begin\n");
     }
     else if (type == END_CONTACT) {
         if (isLeft(points[0], points[1], fix1->GetBody()->GetPosition())){
@@ -133,7 +130,6 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         }
         collidingFixtures.erase(fix1);
         newFixtures.erase(fix1);
-        //printf("End\n");
     }
 }
 
@@ -200,7 +196,7 @@ bool Portal::shouldCollide(b2WorldManifold wManifold, int numOfPoints){
 
 void Portal::update(){
     for (polygon* poly : addPolygons) {
-        poly->applyData(connectedPortal);
+        poly->applyData();
         connectedPortal->newFixtures.insert(poly->body->GetFixtureList());
     }
     for (b2Body* destroyBody : destroyQueue) {

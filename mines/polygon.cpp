@@ -6,10 +6,9 @@ polygon::polygon(b2World* world, b2Vec2 pos) {
     this->pos = pos;
 }
 
-void polygon::createShape(b2PolygonShape shape, b2BodyType bodyType, void* userData) {
+void polygon::createShape(b2PolygonShape shape, b2BodyType bodyType) {
     b2BodyDef bodyDef;
 
-    bodyDef.userData.pointer = (uintptr_t)userData;
     bodyDef.type = bodyType;
     bodyDef.linearDamping = 0.3f;
     body = world->CreateBody(&bodyDef);
@@ -22,10 +21,9 @@ void polygon::createShape(b2PolygonShape shape, b2BodyType bodyType, void* userD
     body->CreateFixture(&fixtureDef);
 }
 
-void polygon::createBox(b2Vec2 size, b2BodyType bodyType, void* userData0) {
+void polygon::createBox(b2Vec2 size, b2BodyType bodyType) {
     b2BodyDef bodyDef;
 
-    bodyDef.userData.pointer = (uintptr_t)userData0;
     bodyDef.type = bodyType;
     bodyDef.position.Set(pos.x, pos.y);
     bodyDef.linearDamping = 0.3f;
@@ -45,8 +43,8 @@ void polygon::setData(teleportData* data) {
     this->data = data;
 }
 
-void polygon::applyData(void* userData) {
-    this->createShape(data->shape, b2_dynamicBody, userData);
+void polygon::applyData() {
+    this->createShape(data->shape, b2_dynamicBody);
     body->SetTransform(data->transform.p, data->transform.q.GetAngle());
     body->SetLinearVelocity(data->linearVelocity);
     body->SetAngularVelocity(data->angularVelocity);

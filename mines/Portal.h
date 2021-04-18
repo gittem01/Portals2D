@@ -56,8 +56,4 @@ public:
     void update();
     void draw();
     void connect(Portal* portal2);
-
-    void onContact(b2Body* body);
-    void newBody(b2Body* body);
-    bool isColliding(b2Fixture* fixture);
 };

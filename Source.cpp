@@ -66,8 +66,8 @@ int main(void)
     Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), 3.0f, world);
 
     //Portal* portal2 = new Portal(b2Vec2(-boxSize + width * 2.0f * 0, 0.0f), b2Vec2(1.0f, 0.0f), 6.0f, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 3.0f, world);
-    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), 6.0f, world);
+    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 3.0f, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), 3.0f, world);
     Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), 3.0f, world);
     Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), 3.0f, world);
 
@@ -75,26 +75,26 @@ int main(void)
     portal3->connect(portal4);
 
     /*(new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
-        b2Vec2(boxSize + width*2, width), b2_staticBody, NULL);*/
+        b2Vec2(boxSize + width*2, width), b2_staticBody);*/
     (new polygon(world, b2Vec2(-(boxSize + width), 0.0f)))->createBox(
-        b2Vec2(width, boxSize), b2_staticBody, NULL);
+        b2Vec2(width, boxSize), b2_staticBody);
     (new polygon(world, b2Vec2(0.0f, -(boxSize + width))))->createBox(
-        b2Vec2(boxSize + width * 2, width), b2_staticBody, NULL);
+        b2Vec2(boxSize + width * 2, width), b2_staticBody);
     (new polygon(world, b2Vec2(boxSize + width, 0.0f)))->createBox(
-        b2Vec2(width, boxSize), b2_staticBody, NULL);
+        b2Vec2(width, boxSize), b2_staticBody);
 
     debugDrawer* drawer = new debugDrawer();
 
     polygon* poly = new polygon(world, b2Vec2(0.0f, -2.0f));
-    poly->createBox(b2Vec2(0.6f, 0.5f), b2_dynamicBody, portal);
+    poly->createBox(b2Vec2(0.6f, 0.5f), b2_dynamicBody);
     //poly->body->SetAngularVelocity(9.0f);
 
     //polygon* thin = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
     //thin->createBox(b2Vec2(0.01f, 3.0f), b2_dynamicBody, portal);
 
-    for (int i = 0; i < 0; i++) {
+    for (int i = 0; i < 10; i++) {
         polygon* poly2 = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
-        poly2->createBox(b2Vec2((getRand() + 0.8f) / 2.0f, (getRand() + 0.8f) / 2.0f), b2_dynamicBody, portal);
+        poly2->createBox(b2Vec2((getRand() + 0.8f) / 2.0f, (getRand() + 0.8f) / 2.0f), b2_dynamicBody);
     }
 
     world->SetDebugDraw(drawer);

@@ -20,9 +20,9 @@ public:
 	b2Vec2 pos;
 
 	polygon(b2World* world, b2Vec2 pos);
-	void createBox(b2Vec2 size, b2BodyType bodyType, void* userData);
-	void createShape(b2PolygonShape shape, b2BodyType bodyType, void* userData);
+	void createBox(b2Vec2 size, b2BodyType bodyType);
+	void createShape(b2PolygonShape shape, b2BodyType bodyType);
 	void setData(teleportData* data);
-	void applyData(void* userData);
+	void applyData();
 };
 
