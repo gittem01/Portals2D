@@ -16,14 +16,14 @@ void polygon::createShape(teleportData* data, b2BodyType bodyType) {
     b2BodyDef bodyDef;
 
     bodyDef.type = bodyType;
-    bodyDef.linearDamping = 0.5f;
+    bodyDef.linearDamping = 0.0f;
     body = world->CreateBody(&bodyDef);
     
     b2PolygonShape clone;
     clone = *(b2PolygonShape*)data->fixture->GetShape();
     b2Vec2* vertices = (b2Vec2*)malloc(clone.m_count * sizeof(b2Vec2));
     for (int i = 0; i < clone.m_count; i++) {
-        b2Vec2 vertex = rotatePoint(clone.m_vertices[i], data->transform.q.GetAngle());
+        b2Vec2 vertex = rotatePoint(clone.m_vertices[i], data->angle + data->fixture->GetBody()->GetAngle());
         vertices[i] = vertex;
     }
 
@@ -43,7 +43,7 @@ void polygon::createBox(b2Vec2 size, b2BodyType bodyType) {
 
     bodyDef.type = bodyType;
     bodyDef.position.Set(pos.x, pos.y);
-    bodyDef.linearDamping = 0.5f;
+    bodyDef.linearDamping = 0.0f;
     body = world->CreateBody(&bodyDef);
     
     b2PolygonShape Box;
@@ -62,7 +62,20 @@ void polygon::setData(teleportData* data) {
 
 void polygon::applyData() {
     this->createShape(data, b2_dynamicBody);
-    body->SetTransform(data->transform.p, 0);
-    body->SetLinearVelocity(data->linearVelocity);
-    body->SetAngularVelocity(data->angularVelocity);
+
+    float angularVelocity = data->fixture->GetBody()->GetAngularVelocity();
+    b2Vec2 posDiff = data->p1 - data->fixture->GetBody()->GetPosition();
+
+    b2Vec2 linearVelocity = data->fixture->GetBody()->GetLinearVelocity();
+    linearVelocity = rotatePoint(linearVelocity, data->angle);
+    posDiff = rotatePoint(posDiff, b2_pi + data->angle);
+
+    b2Transform transform;
+    transform.p = data->p2 + posDiff;
+    this->pos = transform.p;
+    transform.q.Set(data->angle + data->fixture->GetBody()->GetAngle());
+
+    body->SetTransform(transform.p, 0);
+    body->SetLinearVelocity(linearVelocity);
+    body->SetAngularVelocity(angularVelocity);
 }

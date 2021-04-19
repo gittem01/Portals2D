@@ -111,24 +111,15 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         }
 
         if (connectedPortal && newFixtures.find(fix1) == newFixtures.end()) {
-            b2Body* body = fix1->GetBody();
-            b2World* world = body->GetWorld();
+            b2World* world = fix1->GetBody()->GetWorld();
 
             float angle0 = -calcAngle(this->dir) + calcAngle(-connectedPortal->dir);
 
-            float angularVelocity = body->GetAngularVelocity();
-            b2Vec2 posDiff = this->pos - body->GetPosition();
+            polygon* poly = new polygon(world, b2Vec2());
 
-            b2Vec2 linearVelocity = body->GetLinearVelocity();
-            rotateVec(&linearVelocity, angle0);
-            rotateVec(&posDiff, b2_pi + angle0);
-
-            polygon* poly = new polygon(world, connectedPortal->pos + posDiff);
-            b2Transform transform;
-            transform.p = poly->pos;
-            transform.q.Set(angle0 + body->GetAngle());
             teleportData* data = (teleportData*)malloc(sizeof(teleportData));
-            *data = { transform, linearVelocity, angularVelocity, fix1 };
+            *data = { this->pos, connectedPortal->pos, angle0, fix1 };
+
             poly->setData(data);
             addPolygons.push_back(poly);
             addBodies.push_back(fix1->GetBody());
@@ -218,7 +209,7 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     b2Vec2 dirClone2 = this->dir;
     // will be replaced later (no guarantee). Dynamic positioning will be applied to pulleys
     // Attention: could be problematic for larger values.
-    float mult = 1000000.0f;
+    float mult = 10000.0f;
 
     b2PulleyJointDef pulleyDef;
     b2Vec2 anchor1 = body1->GetPosition();

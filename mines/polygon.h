@@ -4,9 +4,9 @@
 #include <stdlib.h>
 
 struct teleportData {
-	b2Transform transform;
-	b2Vec2 linearVelocity;
-	float angularVelocity;
+	b2Vec2 p1;
+	b2Vec2 p2;
+	float angle;
 	b2Fixture* fixture;
 };
 

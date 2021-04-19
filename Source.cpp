@@ -52,7 +52,7 @@ int main(void)
 
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -0.0f));
 
     ContactListener cl;
 
