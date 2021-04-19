@@ -67,13 +67,13 @@ int main(void)
 
     //Portal* portal2 = new Portal(b2Vec2(-boxSize + width * 2.0f * 0, 0.0f), b2Vec2(1.0f, 0.0f), 6.0f, world);
     //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 3.0f, world);
-    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), 3.0f, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), boxSize, world);
     Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), boxSize, world);
     Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), boxSize, world);
 
     //portal->connect(portal2);
     portal3->connect(portal4);
-
+    portal3->connect(portal2);
     /*(new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
         b2Vec2(boxSize + width*2, width), b2_staticBody);*/
     (new polygon(world, b2Vec2(-(boxSize + width), 0.0f)))->createBox(

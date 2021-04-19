@@ -96,8 +96,8 @@ void Portal::createPhysicalBody(b2World* world){
 
     b2PolygonShape polyShape;
     polyShape.Set(polyPoints, 4);
-    collisionSensor = portalBody->CreateFixture(&polyShape, 0.0f);
-    collisionSensor->SetSensor(true);
+    //collisionSensor = portalBody->CreateFixture(&polyShape, 0.0f);
+    //collisionSensor->SetSensor(true);
 }
 
 void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type){
@@ -214,8 +214,8 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
 
     body1->GetWorld()->CreateJoint(&prismDef);
 
-    b2Vec2 dirClone1 = this->dir;
-    b2Vec2 dirClone2 = connectedPortal->dir;
+    b2Vec2 dirClone1 = connectedPortal->dir;
+    b2Vec2 dirClone2 = this->dir;
     // will be replaced later (no guarantee). Dynamic positioning will be applied to pulleys
     // Attention: could be problematic for larger values.
     float mult = 1000000.0f;
