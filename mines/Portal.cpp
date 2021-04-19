@@ -85,6 +85,19 @@ void Portal::createPhysicalBody(b2World* world){
     
     shape.SetTwoSided(points[1] + pVec, points[1]);
     yFix[1] = portalBody->CreateFixture(&shape, 0.0f);
+
+    float widthMul = 10.0f;
+    b2Vec2 p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+    b2Vec2 p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+    b2Vec2 p3 = p1 + dir;
+    b2Vec2 p4 = p2 + dir;
+    
+    b2Vec2 polyPoints[4] = { p1, p2, p3, p4 };
+
+    b2PolygonShape polyShape;
+    polyShape.Set(polyPoints, 4);
+    collisionSensor = portalBody->CreateFixture(&polyShape, 0.0f);
+    collisionSensor->SetSensor(true);
 }
 
 void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type){
@@ -115,9 +128,10 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             transform.p = poly->pos;
             transform.q.Set(angle0 + body->GetAngle());
             teleportData* data = (teleportData*)malloc(sizeof(teleportData));
-            *data = { transform, linearVelocity, angularVelocity, *(b2PolygonShape*)fix1->GetShape() };
+            *data = { transform, linearVelocity, angularVelocity, fix1 };
             poly->setData(data);
             addPolygons.push_back(poly);
+            addBodies.push_back(fix1->GetBody());
         }
 
     }
@@ -194,15 +208,53 @@ bool Portal::shouldCollide(b2WorldManifold wManifold, int numOfPoints){
     return in;
 }
 
+void Portal::connectBodies(b2Body* body1, b2Body* body2) {
+    b2PrismaticJointDef prismDef;
+    prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
+
+    body1->GetWorld()->CreateJoint(&prismDef);
+
+    b2Vec2 dirClone1 = this->dir;
+    b2Vec2 dirClone2 = connectedPortal->dir;
+    // will be replaced later (no guarantee). Dynamic positioning will be applied to pulleys
+    // Attention: could be problematic for larger values.
+    float mult = 1000000.0f;
+
+    b2PulleyJointDef pulleyDef;
+    b2Vec2 anchor1 = body1->GetPosition();
+    b2Vec2 anchor2 = body2->GetPosition();
+    b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
+    b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
+    pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
+
+    body1->GetWorld()->CreateJoint(&pulleyDef);
+
+    rotateVec(&dirClone1, b2_pi / 2.0f);
+    rotateVec(&dirClone2, b2_pi / 2.0f);
+
+    anchor1 = body1->GetPosition();
+    anchor2 = body2->GetPosition();
+    groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
+    groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
+    pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
+
+    body1->GetWorld()->CreateJoint(&pulleyDef);
+}
+
 void Portal::update(){
-    for (polygon* poly : addPolygons) {
+    for (int i = 0; i < addBodies.size(); i++) {
+        polygon* poly = addPolygons.at(i);
         poly->applyData();
         connectedPortal->newFixtures.insert(poly->body->GetFixtureList());
+        connectedPortal->collidingFixtures.insert(poly->body->GetFixtureList());
+        connectBodies(poly->body, addBodies.at(i));
     }
     for (b2Body* destroyBody : destroyQueue) {
         destroyBody->GetWorld()->DestroyBody(destroyBody);
     }
+
     addPolygons.clear();
+    addBodies.clear();
     unhandledCollisions.clear();
     destroyQueue.clear();
 }

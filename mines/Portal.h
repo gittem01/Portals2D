@@ -24,12 +24,14 @@ public:
 
     b2Body* portalBody;
     b2Fixture* midFixture;
+    b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
     std::set<b2Body*> destroyQueue;
     std::set<b2Fixture*> newFixtures;
     std::vector<polygon*> addPolygons;
-
+    std::vector<b2Body*> addBodies;
+        
     std::map<b2Fixture*, std::set<b2Contact*>> unhandledCollisions;
 
     b2Vec2 points[2];
@@ -56,4 +58,6 @@ public:
     void update();
     void draw();
     void connect(Portal* portal2);
+
+    void connectBodies(b2Body* body1, b2Body* body2);
 };

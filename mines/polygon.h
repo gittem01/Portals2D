@@ -7,7 +7,7 @@ struct teleportData {
 	b2Transform transform;
 	b2Vec2 linearVelocity;
 	float angularVelocity;
-	b2PolygonShape shape;
+	b2Fixture* fixture;
 };
 
 class polygon
@@ -21,8 +21,7 @@ public:
 
 	polygon(b2World* world, b2Vec2 pos);
 	void createBox(b2Vec2 size, b2BodyType bodyType);
-	void createShape(b2PolygonShape shape, b2BodyType bodyType);
+	void createShape(teleportData* data, b2BodyType bodyType);
 	void setData(teleportData* data);
 	void applyData();
 };
-

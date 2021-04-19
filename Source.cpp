@@ -63,15 +63,15 @@ int main(void)
     float boxSize = 8.0f;
     float width = 0.05f;
 
-    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), 3.0f, world);
+    //Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), 3.0f, world);
 
     //Portal* portal2 = new Portal(b2Vec2(-boxSize + width * 2.0f * 0, 0.0f), b2Vec2(1.0f, 0.0f), 6.0f, world);
     //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 3.0f, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), 3.0f, world);
-    Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), 3.0f, world);
-    Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), 3.0f, world);
+    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), 3.0f, world);
+    Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), boxSize, world);
+    Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), boxSize, world);
 
-    portal->connect(portal2);
+    //portal->connect(portal2);
     portal3->connect(portal4);
 
     /*(new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
@@ -92,7 +92,7 @@ int main(void)
     //polygon* thin = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
     //thin->createBox(b2Vec2(0.01f, 3.0f), b2_dynamicBody, portal);
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 0; i++) {
         polygon* poly2 = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
         poly2->createBox(b2Vec2((getRand() + 0.8f) / 2.0f, (getRand() + 0.8f) / 2.0f), b2_dynamicBody);
     }
@@ -133,10 +133,15 @@ int main(void)
         }
         
         if (mouseJoint){
+            bool jointFound = false;
             for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()) {
-                if (joint == mouseJoint) mouseJoint->SetTarget(b2Vec2(mp.x, mp.y));
-                break;
+                if (joint == mouseJoint) {
+                    mouseJoint->SetTarget(b2Vec2(mp.x, mp.y));
+                    jointFound = true;
+                    break;
+                }
             }
+            if (!jointFound) mouseJoint = NULL;
         }
 
         if (wh->mouseData[2] == 2){
@@ -144,11 +149,12 @@ int main(void)
         }
         else if (wh->mouseData[2] == 0 && mouseJoint){
             for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()){
-                if (joint == mouseJoint) world->DestroyJoint(mouseJoint);
-                break;
+                if (joint == mouseJoint) {
+                    world->DestroyJoint(mouseJoint);
+                    break;
+                }
             }
             mouseJoint = NULL;
-
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2){
             mouseJoint = NULL;
