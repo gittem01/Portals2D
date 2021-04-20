@@ -33,6 +33,7 @@ public:
     std::vector<b2Body*> addBodies;
         
     std::map<b2Fixture*, std::set<b2Contact*>> unhandledCollisions;
+    std::map<b2Body*, b2Body*> correspondingBodies;
 
     b2Vec2 points[2];
     b2Vec2 pos;

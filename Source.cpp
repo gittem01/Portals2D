@@ -52,7 +52,7 @@ int main(void)
 
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -0.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
 
     ContactListener cl;
 
@@ -61,21 +61,21 @@ int main(void)
     //world->SetAllowSleeping(false);
 
     float boxSize = 8.0f;
-    float width = 0.05f;
+    float width = 0.25f;
 
-    //Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), 3.0f, world);
+    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), boxSize/2.0f, world);
 
     //Portal* portal2 = new Portal(b2Vec2(-boxSize + width * 2.0f * 0, 0.0f), b2Vec2(1.0f, 0.0f), 6.0f, world);
-    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), 3.0f, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), boxSize, world);
-    Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), boxSize, world);
-    Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), boxSize, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), boxSize/2.0f, world);
+    //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), boxSize/2.0f, world);
+    Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), boxSize/2.0f, world);
+    Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), boxSize/2.0f, world);
 
     //portal->connect(portal2);
     portal3->connect(portal4);
-    portal3->connect(portal2);
-    /*(new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
-        b2Vec2(boxSize + width*2, width), b2_staticBody);*/
+    portal->connect(portal2);
+    (new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
+        b2Vec2(boxSize + width*2, width), b2_staticBody);
     (new polygon(world, b2Vec2(-(boxSize + width), 0.0f)))->createBox(
         b2Vec2(width, boxSize), b2_staticBody);
     (new polygon(world, b2Vec2(0.0f, -(boxSize + width))))->createBox(
@@ -86,7 +86,8 @@ int main(void)
     debugDrawer* drawer = new debugDrawer();
 
     polygon* poly = new polygon(world, b2Vec2(0.0f, -2.0f));
-    poly->createBox(b2Vec2(0.6f, 0.5f), b2_dynamicBody);
+    poly->createBox(b2Vec2(boxSize*1.1f, 0.2f), b2_dynamicBody);
+    poly->body->SetTransform(poly->body->GetPosition(), b2_pi/4.0f);
     //poly->body->SetAngularVelocity(9.0f);
 
     //polygon* thin = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));

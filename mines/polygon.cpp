@@ -16,7 +16,7 @@ void polygon::createShape(teleportData* data, b2BodyType bodyType) {
     b2BodyDef bodyDef;
 
     bodyDef.type = bodyType;
-    bodyDef.linearDamping = 0.0f;
+    bodyDef.linearDamping = 0.3f;
     body = world->CreateBody(&bodyDef);
     
     b2PolygonShape clone;
@@ -43,7 +43,7 @@ void polygon::createBox(b2Vec2 size, b2BodyType bodyType) {
 
     bodyDef.type = bodyType;
     bodyDef.position.Set(pos.x, pos.y);
-    bodyDef.linearDamping = 0.0f;
+    bodyDef.linearDamping = 0.3f;
     body = world->CreateBody(&bodyDef);
     
     b2PolygonShape Box;

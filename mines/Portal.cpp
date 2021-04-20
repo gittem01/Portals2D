@@ -128,9 +128,17 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
     }
     else if (type == END_CONTACT) {
         if (isLeft(points[0], points[1], fix1->GetBody()->GetPosition())){
-            // Alive
+            if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
+                connectedPortal->destroyQueue.insert(correspondingBodies[fix1->GetBody()]);
+                connectedPortal->correspondingBodies.erase(correspondingBodies[fix1->GetBody()]);
+                this->correspondingBodies.erase(fix1->GetBody());
+            }
         }
         else{
+            if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
+                connectedPortal->correspondingBodies.erase(correspondingBodies[fix1->GetBody()]);
+                this->correspondingBodies.erase(fix1->GetBody());
+            }
             destroyQueue.insert(fix1->GetBody());
         }
         collidingFixtures.erase(fix1);
@@ -202,6 +210,7 @@ bool Portal::shouldCollide(b2WorldManifold wManifold, int numOfPoints){
 void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     b2PrismaticJointDef prismDef;
     prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
+    prismDef.collideConnected = true;
 
     body1->GetWorld()->CreateJoint(&prismDef);
 
@@ -239,6 +248,9 @@ void Portal::update(){
         connectedPortal->newFixtures.insert(poly->body->GetFixtureList());
         connectedPortal->collidingFixtures.insert(poly->body->GetFixtureList());
         connectBodies(poly->body, addBodies.at(i));
+        
+        this->correspondingBodies[addBodies.at(i)] = poly->body;
+        connectedPortal->correspondingBodies[poly->body] = addBodies.at(i);
     }
     for (b2Body* destroyBody : destroyQueue) {
         destroyBody->GetWorld()->DestroyBody(destroyBody);
