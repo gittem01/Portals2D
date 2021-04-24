@@ -78,7 +78,6 @@ void Portal::createPhysicalBody(b2World* world){
     midPortal.userData.pointer = (uintptr_t)this;
 
     midFixture = portalBody->CreateFixture(&midPortal);
-    //midFixture->SetSensor(true);
 
     b2Vec2 pVec = points[1] - points[0];
     normalize(&pVec);
@@ -126,13 +125,13 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
 
             float angle0 = -calcAngle(this->dir) + calcAngle(-connectedPortal->dir);
 
-            polygon* poly = new polygon(world, b2Vec2());
+            Shape* shape = new Shape(world, b2Vec2());
 
             teleportData* data = (teleportData*)malloc(sizeof(teleportData));
             *data = { this->pos, connectedPortal->pos, angle0, fix1 };
 
-            poly->setData(data);
-            addPolygons.push_back(poly);
+            shape->setData(data);
+            addShapes.push_back(shape);
             addBodies.push_back(fix1->GetBody());
         }
         collidingFixtures.insert(fix1);
@@ -197,7 +196,7 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     contact->GetWorldManifold(&wManifold);
 
     bool isIn = false;
-    if (otherFixture->GetType() == b2Shape::e_polygon){
+    if (otherFixture->GetType() == b2Shape::e_polygon || otherFixture->GetType() == b2Shape::e_circle){
         for (int i=0; i<contact->GetManifold()->pointCount; i++){
             if (otherFixture->TestPoint(wManifold.points[i])){
                 isIn = true;
@@ -215,13 +214,12 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     if (mode == 2) { isIn = true;  }
 
     bool collide = shouldCollide(wManifold, contact->GetManifold()->pointCount, mode);
-    if ((!collide || !isIn) 
-        && otherFixture != yFix[0] && otherFixture != yFix[1]){
+    if ((!collide || !isIn) && otherFixture != yFix[0] && otherFixture != yFix[1]){
         contact->SetEnabled(false);
     }
 
     for (int i=0; i<contact->GetManifold()->pointCount; i++){
-        world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
+        //world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
     }
 }
 
@@ -285,20 +283,20 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
 
 void Portal::update(){
     for (int i = 0; i < addBodies.size(); i++) {
-        polygon* poly = addPolygons.at(i);
-        poly->applyData();
+        Shape* shape = addShapes.at(i);
+        shape->applyData();
 
-        connectedPortal->collidingFixtures.insert(poly->body->GetFixtureList());
-        connectBodies(poly->body, addBodies.at(i));
-        
-        correspondingBodies[addBodies.at(i)] = poly->body;
-        connectedPortal->correspondingBodies[poly->body] = addBodies.at(i);
+        connectedPortal->collidingFixtures.insert(shape->body->GetFixtureList());
+        connectBodies(shape->body, addBodies.at(i));
+
+        correspondingBodies[addBodies.at(i)] = shape->body;
+        connectedPortal->correspondingBodies[shape->body] = addBodies.at(i);
     }
     for (b2Body* destroyBody : destroyQueue) {
         destroyBody->GetWorld()->DestroyBody(destroyBody);
     }
 
-    addPolygons.clear();
+    addShapes.clear();
     addBodies.clear();
     destroyQueue.clear();
 }

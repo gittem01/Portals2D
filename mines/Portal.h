@@ -1,7 +1,7 @@
 #pragma once
 
 #include <box2d/box2d.h>
-#include "polygon.h"
+#include "Shape.h"
 #include <vector>
 #include <stdio.h>
 #include <algorithm>
@@ -33,7 +33,7 @@ public:
     std::set<b2Fixture*> collidingFixtures;
     std::set<b2Body*> destroyQueue;
     std::set<b2Fixture*> prepareFixtures;
-    std::vector<polygon*> addPolygons;
+    std::vector<Shape*> addShapes;
     std::vector<b2Body*> addBodies;
 
     std::map<b2Body*, b2Body*> correspondingBodies;

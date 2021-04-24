@@ -1086,6 +1086,9 @@ void b2World::DrawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color
 
 	case b2Shape::e_polygon:
 		{
+			if (fixture->IsSensor()) {
+				break;
+			}
 			b2PolygonShape* poly = (b2PolygonShape*)fixture->GetShape();
 			int32 vertexCount = poly->m_count;
 			b2Assert(vertexCount <= b2_maxPolygonVertices);
