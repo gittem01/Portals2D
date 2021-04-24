@@ -144,4 +144,6 @@ void Shape::applyData() {
 
     body->SetLinearVelocity(linearVelocity);
     body->SetAngularVelocity(angularVelocity);
+
+    free(data);
 }
