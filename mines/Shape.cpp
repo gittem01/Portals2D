@@ -9,6 +9,12 @@ b2Vec2 rotatePoint(b2Vec2 vec, float angle) {
 Shape::Shape(b2World* world, b2Vec2 pos) {
     this->world = world;
     this->pos = pos;
+    this->body = NULL;
+    this->data = NULL;
+}
+
+Shape::~Shape() {
+    
 }
 
 void Shape::createPolyFromData(teleportData* data) {
@@ -17,6 +23,7 @@ void Shape::createPolyFromData(teleportData* data) {
     bodyDef.type = b2_dynamicBody;
     bodyDef.linearDamping = defaultLinearDamping;
     bodyDef.angularDamping = defaultAngularDamping;
+    bodyDef.userData.pointer = (uintptr_t)this;
     body = world->CreateBody(&bodyDef);
 
     b2PolygonShape clone;
@@ -45,6 +52,7 @@ void Shape::createCircleFromData(teleportData* data) {
     bodyDef.type = b2_dynamicBody;
     bodyDef.linearDamping = defaultLinearDamping;
     bodyDef.angularDamping = defaultAngularDamping;
+    bodyDef.userData.pointer = (uintptr_t)this;
     body = world->CreateBody(&bodyDef);
 
     b2CircleShape clone;
@@ -67,6 +75,7 @@ void Shape::createRect(b2Vec2 size, b2BodyType bodyType) {
     bodyDef.position.Set(pos.x, pos.y);
     bodyDef.linearDamping = defaultLinearDamping;
     bodyDef.angularDamping = defaultAngularDamping;
+    bodyDef.userData.pointer = (uintptr_t)this;
     body = world->CreateBody(&bodyDef);
 
     b2PolygonShape Box;
@@ -87,6 +96,7 @@ void Shape::createCircle(float r, b2BodyType bodyType) {
     bodyDef.position.Set(pos.x, pos.y);
     bodyDef.linearDamping = defaultLinearDamping;
     bodyDef.angularDamping = defaultAngularDamping;
+    bodyDef.userData.pointer = (uintptr_t)this;
     body = world->CreateBody(&bodyDef);
 
     b2CircleShape circle;

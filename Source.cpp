@@ -110,11 +110,11 @@ int main(void)
     world->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
 
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 150; i++) {
         Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 2, getRand() * ySize * 2));
         circle->createCircle((getRand() + 1.5f) / 5.0f, b2_dynamicBody);
     }
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 150; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 2, getRand() * ySize * 2));
         poly->createRect(b2Vec2(((getRand() + 1.5f) / 5.0f), (getRand() + 1.5f) / 5.0f), b2_dynamicBody);
     }

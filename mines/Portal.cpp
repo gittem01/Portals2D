@@ -220,7 +220,8 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     }
 
     for (int i=0; i<contact->GetManifold()->pointCount; i++){
-        world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
+        // Contact drawing
+        //world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
     }
 }
 

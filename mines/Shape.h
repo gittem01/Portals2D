@@ -2,6 +2,7 @@
 
 #include <box2d/box2d.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 struct teleportData {
 	b2Vec2 p1;
@@ -28,6 +29,7 @@ public:
 	b2Vec2 pos;
 
 	Shape(b2World* world, b2Vec2 pos);
+	~Shape();
 
 	void createPolyFromData(teleportData* data);
 	void createRect(b2Vec2 size, b2BodyType bodyType);
