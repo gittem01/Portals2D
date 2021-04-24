@@ -8,6 +8,36 @@ b2MouseJoint* mouseJoint = NULL;
 float frequencyHz = 5.0f;
 float dampingRatio = 0.7f;
 
+void createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world) {
+    b2BodyDef bd;
+    bd.type = b2_staticBody;
+    b2Body* edgeBody = world->CreateBody(&bd);
+
+    b2EdgeShape shape;
+    shape.SetTwoSided(p1, p2);
+
+    b2FixtureDef fixDef;
+    fixDef.shape = &shape;
+
+    edgeBody->CreateFixture(&fixDef);
+}
+
+void createCircle(b2Vec2 pos, float r, b2World* world) {
+    b2BodyDef bd;
+    bd.position = pos;
+    bd.type = b2_dynamicBody;
+    b2Body* circleBody = world->CreateBody(&bd);
+
+    b2CircleShape circleShape;
+    circleShape.m_radius = r;
+
+    b2FixtureDef fixDef;
+    fixDef.shape = &circleShape;
+    fixDef.density = 1.0f;
+
+    circleBody->CreateFixture(&fixDef);
+}
+
 void mouseJointHandler(glm::vec2 mp, b2World* world){
     b2Vec2 target = b2Vec2(mp.x, mp.y);
 
@@ -57,49 +87,55 @@ int main(void)
     ContactListener cl;
 
     world->SetContactListener(&cl);
-    world->SetContinuousPhysics(false);
+    //world->SetContinuousPhysics(false);
     //world->SetAllowSleeping(false);
 
     float boxSize = 8.0f;
-    float width = 0.25f;
+    float width = 0.05f;
+    float m = 0.5f;
 
-    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), boxSize/2.0f, world);
-
+    Portal* portal = new Portal(b2Vec2(0.0f, -boxSize), b2Vec2(0.0f, 1.0f), boxSize * m, world);
+    
     //Portal* portal2 = new Portal(b2Vec2(-boxSize + width * 2.0f * 0, 0.0f), b2Vec2(1.0f, 0.0f), 6.0f, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), boxSize/2.0f, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(0.0f, -1.0f), boxSize * m, world);
     //Portal* portal2 = new Portal(b2Vec2(0.0f, boxSize), b2Vec2(-1.0f, -1.0f), boxSize/2.0f, world);
-    Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), boxSize/2.0f, world);
-    Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), boxSize/2.0f, world);
+    Portal* portal3 = new Portal(b2Vec2(-boxSize, 0.0f), b2Vec2(1.0f, 0.0f), boxSize * m, world);
+    Portal* portal4 = new Portal(b2Vec2(boxSize, 0.0f), b2Vec2(-1.0f, 0.0f), boxSize * m, world);
 
     //portal->connect(portal2);
     portal3->connect(portal4);
     portal->connect(portal2);
-    (new polygon(world, b2Vec2(0.0f, boxSize + width)))->createBox(
-        b2Vec2(boxSize + width*2, width), b2_staticBody);
-    (new polygon(world, b2Vec2(-(boxSize + width), 0.0f)))->createBox(
-        b2Vec2(width, boxSize), b2_staticBody);
-    (new polygon(world, b2Vec2(0.0f, -(boxSize + width))))->createBox(
-        b2Vec2(boxSize + width * 2, width), b2_staticBody);
-    (new polygon(world, b2Vec2(boxSize + width, 0.0f)))->createBox(
-        b2Vec2(width, boxSize), b2_staticBody);
+
+    portal->id = 1;
+    portal2->id = 2;
+    portal3->id = 3;
+    portal4->id = 4;
+
+    createEdge(b2Vec2(-boxSize, -boxSize), b2Vec2(+boxSize, -boxSize), world);
+    createEdge(b2Vec2(-boxSize, -boxSize), b2Vec2(-boxSize, +boxSize), world);
+    createEdge(b2Vec2(-boxSize, +boxSize), b2Vec2(+boxSize, +boxSize), world);
+    createEdge(b2Vec2(+boxSize, +boxSize), b2Vec2(+boxSize, -boxSize), world);
+    //createEdge(b2Vec2(-boxSize, -boxSize-0.1f), b2Vec2(+boxSize, -boxSize-0.1f), world);
+
+    //createCircle(b2Vec2(4.0f, 0.0f), 1.0f, world);
 
     debugDrawer* drawer = new debugDrawer();
 
     polygon* poly = new polygon(world, b2Vec2(0.0f, -2.0f));
-    poly->createBox(b2Vec2(boxSize*1.1f, 0.2f), b2_dynamicBody);
+    poly->createBox(b2Vec2(0.3f, 0.3f), b2_dynamicBody);
     poly->body->SetTransform(poly->body->GetPosition(), b2_pi/4.0f);
-    //poly->body->SetAngularVelocity(9.0f);
+    poly->body->SetLinearVelocity(b2Vec2(10.0f, 1.0f));
 
     //polygon* thin = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
     //thin->createBox(b2Vec2(0.01f, 3.0f), b2_dynamicBody, portal);
 
-    for (int i = 0; i < 0; i++) {
+    for (int i = 0; i < 20; i++) {
         polygon* poly2 = new polygon(world, b2Vec2(getRand() * boxSize, getRand() * boxSize));
         poly2->createBox(b2Vec2((getRand() + 0.8f) / 2.0f, (getRand() + 0.8f) / 2.0f), b2_dynamicBody);
     }
 
     world->SetDebugDraw(drawer);
-    drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
+    drawer->SetFlags(b2Draw::e_shapeBit);
 
     double timeStep = 0.0f;
     double t0;
@@ -166,14 +202,14 @@ int main(void)
             p->draw();
         }
 
-        world->Step(1.0f / 60.0f, 10, 10);
+        world->Step(1.0f / 60.0f, 3, 8);
 
         for (Portal* p : Portal::portals) {
             p->update();
         }
-
+        
         glfwSwapInterval(1);
-
+        
         glfwSwapBuffers(wh->window);
     }
 

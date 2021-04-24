@@ -3,21 +3,21 @@
 
 void ContactListener::BeginContact(b2Contact* contact){
     for (Portal* portal : Portal::portals) {
-        if (portal->midFixture == contact->GetFixtureA()) {
+        if (portal->midFixture == contact->GetFixtureA() || portal->collisionSensor == contact->GetFixtureA()) {
             portal->handleCollision(contact->GetFixtureB(), contact->GetFixtureA(), contact, BEGIN_CONTACT);
         }
-        else if (portal->midFixture == contact->GetFixtureB()){
+        else if (portal->midFixture == contact->GetFixtureB() || portal->collisionSensor == contact->GetFixtureB()) {
             portal->handleCollision(contact->GetFixtureA(), contact->GetFixtureB(), contact, BEGIN_CONTACT);
         }
     }
 }
 
-void ContactListener::EndContact(b2Contact* contact){
+void ContactListener::EndContact(b2Contact* contact) {
     for (Portal* portal : Portal::portals) {
-        if (portal->midFixture == contact->GetFixtureA()) {
+        if (portal->midFixture == contact->GetFixtureA() || portal->collisionSensor == contact->GetFixtureA()) {
             portal->handleCollision(contact->GetFixtureB(), contact->GetFixtureA(), contact, END_CONTACT);
         }
-        else if (portal->midFixture == contact->GetFixtureB()) {
+        else if (portal->midFixture == contact->GetFixtureB() || portal->collisionSensor == contact->GetFixtureB()) {
             portal->handleCollision(contact->GetFixtureA(), contact->GetFixtureB(), contact, END_CONTACT);
         }
     }

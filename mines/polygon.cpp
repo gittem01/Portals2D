@@ -16,7 +16,8 @@ void polygon::createShape(teleportData* data, b2BodyType bodyType) {
     b2BodyDef bodyDef;
 
     bodyDef.type = bodyType;
-    bodyDef.linearDamping = 0.3f;
+    bodyDef.linearDamping = 0.5f;
+    bodyDef.angularDamping = 0.5f;
     body = world->CreateBody(&bodyDef);
     
     b2PolygonShape clone;
@@ -33,9 +34,10 @@ void polygon::createShape(teleportData* data, b2BodyType bodyType) {
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &clone;
     fixtureDef.density = 1.0f;
-    fixtureDef.restitution = 0.2f;
+    fixtureDef.restitution = 01.0f;
     fixtureDef.friction = 0.5f;
     body->CreateFixture(&fixtureDef);
+    body->SetBullet(false);
 }
 
 void polygon::createBox(b2Vec2 size, b2BodyType bodyType) {
@@ -43,7 +45,8 @@ void polygon::createBox(b2Vec2 size, b2BodyType bodyType) {
 
     bodyDef.type = bodyType;
     bodyDef.position.Set(pos.x, pos.y);
-    bodyDef.linearDamping = 0.3f;
+    bodyDef.linearDamping = 0.5f;
+    bodyDef.angularDamping = 0.5f;
     body = world->CreateBody(&bodyDef);
     
     b2PolygonShape Box;
@@ -51,9 +54,10 @@ void polygon::createBox(b2Vec2 size, b2BodyType bodyType) {
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &Box;
     fixtureDef.density = 1.0f;
-    fixtureDef.restitution = 0.2f;
+    fixtureDef.restitution = 1.0f;
     fixtureDef.friction = 0.5f;
     body->CreateFixture(&fixtureDef);
+    body->SetBullet(false);
 }
 
 void polygon::setData(teleportData* data) {

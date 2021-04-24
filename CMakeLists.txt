@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16.3)
 project(Teleporter VERSION 1.0.0)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glfw)

@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <unordered_set>
 
 typedef enum{
     BEGIN_CONTACT = 1,
@@ -27,12 +28,14 @@ public:
     b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
+    b2PolygonShape bottomShape;
+
+    std::set<b2Fixture*> collidingFixtures;
     std::set<b2Body*> destroyQueue;
-    std::set<b2Fixture*> newFixtures;
+    std::set<b2Fixture*> prepareFixtures;
     std::vector<polygon*> addPolygons;
     std::vector<b2Body*> addBodies;
-        
-    std::map<b2Fixture*, std::set<b2Contact*>> unhandledCollisions;
+
     std::map<b2Body*, b2Body*> correspondingBodies;
 
     b2Vec2 points[2];
@@ -42,8 +45,6 @@ public:
     float angle;
 
     int id;
-
-    std::set<b2Fixture*> collidingFixtures;
 
     Portal* connectedPortal;
     b2Color color;
@@ -55,7 +56,7 @@ public:
     void createPhysicalBody(b2World* world);
     void handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type);
     void handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2Manifold* oldManifold);
-    bool shouldCollide(b2WorldManifold wManifold, int numOfPoints);
+    bool shouldCollide(b2WorldManifold wManifold, int numOfPoints, int mode);
     void update();
     void draw();
     void connect(Portal* portal2);
