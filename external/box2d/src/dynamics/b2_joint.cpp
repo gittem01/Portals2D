@@ -289,7 +289,6 @@ void b2Joint::Draw(b2Draw* draw) const
 
 		c.Set(0.8f, 0.8f, 0.8f);
 		draw->DrawSegment(p1, p2, c);
-
 	}
 	break;
 

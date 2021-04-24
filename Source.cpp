@@ -91,7 +91,7 @@ int main(void)
     float xSize = 7.98f;
     float ySize = 4.48f;
     float width = 0.05f;
-    float m = 0.6f;
+    float m = 0.9f;
 
     Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m, world);
     Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m, world);
@@ -106,25 +106,18 @@ int main(void)
     createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), world);
     createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, -ySize), world);
 
-    createCircle(b2Vec2(4.0f, 0.0f), 1.0f, world);
-
     debugDrawer* drawer = new debugDrawer();
-
-    Shape* poly = new Shape(world, b2Vec2(0.0f, -2.0f));
-    poly->createRect(b2Vec2(1.0f, 1.3f), b2_dynamicBody);
-    poly->body->SetTransform(poly->body->GetPosition(), b2_pi/4.0f);
-    poly->body->SetLinearVelocity(b2Vec2(10.0f, 1.0f));
-
-    for (int i = 0; i < 10; i++) {
-        Shape* poly2 = new Shape(world, b2Vec2(getRand() * ySize, getRand() * ySize));
-        poly2->createCircle((getRand() + 0.8f) / 2.0f, b2_dynamicBody);
-    }
-
     world->SetDebugDraw(drawer);
-    drawer->SetFlags(b2Draw::e_shapeBit);
+    drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
 
-    double timeStep = 0.0f;
-    double t0;
+    for (int i = 0; i < 25; i++) {
+        Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 2, getRand() * ySize * 2));
+        circle->createCircle((getRand() + 1.5f) / 5.0f, b2_dynamicBody);
+    }
+    for (int i = 0; i < 25; i++) {
+        Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 2, getRand() * ySize * 2));
+        poly->createRect(b2Vec2(((getRand() + 1.5f) / 5.0f), (getRand() + 1.5f) / 5.0f), b2_dynamicBody);
+    }
 
     glm::vec2* clicks[2] = { NULL, NULL };
 

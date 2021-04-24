@@ -17,10 +17,10 @@ public:
 	b2World* world;
 	teleportData* data;
 
-	float defaultLinearDamping = 0.5f;
-	float defaultAngularDamping = 0.5f;
+	float defaultLinearDamping = 0.3f;
+	float defaultAngularDamping = 0.3f;
 	float defaultDensity = 1.0f;
-	float defaultrestitution = 1.0f;
+	float defaultrestitution = 0.5f;
 	float defaultFriction = 0.5f;
 	bool isBullet = false;
 

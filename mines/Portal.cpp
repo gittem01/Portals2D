@@ -69,9 +69,10 @@ void Portal::createPhysicalBody(b2World* world){
     bd.type = b2_staticBody;
     portalBody = world->CreateBody(&bd);
 
-    b2Vec2 smallDir = b2Vec2(dir.x * 0.03f, dir.y * 0.03f);
+    float d = 0.02f;
+    b2Vec2 smallDir = b2Vec2(dir.x * d, dir.y * d);
     b2EdgeShape shape;
-    shape.SetTwoSided(points[0], points[1]);
+    shape.SetTwoSided(points[0] - smallDir, points[1] - smallDir);
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;
@@ -219,7 +220,7 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     }
 
     for (int i=0; i<contact->GetManifold()->pointCount; i++){
-        //world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
+        world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
     }
 }
 
