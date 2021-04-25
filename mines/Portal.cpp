@@ -7,8 +7,8 @@
 
 std::set<Portal*> Portal::portals;
 
-bool isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c){
-     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= 0.1f; // check this
+bool isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c, float t){
+     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t; // check this
 }
 
 float calcAngle(b2Vec2 vec) {
@@ -84,10 +84,10 @@ void Portal::createPhysicalBody(b2World* world){
     normalize(&pVec);
     pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
 
-    shape.SetTwoSided(points[0] - pVec, points[0]);
+    shape.SetTwoSided(points[0], points[0]);
     yFix[0] = portalBody->CreateFixture(&shape, 0.0f);
     
-    shape.SetTwoSided(points[1] + pVec, points[1]);
+    shape.SetTwoSided(points[1], points[1]);
     yFix[1] = portalBody->CreateFixture(&shape, 0.0f);
 
     float widthMul = 10.0f;
@@ -143,7 +143,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             return;
         }
         
-        if (isLeft(points[0], points[1], fix1->GetBody()->GetPosition())){
+        if (isLeft(points[0], points[1], fix1->GetBody()->GetPosition(), 0.1f)){
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
                 b2Body* cBody = correspondingBodies[fix1->GetBody()];
                 connectedPortal->destroyQueue.insert(cBody);
@@ -165,7 +165,6 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
 }
 
 void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2Manifold* oldManifold){
-
     int mode;
 
     if (this->collidingFixtures.find(fixture) != this->collidingFixtures.end() ||
@@ -205,16 +204,16 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
         }
     }
 
-    if (otherFixture->GetShape()->GetType() == b2Shape::e_edge && otherFixture != midFixture){
+    else if (otherFixture->GetShape()->GetType() == b2Shape::e_edge && otherFixture != midFixture){
         b2EdgeShape* edge = (b2EdgeShape*)otherFixture->GetShape();
-        if (isLeft(points[0], points[1], edge->m_vertex1) && isLeft(points[0], points[1], edge->m_vertex1)) {
+        if (isLeft(points[0], points[1], edge->m_vertex1, 0.1f) || isLeft(points[0], points[1], edge->m_vertex2, 0.1f)) {
             isIn = true;
         }
     }
 
     if (mode == 2) { isIn = true;  }
 
-    bool collide = shouldCollide(wManifold, contact->GetManifold()->pointCount, mode);
+    bool collide = shouldCollide(wManifold, contact->GetManifold(), mode);
     if ((!collide || !isIn) && otherFixture != yFix[0] && otherFixture != yFix[1]){
         contact->SetEnabled(false);
     }
@@ -225,24 +224,36 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     }
 }
 
-bool Portal::shouldCollide(b2WorldManifold wManifold, int numOfPoints, int mode){
+bool Portal::shouldCollide(b2WorldManifold wManifold, b2Manifold* manifold, int mode){
+    int numOfPoints = manifold->pointCount;
     bool in = true;
     if (mode == 1) {
         for (int i = 0; i < numOfPoints; i++) {
-            if (!isLeft(points[0], points[1], wManifold.points[i])) {
+            if (!isLeft(points[0], points[1], wManifold.points[i], 0.1f)) {
                 in = false;
             }
         }
     }
     else if (mode == 2) {
+        bool others[2] = { false, false };
         for (int i = 0; i < numOfPoints; i++) {
-            bool a1 = isLeft(points[0], points[1], wManifold.points[i]);
-            bool a2 = isLeft(points[0] + dir, points[0], wManifold.points[i]);
-            bool a3 = isLeft(points[1] + dir, points[1], wManifold.points[i]);
+            bool a1 = isLeft(points[0], points[1], wManifold.points[i], 0.1f);
+            bool a2 = isLeft(points[0] + dir, points[0], wManifold.points[i], 0.0f);
+            bool a3 = isLeft(points[1] + dir, points[1], wManifold.points[i], 0.0f);
             if (!a1 && a2 && !a3) 
             {
                 in = false;
             }
+            else if (numOfPoints == 2) {
+                others[i] = true;
+            }
+        }
+        if (numOfPoints == 2 && (!others[0] || !others[1]) && (others[0] || others[1])) {
+            int n = 0;
+            if (others[1]) n = 1;
+            manifold->pointCount -= 1;
+            manifold->points[0] = manifold->points[n];
+            in = true;
         }
     }
 

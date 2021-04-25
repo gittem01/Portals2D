@@ -93,10 +93,10 @@ int main(void)
     float xSize = 7.98f;
     float ySize = 4.48f;
     float width = 0.05f;
-    float m = 0.9f;
+    float m = 0.95f;
 
-    Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m * 0.4f, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m * 0.4f, world);
+    Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m * 0.7f, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m * 0.7f, world);
     Portal* portal3 = new Portal(b2Vec2(-xSize, 0.0f), b2Vec2(1.0f, 0.0f), ySize * m, world);
     Portal* portal4 = new Portal(b2Vec2(xSize, 0.0f), b2Vec2(-1.0f, 0.0f), ySize * m, world);
 
@@ -108,21 +108,17 @@ int main(void)
     createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), world, b2_staticBody);
     createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, -ySize), world, b2_staticBody);
 
-    b2Body* slider = createEdge(b2Vec2(+xSize-0.2f, +ySize-1.0f), b2Vec2(+xSize-0.2f, -ySize+1.0f), 
-        world, b2_kinematicBody);
-    slider->SetLinearVelocity(b2Vec2(-5.1f, 0.0f));
-
     debugDrawer* drawer = new debugDrawer();
     world->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
 
-    for (int i = 0; i < 75; i++) {
+    for (int i = 0; i < 150; i++) {
         Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
-        circle->createCircle((getRand() + 1.5f) / 5.0f, b2_dynamicBody);
+        circle->createCircle((getRand() + 1.0f) / 5.0f, b2_dynamicBody);
     }
-    for (int i = 0; i < 75; i++) {
+    for (int i = 0; i < 150; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
-        poly->createRect(b2Vec2(((getRand() + 1.5f) / 5.0f), (getRand() + 1.5f) / 5.0f), b2_dynamicBody);
+        poly->createRect(b2Vec2(((getRand() + 1.0f) / 5.0f), (getRand() + 1.5f) / 5.0f), b2_dynamicBody);
     }
 
     glm::vec2* clicks[2] = { NULL, NULL };
@@ -130,7 +126,6 @@ int main(void)
     bool done = false;
     while (!done)
     {
-        Portal::portals.size();
         glClear( GL_COLOR_BUFFER_BIT );
 
         done = wh->looper();
@@ -172,7 +167,9 @@ int main(void)
         else if (wh->mouseData[2] == 0 && mouseJoint){
             for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()){
                 if (joint == mouseJoint) {
+                    b2Body* body1 = mouseJoint->GetBodyA();
                     world->DestroyJoint(mouseJoint);
+                    world->DestroyBody(body1);
                     break;
                 }
             }
@@ -180,12 +177,6 @@ int main(void)
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2){
             mouseJoint = NULL;
-        }
-
-        if (slider->GetPosition().x <= -xSize*1.9f || slider->GetPosition().x >= 0.0f) {
-            b2Vec2 vel = slider->GetLinearVelocity();
-            vel.x *= -1;
-            slider->SetLinearVelocity(vel);
         }
 
         world->DebugDraw();
