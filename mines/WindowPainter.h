@@ -11,7 +11,7 @@ public:
 	int* mouseData = (int*)calloc(7, sizeof(int));
 	int* lastMousePos = (int*)calloc(2, sizeof(int));
 	GLFWwindow* window;
-	glm::vec2 windowSizes = glm::vec2(1600, 900);
+	glm::vec2 windowSizes = glm::vec2(1280, 720);
 	Camera* cam;
 	float currentColor[4] = {1, 1, 1, 1};
 	bool releaseQueue[3] = {false, false, false};

@@ -84,7 +84,7 @@ int main(void)
 
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
+    b2World* world = new b2World(b2Vec2(5.0f, 0.0f));
 
     ContactListener cl;
 
@@ -185,11 +185,24 @@ int main(void)
         }
 
         world->Step(1.0f / 60.0f, 8, 25);
-
-        for (Portal* p : Portal::portals) {
-            p->update();
-        }
         
+        for (Portal* p : Portal::portals) {
+            p->creation();
+        }
+        for (Portal* p : Portal::portals) {
+            p->destruction();
+        }
+
+        // num of bodies decreasing after some time. TODO.
+        // not the biggest issue currently
+        // Note: pulling a body out of a portal without removing
+        // the mouse button increases num of bodies permanently
+
+        int n = world->GetBodyCount();
+        n -= portal1->correspondingBodies.size();
+        n -= portal3->correspondingBodies.size();
+        printf("Body count: %d\n", n);
+
         glfwSwapInterval(1);
         
         glfwSwapBuffers(wh->window);

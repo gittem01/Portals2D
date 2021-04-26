@@ -294,7 +294,7 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     body1->GetWorld()->CreateJoint(&pulleyDef);
 }
 
-void Portal::update(){
+void Portal::creation() {
     for (int i = 0; i < addBodies.size(); i++) {
         Shape* shape = addShapes.at(i);
         shape->applyData();
@@ -305,10 +305,12 @@ void Portal::update(){
         correspondingBodies[addBodies.at(i)] = shape->body;
         connectedPortal->correspondingBodies[shape->body] = addBodies.at(i);
     }
+}
+
+void Portal::destruction() {
     for (b2Body* destroyBody : destroyQueue) {
         destroyBody->GetWorld()->DestroyBody(destroyBody);
     }
-
     addShapes.clear();
     addBodies.clear();
     destroyQueue.clear();
