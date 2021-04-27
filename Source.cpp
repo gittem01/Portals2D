@@ -84,7 +84,7 @@ int main(void)
 
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(5.0f, 0.0f));
+    b2World* world = new b2World(b2Vec2(10.0f, 0.0f));
 
     ContactListener cl;
 
@@ -93,7 +93,7 @@ int main(void)
     float xSize = 7.98f;
     float ySize = 4.48f;
     float width = 0.05f;
-    float m = 0.95f;
+    float m = 1.0f;
 
     Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m * 0.7f, world);
     Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m * 0.7f, world);
@@ -124,6 +124,7 @@ int main(void)
     glm::vec2* clicks[2] = { NULL, NULL };
 
     bool done = false;
+    int frame = 0;
     while (!done)
     {
         glClear( GL_COLOR_BUFFER_BIT );
@@ -184,7 +185,7 @@ int main(void)
             p->draw();
         }
 
-        world->Step(1.0f / 60.0f, 8, 25);
+        world->Step(1.0f / 60.0f, 8, 3);
         
         for (Portal* p : Portal::portals) {
             p->creation();
@@ -201,7 +202,7 @@ int main(void)
         int n = world->GetBodyCount();
         n -= portal1->correspondingBodies.size();
         n -= portal3->correspondingBodies.size();
-        printf("Body count: %d\n", n);
+        printf("Body count: %d, Frame: %d\n", n, ++frame);
 
         glfwSwapInterval(1);
         

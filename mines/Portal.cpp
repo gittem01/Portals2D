@@ -227,15 +227,18 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
 bool Portal::shouldCollide(b2WorldManifold wManifold, b2Manifold* manifold, int mode){
     int numOfPoints = manifold->pointCount;
     bool in = true;
+    bool others[2] = { false, false };
     if (mode == 1) {
         for (int i = 0; i < numOfPoints; i++) {
-            if (!isLeft(points[0], points[1], wManifold.points[i], 0.1f)) {
+            if (!isLeft(points[0], points[1], wManifold.points[i], 0.0f)) {
                 in = false;
+            }
+            else if (numOfPoints == 2) {
+                others[i] = true;
             }
         }
     }
     else if (mode == 2) {
-        bool others[2] = { false, false };
         for (int i = 0; i < numOfPoints; i++) {
             bool a1 = isLeft(points[0], points[1], wManifold.points[i], 0.1f);
             bool a2 = isLeft(points[0] + dir, points[0], wManifold.points[i], 0.0f);
@@ -248,13 +251,15 @@ bool Portal::shouldCollide(b2WorldManifold wManifold, b2Manifold* manifold, int 
                 others[i] = true;
             }
         }
-        if (numOfPoints == 2 && (!others[0] || !others[1]) && (others[0] || others[1])) {
-            int n = 0;
-            if (others[1]) n = 1;
-            manifold->pointCount -= 1;
-            manifold->points[0] = manifold->points[n];
-            in = true;
-        }
+        
+    }
+
+    if (numOfPoints == 2 && (!others[0] || !others[1]) && (others[0] || others[1])) {
+        int n = 0;
+        if (others[1]) n = 1;
+        manifold->pointCount -= 1;
+        manifold->points[0] = manifold->points[n];
+        in = true;
     }
 
     return in;
