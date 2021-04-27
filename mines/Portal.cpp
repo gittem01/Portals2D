@@ -115,7 +115,6 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             return;
         }
 
-
         if (collidingFixtures.find(fix1) != collidingFixtures.end()) {
             return;
         }
@@ -269,6 +268,7 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     b2PrismaticJointDef prismDef;
     prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
     prismDef.collideConnected = true;
+    prismDef.maxMotorForce = 0.0f;
 
     body1->GetWorld()->CreateJoint(&prismDef);
 
@@ -279,12 +279,12 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     float mult = 10000.0f;
 
     b2PulleyJointDef pulleyDef;
+
     b2Vec2 anchor1 = body1->GetPosition();
     b2Vec2 anchor2 = body2->GetPosition();
     b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
     b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-
     body1->GetWorld()->CreateJoint(&pulleyDef);
 
     rotateVec(&dirClone1, b2_pi / 2.0f);
@@ -295,7 +295,6 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
     groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-
     body1->GetWorld()->CreateJoint(&pulleyDef);
 }
 
