@@ -6,7 +6,7 @@ WindowPainter::WindowPainter(Camera* cam) {
     this->massInit();
 }
 
-void WindowPainter::clearMouseData() {
+void WindowPainter::handleMouseData() {
     this->mouseData[5] = 0;
     for (int i = 2; i < 5; i++) {
         if (this->mouseData[i] == 2) {
@@ -25,15 +25,22 @@ void WindowPainter::clearMouseData() {
     }
 }
 
+void WindowPainter::handleKeyData() {
+    for (int i : newPressIndices) {
+        keyData[i] = 2;
+    }
+    newPressIndices.clear();
+}
+
 bool WindowPainter::looper() {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    this->clearMouseData();
-    lastMousePos[0] = mouseData[0];
-    lastMousePos[1] = mouseData[1];  
+    handleMouseData();
+    handleKeyData();
     
     glfwPollEvents();
+
 
     bool done = glfwWindowShouldClose(window);  
 
@@ -94,15 +101,21 @@ void WindowPainter::scrollEventCallback(GLFWwindow* window, double xoffset, doub
     thisClass->mouseData[5] = (int)yoffset;
 }
 
-void WindowPainter::glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-
+void WindowPainter::glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods){
+    WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
+    if (action == 1) {
+        thisClass->keyData[key] = action;
+        thisClass->newPressIndices.insert(key);
+    }
+    else if (!action) {
+        thisClass->keyData[key] = 0;
+    }
 }
 
 void WindowPainter::glfwWindowFocusCallback(GLFWwindow* window, int isFocused) {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
     if (!isFocused) {
-        thisClass->clearMouseData();
+        thisClass->handleMouseData();
     }
 }
 

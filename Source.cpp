@@ -104,7 +104,7 @@ int main(void)
             b += p->correspondingBodies.size();
         }
         n -= b/2;
-        printf("Body count: %d, Frame: %d\n", n, ++frame);
+        //printf("Body count: %d, Frame: %d\n", n, ++frame);
 
         glfwSwapInterval(1);
         

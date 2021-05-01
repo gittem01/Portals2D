@@ -3,26 +3,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <set>
 #include "Camera.h"
 
 class WindowPainter
 {
 public:
+	int* keyData = (int*)calloc(512, sizeof(int));
 	int* mouseData = (int*)calloc(7, sizeof(int));
 	int* lastMousePos = (int*)calloc(2, sizeof(int));
-	GLFWwindow* window;
 	glm::vec2 windowSizes = glm::vec2(1280, 720);
-	Camera* cam;
-	float currentColor[4] = {1, 1, 1, 1};
 	bool releaseQueue[3] = {false, false, false};
-	float currentDepth = 0;
-	bool isPicking, drawMode, grid;
+	std::set<int> newPressIndices;
+	GLFWwindow* window;
+	Camera* cam;
 
 	WindowPainter(Camera* cam);
 
 	void massInit();
 	bool looper();
-	void clearMouseData();
+	void handleMouseData();
+	void handleKeyData();
 
 	static void mouseEventCallback(GLFWwindow*, double, double);
 	static void buttonEventCallback(GLFWwindow*, int, int, int);
