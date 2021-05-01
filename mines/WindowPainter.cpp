@@ -41,7 +41,6 @@ bool WindowPainter::looper() {
     
     glfwPollEvents();
 
-
     bool done = glfwWindowShouldClose(window);  
 
     return done;
