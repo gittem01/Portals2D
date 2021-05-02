@@ -149,6 +149,13 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
                 connectedPortal->collidingFixtures.erase(cBody->GetFixtureList());
                 connectedPortal->correspondingBodies.erase(cBody);
                 connectedPortal->prepareFixtures.erase(cBody->GetFixtureList());
+
+                Shape* s1 = (Shape*)correspondingBodies[fix1->GetBody()]->GetUserData().pointer;
+                Shape* s2 = (Shape*)fix1->GetBody()->GetUserData().pointer;
+                if (s1->isControllable) {
+                    Player* p = (Player*)s1->controlClass;
+                    p->swapShape(s2);
+                }
             }
         }
         else{

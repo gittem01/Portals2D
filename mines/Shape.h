@@ -25,6 +25,9 @@ public:
 	float defaultFriction = 0.5f;
 	bool isBullet = false;
 
+	bool isControllable = false;
+	void* controlClass;
+
 	b2Body* body;
 	b2Vec2 pos;
 

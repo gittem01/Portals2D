@@ -1,6 +1,5 @@
 #include "debugDrawer.h"
-#include "Shape.h"
-#include "WindowPainter.h"
+#include "Player.h"
 #include "ContactListener.h"
 #include "Portal.h"
 
@@ -82,15 +81,15 @@ void testCase1(b2World* world){
     float width = 0.05f;
     float m = 1.0f;
 
-    /*Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m, world);
+    Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m, world);
     Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m, world);
     Portal* portal3 = new Portal(b2Vec2(-xSize, 0.0f), b2Vec2(1.0f, 0.0f), ySize * m, world);
     Portal* portal4 = new Portal(b2Vec2(xSize, 0.0f), b2Vec2(-1.0f, 0.0f), ySize * m, world);
 
     portal1->connect(portal2);
-    portal3->connect(portal4);*/
+    portal3->connect(portal4);
 
-    b2Vec2 center = b2Vec2(0.0f, 2.0f);
+    b2Vec2 center = b2Vec2(0.0f, 1.75f);
     int n = 5;
     float angle, radius = 1.5f;
     std::vector<b2Vec2> poly;

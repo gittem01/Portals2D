@@ -9,7 +9,7 @@ int main(void)
 
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -15.0f));
     groundBody = world->CreateBody(&bodyDef);
 
     ContactListener cl;
@@ -23,6 +23,8 @@ int main(void)
     testCase1(world);
 
     glm::vec2* clicks[2] = { NULL, NULL };
+
+    Player* player = new Player(world, b2Vec2(0.0, 0.0f), wh);
 
     bool done = false;
     int frame = 0;
@@ -92,6 +94,7 @@ int main(void)
         for (Portal* p : Portal::portals) {
             p->destruction();
         }
+        player->update();
 
         // num of bodies decreasing after some time. TODO.
         // not the biggest issue currently
