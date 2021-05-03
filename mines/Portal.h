@@ -55,7 +55,8 @@ public:
     void calculatePoints();
     void createPhysicalBody(b2World* world);
     void handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type);
-    void handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2Manifold* oldManifold);
+    void handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, 
+        b2Contact* contact, const b2Manifold* oldManifold);
     bool shouldCollide(b2WorldManifold wManifold, b2Manifold* manifold, int mode);
 
     void creation();

@@ -25,11 +25,11 @@ void ContactListener::EndContact(b2Contact* contact) {
 
 void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold){
     for (Portal* p : Portal::portals) {
-        p->handlePreCollision(contact->GetFixtureA(), contact, oldManifold);
+        p->handlePreCollision(contact->GetFixtureA(), contact->GetFixtureB(), contact, oldManifold);
     }
 
     for (Portal* p : Portal::portals) {
-        p->handlePreCollision(contact->GetFixtureB(), contact, oldManifold);
+        p->handlePreCollision(contact->GetFixtureB(), contact->GetFixtureA(), contact, oldManifold);
     }
 }
 

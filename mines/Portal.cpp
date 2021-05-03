@@ -170,9 +170,10 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
     }
 }
 
-void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2Manifold* oldManifold){
-    int mode;
+void Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, 
+    b2Contact* contact, const b2Manifold* oldManifold){
 
+    int mode;
     if (this->collidingFixtures.find(fixture) != this->collidingFixtures.end() ||
         this->destroyQueue.find(fixture->GetBody()) != this->destroyQueue.end()) {
         mode = 1;
@@ -182,14 +183,6 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     }
     else {
         return;
-    }
-
-    b2Fixture* otherFixture;
-    if (contact->GetFixtureA()->GetBody() != fixture->GetBody()){
-        otherFixture = contact->GetFixtureA();
-    }
-    else{
-        otherFixture = contact->GetFixtureB();
     }
 
     if (correspondingBodies.find(otherFixture->GetBody()) != correspondingBodies.end()) {
@@ -205,6 +198,7 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
     if (otherFixture->GetType() == b2Shape::e_polygon || otherFixture->GetType() == b2Shape::e_circle){
         for (int i=0; i<contact->GetManifold()->pointCount; i++){
             if (otherFixture->TestPoint(wManifold.points[i])){
+                // May need some change TODO
                 isIn = true;
             }
         }
@@ -212,8 +206,21 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Contact* contact, const b2
 
     else if (otherFixture->GetShape()->GetType() == b2Shape::e_edge && otherFixture != midFixture){
         b2EdgeShape* edge = (b2EdgeShape*)otherFixture->GetShape();
-        if (isLeft(points[0], points[1], edge->m_vertex1, 0.1f) || isLeft(points[0], points[1], edge->m_vertex2, 0.1f)) {
-            isIn = true;
+        b2Vec2 normalMult = b2Vec2(wManifold.normal.x * 100.0f, wManifold.normal.y * 100.0f);
+        for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
+            b2RayCastOutput rcOutput;
+            b2RayCastInput rcInput;
+            rcInput.maxFraction = 1.0f;
+            rcInput.p1 = wManifold.points[i] - normalMult;
+            rcInput.p2 = wManifold.points[i] + normalMult;
+            otherFixture->RayCast(&rcOutput, rcInput, b2Shape::e_edge);
+            b2Vec2 finalPos = rcInput.p1 + b2Vec2(  (rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
+                                                    (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
+
+            if (isLeft(points[0], points[1], finalPos, 0.001f)) {
+                isIn = true;
+                break;
+            }
         }
     }
 

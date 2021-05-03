@@ -116,11 +116,11 @@ void testCase1(b2World* world){
     createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), world, b2_staticBody);
     createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, -ySize), world, b2_staticBody);
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 5; i++) {
         Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         circle->createCircle((getRand() + 2.0f) / 5.0f, b2_dynamicBody);
     }
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 15; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         poly->createRect(b2Vec2(((getRand() + 2.0f) / 5.0f), (getRand() + 2.0f) / 5.0f), b2_dynamicBody);
     }

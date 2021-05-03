@@ -1,6 +1,5 @@
 #include "helpers.h"
 
-
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(NULL);
