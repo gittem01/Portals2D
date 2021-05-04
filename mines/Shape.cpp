@@ -21,8 +21,8 @@ void Shape::createPolyFromData(teleportData* data) {
     b2BodyDef bodyDef;
 
     bodyDef.type = b2_dynamicBody;
-    bodyDef.linearDamping = defaultLinearDamping;
-    bodyDef.angularDamping = defaultAngularDamping;
+    bodyDef.linearDamping = data->fixture->GetBody()->GetLinearDamping();
+    bodyDef.angularDamping = data->fixture->GetBody()->GetAngularDamping();
     bodyDef.userData.pointer = (uintptr_t)this;
     body = world->CreateBody(&bodyDef);
 
@@ -39,9 +39,9 @@ void Shape::createPolyFromData(teleportData* data) {
 
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &clone;
-    fixtureDef.density = defaultDensity;
-    fixtureDef.restitution = defaultrestitution;
-    fixtureDef.friction = defaultFriction;
+    fixtureDef.density = data->fixture->GetDensity();
+    fixtureDef.restitution = data->fixture->GetRestitution();
+    fixtureDef.friction = data->fixture->GetFriction();
     body->CreateFixture(&fixtureDef);
     body->SetBullet(isBullet);
 }
@@ -50,8 +50,8 @@ void Shape::createCircleFromData(teleportData* data) {
     b2BodyDef bodyDef;
 
     bodyDef.type = b2_dynamicBody;
-    bodyDef.linearDamping = defaultLinearDamping;
-    bodyDef.angularDamping = defaultAngularDamping;
+    bodyDef.linearDamping = data->fixture->GetBody()->GetLinearDamping();
+    bodyDef.angularDamping = data->fixture->GetBody()->GetAngularDamping();
     bodyDef.userData.pointer = (uintptr_t)this;
     body = world->CreateBody(&bodyDef);
 
@@ -60,9 +60,9 @@ void Shape::createCircleFromData(teleportData* data) {
 
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &clone;
-    fixtureDef.density = defaultDensity;
-    fixtureDef.restitution = defaultrestitution;
-    fixtureDef.friction = defaultFriction;
+    fixtureDef.density = data->fixture->GetDensity();
+    fixtureDef.restitution = data->fixture->GetRestitution();
+    fixtureDef.friction = data->fixture->GetFriction();
 
     body->CreateFixture(&fixtureDef);
     body->SetBullet(isBullet);

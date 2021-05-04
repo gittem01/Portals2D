@@ -127,6 +127,12 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
 
             Shape* shape = new Shape(world, b2Vec2());
 
+            Shape* s1 = (Shape*)fix1->GetBody()->GetUserData().pointer;
+            if (s1->isControllable) {
+                shape->isControllable = true;
+                shape->controlClass = s1->controlClass;
+            }
+
             teleportData* data = (teleportData*)malloc(sizeof(teleportData));
             *data = { this->pos, connectedPortal->pos, angle0, fix1 };
 
@@ -160,6 +166,13 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         }
         else{
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
+                Shape* s1 = (Shape*)correspondingBodies[fix1->GetBody()]->GetUserData().pointer;
+                Shape* s2 = (Shape*)fix1->GetBody()->GetUserData().pointer;
+                if (s2->isControllable) {
+                    Player* p = (Player*)s2->controlClass;
+                    p->swapShape(s1);
+                }
+
                 connectedPortal->correspondingBodies.erase(correspondingBodies[fix1->GetBody()]);
                 correspondingBodies.erase(fix1->GetBody());
             }
@@ -233,7 +246,7 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
 
     for (int i=0; i<contact->GetManifold()->pointCount; i++){
         // Contact drawing
-        //world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
+        world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
     }
 }
 
@@ -316,6 +329,11 @@ void Portal::creation() {
     for (int i = 0; i < addBodies.size(); i++) {
         Shape* shape = addShapes.at(i);
         shape->applyData();
+
+        if (shape->isControllable) {
+            Player* p = (Player*)(shape->controlClass);
+            p->portalCollision = true;
+        }
 
         connectedPortal->collidingFixtures.insert(shape->body->GetFixtureList());
         connectBodies(shape->body, addBodies.at(i));
