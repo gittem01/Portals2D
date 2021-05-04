@@ -23,6 +23,7 @@ private:
 public:
     static std::set<Portal*> portals;
 
+    b2World* world;
     b2Body* portalBody;
     b2Fixture* midFixture;
     b2Fixture* collisionSensor;
@@ -51,6 +52,7 @@ public:
 
     Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world);
     ~Portal();
+    void clear();
 
     void calculatePoints();
     void createPhysicalBody(b2World* world);

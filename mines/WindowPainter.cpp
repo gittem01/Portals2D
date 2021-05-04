@@ -27,7 +27,7 @@ void WindowPainter::handleMouseData() {
 
 void WindowPainter::handleKeyData() {
     for (int i : newPressIndices) {
-        keyData[i] = 2;
+        keyData[i] = 1;
     }
     newPressIndices.clear();
 }
@@ -103,7 +103,7 @@ void WindowPainter::scrollEventCallback(GLFWwindow* window, double xoffset, doub
 void WindowPainter::glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods){
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
     if (action == 1) {
-        thisClass->keyData[key] = action;
+        thisClass->keyData[key] = 2;
         thisClass->newPressIndices.insert(key);
     }
     else if (!action) {

@@ -1,4 +1,4 @@
-#include "Player.h"
+#include "Portal.h"
 
 Player::Player(b2World* world, b2Vec2 pos, WindowPainter* wp) {
 	this->shape = new Shape(world, pos);
@@ -10,6 +10,7 @@ Player::Player(b2World* world, b2Vec2 pos, WindowPainter* wp) {
 	this->shape->createCircle(radius, b2_dynamicBody);
 	this->wp = wp;
 	this->gun = new Gun(pos, pos + b2Vec2(5.0f, 0.0f), world);
+	playerPortals[0] = NULL; playerPortals[1] = NULL;
 }
 
 void Player::update() {
@@ -19,7 +20,7 @@ void Player::update() {
 }
 
 void Player::handleInput() {
-	if (wp->keyData[GLFW_KEY_SPACE] == 1) {
+	if (wp->keyData[GLFW_KEY_SPACE] == 2) {
 		shape->body->ApplyForceToCenter(b2Vec2(0.0f, shape->body->GetMass() * 500.0f * (1.0f + portalCollision)), true);
 	}
 	float w = 0.0f;
@@ -37,6 +38,32 @@ void Player::handleInput() {
 
 	glm::vec2 mp = wp->cam->getMouseCoords();
 	gun->targetPos = b2Vec2(mp.x, mp.y);
+
+	for (int i = 0; i < 2; i++) {
+		if (wp->mouseData[i+2] == 2 && gun->currentTarget->GetBody()->GetType() == b2_staticBody) {
+			if (playerPortals[i]) {
+				Portal* p = (Portal*)playerPortals[i];
+				
+				if (portalCollision) {
+					if (((Portal*)playerPortals[0])->correspondingBodies.find(shape->body) !=
+						((Portal*)playerPortals[0])->correspondingBodies.end()) {
+						shape->world->DestroyBody(((Portal*)playerPortals[0])->correspondingBodies[shape->body]);
+					}
+					else {
+						shape->world->DestroyBody(((Portal*)playerPortals[1])->correspondingBodies[shape->body]);
+					}
+				}
+				
+				p->~Portal();
+				playerPortals[i] = NULL;
+			}
+			playerPortals[i] = new Portal(gun->currentCollisionPos, gun->currentNormal, 1.0f, shape->world);
+			if (playerPortals[1-i]) {
+				((Portal*)playerPortals[i])->connect((Portal*)playerPortals[1-i]);
+			}
+			((Portal*)playerPortals[i])->color = b2Color(i, 0.5f, 1.0f-i, 1.0f);
+		}
+	}
 }
 
 void Player::swapShape(Shape* newShape) {

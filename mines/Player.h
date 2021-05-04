@@ -9,7 +9,8 @@ public:
 	Gun* gun;
 	Shape* shape;
 	WindowPainter* wp;
-	float radius = 0.5f;
+	void* playerPortals[2];
+	float radius = 0.3f;
 	bool portalCollision = false;
 	Player(b2World* world, b2Vec2 pos, WindowPainter* wp);
 	void swapShape(Shape* newShape);

@@ -37,7 +37,7 @@ int main(void)
 
         glm::vec2 mp = cam->getMouseCoords();
 
-        if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
+        /*if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
             clicks[0] = clicks[1];
             clicks[1] = new glm::vec2(mp.x, mp.y);
         }
@@ -78,7 +78,7 @@ int main(void)
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2){
             mouseJoint = NULL;
-        }
+        }*/
 
         world->DebugDraw();
         for (Portal* p : Portal::portals) {

@@ -16,30 +16,31 @@ Gun::Gun(b2Vec2 pos, b2Vec2 targetPos, b2World* world) {
 	this->world = world;
 	this->currentTarget = NULL;
 	this->currentFraction = 0.0f;
+	this->currentNormal = b2Vec2(1.0f, 0.0f);
+	this->currentCollisionPos = b2Vec2(0.0f, 0.0f);
 }
 
 
 void Gun::update() {
-	float minFraction = b2_maxFloat;
+	currentFraction = 1.0f;
 	b2RayCastOutput rcOutput;
 	b2RayCastInput rcInput = {pos, pos + normalize(targetPos - pos, 100.f), 1.0f};
 	for (b2Body* body = world->GetBodyList(); body; body=body->GetNext()) {
 		for (b2Fixture* fixture = body->GetFixtureList(); fixture; fixture = fixture->GetNext()) {
 			if (fixture->IsSensor()) continue;
 			bool res = fixture->RayCast(&rcOutput, rcInput, fixture->GetType());
-			if (res && rcOutput.fraction < minFraction) {
-				minFraction = rcOutput.fraction;
-				currentTarget = fixture;
+			if (res && rcOutput.fraction < currentFraction) {
 				currentFraction = rcOutput.fraction;
+				currentTarget = fixture;
+				currentNormal = rcOutput.normal;
 			}
 		}
 	}
-
+	currentCollisionPos = pos + normalize(targetPos - pos, 100.f * currentFraction);
 	draw();
 }
 
 void Gun::draw() {
-	b2Vec2 p2 = pos + normalize(targetPos - pos, 100.f * currentFraction);
-	world->m_debugDraw->DrawSegment(pos, p2, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
-	world->m_debugDraw->DrawPoint(p2, 10.0f, b2Color(1.0f, 1.0f, 0.0f, 1.0f));
+	world->m_debugDraw->DrawSegment(pos, currentCollisionPos, b2Color(1.0f, 1.0f, 1.0f, 0.3f));
+	world->m_debugDraw->DrawPoint(currentCollisionPos, 10.0f, b2Color(1.0f, 1.0f, 0.0f, 1.0f));
 }

@@ -40,6 +40,7 @@ void normalize(b2Vec2* vec){
 
 
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
+    this->world = world;
     this->pos = pos;
     this->dir = dir;
     normalize(&this->dir);
@@ -53,6 +54,22 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
     portals.insert(this);
 }
 
+Portal::~Portal() {
+    world->DestroyBody(portalBody);
+    portals.erase(this);
+    if (connectedPortal) connectedPortal->clear();
+    this->clear();
+}
+
+void Portal::clear() {
+    connectedPortal = NULL;
+    collidingFixtures.clear();
+    destroyQueue.clear();
+    prepareFixtures.clear();
+    addShapes.clear();
+    addBodies.clear();
+    correspondingBodies.clear();
+}
 
 void Portal::calculatePoints(){
     this->angle = calcAngle(this->dir) + b2_pi / 2.0f;
@@ -109,13 +126,19 @@ void Portal::createPhysicalBody(b2World* world){
 }
 
 void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type){
+    if (!this->connectedPortal) return;
     if (type == BEGIN_CONTACT) {
+
         if (fix2 == collisionSensor) {
             prepareFixtures.insert(fix1);
             return;
         }
 
         if (collidingFixtures.find(fix1) != collidingFixtures.end()) {
+            return;
+        }
+
+        if (!isLeft(points[0], points[1], fix1->GetBody()->GetPosition(), 0.0f)) {
             return;
         }
 
@@ -147,7 +170,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             prepareFixtures.erase(fix1);
             return;
         }
-        
+        if (collidingFixtures.find(fix1) == collidingFixtures.end()) return;
         if (isLeft(points[0], points[1], fix1->GetBody()->GetPosition(), 0.1f)){
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
                 b2Body* cBody = correspondingBodies[fix1->GetBody()];
@@ -230,7 +253,7 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
             b2Vec2 finalPos = rcInput.p1 + b2Vec2(  (rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
                                                     (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
 
-            if (isLeft(points[0], points[1], finalPos, 0.001f)) {
+            if (isLeft(points[0], points[1], finalPos, 0.01f)) {
                 isIn = true;
                 break;
             }
