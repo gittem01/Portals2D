@@ -21,7 +21,7 @@ public:
 	float defaultLinearDamping = 0.3f;
 	float defaultAngularDamping = 0.3f;
 	float defaultDensity = 1.0f;
-	float defaultrestitution = 0.5f;
+	float defaultrestitution = 0.3f;
 	float defaultFriction = 0.5f;
 	bool isBullet = false;
 

@@ -272,7 +272,7 @@ bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
     bool others[2] = { false, false };
     if (mode == 1) {
         for (int i = 0; i < numOfPoints; i++) {
-            if (!isLeft(points[0], points[1], finalPos[i], 0.01f)) {
+            if (!isLeft(points[0], points[1], finalPos[i], 0.001f)) {
                 in = false;
             }
             else if (numOfPoints == 2) {
@@ -282,7 +282,7 @@ bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
     }
     else if (mode == 2) {
         for (int i = 0; i < numOfPoints; i++) {
-            bool a1 = isLeft(points[0], points[1], finalPos[i], 0.01f);
+            bool a1 = isLeft(points[0], points[1], finalPos[i], 0.001f);
             bool a2 = isLeft(points[0] + dir, points[0], finalPos[i], 0.0f);
             bool a3 = isLeft(points[1] + dir, points[1], finalPos[i], 0.0f);
             if (!a1 && a2 && !a3) 
@@ -293,7 +293,6 @@ bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
                 others[i] = true;
             }
         }
-        
     }
 
     if (numOfPoints == 2 && (!others[0] || !others[1]) && (others[0] || others[1])) {

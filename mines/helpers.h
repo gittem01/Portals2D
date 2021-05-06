@@ -10,6 +10,11 @@ float dampingRatio = 0.7f;
 b2BodyDef bodyDef;
 b2Body* groundBody;
 
+glm::vec2* clicks[2] = { NULL, NULL };
+
+bool isPaused = false;
+bool tick = false;
+
 b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
     b2BodyDef bd;
     bd.type = type;
@@ -26,39 +31,34 @@ b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
     return edgeBody;
 }
 
-void createCircle(b2Vec2 pos, float r, b2World* world) {
-    b2BodyDef bd;
-    bd.position = pos;
-    bd.type = b2_dynamicBody;
-    b2Body* circleBody = world->CreateBody(&bd);
-
-    b2CircleShape circleShape;
-    circleShape.m_radius = r;
-
-    b2FixtureDef fixDef;
-    fixDef.shape = &circleShape;
-    fixDef.density = 1.0f;
-
-    circleBody->CreateFixture(&fixDef);
+void keyHandler(WindowPainter* wh) {
+    tick = false;
+    if (wh->keyData[GLFW_KEY_P] == 2) {
+        isPaused = !isPaused;
+    }
+    else if (wh->keyData[GLFW_KEY_O] == 2) {
+        isPaused = true;
+        tick = true;
+    }
 }
 
-void mouseJointHandler(glm::vec2 mp, b2World* world){
+void mouseJointHandler(glm::vec2 mp, b2World* world) {
     b2Vec2 target = b2Vec2(mp.x, mp.y);
 
     b2Body* clickedBody = NULL;
-    for (b2Body* body = world->GetBodyList(); body; body = body->GetNext()){
+    for (b2Body* body = world->GetBodyList(); body; body = body->GetNext()) {
         if (body->GetType() != b2_dynamicBody) continue;
-        for (b2Fixture* fixture = body->GetFixtureList(); fixture; fixture = fixture->GetNext()){
+        for (b2Fixture* fixture = body->GetFixtureList(); fixture; fixture = fixture->GetNext()) {
             bool isIn = fixture->TestPoint(target);
-            if (isIn){ 
-                clickedBody = body; 
+            if (isIn) {
+                clickedBody = body;
                 goto endFor;
             }
         }
     }
-    endFor:
+endFor:
 
-    if (clickedBody){
+    if (clickedBody) {
         b2MouseJointDef jd;
         jd.bodyA = groundBody;
         jd.bodyB = clickedBody;
@@ -69,6 +69,66 @@ void mouseJointHandler(glm::vec2 mp, b2World* world){
         mouseJoint = (b2MouseJoint*)world->CreateJoint(&jd);
         clickedBody->SetAwake(true);
     }
+}
+
+void mouseHandler(b2World* world, glm::vec2 mp, WindowPainter* wh) {
+    if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
+        clicks[1] = clicks[0];
+        clicks[0] = new glm::vec2(mp.x, mp.y);
+    }
+    if (clicks[1]) {
+        b2BodyDef bd;
+        b2Body* ground = world->CreateBody(&bd);
+
+        b2EdgeShape shape;
+        shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
+
+        ground->CreateFixture(&shape, 0.0f);
+        clicks[0] = NULL; clicks[1] = NULL;
+    }
+
+    if (mouseJoint) {
+        bool jointFound = false;
+        for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()) {
+            if (joint == mouseJoint) {
+                mouseJoint->SetTarget(b2Vec2(mp.x, mp.y));
+                jointFound = true;
+                break;
+            }
+        }
+        if (!jointFound) mouseJoint = NULL;
+    }
+
+    if (wh->mouseData[2] == 2) {
+        mouseJointHandler(mp, world);
+    }
+    else if (wh->mouseData[2] == 0 && mouseJoint) {
+        for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()) {
+            if (joint == mouseJoint) {
+                world->DestroyJoint(mouseJoint);
+                break;
+            }
+        }
+        mouseJoint = NULL;
+    }
+    else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2) {
+        mouseJoint = NULL;
+    }
+}
+
+void printBodyCount(b2World* world) {
+    // num of bodies decreasing after some time. TODO.
+    // not the biggest issue currently
+    // Note: pulling a body out of a portal without removing
+    // the mouse button increases num of bodies permanently
+
+    int n = world->GetBodyCount();
+    int b = 0;
+    for (Portal* p : Portal::portals) {
+        b += p->correspondingBodies.size();
+    }
+    n -= b / 2;
+    printf("Body count: %d\n", n);
 }
 
 float getRand(){
@@ -124,10 +184,10 @@ void testCase2(b2World* world) {
     float width = 0.05f;
     float m = 1.0f;
 
-    Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m, world);
-    Portal* portal3 = new Portal(b2Vec2(-xSize, 0.0f), b2Vec2(1.0f, 0.0f), ySize * m, world);
-    Portal* portal4 = new Portal(b2Vec2(xSize, 0.0f), b2Vec2(-1.0f, 0.0f), ySize * m, world);
+    Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(+0.0f, +1.0f), ySize * m, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, +ySize), b2Vec2(+0.0f, -1.0f), ySize * m, world);
+    Portal* portal3 = new Portal(b2Vec2(-xSize, 0.0f), b2Vec2(+1.0f, +0.0f), ySize * m, world);
+    Portal* portal4 = new Portal(b2Vec2(+xSize, 0.0f), b2Vec2(-1.0f, +0.0f), ySize * m, world);
 
     portal1->connect(portal2);
     portal3->connect(portal4);
