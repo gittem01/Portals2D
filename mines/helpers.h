@@ -63,7 +63,7 @@ void mouseJointHandler(glm::vec2 mp, b2World* world){
         jd.bodyA = groundBody;
         jd.bodyB = clickedBody;
         jd.target = target;
-        jd.maxForce = 1000.0f * clickedBody->GetMass();
+        jd.maxForce = 100000.0f * clickedBody->GetMass();
         b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
         mouseJoint = (b2MouseJoint*)world->CreateJoint(&jd);
@@ -122,7 +122,7 @@ void testCase2(b2World* world) {
     float xSize = 7.98f;
     float ySize = 4.48f;
     float width = 0.05f;
-    float m = 0.8f;
+    float m = 1.0f;
 
     Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m, world);
     Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m, world);
@@ -139,12 +139,12 @@ void testCase2(b2World* world) {
     Shape* shape = new Shape(world, b2Vec2(xSize+width, 0.0f));
     shape->createRect(b2Vec2(width, ySize), b2_staticBody);
 
-    float sizeM = 1.85f;
-    for (int i = 0; i < 100; i++) {
+    float sizeM = 1.50f;
+    for (int i = 0; i < 150; i++) {
         Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         circle->createCircle((getRand() + sizeM) / 5.0f, b2_dynamicBody);
     }
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 150; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         poly->createRect(b2Vec2(((getRand() + sizeM) / 5.0f), (getRand() + sizeM) / 5.0f), b2_dynamicBody);
     }

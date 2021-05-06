@@ -36,10 +36,10 @@ int main(void)
         glm::vec2 mp = cam->getMouseCoords();
 
         if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
-            clicks[0] = clicks[1];
-            clicks[1] = new glm::vec2(mp.x, mp.y);
+            clicks[1] = clicks[0];
+            clicks[0] = new glm::vec2(mp.x, mp.y);
         }
-        if (clicks[0]) {
+        if (clicks[1]) {
             b2BodyDef bd;
             b2Body* ground = world->CreateBody(&bd);
 
@@ -47,7 +47,7 @@ int main(void)
             shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
             
             ground->CreateFixture(&shape, 0.0f);
-            clicks[0] = NULL;
+            clicks[0] = NULL; clicks[1] = NULL;
         }
         
         if (mouseJoint){

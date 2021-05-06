@@ -236,12 +236,15 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     b2Vec2 normalMult = b2Vec2(wManifold.normal.x * 100.0f, wManifold.normal.y * 100.0f);
     for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
         finalPos[i] = wManifold.points[i];
+
         b2RayCastOutput rcOutput;
         b2RayCastInput rcInput;
+
         rcInput.maxFraction = 1.0f;
-        rcInput.p1 = wManifold.points[i] - normalMult;
-        rcInput.p2 = wManifold.points[i] + normalMult;
-        bool success = otherFixture->RayCast(&rcOutput, rcInput, b2Shape::e_edge);
+        rcInput.p1 = wManifold.points[i] + normalMult;
+        rcInput.p2 = wManifold.points[i] - normalMult;
+
+        bool success = otherFixture->RayCast(&rcOutput, rcInput, otherFixture->GetBody()->GetType());
         if (success) {
             finalPos[i] = rcInput.p1 + b2Vec2(  (rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
                                                 (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
