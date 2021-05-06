@@ -206,7 +206,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
     }
 }
 
-void Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, 
+bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, 
     b2Contact* contact, const b2Manifold* oldManifold){
 
     int mode;
@@ -218,11 +218,12 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
         mode = 2;
     }
     else {
-        return;
+        return false;
     }
 
-    if (correspondingBodies.find(otherFixture->GetBody()) != correspondingBodies.end()) {
-        return;
+    if (correspondingBodies.find(otherFixture->GetBody()) != correspondingBodies.end() ||
+        fixture->GetBody()->GetType() == b2_staticBody) {
+        return false;
     }
 
     b2World* world = fixture->GetBody()->GetWorld();
@@ -230,56 +231,45 @@ void Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
-    bool isIn = false;
-    if (otherFixture->GetType() == b2Shape::e_polygon || otherFixture->GetType() == b2Shape::e_circle){
-        for (int i=0; i<contact->GetManifold()->pointCount; i++){
-            if (otherFixture->TestPoint(wManifold.points[i])){
-                // May need some change TODO
-                isIn = true;
-            }
+    b2Vec2* finalPos = (b2Vec2*)malloc(contact->GetManifold()->pointCount * sizeof(b2Vec2));
+
+    b2Vec2 normalMult = b2Vec2(wManifold.normal.x * 100.0f, wManifold.normal.y * 100.0f);
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
+        finalPos[i] = wManifold.points[i];
+        b2RayCastOutput rcOutput;
+        b2RayCastInput rcInput;
+        rcInput.maxFraction = 1.0f;
+        rcInput.p1 = wManifold.points[i] - normalMult;
+        rcInput.p2 = wManifold.points[i] + normalMult;
+        bool success = otherFixture->RayCast(&rcOutput, rcInput, b2Shape::e_edge);
+        if (success) {
+            finalPos[i] = rcInput.p1 + b2Vec2(  (rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
+                                                (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
         }
     }
 
-    else if (otherFixture->GetShape()->GetType() == b2Shape::e_edge && otherFixture != midFixture){
-        b2EdgeShape* edge = (b2EdgeShape*)otherFixture->GetShape();
-        b2Vec2 normalMult = b2Vec2(wManifold.normal.x * 100.0f, wManifold.normal.y * 100.0f);
-        for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
-            b2RayCastOutput rcOutput;
-            b2RayCastInput rcInput;
-            rcInput.maxFraction = 1.0f;
-            rcInput.p1 = wManifold.points[i] - normalMult;
-            rcInput.p2 = wManifold.points[i] + normalMult;
-            otherFixture->RayCast(&rcOutput, rcInput, b2Shape::e_edge);
-            b2Vec2 finalPos = rcInput.p1 + b2Vec2(  (rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
-                                                    (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
-
-            if (isLeft(points[0], points[1], finalPos, 0.01f)) {
-                isIn = true;
-                break;
-            }
-        }
-    }
-
-    if (mode == 2) { isIn = true;  }
-
-    bool collide = shouldCollide(wManifold, contact->GetManifold(), mode);
-    if ((!collide || !isIn) && otherFixture != yFix[0] && otherFixture != yFix[1]){
-        contact->SetEnabled(false);
-    }
-
-    for (int i=0; i<contact->GetManifold()->pointCount; i++){
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
         // Contact drawing
-        world->m_debugDraw->DrawPoint(wManifold.points[i], 6.0f, b2Color(1, 1, 1, 1));
+        //world->m_debugDraw->DrawPoint(finalPos[i], 6.0f, b2Color(1, 0, 0, 1));
     }
+
+    bool collide = shouldCollide(finalPos, contact->GetManifold(), mode);
+    free(finalPos);
+    if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]){
+        contact->SetEnabled(false);
+        return true;
+    }
+
+    return false;
 }
 
-bool Portal::shouldCollide(b2WorldManifold wManifold, b2Manifold* manifold, int mode){
+bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
     int numOfPoints = manifold->pointCount;
     bool in = true;
     bool others[2] = { false, false };
     if (mode == 1) {
         for (int i = 0; i < numOfPoints; i++) {
-            if (!isLeft(points[0], points[1], wManifold.points[i], 0.0f)) {
+            if (!isLeft(points[0], points[1], finalPos[i], 0.01f)) {
                 in = false;
             }
             else if (numOfPoints == 2) {
@@ -289,9 +279,9 @@ bool Portal::shouldCollide(b2WorldManifold wManifold, b2Manifold* manifold, int 
     }
     else if (mode == 2) {
         for (int i = 0; i < numOfPoints; i++) {
-            bool a1 = isLeft(points[0], points[1], wManifold.points[i], 0.1f);
-            bool a2 = isLeft(points[0] + dir, points[0], wManifold.points[i], 0.0f);
-            bool a3 = isLeft(points[1] + dir, points[1], wManifold.points[i], 0.0f);
+            bool a1 = isLeft(points[0], points[1], finalPos[i], 0.01f);
+            bool a2 = isLeft(points[0] + dir, points[0], finalPos[i], 0.0f);
+            bool a3 = isLeft(points[1] + dir, points[1], finalPos[i], 0.0f);
             if (!a1 && a2 && !a3) 
             {
                 in = false;
@@ -387,4 +377,6 @@ void Portal::draw(){
 void Portal::connect(Portal* portal2){
     connectedPortal = portal2;
     portal2->connectedPortal = this;
+    this->color = b2Color(1.0f, ((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
+    connectedPortal->color = (b2Color(1.0f-this->color.r, 1.0f - this->color.g, 1.0f - this->color.b, 1.0f));
 }

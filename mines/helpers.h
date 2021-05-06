@@ -81,14 +81,6 @@ void testCase1(b2World* world){
     float width = 0.05f;
     float m = 1.0f;
 
-    /*Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m, world);
-    Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m, world);
-    Portal* portal3 = new Portal(b2Vec2(-xSize, 0.0f), b2Vec2(1.0f, 0.0f), ySize * m, world);
-    Portal* portal4 = new Portal(b2Vec2(xSize, 0.0f), b2Vec2(-1.0f, 0.0f), ySize * m, world);
-
-    portal1->connect(portal2);
-    portal3->connect(portal4);*/
-
     b2Vec2 center = b2Vec2(0.0f, 1.75f);
     int n = 5;
     float angle, radius = 1.5f;
@@ -123,5 +115,37 @@ void testCase1(b2World* world){
     for (int i = 0; i < 15; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         poly->createRect(b2Vec2(((getRand() + 1.0f) / 5.0f), (getRand() + 1.0f) / 5.0f), b2_dynamicBody);
+    }
+}
+
+void testCase2(b2World* world) {
+    float xSize = 7.98f;
+    float ySize = 4.48f;
+    float width = 0.05f;
+    float m = 0.8f;
+
+    Portal* portal1 = new Portal(b2Vec2(0.0f, -ySize), b2Vec2(0.0f, 1.0f), ySize * m, world);
+    Portal* portal2 = new Portal(b2Vec2(0.0f, ySize), b2Vec2(0.0f, -1.0f), ySize * m, world);
+    Portal* portal3 = new Portal(b2Vec2(-xSize, 0.0f), b2Vec2(1.0f, 0.0f), ySize * m, world);
+    Portal* portal4 = new Portal(b2Vec2(xSize, 0.0f), b2Vec2(-1.0f, 0.0f), ySize * m, world);
+
+    portal1->connect(portal2);
+    portal3->connect(portal4);
+
+    createEdge(b2Vec2(-xSize, -ySize), b2Vec2(+xSize, -ySize), world, b2_staticBody);
+    createEdge(b2Vec2(-xSize, -ySize), b2Vec2(-xSize, +ySize), world, b2_staticBody);
+    createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), world, b2_staticBody);
+
+    Shape* shape = new Shape(world, b2Vec2(xSize+width, 0.0f));
+    shape->createRect(b2Vec2(width, ySize), b2_staticBody);
+
+    float sizeM = 1.85f;
+    for (int i = 0; i < 100; i++) {
+        Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
+        circle->createCircle((getRand() + sizeM) / 5.0f, b2_dynamicBody);
+    }
+    for (int i = 0; i < 100; i++) {
+        Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
+        poly->createRect(b2Vec2(((getRand() + sizeM) / 5.0f), (getRand() + sizeM) / 5.0f), b2_dynamicBody);
     }
 }

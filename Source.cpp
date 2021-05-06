@@ -19,11 +19,9 @@ int main(void)
     world->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
 
-    testCase1(world);
+    testCase2(world);
 
     glm::vec2* clicks[2] = { NULL, NULL };
-
-    Player* player = new Player(world, b2Vec2(0.0, 0.0f), wh);
 
     bool done = false;
     int frame = 0;
@@ -37,7 +35,7 @@ int main(void)
 
         glm::vec2 mp = cam->getMouseCoords();
 
-        /*if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
+        if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
             clicks[0] = clicks[1];
             clicks[1] = new glm::vec2(mp.x, mp.y);
         }
@@ -78,7 +76,7 @@ int main(void)
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2){
             mouseJoint = NULL;
-        }*/
+        }
 
         world->DebugDraw();
         for (Portal* p : Portal::portals) {
@@ -93,7 +91,6 @@ int main(void)
         for (Portal* p : Portal::portals) {
             p->destruction();
         }
-        player->update();
 
         // num of bodies decreasing after some time. TODO.
         // not the biggest issue currently
@@ -106,7 +103,7 @@ int main(void)
             b += p->correspondingBodies.size();
         }
         n -= b/2;
-        //printf("Body count: %d, Frame: %d\n", n, ++frame);
+        printf("Body count: %d, Frame: %d\n", n, ++frame);
 
         glfwSwapInterval(1);
         
