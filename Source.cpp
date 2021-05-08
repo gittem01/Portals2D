@@ -3,11 +3,10 @@
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(NULL);
-    Camera* cam = new Camera(glm::vec2(0, 0), wh->mouseData, wh->window);
+    Camera* cam = new Camera(glm::vec2(0, 0), wh);
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -15.0f));
-    groundBody = world->CreateBody(&bodyDef);
+    b2World* world = new b2World(b2Vec2(0.0f, 0.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -15,6 +14,8 @@ int main(void)
     debugDrawer* drawer = new debugDrawer();
     world->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
+
+    mouseJointHandler mjh(world, wh);
 
     testCase2(world);
 
@@ -28,9 +29,7 @@ int main(void)
 
         cam->update();
 
-        glm::vec2 mp = cam->getMouseCoords();
-        mouseHandler(world, mp, wh);
-
+        mjh.mouseHandler();
         keyHandler(wh);
 
         if (!isPaused || tick) world->Step(1.0f / 60.0f, 8, 3);
@@ -46,7 +45,7 @@ int main(void)
         for (Portal* p : Portal::portals) {
             p->draw();
         }
-
+        
         printBodyCount(world);
 
         glfwSwapInterval(1);

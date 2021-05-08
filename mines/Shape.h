@@ -11,6 +11,18 @@ struct teleportData {
 	b2Fixture* fixture;
 };
 
+enum dataTypes
+{
+	OTHER = 0,
+	PORTAL = 1,
+	SHAPE = 2,
+	MOUSE = 3,
+};
+
+struct bodyData {
+	dataTypes type;
+	void* data;
+};
 
 class Shape
 {

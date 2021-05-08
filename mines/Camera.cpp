@@ -1,9 +1,11 @@
 #include "Camera.h"
+#include "WindowPainter.h"
 
-Camera::Camera(glm::vec2 pos, int* mouseData, GLFWwindow *window) {
+Camera::Camera(glm::vec2 pos, void* wh) {
+	WindowPainter* windowHandler = (WindowPainter*)wh;
 	this->pos = pos;
-	this->mouseData = mouseData;
-	this->window = window;
+	this->wh = wh;
+	this->window = windowHandler->window;
 }
 
 void Camera::updateOrtho() {
@@ -50,13 +52,16 @@ void Camera::update() {
 	glLoadIdentity();
 	updateOrtho();
 
+	WindowPainter* windowHandler = (WindowPainter*)wh;
+
 	int width, height;
 	glfwGetFramebufferSize(this->window, &width, &height);
 
 	this->dragFunc(width, height);
-	if (this->mouseData[5] != 0) {
-		this->neededZoom += zoom * this->mouseData[5] / 10.0f;
-		this->zoomPoint.x = this->mouseData[0]; this->zoomPoint.y = height - this->mouseData[1];
+	if (windowHandler->mouseData[5] != 0 && 
+		!windowHandler->keyData[GLFW_KEY_LEFT_CONTROL] && !windowHandler->keyData[GLFW_KEY_RIGHT_CONTROL]) {
+		this->neededZoom += zoom * windowHandler->mouseData[5] / 10.0f;
+		this->zoomPoint.x = windowHandler->mouseData[0]; this->zoomPoint.y = height - windowHandler->mouseData[1];
 	}
 
 	if (this->neededZoom != 0) {
@@ -66,6 +71,8 @@ void Camera::update() {
 }
 
 void Camera::dragFunc(int width, int height) {
+	WindowPainter* windowHandler = (WindowPainter*)wh;
+
 	glm::vec2 diffVec = glm::vec2(dragTo->x - lastPos->x,
 		dragTo->y - lastPos->y);
 	glm::vec2 sideDiffs = glm::vec2(defaultXSides.y - defaultXSides.x,
@@ -81,24 +88,26 @@ void Camera::dragFunc(int width, int height) {
 	}
 
 
-	if (this->mouseData[4] == 2) {
-		this->lastPos->x = this->mouseData[0];
-		this->lastPos->y = this->mouseData[1];
+	if (windowHandler->mouseData[4] == 2) {
+		this->lastPos->x = windowHandler->mouseData[0];
+		this->lastPos->y = windowHandler->mouseData[1];
 
-		this->dragTo->x = this->mouseData[0];
-		this->dragTo->y = this->mouseData[1];
+		this->dragTo->x = windowHandler->mouseData[0];
+		this->dragTo->y = windowHandler->mouseData[1];
 	}
-	if (this->mouseData[4] == 1) {
-		dragTo->x = this->mouseData[0];
-		dragTo->y = this->mouseData[1];
+	if (windowHandler->mouseData[4] == 1) {
+		dragTo->x = windowHandler->mouseData[0];
+		dragTo->y = windowHandler->mouseData[1];
 	}
 }
 
 glm::vec2 Camera::getMouseCoords() {
+	WindowPainter* windowHandler = (WindowPainter*)wh;
+
 	int width, height;
 	glfwGetFramebufferSize(this->window, &width, &height);
-	float xPerct = this->mouseData[0] / (float)width;
-	float yPerct = 1 - this->mouseData[1] / (float)height;
+	float xPerct = windowHandler->mouseData[0] / (float)width;
+	float yPerct = 1 - windowHandler->mouseData[1] / (float)height;
 
 	glm::vec2 xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
 	float xDiff = xSides.y - xSides.x;

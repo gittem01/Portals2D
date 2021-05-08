@@ -1,7 +1,6 @@
 #pragma once
 
 #include <box2d/box2d.h>
-#include "Player.h"
 #include <vector>
 #include <stdio.h>
 #include <algorithm>
@@ -9,6 +8,7 @@
 #include <map>
 #include <set>
 #include <unordered_set>
+#include "Shape.h"
 
 typedef enum{
     BEGIN_CONTACT = 1,

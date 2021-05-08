@@ -1043,6 +1043,11 @@ void b2World::DrawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color
 	{
 	case b2Shape::e_circle:
 		{
+			// ##############################################
+			if (fixture->IsSensor()) {
+				break;
+			}
+			// ##############################################
 			b2CircleShape* circle = (b2CircleShape*)fixture->GetShape();
 
 			b2Vec2 center = b2Mul(xf, circle->m_p);

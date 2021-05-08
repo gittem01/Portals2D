@@ -86,14 +86,17 @@ void Portal::createPhysicalBody(b2World* world){
     bd.type = b2_staticBody;
     portalBody = world->CreateBody(&bd);
 
-    float d = 0.02f;
+    float d = 0.005f;
     b2Vec2 smallDir = b2Vec2(dir.x * d, dir.y * d);
     b2EdgeShape shape;
     shape.SetTwoSided(points[0] - smallDir, points[1] - smallDir);
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;
-    midPortal.userData.pointer = (uintptr_t)this;
+
+    bodyData* data = (bodyData*)malloc(sizeof(bodyData));
+    *data = { PORTAL, this };
+    midPortal.userData.pointer = (uintptr_t)&data;
 
     midFixture = portalBody->CreateFixture(&midPortal);
 
@@ -150,12 +153,6 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
 
             Shape* shape = new Shape(world, b2Vec2());
 
-            Shape* s1 = (Shape*)fix1->GetBody()->GetUserData().pointer;
-            if (s1->isControllable) {
-                shape->isControllable = true;
-                shape->controlClass = s1->controlClass;
-            }
-
             teleportData* data = (teleportData*)malloc(sizeof(teleportData));
             *data = { this->pos, connectedPortal->pos, angle0, fix1 };
 
@@ -178,24 +175,10 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
                 connectedPortal->collidingFixtures.erase(cBody->GetFixtureList());
                 connectedPortal->correspondingBodies.erase(cBody);
                 connectedPortal->prepareFixtures.erase(cBody->GetFixtureList());
-
-                Shape* s1 = (Shape*)correspondingBodies[fix1->GetBody()]->GetUserData().pointer;
-                Shape* s2 = (Shape*)fix1->GetBody()->GetUserData().pointer;
-                if (s1->isControllable) {
-                    Player* p = (Player*)s1->controlClass;
-                    p->swapShape(s2);
-                }
             }
         }
         else{
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
-                Shape* s1 = (Shape*)correspondingBodies[fix1->GetBody()]->GetUserData().pointer;
-                Shape* s2 = (Shape*)fix1->GetBody()->GetUserData().pointer;
-                if (s2->isControllable) {
-                    Player* p = (Player*)s2->controlClass;
-                    p->swapShape(s1);
-                }
-
                 connectedPortal->correspondingBodies.erase(correspondingBodies[fix1->GetBody()]);
                 correspondingBodies.erase(fix1->GetBody());
             }
@@ -344,11 +327,6 @@ void Portal::creation() {
     for (int i = 0; i < addBodies.size(); i++) {
         Shape* shape = addShapes.at(i);
         shape->applyData();
-
-        if (shape->isControllable) {
-            Player* p = (Player*)(shape->controlClass);
-            p->portalCollision = true;
-        }
 
         connectedPortal->collidingFixtures.insert(shape->body->GetFixtureList());
         connectBodies(shape->body, addBodies.at(i));

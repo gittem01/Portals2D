@@ -25,8 +25,9 @@ public:
 	glm::vec2* lastPos = new glm::vec2(-1, -1);
 	glm::vec2* dragTo = new glm::vec2(0, 0);
 
-	int* mouseData;
-	Camera(glm::vec2 pos, int* mouseData, GLFWwindow *window);
+	void* wh;
+
+	Camera(glm::vec2 pos, void* wh);
 	void update();
 	glm::vec2 getCameraCoords(glm::vec2 p);
 	glm::vec2 getMouseCoords();

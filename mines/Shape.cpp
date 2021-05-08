@@ -23,7 +23,9 @@ void Shape::createPolyFromData(teleportData* data) {
     bodyDef.type = b2_dynamicBody;
     bodyDef.linearDamping = data->fixture->GetBody()->GetLinearDamping();
     bodyDef.angularDamping = data->fixture->GetBody()->GetAngularDamping();
-    bodyDef.userData.pointer = (uintptr_t)this;
+    bodyData* bData = (bodyData*)malloc(sizeof(bodyData));
+    *bData = { SHAPE, this };
+    bodyDef.userData.pointer = (uintptr_t)bData;
     body = world->CreateBody(&bodyDef);
 
     b2PolygonShape clone;
@@ -52,7 +54,9 @@ void Shape::createCircleFromData(teleportData* data) {
     bodyDef.type = b2_dynamicBody;
     bodyDef.linearDamping = data->fixture->GetBody()->GetLinearDamping();
     bodyDef.angularDamping = data->fixture->GetBody()->GetAngularDamping();
-    bodyDef.userData.pointer = (uintptr_t)this;
+    bodyData* bData = (bodyData*)malloc(sizeof(bodyData));
+    *bData = { SHAPE, this };
+    bodyDef.userData.pointer = (uintptr_t)bData;
     body = world->CreateBody(&bodyDef);
 
     b2CircleShape clone;
@@ -75,7 +79,9 @@ void Shape::createRect(b2Vec2 size, b2BodyType bodyType) {
     bodyDef.position.Set(pos.x, pos.y);
     bodyDef.linearDamping = defaultLinearDamping;
     bodyDef.angularDamping = defaultAngularDamping;
-    bodyDef.userData.pointer = (uintptr_t)this;
+    bodyData* bData = (bodyData*)malloc(sizeof(bodyData));
+    *bData = { SHAPE, this };
+    bodyDef.userData.pointer = (uintptr_t)bData;
     body = world->CreateBody(&bodyDef);
 
     b2PolygonShape Box;
@@ -96,7 +102,9 @@ void Shape::createCircle(float r, b2BodyType bodyType) {
     bodyDef.position.Set(pos.x, pos.y);
     bodyDef.linearDamping = defaultLinearDamping;
     bodyDef.angularDamping = defaultAngularDamping;
-    bodyDef.userData.pointer = (uintptr_t)this;
+    bodyData* bData = (bodyData*)malloc(sizeof(bodyData));
+    *bData = { SHAPE, this };
+    bodyDef.userData.pointer = (uintptr_t)bData;
     body = world->CreateBody(&bodyDef);
 
     b2CircleShape circle;
