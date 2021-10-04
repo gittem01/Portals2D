@@ -13,7 +13,7 @@ void debugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b
 }
 
 void debugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
-	glColor4f(color.r, color.g, color.b, 0.5f);
+	glColor4f(color.r, color.g, color.b, 0.4f);
 	glBegin(GL_POLYGON);
 	for (int i = 0; i < vertexCount; i+=1) {
 		glVertex2d((vertices + i)->x, (vertices + i)->y);
@@ -35,7 +35,7 @@ void debugDrawer::DrawSolidCircle(const b2Vec2& center, float radius,
 
 	int n = 100;
 	b2Vec2* positions = (b2Vec2*)malloc((n + 1) * sizeof(b2Vec2));
-	glColor4f(color.r, color.g, color.b, 0.5f);
+	glColor4f(color.r, color.g, color.b, 0.4f);
 	glBegin(GL_POLYGON);
 	float angle = 0;
 	for (int i=0; i<=n; i++){

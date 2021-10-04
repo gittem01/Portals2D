@@ -48,14 +48,14 @@ public:
             jd.bodyA = groundBody;
             jd.bodyB = clickedBody;
             jd.target = target;
-            jd.maxForce = 1000.0f * clickedBody->GetMass();
+            jd.maxForce = 5000.0f * clickedBody->GetMass();
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
             mouseJoints.insert((b2MouseJoint*)world->CreateJoint(&jd));
         }
     }
 
-    void mouseHandler(int frame) {
+    void mouseHandler(int frame, int totalIter) {
         glm::vec2 mp = wh->cam->getMouseCoords();
         mouseBody->SetTransform(b2Vec2(mp.x, mp.y), 0.0f);
         drawMouseBody();
@@ -113,7 +113,7 @@ public:
 
         if (wh->keyData[GLFW_KEY_LEFT_CONTROL] || wh->keyData[GLFW_KEY_RIGHT_CONTROL]) {
             if (wh->mouseData[5]) {
-                bodyRadius += wh->mouseData[5] * 0.1f;
+                bodyRadius += wh->mouseData[5] * 0.1f / totalIter;
                 if (bodyRadius < radiusLimits[0]) bodyRadius = radiusLimits[0];
                 else if (bodyRadius > radiusLimits[1]) bodyRadius = radiusLimits[1];
                 createMouseBody();

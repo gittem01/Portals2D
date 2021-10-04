@@ -6,7 +6,7 @@ int main(void)
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -90.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -30.0f));
     world->SetAllowSleeping(false); // required for mouse joint to work properly
 
     ContactListener cl;
@@ -30,8 +30,6 @@ int main(void)
     {
         frame++;
 
-        glClear( GL_COLOR_BUFFER_BIT );
-
         done = wh->looper();
 
         cam->update();
@@ -39,8 +37,10 @@ int main(void)
         keyHandler(wh);
 
         if (!isPaused || tick) {
+            glClear(GL_COLOR_BUFFER_BIT);
+
             for (int i = 0; i < totalIter; i++) {
-                mjh.mouseHandler(frame);
+                mjh.mouseHandler(frame, totalIter);
 
                 world->Step(1.0f / (60.0f * totalIter), 8, 3);
 
