@@ -12,6 +12,9 @@ int main(void)
     ContactListener cl;
     world->SetContactListener(&cl);
 
+    DestrucionListener dl;
+    world->SetDestructionListener(&dl);
+
     debugDrawer* drawer = new debugDrawer();
     world->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
@@ -31,11 +34,12 @@ int main(void)
 
         cam->update();
 
-        mjh.mouseHandler();
         keyHandler(wh);
 
         if (!isPaused || tick) {
             for (int i = 0; i < totalIter; i++) {
+                mjh.mouseHandler();
+
                 world->Step(1.0f / (60.0f * totalIter), 8, 3);
 
                 for (Portal* p : Portal::portals) {

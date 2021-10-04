@@ -1,6 +1,7 @@
 #include "debugDrawer.h"
 #include "mouseJointHandler.h"
 #include "ContactListener.h"
+#include "DestructionListener.h"
 #include "Portal.h"
 
 
@@ -120,9 +121,9 @@ void testCase2(b2World* world) {
     Shape* shape = new Shape(world, b2Vec2(xSize+width, 0.0f));
     shape->createRect(b2Vec2(width, ySize), b2_staticBody);
 
-    float sizeM = 1.50f;
-    uint32_t numCircles = 150; // circles are behaving well enough
-    uint32_t numPolygons = 150;
+    float sizeM = 2.25f;
+    uint32_t numCircles = 40;
+    uint32_t numPolygons = 80;
     for (int i = 0; i < numCircles; i++) {
         Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         circle->createCircle((getRand() + sizeM) / 5.0f, b2_dynamicBody);

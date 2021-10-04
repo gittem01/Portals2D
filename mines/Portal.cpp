@@ -241,11 +241,12 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     }
 
     bool collide = shouldCollide(finalPos, contact->GetManifold(), mode);
+    free(finalPos);
     if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]) {
         contact->SetEnabled(false);
         return true;
     }
-    free(finalPos);
+    
     return false;
 }
 

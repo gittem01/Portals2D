@@ -8,13 +8,14 @@
 
 class mouseJointHandler {
 public:
-	std::vector<b2MouseJoint*> mouseJoints;
+	std::set<b2MouseJoint*> mouseJoints;
     std::set<b2Body*> collidingBodies;
+    std::set<b2Body*> selectedBodies;
 
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
     float bodyRadius = 0.0f;
-    float radiusLimits[2] = { 0.0f, 0.5f };
+    float radiusLimits[2] = { 0.0f, 1.5f };
 
     b2World* world;
 	b2BodyDef bodyDef;
@@ -36,15 +37,19 @@ public:
         b2Vec2 target = b2Vec2(mp.x, mp.y);
 
         for (b2Body* clickedBody : collidingBodies) {
+            if (selectedBodies.find(clickedBody) != selectedBodies.end()) {
+                continue;
+            }
+            selectedBodies.insert(clickedBody);
+
             b2MouseJointDef jd;
             jd.bodyA = groundBody;
             jd.bodyB = clickedBody;
             jd.target = target;
-            jd.maxForce = 100.0f * clickedBody->GetMass();
+            jd.maxForce = 1000.0f * clickedBody->GetMass();
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
-            mouseJoints.push_back((b2MouseJoint*)world->CreateJoint(&jd));
-            clickedBody->SetAwake(true);
+            mouseJoints.insert((b2MouseJoint*)world->CreateJoint(&jd));
         }
     }
 
@@ -67,8 +72,12 @@ public:
             ground->CreateFixture(&shape, 0.0f);
             clicks[0] = NULL; clicks[1] = NULL;
         }
-        for (int i = 0; i < mouseJoints.size(); i++) {
-            b2MouseJoint* mouseJoint = mouseJoints.at(i);
+
+        for (b2Body* body : collidingBodies) {
+            
+        }
+
+        for (b2MouseJoint* mouseJoint : mouseJoints) {
             bool jointFound = false;
             for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()) {
                 if (joint == mouseJoint) {
@@ -77,16 +86,17 @@ public:
                     break;
                 }
             }
-            if (!jointFound) mouseJoints.erase(mouseJoints.begin() + i);
+            if (!jointFound) {
+                selectedBodies.erase(mouseJoint->GetBodyB());
+                mouseJoints.erase(mouseJoint);
+            }
         }
-
 
         if (wh->mouseData[2] == 2) {
             jointHandler(mp, world);
         }
         else if (wh->mouseData[2] == 0 && mouseJoints.size() > 0) {
-            for (int i = 0; i < mouseJoints.size(); i++) {
-                b2MouseJoint* mouseJoint = mouseJoints.at(i);
+            for (b2MouseJoint* mouseJoint : mouseJoints) {
                 for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()) {
                     if (joint == mouseJoint) {
                         world->DestroyJoint(mouseJoint);
@@ -95,9 +105,11 @@ public:
                 }
             }
             mouseJoints.clear();
+            selectedBodies.clear();
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2) {
             mouseJoints.clear();
+            selectedBodies.clear();
         }
 
         if (wh->keyData[GLFW_KEY_LEFT_CONTROL] || wh->keyData[GLFW_KEY_RIGHT_CONTROL]) {
