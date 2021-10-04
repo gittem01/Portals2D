@@ -58,7 +58,6 @@ public:
     void mouseHandler(int frame, int totalIter) {
         glm::vec2 mp = wh->cam->getMouseCoords();
         mouseBody->SetTransform(b2Vec2(mp.x, mp.y), 0.0f);
-        drawMouseBody();
 
         if (wh->mouseData[3] == 2 && !wh->mouseData[2] && frame != lastFrame) {
             clicks[1] = clicks[0];
@@ -123,7 +122,9 @@ public:
     }
 
     void createMouseBody() {
+        b2Vec2 oldMousePos = b2Vec2();
         if (mouseBody) {
+            oldMousePos = mouseBody->GetTransform().p;
             world->DestroyBody(mouseBody);
         }
         b2BodyDef bodyDef;
@@ -132,6 +133,8 @@ public:
         *bData = { MOUSE, this };
         bodyDef.userData.pointer = (uintptr_t)bData;
         mouseBody = world->CreateBody(&bodyDef);
+
+        mouseBody->SetTransform(oldMousePos, 0.0f);
 
         b2CircleShape circleShape;
         circleShape.m_radius = bodyRadius;

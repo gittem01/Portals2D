@@ -52,6 +52,7 @@ int main(void)
                 }
             }
 
+            mjh.drawMouseBody();
             world->DebugDraw();
             for (Portal* p : Portal::portals) {
                 p->draw();
