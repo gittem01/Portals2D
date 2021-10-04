@@ -86,9 +86,10 @@ void Portal::createPhysicalBody(b2World* world){
     bd.type = b2_staticBody;
     portalBody = world->CreateBody(&bd);
 
-    float d = 0.005f;
+    float d = 0.05f;
     b2Vec2 smallDir = b2Vec2(dir.x * d, dir.y * d);
     b2EdgeShape shape;
+
     shape.SetTwoSided(points[0] - smallDir, points[1] - smallDir);
 
     b2FixtureDef midPortal;
@@ -100,15 +101,15 @@ void Portal::createPhysicalBody(b2World* world){
 
     midFixture = portalBody->CreateFixture(&midPortal);
 
-    b2Vec2 pVec = points[1] - points[0];
-    normalize(&pVec);
-    pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
-
     shape.SetTwoSided(points[0], points[0]);
     yFix[0] = portalBody->CreateFixture(&shape, 0.0f);
     
     shape.SetTwoSided(points[1], points[1]);
     yFix[1] = portalBody->CreateFixture(&shape, 0.0f);
+
+    b2Vec2 pVec = points[1] - points[0];
+    normalize(&pVec);
+    pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
 
     float widthMul = 10.0f;
     float dirMult = 2.0f;
@@ -240,12 +241,11 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     }
 
     bool collide = shouldCollide(finalPos, contact->GetManifold(), mode);
-    free(finalPos);
-    if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]){
+    if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]) {
         contact->SetEnabled(false);
         return true;
     }
-
+    free(finalPos);
     return false;
 }
 
@@ -268,8 +268,7 @@ bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
             bool a1 = isLeft(points[0], points[1], finalPos[i], 0.001f);
             bool a2 = isLeft(points[0] + dir, points[0], finalPos[i], 0.0f);
             bool a3 = isLeft(points[1] + dir, points[1], finalPos[i], 0.0f);
-            if (!a1 && a2 && !a3) 
-            {
+            if (!a1 && a2 && !a3) {
                 in = false;
             }
             else if (numOfPoints == 2) {
@@ -278,7 +277,7 @@ bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
         }
     }
 
-    if (numOfPoints == 2 && (!others[0] || !others[1]) && (others[0] || others[1])) {
+    if (numOfPoints == 2 && (others[0] ^ others[1])) {
         int n = 0;
         if (others[1]) n = 1;
         manifold->pointCount -= 1;

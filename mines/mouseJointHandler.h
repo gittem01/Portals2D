@@ -13,7 +13,7 @@ public:
 
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
-    float bodyRadius = 0.3f;
+    float bodyRadius = 0.0f;
     float radiusLimits[2] = { 0.0f, 0.5f };
 
     b2World* world;
@@ -35,12 +35,12 @@ public:
     void jointHandler(glm::vec2 mp, b2World* world) {
         b2Vec2 target = b2Vec2(mp.x, mp.y);
 
-        for (b2Body* clickedBody: collidingBodies) {
+        for (b2Body* clickedBody : collidingBodies) {
             b2MouseJointDef jd;
             jd.bodyA = groundBody;
             jd.bodyB = clickedBody;
             jd.target = target;
-            jd.maxForce = 100000.0f * clickedBody->GetMass();
+            jd.maxForce = 100.0f * clickedBody->GetMass();
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
             mouseJoints.push_back((b2MouseJoint*)world->CreateJoint(&jd));

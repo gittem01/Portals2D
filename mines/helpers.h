@@ -121,11 +121,13 @@ void testCase2(b2World* world) {
     shape->createRect(b2Vec2(width, ySize), b2_staticBody);
 
     float sizeM = 1.50f;
-    for (int i = 0; i < 150; i++) {
+    uint32_t numCircles = 150; // circles are behaving well enough
+    uint32_t numPolygons = 150;
+    for (int i = 0; i < numCircles; i++) {
         Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         circle->createCircle((getRand() + sizeM) / 5.0f, b2_dynamicBody);
     }
-    for (int i = 0; i < 150; i++) {
+    for (int i = 0; i < numPolygons; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
         poly->createRect(b2Vec2(((getRand() + sizeM) / 5.0f), (getRand() + sizeM) / 5.0f), b2_dynamicBody);
     }
