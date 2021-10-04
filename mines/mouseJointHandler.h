@@ -17,6 +17,8 @@ public:
     float bodyRadius = 0.0f;
     float radiusLimits[2] = { 0.0f, 1.5f };
 
+    int lastFrame = INT_MIN;
+
     b2World* world;
 	b2BodyDef bodyDef;
 	b2Body* groundBody;
@@ -53,12 +55,12 @@ public:
         }
     }
 
-    void mouseHandler() {
+    void mouseHandler(int frame) {
         glm::vec2 mp = wh->cam->getMouseCoords();
         mouseBody->SetTransform(b2Vec2(mp.x, mp.y), 0.0f);
         drawMouseBody();
 
-        if (wh->mouseData[3] == 2 && !wh->mouseData[2]) {
+        if (wh->mouseData[3] == 2 && !wh->mouseData[2] && frame != lastFrame) {
             clicks[1] = clicks[0];
             clicks[0] = new glm::vec2(mp.x, mp.y);
         }
@@ -70,11 +72,8 @@ public:
             shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
 
             ground->CreateFixture(&shape, 0.0f);
+            free(clicks[1]);
             clicks[0] = NULL; clicks[1] = NULL;
-        }
-
-        for (b2Body* body : collidingBodies) {
-            
         }
 
         for (b2MouseJoint* mouseJoint : mouseJoints) {
@@ -120,6 +119,7 @@ public:
                 createMouseBody();
             }
         }
+        lastFrame = frame;
     }
 
     void createMouseBody() {
