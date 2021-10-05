@@ -148,6 +148,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
 
         if (connectedPortal && collidingFixtures.find(fix1) == collidingFixtures.end() &&
             destroyQueue.find(fix1->GetBody()) == destroyQueue.end()) {
+
             b2World* world = fix1->GetBody()->GetWorld();
 
             float angle0 = -calcAngle(this->dir) + calcAngle(-connectedPortal->dir);
@@ -228,16 +229,28 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
         rcInput.p1 = wManifold.points[i] + normalMult;
         rcInput.p2 = wManifold.points[i] - normalMult;
 
-        bool success = otherFixture->RayCast(&rcOutput, rcInput, otherFixture->GetBody()->GetType());
+        bool success;
+        success = otherFixture->RayCast(&rcOutput, rcInput, otherFixture->GetBody()->GetType());
+            
         if (success) {
             finalPos[i] = rcInput.p1 + b2Vec2(  (rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
                                                 (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
+        }
+        else if (otherFixture->GetShape()->GetType() == b2Shape::e_edge) {
+            rcInput.p1 = ((b2EdgeShape*)otherFixture->GetShape())->m_vertex1;
+            rcInput.p2 = ((b2EdgeShape*)otherFixture->GetShape())->m_vertex2;
+            success = fixture->RayCast(&rcOutput, rcInput, fixture->GetBody()->GetType());
+
+            if (success) {
+                finalPos[i] = rcInput.p1 + b2Vec2((rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
+                    (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
+            }
         }
     }
 
     for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
         // Contact drawing
-        //world->m_debugDraw->DrawPoint(finalPos[i], 6.0f, b2Color(1, 0, 0, 1));
+        //world->m_debugDraw->DrawPoint(finalPos[i], 10.0f, b2Color(1, 0, 0, 1));
     }
 
     bool collide = shouldCollide(finalPos, contact->GetManifold(), mode);
