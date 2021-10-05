@@ -64,13 +64,6 @@ public:
             clicks[0] = new glm::vec2(mp.x, mp.y);
         }
         if (clicks[1]) {
-            b2BodyDef bd;
-            b2Body* ground = world->CreateBody(&bd);
-
-            b2EdgeShape shape;
-            shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
-
-            ground->CreateFixture(&shape, 0.0f);
             free(clicks[1]);
             clicks[0] = NULL; clicks[1] = NULL;
         }

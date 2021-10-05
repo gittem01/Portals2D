@@ -40,9 +40,6 @@ void keyHandler(WindowPainter* wh) {
 
 void printBodyCount(b2World* world) {
     // num of bodies decreasing after some time. TODO.
-    // not the biggest issue currently
-    // Note: pulling a body out of a portal without removing
-    // the mouse button increases num of bodies permanently
 
     int n = world->GetBodyCount();
     int b = 0;
@@ -121,15 +118,22 @@ void testCase2(b2World* world) {
     Shape* shape = new Shape(world, b2Vec2(xSize+width, 0.0f));
     shape->createRect(b2Vec2(width, ySize), b2_staticBody);
 
-    float sizeM = 2.25f;
-    uint32_t numCircles = 40;
-    uint32_t numPolygons = 80;
+    float sizeM = 1.0f;
+    float div = 2.25f;
+    uint32_t numCircles = 25;
+    uint32_t numPolygons = 75;
     for (int i = 0; i < numCircles; i++) {
         Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
-        circle->createCircle((getRand() + sizeM) / 5.0f, b2_dynamicBody);
+        circle->createCircle((getRand() + sizeM) / div, b2_dynamicBody);
     }
     for (int i = 0; i < numPolygons; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
-        poly->createRect(b2Vec2(((getRand() + sizeM) / 5.0f), (getRand() + sizeM) / 5.0f), b2_dynamicBody);
+        poly->createRect(b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), b2_dynamicBody);
+    }
+
+    for (int i = 0; i < 10; i++) {
+        Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, 10.0f));
+        poly->createRect(b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), b2_dynamicBody);
+        //poly->createCircle((getRand() + sizeM) / div, b2_dynamicBody);
     }
 }
