@@ -136,16 +136,16 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
 
     if (type == BEGIN_CONTACT) {
 
+        if (!isLeft(points[0], points[1], fix1Pos, 0.0f)) {
+            return;
+        }
+
         if (fix2 == collisionSensor) {
             prepareFixtures.insert(fix1);
             return;
         }
 
         if (collidingFixtures.find(fix1) != collidingFixtures.end()) {
-            return;
-        }
-
-        if (!isLeft(points[0], points[1], fix1Pos, 0.0f)) {
             return;
         }
 
@@ -221,6 +221,13 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
 
     std::vector<b2Vec2> collisionPoints = getCollisionPoints(fixture, otherFixture);
 
+    bool noCollision = false;
+    for (b2Vec2& p : collisionPoints) {
+        if (!isLeft(points[0], points[1], p, 0.0f)) {
+            noCollision = true;
+        }
+    }
+
     for (int i = 0; i < collisionPoints.size(); i++) {
         //world->m_debugDraw->DrawPoint(collisionPoints.at(i), 10.0f, b2Color(1, 1, 1, 1));
     }
@@ -262,7 +269,7 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
 
     bool collide = shouldCollide(finalPos, contact->GetManifold(), mode);
     free(finalPos);
-    if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]) {
+    if ((!collide || noCollision) && otherFixture != yFix[0] && otherFixture != yFix[1]) {
         contact->SetEnabled(false);
         return true;
     }

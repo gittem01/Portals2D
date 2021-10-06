@@ -17,7 +17,7 @@ public:
 	glm::mat4 ortho;
 
 	GLFWwindow* window;
-	float zoom = 1;
+	float zoom = 0.7;
 	float zoomInc = 0.2;
 	float dragSmth = 0.5f;
 	float neededZoom = 0;

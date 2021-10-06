@@ -135,8 +135,8 @@ void testCase2(b2World* world) {
         poly->createRect(b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), b2_dynamicBody);
     }
 
-    for (int i = 0; i < 10; i++) {
-        Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, 10.0f));
+    for (int i = 0; i < 20; i++) {
+        Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.0f, 10.0f));
         poly->createRect(b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), b2_dynamicBody);
         //poly->createCircle((getRand() + sizeM) / div, b2_dynamicBody);
     }
