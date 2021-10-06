@@ -67,4 +67,13 @@ public:
     void connect(Portal* portal2);
 
     void connectBodies(b2Body* body1, b2Body* body2);
+
+    std::vector<b2Vec2> getCollisionPoints(b2Fixture*& fix1, b2Fixture*& fix2);
+
+    std::vector<b2Vec2> collideCircleCircle(b2Fixture*& fix1, b2Fixture*& fix2);
+    std::vector<b2Vec2> collidePolygonPolygon(b2Fixture*& fix1, b2Fixture*& fix2);
+    std::vector<b2Vec2> collidePolygonOther(b2Fixture*& fix1, b2Fixture*& fix2);
+    std::vector<b2Vec2> collideEdgeOther(b2Fixture*& fix1, b2Fixture*& fix2);
+
+    b2Vec2 getRayPoint(b2RayCastInput& input, b2RayCastOutput& output);
 };

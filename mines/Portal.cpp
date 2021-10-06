@@ -7,7 +7,7 @@
 
 std::set<Portal*> Portal::portals;
 
-bool isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c, float t){
+bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){
      return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t; // check this
 }
 
@@ -131,6 +131,9 @@ void Portal::createPhysicalBody(b2World* world){
 
 void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type){
     if (!this->connectedPortal) return;
+
+    b2Vec2 fix1Pos = fix1->GetBody()->GetPosition();
+
     if (type == BEGIN_CONTACT) {
 
         if (fix2 == collisionSensor) {
@@ -142,7 +145,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             return;
         }
 
-        if (!isLeft(points[0], points[1], fix1->GetBody()->GetPosition(), 0.0f)) {
+        if (!isLeft(points[0], points[1], fix1Pos, 0.0f)) {
             return;
         }
 
@@ -170,7 +173,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             return;
         }
         if (collidingFixtures.find(fix1) == collidingFixtures.end()) return;
-        if (isLeft(points[0], points[1], fix1->GetBody()->GetPosition(), 0.1f)){
+        if (isLeft(points[0], points[1], fix1Pos, 0.1f)){
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
                 b2Body* cBody = correspondingBodies[fix1->GetBody()];
                 connectedPortal->destroyQueue.insert(cBody);
@@ -216,6 +219,12 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
+    std::vector<b2Vec2> collisionPoints = getCollisionPoints(fixture, otherFixture);
+
+    for (int i = 0; i < collisionPoints.size(); i++) {
+        //world->m_debugDraw->DrawPoint(collisionPoints.at(i), 10.0f, b2Color(1, 1, 1, 1));
+    }
+
     b2Vec2* finalPos = (b2Vec2*)malloc(contact->GetManifold()->pointCount * sizeof(b2Vec2));
 
     b2Vec2 normalMult = b2Vec2(wManifold.normal.x * 100.0f, wManifold.normal.y * 100.0f);
@@ -233,8 +242,7 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
         success = otherFixture->RayCast(&rcOutput, rcInput, otherFixture->GetBody()->GetType());
             
         if (success) {
-            finalPos[i] = rcInput.p1 + b2Vec2(  (rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
-                                                (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
+            finalPos[i] = getRayPoint(rcInput, rcOutput);
         }
         else if (otherFixture->GetShape()->GetType() == b2Shape::e_edge) {
             rcInput.p1 = ((b2EdgeShape*)otherFixture->GetShape())->m_vertex1;
@@ -242,8 +250,7 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
             success = fixture->RayCast(&rcOutput, rcInput, fixture->GetBody()->GetType());
 
             if (success) {
-                finalPos[i] = rcInput.p1 + b2Vec2((rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
-                    (rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction);
+                finalPos[i] = getRayPoint(rcInput, rcOutput);
             }
         }
     }
