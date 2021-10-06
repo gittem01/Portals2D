@@ -26,6 +26,7 @@ int main(void)
     bool done = false;
     int frame = 0;
     int totalIter = 10;
+    long sleepTime = 20; // millisecond
     while (!done)
     {
         frame++;
@@ -62,6 +63,9 @@ int main(void)
             
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);
+        }
+        else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
         }
     }
 

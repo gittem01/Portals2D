@@ -4,6 +4,9 @@
 #include "DestructionListener.h"
 #include "Portal.h"
 
+#include <chrono>
+#include <thread>
+
 
 bool isPaused = false;
 bool tick = false;
