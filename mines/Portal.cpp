@@ -235,7 +235,7 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     }
     
     for (int i = 0; i < collisionPoints.size(); i++) {
-        world->m_debugDraw->DrawPoint(collisionPoints.at(i), 10.0f, b2Color(1, 1, 1, 1));
+        //world->m_debugDraw->DrawPoint(collisionPoints.at(i), 10.0f, b2Color(1, 1, 1, 1));
     }
 
     b2Vec2* finalPos = (b2Vec2*)malloc(contact->GetManifold()->pointCount * sizeof(b2Vec2));
