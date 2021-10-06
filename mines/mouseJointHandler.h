@@ -15,7 +15,7 @@ public:
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
     float bodyRadius = 0.0f;
-    float radiusLimits[2] = { 0.0f, 1.5f };
+    float radiusLimits[2] = { 0.0f, 2.5f };
 
     int lastFrame = INT_MIN;
 

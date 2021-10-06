@@ -117,10 +117,10 @@ void testCase2(b2World* world) {
     createEdge(b2Vec2(-xSize, -ySize), b2Vec2(+xSize, -ySize), world, b2_staticBody);
     createEdge(b2Vec2(-xSize, -ySize), b2Vec2(-xSize, +ySize), world, b2_staticBody);
     createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), world, b2_staticBody);
-    createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, -ySize), world, b2_staticBody);
+    //createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, -ySize), world, b2_staticBody);
 
-    /*Shape* shape = new Shape(world, b2Vec2(xSize+width, 0.0f));
-    shape->createRect(b2Vec2(width, ySize), b2_staticBody);*/
+    Shape* shape = new Shape(world, b2Vec2(xSize+width, 0.0f));
+    shape->createRect(b2Vec2(width, ySize), b2_staticBody);
 
     float sizeM = 1.0f;
     float div = 2.25f;

@@ -202,7 +202,7 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
         this->destroyQueue.find(fixture->GetBody()) != this->destroyQueue.end()) {
         mode = 1;
     }
-    else if (prepareFixtures.find(fixture) != prepareFixtures.end() && otherFixture->GetType() != b2_dynamicBody) {
+    else if (prepareFixtures.find(fixture) != prepareFixtures.end()) {
         mode = 2;
     }
     else {
