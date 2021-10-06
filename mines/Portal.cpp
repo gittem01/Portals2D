@@ -130,13 +130,22 @@ void Portal::createPhysicalBody(b2World* world){
 }
 
 void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type){
-    if (!this->connectedPortal) return;
+    if (!connectedPortal) return;
 
     b2Vec2 fix1Pos = fix1->GetBody()->GetPosition();
-
+    
     if (type == BEGIN_CONTACT) {
-
-        if (fix2 == collisionSensor) {
+        bool cond;
+        if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
+            cond = isLeft(points[0], points[1], fix1Pos, 0.0f) ||
+                connectedPortal->prepareFixtures.find(correspondingBodies[fix1->GetBody()]->GetFixtureList()) !=
+                connectedPortal->prepareFixtures.end();
+        }
+        else {
+            cond = isLeft(points[0], points[1], fix1Pos, 0.0f);
+        }
+        
+        if  (fix2 == collisionSensor && cond) {
             prepareFixtures.insert(fix1);
             return;
         }
@@ -145,11 +154,12 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             return;
         }
 
-        if (!isLeft(points[0], points[1], fix1Pos, 0.0f)) {
+        float angle = vecAngle(contact->GetManifold()->localNormal, dir);
+        if (!isLeft(points[0], points[1], fix1Pos, 0.0f) || angle > 0.1f) {
             return;
         }
 
-        if (connectedPortal && collidingFixtures.find(fix1) == collidingFixtures.end() &&
+        if (collidingFixtures.find(fix1) == collidingFixtures.end() &&
             destroyQueue.find(fix1->GetBody()) == destroyQueue.end()) {
 
             b2World* world = fix1->GetBody()->GetWorld();
@@ -179,7 +189,6 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
                 connectedPortal->destroyQueue.insert(cBody);
                 connectedPortal->collidingFixtures.erase(cBody->GetFixtureList());
                 connectedPortal->correspondingBodies.erase(cBody);
-                connectedPortal->prepareFixtures.erase(cBody->GetFixtureList());
             }
         }
         else{
@@ -367,6 +376,7 @@ void Portal::creation() {
 
 void Portal::destruction() {
     for (b2Body* destroyBody : destroyQueue) {
+        free(((bodyData*)destroyBody->GetUserData().pointer)->data);
         destroyBody->GetWorld()->DestroyBody(destroyBody);
     }
     addShapes.clear();
@@ -386,6 +396,6 @@ void Portal::draw(){
 void Portal::connect(Portal* portal2){
     connectedPortal = portal2;
     portal2->connectedPortal = this;
-    this->color = b2Color(1.0f, ((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
-    connectedPortal->color = (b2Color(1.0f-this->color.r, 1.0f - this->color.g, 1.0f - this->color.b, 1.0f));
+    this->color             = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
+    connectedPortal->color  = b2Color(1.0f - this->color.r, 1.0f - this->color.g, 1.0f - this->color.b, 1.0f);
 }

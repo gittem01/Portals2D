@@ -61,7 +61,8 @@ void testCase1(b2World* world){
     float xSize = 7.98f;
     float ySize = 4.48f;
     float width = 0.05f;
-    float m = 1.0f;
+    float sizeM = 1.0f;
+    float div = 2.0f;
 
     b2Vec2 center = b2Vec2(0.0f, 1.75f);
     int n = 5;
@@ -90,13 +91,13 @@ void testCase1(b2World* world){
     createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), world, b2_staticBody);
     createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, -ySize), world, b2_staticBody);
 
-    for (int i = 0; i < 5; i++) {
-        Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
-        circle->createCircle((getRand() + 1.0f) / 5.0f, b2_dynamicBody);
-    }
     for (int i = 0; i < 15; i++) {
+        Shape* circle = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
+        circle->createCircle((getRand() + sizeM) / div, b2_dynamicBody);
+    }
+    for (int i = 0; i < 30; i++) {
         Shape* poly = new Shape(world, b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f));
-        poly->createRect(b2Vec2(((getRand() + 1.0f) / 5.0f), (getRand() + 1.0f) / 5.0f), b2_dynamicBody);
+        poly->createRect(b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), b2_dynamicBody);
     }
 }
 
