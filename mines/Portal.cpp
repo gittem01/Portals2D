@@ -136,16 +136,16 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
 
     if (type == BEGIN_CONTACT) {
 
-        if (!isLeft(points[0], points[1], fix1Pos, 0.0f)) {
-            return;
-        }
-
         if (fix2 == collisionSensor) {
             prepareFixtures.insert(fix1);
             return;
         }
 
         if (collidingFixtures.find(fix1) != collidingFixtures.end()) {
+            return;
+        }
+
+        if (!isLeft(points[0], points[1], fix1Pos, 0.0f)) {
             return;
         }
 
@@ -202,7 +202,7 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
         this->destroyQueue.find(fixture->GetBody()) != this->destroyQueue.end()) {
         mode = 1;
     }
-    else if (prepareFixtures.find(fixture) != prepareFixtures.end()) {
+    else if (prepareFixtures.find(fixture) != prepareFixtures.end() && otherFixture->GetType() != b2_dynamicBody) {
         mode = 2;
     }
     else {
@@ -222,14 +222,20 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     std::vector<b2Vec2> collisionPoints = getCollisionPoints(fixture, otherFixture);
 
     bool noCollision = false;
-    for (b2Vec2& p : collisionPoints) {
-        if (!isLeft(points[0], points[1], p, 0.0f)) {
-            noCollision = true;
+    if (otherFixture->GetShape()->GetType() != b2Shape::e_edge) {
+        for (b2Vec2& p : collisionPoints) {
+            if (!isLeft(points[0], points[1], p, 0.0f)) {
+                noCollision = true;
+            }
+            else {
+                noCollision = false;
+                break;
+            }
         }
     }
-
+    
     for (int i = 0; i < collisionPoints.size(); i++) {
-        //world->m_debugDraw->DrawPoint(collisionPoints.at(i), 10.0f, b2Color(1, 1, 1, 1));
+        world->m_debugDraw->DrawPoint(collisionPoints.at(i), 10.0f, b2Color(1, 1, 1, 1));
     }
 
     b2Vec2* finalPos = (b2Vec2*)malloc(contact->GetManifold()->pointCount * sizeof(b2Vec2));
@@ -252,12 +258,8 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
             finalPos[i] = getRayPoint(rcInput, rcOutput);
         }
         else if (otherFixture->GetShape()->GetType() == b2Shape::e_edge) {
-            rcInput.p1 = ((b2EdgeShape*)otherFixture->GetShape())->m_vertex1;
-            rcInput.p2 = ((b2EdgeShape*)otherFixture->GetShape())->m_vertex2;
-            success = fixture->RayCast(&rcOutput, rcInput, fixture->GetBody()->GetType());
-
-            if (success) {
-                finalPos[i] = getRayPoint(rcInput, rcOutput);
+            if (collisionPoints.size() > i) {
+                finalPos[i] = collisionPoints.at(i);
             }
         }
     }
