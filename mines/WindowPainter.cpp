@@ -53,7 +53,7 @@ void WindowPainter::massInit() {
         std::exit(-1);
     }
 
-    window = glfwCreateWindow(windowSizes.x, windowSizes.y, "Window", 0, 0);
+    window = glfwCreateWindow(windowSizes.x, windowSizes.y, "2D physics plaground", 0, 0);
     if (!window)
     {
         glfwTerminate();

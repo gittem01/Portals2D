@@ -6,7 +6,7 @@ int main(void)
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -90.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -30.0f));
     world->SetAllowSleeping(false); // required for mouse joint to work properly
 
     ContactListener cl;

@@ -155,7 +155,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         }
 
         float angle = vecAngle(contact->GetManifold()->localNormal, dir);
-        if (!isLeft(points[0], points[1], fix1Pos, 0.0f) || angle > 0.1f) {
+        if (!isLeft(points[0], points[1], fix1Pos, 0.0f) || angle > 0.01f) {
             return;
         }
 
@@ -241,6 +241,10 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
                 break;
             }
         }
+        if (noCollision) {
+            contact->SetEnabled(false);
+            return true;
+        }
     }
     
     for (int i = 0; i < collisionPoints.size(); i++) {
@@ -280,8 +284,12 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
 
     bool collide = shouldCollide(finalPos, contact->GetManifold(), mode);
     free(finalPos);
-    if ((!collide || noCollision) && otherFixture != yFix[0] && otherFixture != yFix[1]) {
+    if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]) {
         contact->SetEnabled(false);
+        for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
+            // Contact drawing
+            world->m_debugDraw->DrawPoint(finalPos[i], 10.0f, b2Color(1, 1, 0, 1));
+        }
         return true;
     }
     
@@ -305,8 +313,8 @@ bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
     else if (mode == 2) {
         for (int i = 0; i < numOfPoints; i++) {
             bool a1 = isLeft(points[0], points[1], finalPos[i], 0.001f);
-            bool a2 = isLeft(points[0] + dir, points[0], finalPos[i], 0.0f);
-            bool a3 = isLeft(points[1] + dir, points[1], finalPos[i], 0.0f);
+            bool a2 = isLeft(points[0] + dir, points[0], finalPos[i], 0.001f);
+            bool a3 = isLeft(points[1] + dir, points[1], finalPos[i], 0.001f);
             if (!a1 && a2 && !a3) {
                 in = false;
             }
