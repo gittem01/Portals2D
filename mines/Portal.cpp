@@ -286,10 +286,6 @@ bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture,
     free(finalPos);
     if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]) {
         contact->SetEnabled(false);
-        for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
-            // Contact drawing
-            world->m_debugDraw->DrawPoint(finalPos[i], 10.0f, b2Color(1, 1, 0, 1));
-        }
         return true;
     }
     

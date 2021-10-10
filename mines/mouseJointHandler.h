@@ -49,6 +49,7 @@ public:
             jd.bodyB = clickedBody;
             jd.target = target;
             jd.maxForce = 5000.0f * clickedBody->GetMass();
+            jd.collideConnected = true;
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
             mouseJoints.insert((b2MouseJoint*)world->CreateJoint(&jd));
