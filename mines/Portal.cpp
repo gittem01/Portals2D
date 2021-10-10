@@ -183,7 +183,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
             return;
         }
         if (collidingFixtures.find(fix1) == collidingFixtures.end()) return;
-        if (isLeft(points[0], points[1], fix1Pos, 0.1f)){
+        if (isLeft(points[0], points[1], fix1Pos, 0.0f)){
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
                 b2Body* cBody = correspondingBodies[fix1->GetBody()];
                 connectedPortal->destroyQueue.insert(cBody);
@@ -341,9 +341,8 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
 
     b2Vec2 dirClone1 = connectedPortal->dir;
     b2Vec2 dirClone2 = this->dir;
-    // will be replaced later (no guarantee). Dynamic positioning will be applied to pulleys
-    // Attention: could be problematic for larger values.
-    float mult = 10000.0f;
+
+    float mult = 100000.0f;
 
     b2PulleyJointDef pulleyDef;
 
@@ -352,7 +351,7 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
     b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    body1->GetWorld()->CreateJoint(&pulleyDef);
+    world->CreateJoint(&pulleyDef);
 
     rotateVec(&dirClone1, b2_pi / 2.0f);
     rotateVec(&dirClone2, b2_pi / 2.0f);
@@ -362,7 +361,7 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
     groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    body1->GetWorld()->CreateJoint(&pulleyDef);
+    world->CreateJoint(&pulleyDef);
 }
 
 void Portal::creation() {

@@ -1,14 +1,16 @@
 #pragma once
 
-#include <box2d/box2d.h>
+#include "box2d/box2d.h"
 #include "WindowPainter.h"
-#include <set>
-#include <vector>
 #include "Shape.h"
+#include <set>
+#include <map>
+#include <vector>
 
 class mouseJointHandler {
 public:
 	std::set<b2MouseJoint*> mouseJoints;
+    std::map<b2MouseJoint*, b2Vec2> jointDiffs;
     std::set<b2Body*> collidingBodies;
     std::set<b2Body*> selectedBodies;
 
@@ -42,17 +44,28 @@ public:
             if (selectedBodies.find(clickedBody) != selectedBodies.end()) {
                 continue;
             }
+
+            b2Vec2 diff = clickedBody->GetPosition() - target;
+
             selectedBodies.insert(clickedBody);
 
             b2MouseJointDef jd;
             jd.bodyA = groundBody;
             jd.bodyB = clickedBody;
-            jd.target = target;
+            if (bodyRadius > 1.0f)
+                jd.target = target + diff;
+            else
+                jd.target = target;
             jd.maxForce = 5000.0f * clickedBody->GetMass();
             jd.collideConnected = true;
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
-            mouseJoints.insert((b2MouseJoint*)world->CreateJoint(&jd));
+            b2MouseJoint* joint = (b2MouseJoint*)world->CreateJoint(&jd);
+
+            if (bodyRadius > 1.0f)
+                jointDiffs[joint] = diff;
+
+            mouseJoints.insert(joint);
         }
     }
 
@@ -77,7 +90,12 @@ public:
             bool jointFound = false;
             for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()) {
                 if (joint == mouseJoint) {
-                    mouseJoint->SetTarget(b2Vec2(mp.x, mp.y));
+                    if (jointDiffs.find((b2MouseJoint*)joint) != jointDiffs.end()) {
+                        mouseJoint->SetTarget(b2Vec2(mp.x, mp.y) + jointDiffs[(b2MouseJoint*)joint]);
+                    }
+                    else {
+                        mouseJoint->SetTarget(b2Vec2(mp.x, mp.y));
+                    }
                     jointFound = true;
                     break;
                 }
@@ -85,6 +103,7 @@ public:
             if (!jointFound) {
                 selectedBodies.erase(mouseJoint->GetBodyB());
                 mouseJoints.erase(mouseJoint);
+                jointDiffs.erase(mouseJoint);
             }
         }
 
@@ -101,10 +120,12 @@ public:
                 }
             }
             mouseJoints.clear();
+            jointDiffs.clear();
             selectedBodies.clear();
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2) {
             mouseJoints.clear();
+            jointDiffs.clear();
             selectedBodies.clear();
         }
 
