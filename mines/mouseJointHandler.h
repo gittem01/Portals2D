@@ -49,20 +49,22 @@ public:
 
             selectedBodies.insert(clickedBody);
 
+            bool isIn = isBodyFullyIn(clickedBody);
+
             b2MouseJointDef jd;
             jd.bodyA = groundBody;
             jd.bodyB = clickedBody;
-            if (bodyRadius > 1.0f)
+            if (isIn)
                 jd.target = target + diff;
             else
                 jd.target = target;
-            jd.maxForce = 5000.0f * clickedBody->GetMass();
+            jd.maxForce = 1000.0f * clickedBody->GetMass();
             jd.collideConnected = true;
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
             b2MouseJoint* joint = (b2MouseJoint*)world->CreateJoint(&jd);
 
-            if (bodyRadius > 1.0f)
+            if (isIn)
                 jointDiffs[joint] = diff;
 
             mouseJoints.insert(joint);
@@ -138,6 +140,51 @@ public:
             }
         }
         lastFrame = frame;
+    }
+
+    bool isPolyIn(b2Body* body, b2PolygonShape* shape) {
+        b2Vec2 thisPos = mouseBody->GetPosition();
+        b2Vec2 vert;
+        for (int i = 0; i < shape->m_count; i++) {
+            b2Vec2 vertPos = body->GetWorldPoint(shape->m_vertices[i]);
+
+            if ((vertPos - thisPos).Length() > bodyRadius)
+                return false;
+        }
+        return true;
+    }
+
+    bool isCircleIn(b2Body* body, b2CircleShape* shape) {
+        b2Vec2 thisPos = mouseBody->GetPosition();
+        b2Vec2 bodyPos = body->GetPosition();
+        float r = bodyRadius - shape->m_radius;
+
+        if ((bodyPos - thisPos).Length() > r)
+            return false;
+        else
+            return true;
+    }
+
+    bool isFixtureIn(b2Fixture* fixture) {
+        switch (fixture->GetShape()->GetType())
+        {
+        case b2Shape::e_polygon:
+            return isPolyIn(fixture->GetBody(), (b2PolygonShape*)fixture->GetShape());
+        case b2Shape::e_circle:
+            return isCircleIn(fixture->GetBody(), (b2CircleShape*)fixture->GetShape());
+        default:
+            break;
+        }
+    }
+
+    bool isBodyFullyIn(b2Body* body) {
+        for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()) {
+            if (!isFixtureIn(fix)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     void createMouseBody() {
