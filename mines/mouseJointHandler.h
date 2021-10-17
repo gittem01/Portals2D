@@ -11,6 +11,7 @@ class mouseJointHandler {
 public:
 	std::set<b2MouseJoint*> mouseJoints;
     std::map<b2MouseJoint*, b2Vec2> jointDiffs;
+    std::map<b2MouseJoint*, b2Body*> mouseBodies;
     std::set<b2Body*> collidingBodies;
     std::set<b2Body*> selectedBodies;
 
@@ -63,7 +64,7 @@ public:
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
             b2MouseJoint* joint = (b2MouseJoint*)world->CreateJoint(&jd);
-
+            mouseBodies[joint] = clickedBody;
             if (isIn)
                 jointDiffs[joint] = diff;
 
@@ -84,10 +85,11 @@ public:
             shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
             groundBody->CreateFixture(&shape, 0.0f);
 
-            free(clicks[1]);
+            delete(clicks[1]);
             clicks[0] = NULL; clicks[1] = NULL;
         }
 
+        std::vector<b2MouseJoint*> remJoints;
         for (b2MouseJoint* mouseJoint : mouseJoints) {
             bool jointFound = false;
             for (b2Joint* joint = world->GetJointList(); joint; joint = joint->GetNext()) {
@@ -103,10 +105,15 @@ public:
                 }
             }
             if (!jointFound) {
-                selectedBodies.erase(mouseJoint->GetBodyB());
-                mouseJoints.erase(mouseJoint);
-                jointDiffs.erase(mouseJoint);
+                remJoints.push_back(mouseJoint);
             }
+        }
+
+        for (b2MouseJoint* mouseJoint : remJoints){
+            selectedBodies.erase(mouseBodies[mouseJoint]);
+            mouseBodies.erase(mouseJoint);
+            mouseJoints.erase(mouseJoint);
+            jointDiffs.erase(mouseJoint);
         }
 
         if (wh->mouseData[2] == 2) {
@@ -123,11 +130,13 @@ public:
             }
             mouseJoints.clear();
             jointDiffs.clear();
+            mouseBodies.clear();
             selectedBodies.clear();
         }
         else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2) {
             mouseJoints.clear();
             jointDiffs.clear();
+            mouseBodies.clear();
             selectedBodies.clear();
         }
 
