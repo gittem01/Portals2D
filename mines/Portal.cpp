@@ -11,7 +11,7 @@ bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){
      return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t; // check this
 }
 
-float calcAngle(b2Vec2 vec) {
+float calcAngle2(b2Vec2 vec) {
     float angle = atan2(vec.y, vec.x);
     if (angle < 0) angle += b2_pi * 2.0f;
 
@@ -46,7 +46,7 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
     normalize(&this->dir);
     this->size = size;
     calculatePoints();
-    createPhysicalBody(world);
+    createPortalBody(world);
     
     this->connectedPortal = NULL;
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
@@ -64,7 +64,6 @@ Portal::~Portal() {
 void Portal::clear() {
     connectedPortal = NULL;
     collidingFixtures.clear();
-    destroyQueue.clear();
     prepareFixtures.clear();
     addShapes.clear();
     addBodies.clear();
@@ -72,7 +71,7 @@ void Portal::clear() {
 }
 
 void Portal::calculatePoints(){
-    this->angle = calcAngle(this->dir) + b2_pi / 2.0f;
+    this->angle = calcAngle2(this->dir) + b2_pi / 2.0f;
 
     points[0].x = pos.x + cos(angle) * size;
     points[0].y = pos.y + sin(angle) * size;
@@ -81,7 +80,7 @@ void Portal::calculatePoints(){
     points[1].y = pos.y - sin(angle) * size;
 }
 
-void Portal::createPhysicalBody(b2World* world){
+void Portal::createPortalBody(b2World* world){
     b2BodyDef bd;
     bd.type = b2_staticBody;
     portalBody = world->CreateBody(&bd);
@@ -135,6 +134,7 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
     b2Vec2 fix1Pos = fix1->GetBody()->GetPosition();
     
     if (type == BEGIN_CONTACT) {
+
         bool cond;
         if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
             cond = isLeft(points[0], points[1], fix1Pos, 0.0f) ||
@@ -158,57 +158,59 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         if (!isLeft(points[0], points[1], fix1Pos, 0.0f) || angle > 0.01f) {
             return;
         }
+        
+        if (collidingFixtures.find(fix1) == collidingFixtures.end()) {
 
-        if (collidingFixtures.find(fix1) == collidingFixtures.end() &&
-            destroyQueue.find(fix1->GetBody()) == destroyQueue.end()) {
-
-            b2World* world = fix1->GetBody()->GetWorld();
-
-            float angle0 = -calcAngle(this->dir) + calcAngle(-connectedPortal->dir);
-
-            Shape* shape = new Shape(world, b2Vec2());
-
-            teleportData* data = (teleportData*)malloc(sizeof(teleportData));
-            *data = { this->pos, connectedPortal->pos, angle0, fix1 };
-
-            shape->setData(data);
-            addShapes.push_back(shape);
-            addBodies.push_back(fix1->GetBody());
+            bodyData* bData = ((bodyData*)fix1->GetBody()->GetUserData().pointer);
+            Shape* shape;
+            if (bData) {
+                shape = reinterpret_cast<Shape*>(bData->data);
+                shape->portalCollideStart(this, fix1);
+                addShapes.push_back(shape);
+                addBodies.push_back(fix1->GetBody());
+            }
         }
         collidingFixtures.insert(fix1);
     }
     else if (type == END_CONTACT) {
+
         if (fix2 == collisionSensor) {
             prepareFixtures.erase(fix1);
             return;
         }
+
         if (collidingFixtures.find(fix1) == collidingFixtures.end()) return;
-        if (isLeft(points[0], points[1], fix1Pos, 0.0f)){
+
+        bodyData* bData = ((bodyData*)fix1->GetBody()->GetUserData().pointer);
+
+        Shape* shape = reinterpret_cast<Shape*>(bData->data);
+        
+        if (isLeft(points[0], points[1], fix1Pos, 0.0f)) {
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
                 b2Body* cBody = correspondingBodies[fix1->GetBody()];
-                connectedPortal->destroyQueue.insert(cBody);
+                shape->portalCollideEnd(this, fix1, 0);
                 connectedPortal->collidingFixtures.erase(cBody->GetFixtureList());
                 connectedPortal->correspondingBodies.erase(cBody);
+                destroyShapes.insert(shape);
             }
         }
-        else{
+        else {
+            shape->portalCollideEnd(this, fix1, 1);
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
                 connectedPortal->correspondingBodies.erase(correspondingBodies[fix1->GetBody()]);
                 correspondingBodies.erase(fix1->GetBody());
             }
-            destroyQueue.insert(fix1->GetBody());
+            destroyShapes.insert(shape);
         }
         collidingFixtures.erase(fix1);
         correspondingBodies.erase(fix1->GetBody());
     }
 }
 
-bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, 
-    b2Contact* contact, const b2Manifold* oldManifold){
+bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, b2Contact* contact, const b2Manifold* oldManifold){
 
     int mode;
-    if (this->collidingFixtures.find(fixture) != this->collidingFixtures.end() ||
-        this->destroyQueue.find(fixture->GetBody()) != this->destroyQueue.end()) {
+    if (this->collidingFixtures.find(fixture) != this->collidingFixtures.end()) {
         mode = 1;
     }
     else if (prepareFixtures.find(fixture) != prepareFixtures.end()) {
@@ -368,24 +370,25 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
 void Portal::creation() {
     for (int i = 0; i < addBodies.size(); i++) {
         Shape* shape = addShapes.at(i);
-        shape->applyData();
+        shape->creation();
 
-        connectedPortal->collidingFixtures.insert(shape->body->GetFixtureList());
-        connectBodies(shape->body, addBodies.at(i));
+        b2Body* sb = shape->bodies.at(shape->bodies.size() - 1);
 
-        correspondingBodies[addBodies.at(i)] = shape->body;
-        connectedPortal->correspondingBodies[shape->body] = addBodies.at(i);
+        connectBodies(sb, addBodies.at(i));
+
+        connectedPortal->collidingFixtures.insert(sb->GetFixtureList());
+        connectedPortal->correspondingBodies[sb] = addBodies.at(i);
+        correspondingBodies[addBodies.at(i)] = sb;
     }
 }
 
 void Portal::destruction() {
-    for (b2Body* destroyBody : destroyQueue) {
-        free(((bodyData*)destroyBody->GetUserData().pointer)->data);
-        destroyBody->GetWorld()->DestroyBody(destroyBody);
+    for (Shape* s : destroyShapes) {
+        s->destruction();
     }
     addShapes.clear();
     addBodies.clear();
-    destroyQueue.clear();
+    destroyShapes.clear();
 }
 
 void Portal::draw(){

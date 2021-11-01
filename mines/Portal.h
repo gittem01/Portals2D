@@ -32,7 +32,7 @@ public:
     b2PolygonShape bottomShape;
 
     std::set<b2Fixture*> collidingFixtures;
-    std::set<b2Body*> destroyQueue;
+    std::set<Shape*> destroyShapes;
     std::set<b2Fixture*> prepareFixtures;
     std::vector<Shape*> addShapes;
     std::vector<b2Body*> addBodies;
@@ -55,7 +55,7 @@ public:
     void clear();
 
     void calculatePoints();
-    void createPhysicalBody(b2World* world);
+    void createPortalBody(b2World* world);
     void handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type);
     bool handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, 
         b2Contact* contact, const b2Manifold* oldManifold);

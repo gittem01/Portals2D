@@ -46,7 +46,6 @@ bool WindowPainter::looper() {
     return done;
 }
 
-
 void WindowPainter::massInit() {
     if (!glfwInit()) {
         printf("GLFW init error\n");

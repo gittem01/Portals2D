@@ -3,6 +3,8 @@
 #include <box2d/box2d.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <vector>
+#include <set>
 
 struct teleportData {
 	b2Vec2 p1;
@@ -27,6 +29,9 @@ struct bodyData {
 class Shape
 {
 public:
+	std::vector<b2Body*> addBodies; // add		bodies
+	std::vector<b2Body*> dtrBodies; // destroy	bodies
+
 	b2World* world;
 	teleportData* data;
 
@@ -43,6 +48,8 @@ public:
 	b2Body* body;
 	b2Vec2 pos;
 
+	std::vector<b2Body*> bodies;
+
 	Shape(b2World* world, b2Vec2 pos);
 	~Shape();
 
@@ -51,6 +58,12 @@ public:
 
 	void createCircleFromData(teleportData* data);
 	void createCircle(float r, b2BodyType bodyType);
+
+	void portalCollideStart(void* portal, b2Fixture* fix);
+	void portalCollideEnd(void* portal, b2Fixture* fix, bool shouldDestroy);
+
+	void creation();
+	void destruction();
 
 	void setData(teleportData* data);
 	void applyData();
