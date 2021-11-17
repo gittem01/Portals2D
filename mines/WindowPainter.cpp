@@ -73,6 +73,7 @@ void WindowPainter::massInit() {
     glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
     glLoadIdentity();
     glfwWindowHint(GLFW_SAMPLES, 8);
+    
     glEnable(GL_POLYGON_SMOOTH);
     glEnable(GL_LINE_SMOOTH);
     glEnable(GL_POINT_SMOOTH);
