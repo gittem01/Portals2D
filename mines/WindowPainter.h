@@ -14,6 +14,7 @@ public:
 	int* lastMousePos = (int*)calloc(2, sizeof(int));
 	glm::vec2 windowSizes = glm::vec2(1280, 720);
 	bool releaseQueue[3] = {false, false, false};
+	float dpiScaling = 1.0f;
 	std::set<int> newPressIndices;
 	GLFWwindow* window;
 	Camera* cam;

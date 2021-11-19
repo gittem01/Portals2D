@@ -60,6 +60,12 @@ void WindowPainter::massInit() {
         std::exit(-1);
     }
 
+    int x1, y1, x2, y2;
+    glfwGetWindowSize(window, &x1, &y1);
+    glfwGetFramebufferSize(window, &x2, &y2);
+
+    dpiScaling = x2 / x1;
+
     glfwMakeContextCurrent(window);
     glfwSetCursorPosCallback(this->window, WindowPainter::mouseEventCallback);
     glfwSetMouseButtonCallback(this->window, WindowPainter::buttonEventCallback);
@@ -69,7 +75,7 @@ void WindowPainter::massInit() {
     glfwSetWindowSizeCallback(this->window, WindowPainter::windowSizeEventCallback);
     glfwSetWindowUserPointer(window, this);
 
-    glViewport(0, 0, windowSizes.x, windowSizes.y);
+    glViewport(0, 0, (int)(windowSizes.x * dpiScaling), (int)(windowSizes.y * dpiScaling));
     glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
     glLoadIdentity();
     glfwWindowHint(GLFW_SAMPLES, 8);
@@ -124,7 +130,9 @@ void WindowPainter::glfwWindowFocusCallback(GLFWwindow* window, int isFocused) {
 
 void WindowPainter::windowSizeEventCallback(GLFWwindow* window, int width, int height) {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
-    glViewport(0, 0, width, height);
+
+    printf("%f\n", thisClass->dpiScaling);
+    glViewport(0, 0, (int)(width * thisClass->dpiScaling), (int)(height * thisClass->dpiScaling));
     thisClass->windowSizes.x = width;
     thisClass->windowSizes.y = height;
 }
