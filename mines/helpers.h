@@ -40,7 +40,6 @@ void keyHandler(WindowPainter* wh) {
     }
 }
 
-
 void printBodyCount(b2World* world) {
     // num of bodies decreasing after some time. TODO.
 

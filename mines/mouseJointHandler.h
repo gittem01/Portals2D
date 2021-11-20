@@ -7,13 +7,34 @@
 #include <map>
 #include <vector>
 
-class mouseJointHandler {
+class mouseJointHandler;
+
+class QueryCallback : public b2QueryCallback
+{
+public:
+    mouseJointHandler* mjh;
+
+    QueryCallback(mouseJointHandler* mjh) {
+        this->mjh = mjh;
+    }
+
+	virtual bool ReportFixture(b2Fixture* fixture){
+        fixture->GetBody()->SetAwake(true);
+
+        return true;
+    }
+};
+
+class mouseJointHandler
+{
 public:
 	std::set<b2MouseJoint*> mouseJoints;
     std::map<b2MouseJoint*, b2Vec2> jointDiffs;
     std::map<b2MouseJoint*, b2Body*> mouseBodies;
     std::set<b2Body*> collidingBodies;
     std::set<b2Body*> selectedBodies;
+
+    QueryCallback* queryCallback;
 
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
@@ -30,15 +51,18 @@ public:
 	glm::vec2* clicks[2] = { NULL, NULL };
     WindowPainter* wh;
 
-    mouseJointHandler(b2World* world, WindowPainter* wh) {
+    mouseJointHandler(b2World* world, WindowPainter* wh)
+    {
         this->world = world;
         this->groundBody = world->CreateBody(&bodyDef);
         this->wh = wh;
         mouseBody = NULL;
         createMouseBody();
+        queryCallback = new QueryCallback(this);
     }
 
-    void jointHandler(glm::vec2 mp, b2World* world) {
+    void jointHandler(glm::vec2 mp, b2World* world)
+    {
         b2Vec2 target = b2Vec2(mp.x, mp.y);
 
         for (b2Body* clickedBody : collidingBodies) {
@@ -72,9 +96,16 @@ public:
         }
     }
 
-    void mouseHandler(int frame, int totalIter) {
+    void mouseHandler(int frame, int totalIter)
+    {
         glm::vec2 mp = wh->cam->getMouseCoords();
         mouseBody->SetTransform(b2Vec2(mp.x, mp.y), 0.0f);
+
+        b2Vec2 lowerBound = b2Vec2(mp.x - bodyRadius, mp.y - bodyRadius);
+        b2Vec2 upperBound = b2Vec2(mp.x + bodyRadius, mp.y + bodyRadius);
+
+        b2AABB aabb = { lowerBound, upperBound };
+        world->QueryAABB(queryCallback, aabb);
 
         if (wh->mouseData[3] == 2 && !wh->mouseData[2] && frame != lastFrame) {
             clicks[1] = clicks[0];
@@ -151,7 +182,8 @@ public:
         lastFrame = frame;
     }
 
-    bool isPolyIn(b2Body* body, b2PolygonShape* shape) {
+    bool isPolyIn(b2Body* body, b2PolygonShape* shape)
+    {
         b2Vec2 thisPos = mouseBody->GetPosition();
         b2Vec2 vert;
         for (int i = 0; i < shape->m_count; i++) {
@@ -163,7 +195,8 @@ public:
         return true;
     }
 
-    bool isCircleIn(b2Body* body, b2CircleShape* shape) {
+    bool isCircleIn(b2Body* body, b2CircleShape* shape)
+    {
         b2Vec2 thisPos = mouseBody->GetPosition();
         b2Vec2 bodyPos = body->GetPosition();
         float r = bodyRadius - shape->m_radius;
@@ -174,7 +207,8 @@ public:
             return true;
     }
 
-    bool isFixtureIn(b2Fixture* fixture) {
+    bool isFixtureIn(b2Fixture* fixture)
+    {
         switch (fixture->GetShape()->GetType())
         {
         case b2Shape::e_polygon:
@@ -186,7 +220,8 @@ public:
         }
     }
 
-    bool isBodyFullyIn(b2Body* body) {
+    bool isBodyFullyIn(b2Body* body)
+    {
         for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()) {
             if (!isFixtureIn(fix)) {
                 return false;
@@ -196,7 +231,8 @@ public:
         return true;
     }
 
-    void createMouseBody() {
+    void createMouseBody()
+    {
         b2Vec2 oldMousePos = b2Vec2();
         if (mouseBody) {
             oldMousePos = mouseBody->GetTransform().p;
@@ -221,7 +257,8 @@ public:
         mouseBody->CreateFixture(&fixtureDef);
     }
 
-    void drawMouseBody() {
+    void drawMouseBody()
+    {
         world->m_debugDraw->DrawSolidCircle(mouseBody->GetPosition(), bodyRadius,
             b2Vec2(0.0f, 0.0f), b2Color(1.0f, 1.0f, 1.0f, 0.2f));
     }

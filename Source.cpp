@@ -6,8 +6,7 @@ int main(void)
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -30.0f));
-    world->SetAllowSleeping(false); // required for mouse joint to work properly
+    b2World* world = new b2World(b2Vec2(0.0f, -20.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -43,7 +42,7 @@ int main(void)
             for (int i = 0; i < totalIter; i++) {
                 mjh.mouseHandler(frame, totalIter);
 
-                world->Step(1.0f / (60.0f * totalIter), 8, 3);
+                world->Step(1.0f / (120.0f * totalIter), 8, 3);
 
                 for (Portal* p : Portal::portals) {
                     p->creation();
