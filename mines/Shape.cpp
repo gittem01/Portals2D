@@ -39,10 +39,10 @@ void Shape::portalCollideEnd(void* portal, b2Fixture* fix, bool shouldDestroy) {
     Portal* tPortal = reinterpret_cast<Portal*>(portal);
 
     if (shouldDestroy) {
-        dtrBodies.push_back(fix->GetBody());
+        dtrBodies.insert(fix->GetBody());
     }
     else {
-        dtrBodies.push_back(tPortal->correspondingBodies[fix->GetBody()]);
+        dtrBodies.insert(tPortal->correspondingBodies[fix->GetBody()]);
     }
 }
 

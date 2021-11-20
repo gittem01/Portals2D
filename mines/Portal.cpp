@@ -187,21 +187,14 @@ void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contac
         
         if (isLeft(points[0], points[1], fix1Pos, 0.0f)) {
             if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
-                b2Body* cBody = correspondingBodies[fix1->GetBody()];
-                shape->portalCollideEnd(this, fix1, 0);
-                connectedPortal->collidingFixtures.erase(cBody->GetFixtureList());
-                connectedPortal->correspondingBodies.erase(cBody);
-                destroyShapes.insert(shape);
-            }
-        }
-        else {
-            shape->portalCollideEnd(this, fix1, 1);
-            if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
+                connectedPortal->collidingFixtures.erase(correspondingBodies[fix1->GetBody()]->GetFixtureList());
                 connectedPortal->correspondingBodies.erase(correspondingBodies[fix1->GetBody()]);
-                correspondingBodies.erase(fix1->GetBody());
             }
+            
+            shape->portalCollideEnd(this, fix1, 0);
             destroyShapes.insert(shape);
         }
+
         collidingFixtures.erase(fix1);
         correspondingBodies.erase(fix1->GetBody());
     }
@@ -372,13 +365,12 @@ void Portal::creation() {
         Shape* shape = addShapes.at(i);
         shape->creation();
 
-        b2Body* sb = shape->bodies.at(shape->bodies.size() - 1);
+        b2Body* shapeBody = shape->bodies.at(shape->bodies.size() - 1);
 
-        connectBodies(sb, addBodies.at(i));
-
-        connectedPortal->collidingFixtures.insert(sb->GetFixtureList());
-        connectedPortal->correspondingBodies[sb] = addBodies.at(i);
-        correspondingBodies[addBodies.at(i)] = sb;
+        connectBodies(shapeBody, addBodies.at(i));
+        connectedPortal->collidingFixtures.insert(shapeBody->GetFixtureList());
+        connectedPortal->correspondingBodies[shapeBody] = addBodies.at(i);
+        correspondingBodies[addBodies.at(i)] = shapeBody;
     }
 }
 

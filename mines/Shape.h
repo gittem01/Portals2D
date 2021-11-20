@@ -29,8 +29,8 @@ struct bodyData {
 class Shape
 {
 public:
-	std::vector<b2Body*> addBodies; // add		bodies
-	std::vector<b2Body*> dtrBodies; // destroy	bodies
+	std::vector<b2Body*> addBodies; // add	bodies
+	std::set<b2Body*> dtrBodies; // destroy	bodies
 
 	b2World* world;
 	teleportData* data;
