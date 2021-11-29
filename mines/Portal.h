@@ -8,13 +8,24 @@
 #include <map>
 #include <set>
 #include <unordered_set>
-#include "Shape.h"
 
 typedef enum{
     BEGIN_CONTACT = 1,
     END_CONTACT = 2,
 } contactType;
 
+enum dataTypes
+{
+	OTHER = 0,
+	PORTAL = 1,
+	SHAPE = 2,
+	MOUSE = 3,
+};
+
+struct bodyData {
+	dataTypes type;
+	void* data;
+};
 
 class Portal
 {

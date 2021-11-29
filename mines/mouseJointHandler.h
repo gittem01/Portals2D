@@ -2,10 +2,10 @@
 
 #include "box2d/box2d.h"
 #include "WindowPainter.h"
-#include "Shape.h"
 #include <set>
 #include <map>
 #include <vector>
+#include "Portal.h"
 
 class mouseJointHandler;
 
@@ -73,9 +73,8 @@ public:
     }
 
     void jointHandler(glm::vec2 mp, b2World* world) {
-        b2Vec2 target = b2Vec2(mp.x, mp.y);
         removeDuplicates();
-        printf("%d\n", collidingBodies.size());
+        b2Vec2 target = b2Vec2(mp.x, mp.y);
         for (b2Body* clickedBody : collidingBodies) {
             if (selectedBodies.find(clickedBody) != selectedBodies.end()) {
                 continue;
