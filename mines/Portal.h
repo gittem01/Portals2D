@@ -29,26 +29,19 @@ public:
     b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
-    b2PolygonShape bottomShape;
-
-    std::set<b2Fixture*> collidingFixtures;
-    std::set<Shape*> destroyShapes;
     std::set<b2Fixture*> prepareFixtures;
-    std::vector<Shape*> addShapes;
-    std::vector<b2Body*> addBodies;
+    std::set<b2Fixture*> collidingFixtures;
+    std::set<b2Fixture*> releaseFixtures;
 
-    std::map<b2Body*, b2Body*> correspondingBodies;
+    std::vector<Portal*> connectedPortals;
 
     b2Vec2 points[2];
     b2Vec2 pos;
     b2Vec2 dir;
     float size;
     float angle;
-
-    int id;
-
-    Portal* connectedPortal;
     b2Color color;
+    int id;
 
     Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world);
     ~Portal();
@@ -56,13 +49,7 @@ public:
 
     void calculatePoints();
     void createPortalBody(b2World* world);
-    void handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type);
-    bool handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, 
-        b2Contact* contact, const b2Manifold* oldManifold);
-    bool shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode);
 
-    void creation();
-    void destruction();
     void draw();
     void connect(Portal* portal2);
 

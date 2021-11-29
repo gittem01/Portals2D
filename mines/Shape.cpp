@@ -24,46 +24,8 @@ Shape::~Shape() {
     
 }
 
-void Shape::portalCollideStart(void* portal, b2Fixture* fix) {
-    Portal* tPortal = reinterpret_cast<Portal*>(portal);
-
-    float angle0 = -calcAngle(tPortal->dir) + calcAngle(-tPortal->connectedPortal->dir);
-
-    data = (teleportData*)malloc(sizeof(teleportData));
-    *data = { tPortal->pos, tPortal->connectedPortal->pos, angle0, fix };
-
-    setData(data);
-}
-
-void Shape::portalCollideEnd(void* portal, b2Fixture* fix, bool shouldDestroy) {
-    Portal* tPortal = reinterpret_cast<Portal*>(portal);
-
-    if (shouldDestroy) {
-        dtrBodies.insert(fix->GetBody());
-    }
-    else {
-        dtrBodies.insert(tPortal->correspondingBodies[fix->GetBody()]);
-    }
-}
-
 void Shape::creation() {
     applyData();
-}
-
-void Shape::destruction() {
-    for (b2Body* destroyBody : dtrBodies) {
-        free(((bodyData*)destroyBody->GetUserData().pointer));
-        world->DestroyBody(destroyBody);
-
-        int i = 0;
-        for (b2Body* body : bodies) {
-            if (body == destroyBody) {
-                bodies.erase(bodies.begin() + i++);
-                break;
-            }
-        }
-    }
-    dtrBodies.clear();
 }
 
 void Shape::createPolyFromData(teleportData* data) {

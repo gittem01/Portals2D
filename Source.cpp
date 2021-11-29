@@ -6,7 +6,7 @@ int main(void)
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -15.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -45.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -20,11 +20,11 @@ int main(void)
     
     mouseJointHandler mjh(world, wh);
 
-    testCase2(world);
+    testCase1(world);
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 1;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 120;
@@ -45,13 +45,6 @@ int main(void)
                 mjh.mouseHandler(frame, totalIter);
 
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
-
-                for (Portal* p : Portal::portals) {
-                    p->creation();
-                }
-                for (Portal* p : Portal::portals) {
-                    p->destruction();
-                }
             }
 
             mjh.drawMouseBody();
@@ -59,8 +52,6 @@ int main(void)
             for (Portal* p : Portal::portals) {
                 p->draw();
             }
-
-            printBodyCount(world);
             
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);

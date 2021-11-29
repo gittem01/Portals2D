@@ -48,26 +48,13 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
     calculatePoints();
     createPortalBody(world);
     
-    this->connectedPortal = NULL;
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
 
     portals.insert(this);
 }
 
 Portal::~Portal() {
-    world->DestroyBody(portalBody);
-    portals.erase(this);
-    if (connectedPortal) connectedPortal->clear();
-    this->clear();
-}
-
-void Portal::clear() {
-    connectedPortal = NULL;
-    collidingFixtures.clear();
-    prepareFixtures.clear();
-    addShapes.clear();
-    addBodies.clear();
-    correspondingBodies.clear();
+    
 }
 
 void Portal::calculatePoints(){
@@ -85,7 +72,7 @@ void Portal::createPortalBody(b2World* world){
     bd.type = b2_staticBody;
     portalBody = world->CreateBody(&bd);
 
-    float d = 0.05f;
+    float d = 0.0f;
     b2Vec2 smallDir = b2Vec2(dir.x * d, dir.y * d);
     b2EdgeShape shape;
 
@@ -93,6 +80,7 @@ void Portal::createPortalBody(b2World* world){
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;
+    midPortal.isSensor = true;
 
     bodyData* data = (bodyData*)malloc(sizeof(bodyData));
     *data = { PORTAL, this };
@@ -123,208 +111,6 @@ void Portal::createPortalBody(b2World* world){
     polyShape.Set(polyPoints, 4);
     collisionSensor = portalBody->CreateFixture(&polyShape, 0.0f);
     collisionSensor->SetSensor(true);
-
-    b2Vec2 polyPoints2[4] = { p1 + smallDir, p2 + smallDir, p1-dir, p2-dir };
-    bottomShape.Set(polyPoints2, 4);
-}
-
-void Portal::handleCollision(b2Fixture* fix1, b2Fixture* fix2, b2Contact* contact, contactType type){
-    if (!connectedPortal) return;
-
-    b2Vec2 fix1Pos = fix1->GetBody()->GetPosition();
-    
-    if (type == BEGIN_CONTACT) {
-
-        bool cond;
-        if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
-            cond = isLeft(points[0], points[1], fix1Pos, 0.0f) ||
-                connectedPortal->prepareFixtures.find(correspondingBodies[fix1->GetBody()]->GetFixtureList()) !=
-                connectedPortal->prepareFixtures.end();
-        }
-        else {
-            cond = isLeft(points[0], points[1], fix1Pos, 0.0f);
-        }
-        
-        if  (fix2 == collisionSensor && cond) {
-            prepareFixtures.insert(fix1);
-            return;
-        }
-
-        if (collidingFixtures.find(fix1) != collidingFixtures.end()) {
-            return;
-        }
-
-        float angle = vecAngle(contact->GetManifold()->localNormal, dir);
-        if (!isLeft(points[0], points[1], fix1Pos, 0.0f) || angle > 0.01f) {
-            return;
-        }
-        
-        if (collidingFixtures.find(fix1) == collidingFixtures.end()) {
-
-            bodyData* bData = ((bodyData*)fix1->GetBody()->GetUserData().pointer);
-            Shape* shape;
-            if (bData) {
-                shape = reinterpret_cast<Shape*>(bData->data);
-                shape->portalCollideStart(this, fix1);
-                addShapes.push_back(shape);
-                addBodies.push_back(fix1->GetBody());
-            }
-        }
-        collidingFixtures.insert(fix1);
-    }
-    else if (type == END_CONTACT) {
-
-        if (fix2 == collisionSensor) {
-            prepareFixtures.erase(fix1);
-            return;
-        }
-
-        if (collidingFixtures.find(fix1) == collidingFixtures.end()) return;
-
-        bodyData* bData = ((bodyData*)fix1->GetBody()->GetUserData().pointer);
-
-        Shape* shape = reinterpret_cast<Shape*>(bData->data);
-        
-        if (isLeft(points[0], points[1], fix1Pos, 0.0f)) {
-            if (correspondingBodies.find(fix1->GetBody()) != correspondingBodies.end()) {
-                connectedPortal->collidingFixtures.erase(correspondingBodies[fix1->GetBody()]->GetFixtureList());
-                connectedPortal->correspondingBodies.erase(correspondingBodies[fix1->GetBody()]);
-            }
-            
-            shape->portalCollideEnd(this, fix1, 0);
-            destroyShapes.insert(shape);
-        }
-
-        collidingFixtures.erase(fix1);
-        correspondingBodies.erase(fix1->GetBody());
-    }
-}
-
-bool Portal::handlePreCollision(b2Fixture* fixture, b2Fixture* otherFixture, b2Contact* contact, const b2Manifold* oldManifold){
-
-    int mode;
-    if (this->collidingFixtures.find(fixture) != this->collidingFixtures.end()) {
-        mode = 1;
-    }
-    else if (prepareFixtures.find(fixture) != prepareFixtures.end()) {
-        mode = 2;
-    }
-    else {
-        return false;
-    }
-
-    if (correspondingBodies.find(otherFixture->GetBody()) != correspondingBodies.end() ||
-        fixture->GetBody()->GetType() == b2_staticBody) {
-        return false;
-    }
-
-    b2World* world = fixture->GetBody()->GetWorld();
-
-    b2WorldManifold wManifold;
-    contact->GetWorldManifold(&wManifold);
-
-    std::vector<b2Vec2> collisionPoints = getCollisionPoints(fixture, otherFixture);
-
-    bool noCollision = false;
-    if (otherFixture->GetShape()->GetType() != b2Shape::e_edge) {
-        for (b2Vec2& p : collisionPoints) {
-            if (!isLeft(points[0], points[1], p, 0.0f)) {
-                noCollision = true;
-            }
-            else {
-                noCollision = false;
-                break;
-            }
-        }
-        if (noCollision) {
-            contact->SetEnabled(false);
-            return true;
-        }
-    }
-    
-    for (int i = 0; i < collisionPoints.size(); i++) {
-        //world->m_debugDraw->DrawPoint(collisionPoints.at(i), 10.0f, b2Color(1, 1, 1, 1));
-    }
-
-    b2Vec2* finalPos = (b2Vec2*)malloc(contact->GetManifold()->pointCount * sizeof(b2Vec2));
-
-    b2Vec2 normalMult = b2Vec2(wManifold.normal.x * 100.0f, wManifold.normal.y * 100.0f);
-    for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
-        finalPos[i] = wManifold.points[i];
-
-        b2RayCastOutput rcOutput;
-        b2RayCastInput rcInput;
-
-        rcInput.maxFraction = 1.0f;
-        rcInput.p1 = wManifold.points[i] + normalMult;
-        rcInput.p2 = wManifold.points[i] - normalMult;
-
-        bool success;
-        success = otherFixture->RayCast(&rcOutput, rcInput, otherFixture->GetBody()->GetType());
-            
-        if (success) {
-            finalPos[i] = getRayPoint(rcInput, rcOutput);
-        }
-        else if (otherFixture->GetShape()->GetType() == b2Shape::e_edge) {
-            if (collisionPoints.size() > i) {
-                finalPos[i] = collisionPoints.at(i);
-            }
-        }
-    }
-
-    for (int i = 0; i < contact->GetManifold()->pointCount; i++) {
-        // Contact drawing
-        //world->m_debugDraw->DrawPoint(finalPos[i], 10.0f, b2Color(1, 0, 0, 1));
-    }
-
-    bool collide = shouldCollide(finalPos, contact->GetManifold(), mode);
-    free(finalPos);
-    if (!collide && otherFixture != yFix[0] && otherFixture != yFix[1]) {
-        contact->SetEnabled(false);
-        return true;
-    }
-    
-    return false;
-}
-
-bool Portal::shouldCollide(b2Vec2* finalPos, b2Manifold* manifold, int mode){
-    int numOfPoints = manifold->pointCount;
-    bool in = true;
-    bool others[2] = { false, false };
-    if (mode == 1) {
-        for (int i = 0; i < numOfPoints; i++) {
-            if (!isLeft(points[0], points[1], finalPos[i], 0.001f)) {
-                in = false;
-            }
-            else if (numOfPoints == 2) {
-                others[i] = true;
-            }
-        }
-    }
-    else if (mode == 2) {
-        for (int i = 0; i < numOfPoints; i++) {
-            b2Vec2 p1 = points[0] + dir;
-            b2Vec2 p2 = points[1] + dir;
-            bool a1 = isLeft(points[0], points[1], finalPos[i], 0.001f);
-            bool a2 = isLeft(p1, points[0], finalPos[i], 0.001f);
-            bool a3 = isLeft(p2, points[1], finalPos[i], 0.001f);
-            if (!a1 && a2 && !a3) {
-                in = false;
-            }
-            else if (numOfPoints == 2) {
-                others[i] = true;
-            }
-        }
-    }
-
-    if (numOfPoints == 2 && (others[0] ^ others[1])) {
-        int n = 0;
-        if (others[1]) n = 1;
-        manifold->pointCount -= 1;
-        manifold->points[0] = manifold->points[n];
-        in = true;
-    }
-    return in;
 }
 
 void Portal::connectBodies(b2Body* body1, b2Body* body2) {
@@ -335,7 +121,7 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
 
     body1->GetWorld()->CreateJoint(&prismDef);
 
-    b2Vec2 dirClone1 = connectedPortal->dir;
+    b2Vec2 dirClone1 = connectedPortals.at(0)->dir;
     b2Vec2 dirClone2 = this->dir;
 
     float mult = 100000.0f;
@@ -360,28 +146,6 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
     world->CreateJoint(&pulleyDef);
 }
 
-void Portal::creation() {
-    for (int i = 0; i < addBodies.size(); i++) {
-        Shape* shape = addShapes.at(i);
-        shape->creation();
-
-        b2Body* shapeBody = shape->bodies.at(shape->bodies.size() - 1);
-
-        connectBodies(shapeBody, addBodies.at(i));
-        connectedPortal->collidingFixtures.insert(shapeBody->GetFixtureList());
-        connectedPortal->correspondingBodies[shapeBody] = addBodies.at(i);
-        correspondingBodies[addBodies.at(i)] = shapeBody;
-    }
-}
-
-void Portal::destruction() {
-    for (Shape* s : destroyShapes) {
-        s->destruction();
-    }
-    addShapes.clear();
-    addBodies.clear();
-    destroyShapes.clear();
-}
 
 void Portal::draw(){
     glLineWidth(2.0f);
@@ -393,8 +157,8 @@ void Portal::draw(){
 }
 
 void Portal::connect(Portal* portal2){
-    connectedPortal = portal2;
-    portal2->connectedPortal = this;
+    connectedPortals.push_back(portal2);
+    portal2->connectedPortals.push_back(this);
     this->color             = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
-    connectedPortal->color  = b2Color(1.0f - this->color.r, 1.0f - this->color.g, 1.0f - this->color.b, 1.0f);
+    portal2->color          = b2Color(1.0f - this->color.r, 1.0f - this->color.g, 1.0f - this->color.b, 1.0f);
 }
