@@ -52,6 +52,10 @@ int main(void)
             for (Portal* p : Portal::portals) {
                 p->draw();
             }
+
+            for (PortalBody* body : PortalBody::portalBodies){
+                body->drawBodies();
+            }
             
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);

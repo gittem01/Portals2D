@@ -20,6 +20,8 @@ void ContactListener::endBeginHandle(contactType type, b2Contact* contact) {
                 }
             }
             break;
+        default:
+            break;
         }
     }
     if (data2) {
@@ -37,6 +39,8 @@ void ContactListener::endBeginHandle(contactType type, b2Contact* contact) {
                     }
                 }
             }
+            break;
+        default:
             break;
         }
     }

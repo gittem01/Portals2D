@@ -105,12 +105,24 @@ void Portal::createPortalBody(b2World* world){
     b2Vec2 p3 = p1 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
     b2Vec2 p4 = p2 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
     
-    b2Vec2 polyPoints[4] = { p1, p2, p3, p4 };
+    b2Vec2 polyPoints1[4] = { p1, p2, p3, p4 };
 
     b2PolygonShape polyShape;
-    polyShape.Set(polyPoints, 4);
-    collisionSensor = portalBody->CreateFixture(&polyShape, 0.0f);
-    collisionSensor->SetSensor(true);
+    polyShape.Set(polyPoints1, 4);
+    collisionSensor1 = portalBody->CreateFixture(&polyShape, 0.0f);
+    collisionSensor1->SetSensor(true);
+
+    p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+    p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+    p3 = p1 + b2Vec2(dir.x * dirMult * -1, dir.y * dirMult * -1);
+    p4 = p2 + b2Vec2(dir.x * dirMult * -1, dir.y * dirMult * -1);
+    
+    b2Vec2 polyPoints2[4] = { p1, p2, p3, p4 };
+
+    polyShape.Set(polyPoints2, 4);
+
+    collisionSensor2 = portalBody->CreateFixture(&polyShape, 0.0f);
+    collisionSensor2->SetSensor(true);
 }
 
 void Portal::connectBodies(b2Body* body1, b2Body* body2) {
@@ -121,7 +133,7 @@ void Portal::connectBodies(b2Body* body1, b2Body* body2) {
 
     body1->GetWorld()->CreateJoint(&prismDef);
 
-    b2Vec2 dirClone1 = connectedPortals.at(0)->dir;
+    b2Vec2 dirClone1 = connections.at(0)->portal->dir;
     b2Vec2 dirClone2 = this->dir;
 
     float mult = 100000.0f;
@@ -157,8 +169,12 @@ void Portal::draw(){
 }
 
 void Portal::connect(Portal* portal2){
-    connectedPortals.push_back(portal2);
-    portal2->connectedPortals.push_back(this);
-    this->color             = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
-    portal2->color          = b2Color(1.0f - this->color.r, 1.0f - this->color.g, 1.0f - this->color.b, 1.0f);
+
+    portalConnection* c = (portalConnection*)malloc(sizeof(portalConnection));
+    c->portal = portal2;
+    c->side1 = 1;
+    c->side2 = 1;
+
+    connections.push_back(c);
+    this->color = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
 }

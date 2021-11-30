@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include <unordered_set>
+#include <PortalBody.h>
 
 typedef enum{
     BEGIN_CONTACT = 1,
@@ -27,6 +28,15 @@ struct bodyData {
 	void* data;
 };
 
+class Portal;
+
+struct portalConnection {
+    int side1;
+    int side2;
+    int isReversed;
+    Portal* portal;
+};
+
 class Portal
 {
 private:
@@ -37,14 +47,19 @@ public:
     b2World* world;
     b2Body* portalBody;
     b2Fixture* midFixture;
-    b2Fixture* collisionSensor;
+    b2Fixture* collisionSensor1;
+    b2Fixture* collisionSensor2;
     b2Fixture* yFix[2];
 
-    std::set<b2Fixture*> prepareFixtures;
-    std::set<b2Fixture*> collidingFixtures;
-    std::set<b2Fixture*> releaseFixtures;
+    std::set<b2Body*> prepareBodies1;
+    std::set<b2Fixture*> collidingFixtures1;
+    std::set<b2Fixture*> releaseFixtures1;
 
-    std::vector<Portal*> connectedPortals;
+    std::set<b2Body*> prepareBodies2;
+    std::set<b2Fixture*> collidingFixtures2;
+    std::set<b2Fixture*> releaseFixtures2;
+
+    std::vector<portalConnection*> connections;
 
     b2Vec2 points[2];
     b2Vec2 pos;

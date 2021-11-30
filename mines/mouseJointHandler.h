@@ -222,6 +222,7 @@ public:
         case b2Shape::e_circle:
             return isCircleIn(fixture->GetBody(), (b2CircleShape*)fixture->GetShape());
         default:
+            return false;
             break;
         }
     }

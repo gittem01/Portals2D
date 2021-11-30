@@ -108,6 +108,8 @@ void WindowPainter::buttonEventCallback(GLFWwindow* window, int button, int acti
 void WindowPainter::scrollEventCallback(GLFWwindow* window, double xoffset, double yoffset) {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
     thisClass->mouseData[5] = (int)yoffset;
+    thisClass->trackpadData[0] = xoffset;
+    thisClass->trackpadData[1] = yoffset;
 }
 
 void WindowPainter::glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods){

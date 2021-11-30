@@ -11,7 +11,7 @@
 bool isPaused = false;
 bool tick = false;
 
-void createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.0f) {
+b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.0f) {
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.angularDamping = 0.0f;
@@ -57,9 +57,11 @@ void createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0
     }
 
     free(vertices);
+
+    return body;
 }
 
-void createWbody(b2World* world, float degree=270.0f) {
+b2Body* createWbody(b2World* world, float degree=270.0f) {
     b2Vec2 pos = b2Vec2(0.0f, 5.0f);
 
     b2BodyDef bodyDef;
@@ -97,6 +99,8 @@ void createWbody(b2World* world, float degree=270.0f) {
 
         currD = nextD;
     }
+
+    return body;
 }
 
 b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
@@ -160,6 +164,8 @@ void testCase1(b2World* world){
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
     
-    createObody(world);
-    createWbody(world);
+    PortalBody* b1 = new PortalBody(createObody(world), world);
+    PortalBody* b2 = new PortalBody(createWbody(world), world);
+
+    b1->bodyColor = b2Vec3(0.0f, 1.0f, 1.0f);
 }

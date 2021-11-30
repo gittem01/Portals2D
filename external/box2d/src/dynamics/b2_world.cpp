@@ -1150,11 +1150,11 @@ void b2World::DebugDraw()
 				}
 				else if (b->IsAwake() == false)
 				{
-					DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
+					//DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
 				}
 				else
 				{
-					DrawShape(f, xf, b2Color(0.9f, 0.7f, 0.7f));
+					//DrawShape(f, xf, b2Color(0.9f, 0.7f, 0.7f));
 				}
 			}
 		}

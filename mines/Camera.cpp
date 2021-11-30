@@ -59,7 +59,9 @@ void Camera::update() {
 
 	this->dragFunc(width, height);
 	if (windowHandler->mouseData[5] != 0 && 
-		!windowHandler->keyData[GLFW_KEY_LEFT_CONTROL] && !windowHandler->keyData[GLFW_KEY_RIGHT_CONTROL]) {
+		!windowHandler->keyData[GLFW_KEY_LEFT_CONTROL] &&
+		!windowHandler->keyData[GLFW_KEY_RIGHT_CONTROL] &&
+		!windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]) {
 		this->neededZoom += zoom * windowHandler->mouseData[5] / 10.0f;
 		this->zoomPoint.x = windowHandler->mouseData[0]; this->zoomPoint.y = height - windowHandler->mouseData[1];
 	}
@@ -81,23 +83,27 @@ void Camera::dragFunc(int width, int height) {
 	float lng = glm::length(diffVec);
 
 	if (abs(lng) > 0) {
-		this->pos.x -= diffVec.x * (sideDiffs.x / width) * dragSmth / (zoom * zoom);
-		this->pos.y += diffVec.y * (sideDiffs.y / height) * dragSmth / (zoom * zoom);
-		this->lastPos->x += diffVec.x * dragSmth;
-		this->lastPos->y += diffVec.y * dragSmth;
+		pos.x -= diffVec.x * (sideDiffs.x / width) * dragSmth / (zoom * zoom);
+		pos.y += diffVec.y * (sideDiffs.y / height) * dragSmth / (zoom * zoom);
+		lastPos->x += diffVec.x * dragSmth;
+		lastPos->y += diffVec.y * dragSmth;
 	}
 
 
-	if (windowHandler->mouseData[4] == 2) {
-		this->lastPos->x = windowHandler->mouseData[0];
-		this->lastPos->y = windowHandler->mouseData[1];
+	if (windowHandler->mouseData[4] == 2 && !windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]) {
+		lastPos->x = windowHandler->mouseData[0];
+		lastPos->y = windowHandler->mouseData[1];
 
-		this->dragTo->x = windowHandler->mouseData[0];
-		this->dragTo->y = windowHandler->mouseData[1];
-	}
-	if (windowHandler->mouseData[4] == 1) {
 		dragTo->x = windowHandler->mouseData[0];
 		dragTo->y = windowHandler->mouseData[1];
+	}
+	else if (windowHandler->mouseData[4] == 1 && !windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]) {
+		dragTo->x = windowHandler->mouseData[0];
+		dragTo->y = windowHandler->mouseData[1];
+	}
+	else if (windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]){
+		pos.x -= windowHandler->trackpadData[0] * (sideDiffs.x / width) * dragSmth / (zoom * zoom) * 5.0f;
+		pos.y += windowHandler->trackpadData[1] * (sideDiffs.y / height) * dragSmth / (zoom * zoom) * 5.0f;
 	}
 }
 
