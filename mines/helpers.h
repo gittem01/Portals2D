@@ -13,6 +13,7 @@ bool tick = false;
 
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.0f) {
     b2BodyDef bodyDef;
+    bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
     bodyDef.angularDamping = 0.0f;
 
@@ -61,15 +62,13 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     return body;
 }
 
-b2Body* createWbody(b2World* world, float degree=270.0f) {
-    b2Vec2 pos = b2Vec2(0.0f, 5.0f);
-
+b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f) {
     b2BodyDef bodyDef;
+    bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
     bodyDef.angularDamping = 0.0f;
 
     b2Body* body = world->CreateBody(&bodyDef);
-    body->SetTransform(pos, 0.0f);
 
     b2FixtureDef fDef;
     b2CircleShape shape;
@@ -132,18 +131,6 @@ void keyHandler(WindowPainter* wh) {
     }
 }
 
-void printBodyCount(b2World* world) {
-    // num of bodies decreasing after some time. TODO.
-
-    int n = world->GetBodyCount();
-    int b = 0;
-    for (Portal* p : Portal::portals) {
-        //b += p->correspondingBodies.size();
-    }
-    n -= b / 2;
-    printf("Body count: %d\n", n);
-}
-
 float getRand(){
     return ((float)rand()) / RAND_MAX - 0.5f;
 }
@@ -155,17 +142,19 @@ void testCase1(b2World* world){
     Portal* portal1 = new Portal(b2Vec2(-5.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
     Portal* portal2 = new Portal(b2Vec2(+5.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
 
-    Portal* portal5 = new Portal(b2Vec2(+9.0f, yPos - portalSize), b2Vec2(0.0f, 1.0f), portalSize, world);
-    Portal* portal6 = new Portal(b2Vec2(-9.0f, yPos - portalSize), b2Vec2(0.0f, 1.0f), portalSize, world);
+    //Portal* portal5 = new Portal(b2Vec2(+9.0f, yPos - portalSize), b2Vec2(0.0f, 1.0f), portalSize, world);
+    //Portal* portal6 = new Portal(b2Vec2(-9.0f, yPos - portalSize), b2Vec2(0.0f, 1.0f), portalSize, world);
 
     portal1->connect(portal2);
 
-    portal5->connect(portal6);
+    //portal5->connect(portal6);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
     
-    PortalBody* b1 = new PortalBody(createObody(world), world);
-    PortalBody* b2 = new PortalBody(createWbody(world), world);
+    createObody(world, b2Vec2(0.0f, 0.0f));
+    createWbody(world, b2Vec2(0.0f, -3.0f));
+    PortalBody* b1 = new PortalBody(createObody(world, b2Vec2(0.0f, 3.0f)), world);
+    PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 6.0f)), world);
 
     b1->bodyColor = b2Vec3(0.0f, 1.0f, 1.0f);
 }

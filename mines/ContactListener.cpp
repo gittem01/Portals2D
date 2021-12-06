@@ -1,6 +1,7 @@
 #include "ContactListener.h"
 #include "mouseJointHandler.h"
 
+// for mouse
 void ContactListener::endBeginHandle(contactType type, b2Contact* contact) {
     bodyData* data1 = (bodyData*)(contact->GetFixtureA()->GetBody()->GetUserData().pointer);
     bodyData* data2 = (bodyData*)(contact->GetFixtureB()->GetBody()->GetUserData().pointer);
@@ -47,17 +48,50 @@ void ContactListener::endBeginHandle(contactType type, b2Contact* contact) {
 }
 
 void ContactListener::BeginContact(b2Contact* contact){
-    
     endBeginHandle(BEGIN_CONTACT, contact);
+
+    bodyData* bDataA = (bodyData*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+    bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+
+    if (bDataA && bDataA->type == PORTAL_BODY){
+        PortalBody* p = (PortalBody*)bDataA->data;
+        p->collisionBegin(contact, contact->GetFixtureA(), contact->GetFixtureB());
+    }
+    if (bDataB && bDataB->type == PORTAL_BODY){
+        PortalBody* p = (PortalBody*)bDataB->data;
+        p->collisionBegin(contact, contact->GetFixtureB(), contact->GetFixtureA());
+    }
+
 }
 
 void ContactListener::EndContact(b2Contact* contact) {
-    
     endBeginHandle(END_CONTACT, contact);
+
+    bodyData* bDataA = (bodyData*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+    bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+
+    if (bDataA && bDataA->type == PORTAL_BODY){
+        PortalBody* p = (PortalBody*)bDataA->data;
+        p->collisionEnd(contact, contact->GetFixtureA(), contact->GetFixtureB());
+    }
+    if (bDataB && bDataB->type == PORTAL_BODY){
+        PortalBody* p = (PortalBody*)bDataB->data;
+        p->collisionEnd(contact, contact->GetFixtureB(), contact->GetFixtureA());
+    }
 }
 
 void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold){
-    
+    bodyData* bDataA = (bodyData*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+    bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+
+    if (bDataA && bDataA->type == PORTAL_BODY){
+        PortalBody* p = (PortalBody*)bDataA->data;
+        p->preCollision(contact, contact->GetFixtureA(), contact->GetFixtureB());
+    }
+    if (bDataB && bDataB->type == PORTAL_BODY){
+        PortalBody* p = (PortalBody*)bDataB->data;
+        p->preCollision(contact, contact->GetFixtureB(), contact->GetFixtureA());
+    }
 }
 
 void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impulse){

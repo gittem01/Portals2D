@@ -16,6 +16,11 @@ public:
 
     PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor=b2Vec3(1.0f, 0.0f, 1.0f));
 
+    // fix1 is always a fixture of this class
+    void collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+
     void drawBodies();
 
     // draw fixtures according to the portal collision status

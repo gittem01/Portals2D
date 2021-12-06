@@ -1043,11 +1043,6 @@ void b2World::DrawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color
 	{
 	case b2Shape::e_circle:
 		{
-			// ##############################################
-			if (fixture->IsSensor()) {
-				break;
-			}
-			// ##############################################
 			b2CircleShape* circle = (b2CircleShape*)fixture->GetShape();
 
 			b2Vec2 center = b2Mul(xf, circle->m_p);
@@ -1091,11 +1086,6 @@ void b2World::DrawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color
 
 	case b2Shape::e_polygon:
 		{
-			// ##############################################
-			if (fixture->IsSensor()) {
-				break;
-			}
-			// ##############################################
 			b2PolygonShape* poly = (b2PolygonShape*)fixture->GetShape();
 			int32 vertexCount = poly->m_count;
 			b2Assert(vertexCount <= b2_maxPolygonVertices);
@@ -1150,11 +1140,11 @@ void b2World::DebugDraw()
 				}
 				else if (b->IsAwake() == false)
 				{
-					//DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
+					DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
 				}
 				else
 				{
-					//DrawShape(f, xf, b2Color(0.9f, 0.7f, 0.7f));
+					DrawShape(f, xf, b2Color(0.9f, 0.7f, 0.7f));
 				}
 			}
 		}
@@ -1164,9 +1154,6 @@ void b2World::DebugDraw()
 	{
 		for (b2Joint* j = m_jointList; j; j = j->GetNext())
 		{
-			// ##############################################
-			if (j->GetType() != e_mouseJoint) continue;
-			// ##############################################
 			j->Draw(m_debugDraw);
 		}
 	}

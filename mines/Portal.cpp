@@ -8,7 +8,7 @@
 std::set<Portal*> Portal::portals;
 
 bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){
-     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t; // check this
+     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t;
 }
 
 float calcAngle2(b2Vec2 vec) {
@@ -69,34 +69,31 @@ void Portal::calculatePoints(){
 
 void Portal::createPortalBody(b2World* world){
     b2BodyDef bd;
+    bodyData* data = (bodyData*)malloc(sizeof(bodyData));
+    *data = { PORTAL, this };
+    bd.userData.pointer = (uintptr_t)data;
+
     bd.type = b2_staticBody;
-    portalBody = world->CreateBody(&bd);
+    body = world->CreateBody(&bd);
 
-    float d = 0.0f;
-    b2Vec2 smallDir = b2Vec2(dir.x * d, dir.y * d);
     b2EdgeShape shape;
-
-    shape.SetTwoSided(points[0] - smallDir, points[1] - smallDir);
+    shape.SetTwoSided(points[0], points[1]);
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;
-    midPortal.isSensor = true;
+    midPortal.isSensor = false;
 
-    bodyData* data = (bodyData*)malloc(sizeof(bodyData));
-    *data = { PORTAL, this };
-    midPortal.userData.pointer = (uintptr_t)&data;
-
-    midFixture = portalBody->CreateFixture(&midPortal);
-
-    shape.SetTwoSided(points[0], points[0]);
-    yFix[0] = portalBody->CreateFixture(&shape, 0.0f);
-    
-    shape.SetTwoSided(points[1], points[1]);
-    yFix[1] = portalBody->CreateFixture(&shape, 0.0f);
+    midFixture = body->CreateFixture(&midPortal);
 
     b2Vec2 pVec = points[1] - points[0];
     normalize(&pVec);
     pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
+
+    shape.SetTwoSided(points[0], points[0]);
+    yFix[0] = body->CreateFixture(&shape, 0.0f);
+    
+    shape.SetTwoSided(points[1], points[1]);
+    yFix[1] = body->CreateFixture(&shape, 0.0f);
 
     float widthMul = 10.0f;
     float dirMult = 2.0f;
@@ -109,8 +106,8 @@ void Portal::createPortalBody(b2World* world){
 
     b2PolygonShape polyShape;
     polyShape.Set(polyPoints1, 4);
-    collisionSensor1 = portalBody->CreateFixture(&polyShape, 0.0f);
-    collisionSensor1->SetSensor(true);
+    collisionSensors[0] = body->CreateFixture(&polyShape, 0.0f);
+    collisionSensors[0]->SetSensor(true);
 
     p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
     p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
@@ -121,8 +118,54 @@ void Portal::createPortalBody(b2World* world){
 
     polyShape.Set(polyPoints2, 4);
 
-    collisionSensor2 = portalBody->CreateFixture(&polyShape, 0.0f);
-    collisionSensor2->SetSensor(true);
+    collisionSensors[1] = body->CreateFixture(&polyShape, 0.0f);
+    collisionSensors[1]->SetSensor(true);
+}
+
+void Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+    if (!bData || bData->type != PORTAL_BODY) return;
+
+    PortalBody* pBody = (PortalBody*)bData->data;
+
+    for (int i = 0; i < 2; i++){
+        if  (fix1 == collisionSensors[i]){
+            prepareBegins[i].push_back(fix2);
+            return;
+        }
+
+        if (fix1 == midFixture){
+            collideBegins.push_back(fix2);
+        }
+    }
+}
+
+void Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+    if (!bData || bData->type != PORTAL_BODY) return;
+
+    PortalBody* pBody = (PortalBody*)bData->data;
+
+    for (int i = 0; i < 2; i++){
+        if (fix1 == collisionSensors[i]){
+            prepareEnds[i].push_back(fix2);
+            return;
+        }
+
+        if (fix1 == midFixture){
+            collideEnds.push_back(fix2);
+        }
+    }    
+}
+
+void Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    if (fix1 == midFixture){
+        contact->SetEnabled(false);
+    }
+}
+
+void Portal::postHandle(){
+    
 }
 
 void Portal::connectBodies(b2Body* body1, b2Body* body2) {

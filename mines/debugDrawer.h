@@ -15,4 +15,7 @@ public:
     void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
     void DrawTransform(const b2Transform& xf){ printf("transform\n"); }
     void DrawPoint(const b2Vec2& p, float size, const b2Color& color);
+
+    void drawWorld(b2World* world);
+    void drawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color& color);
 };

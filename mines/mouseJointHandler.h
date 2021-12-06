@@ -76,7 +76,7 @@ public:
         removeDuplicates();
         b2Vec2 target = b2Vec2(mp.x, mp.y);
         for (b2Body* clickedBody : collidingBodies) {
-            if (selectedBodies.find(clickedBody) != selectedBodies.end()) {
+            if (selectedBodies.find(clickedBody) != selectedBodies.end()){
                 continue;
             }
 
@@ -95,6 +95,7 @@ public:
                 jd.target = target;
             jd.maxForce = 1000.0f * clickedBody->GetMass();
             jd.collideConnected = true;
+            
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
 
             b2MouseJoint* joint = (b2MouseJoint*)world->CreateJoint(&jd);
@@ -116,7 +117,7 @@ public:
         b2AABB aabb = { lowerBound, upperBound };
         world->QueryAABB(queryCallback, aabb);
 
-        if (wh->mouseData[3] == 2 && !wh->mouseData[2] && frame != lastFrame) {
+        if (wh->mouseData[3] == 2 && !wh->mouseData[2] && frame != lastFrame){
             clicks[1] = clicks[0];
             clicks[0] = new glm::vec2(mp.x, mp.y);
         }
@@ -173,7 +174,7 @@ public:
             mouseBodies.clear();
             selectedBodies.clear();
         }
-        else if (wh->mouseData[2] == 1 && wh->mouseData[3] == 2) {
+        else if (wh->mouseData[2] == 1 && (wh->mouseData[3] == 2 || wh->keyData[GLFW_KEY_F])) {
             mouseJoints.clear();
             jointDiffs.clear();
             mouseBodies.clear();

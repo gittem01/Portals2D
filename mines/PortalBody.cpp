@@ -1,4 +1,4 @@
-#include "PortalBody.h"
+#include "Portal.h"
 #include "glm/common.hpp"
 
 std::vector<PortalBody*> PortalBody::portalBodies;
@@ -6,8 +6,31 @@ std::vector<PortalBody*> PortalBody::portalBodies;
 PortalBody::PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor){
     this->world = world;
     this->bodyMaps[body] = new std::vector<void*>();
+    
+    bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
+    bd->data = this;
+    bd->type = PORTAL_BODY;
+    body->GetUserData().pointer = (uintptr_t)bd;
+
     this->bodyColor = bodyColor;
     PortalBody::portalBodies.push_back(this);
+}
+
+void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+
+}
+
+void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+
+}
+
+void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+
+    if (bData && bData->type == PORTAL){
+        Portal* p = (Portal*)bData->data;
+        p->preCollision(contact, fix2, fix1);
+    }
 }
 
 void PortalBody::drawBodies(){
@@ -59,15 +82,12 @@ void PortalBody::drawCircleFix(b2Fixture* fix){
 }
 
 void PortalBody::drawVertices(b2Body* body, b2Vec2* vertices, int vertexCount){
-    b2Vec3 color;
-    if (body->IsAwake()){
-        color = bodyColor;
-    }
-    else{
-        color = b2Vec3(1.0f, 1.0f, 1.0f);
+    float transparency = 1.0f;
+    if (!body->IsAwake()){
+        transparency /= 2;
     }
     
-    glColor4f(color.x, color.y, color.z, 0.2f);
+    glColor4f(bodyColor.x, bodyColor.y, bodyColor.z, 0.5f * transparency);
 	glBegin(GL_POLYGON);
 	for (int i = 0; i < vertexCount; i+=1) {
 		glVertex2d((vertices + i)->x, (vertices + i)->y);
@@ -75,7 +95,7 @@ void PortalBody::drawVertices(b2Body* body, b2Vec2* vertices, int vertexCount){
 	glEnd();
 
 	glLineWidth(1.0f);
-	glColor4f(color.x, color.y, color.z, 1.0f);
+	glColor4f(bodyColor.x, bodyColor.y, bodyColor.z, transparency);
 	glBegin(GL_LINES);
 	for (int i = 0; i < vertexCount; i++) {
 		glVertex2d((vertices + i)->x, (vertices + i)->y);
