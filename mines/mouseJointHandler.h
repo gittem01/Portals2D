@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include "Portal.h"
+#include "DebugDrawer.h"
 
 class mouseJointHandler;
 
@@ -36,6 +37,8 @@ public:
 
     QueryCallback* queryCallback;
 
+    DebugDrawer* drawer;
+
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
     float bodyRadius = 0.0f;
@@ -51,10 +54,11 @@ public:
 	glm::vec2* clicks[2] = { NULL, NULL };
     WindowPainter* wh;
 
-    mouseJointHandler(b2World* world, WindowPainter* wh) {
+    mouseJointHandler(b2World* world, WindowPainter* wh, DebugDrawer* drawer) {
         this->world = world;
         this->groundBody = world->CreateBody(&bodyDef);
         this->wh = wh;
+        this->drawer = drawer;
         mouseBody = NULL;
         createMouseBody();
         queryCallback = new QueryCallback(this);
@@ -264,7 +268,7 @@ public:
     }
 
     void drawMouseBody() {
-        world->m_debugDraw->DrawSolidCircle(mouseBody->GetPosition(), bodyRadius,
+        drawer->DrawSolidCircle(mouseBody->GetPosition(), bodyRadius,
             b2Vec2(0.0f, 0.0f), b2Color(1.0f, 1.0f, 1.0f, 0.2f));
     }
 };

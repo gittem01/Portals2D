@@ -41,6 +41,5 @@ void Gun::update() {
 }
 
 void Gun::draw() {
-	world->m_debugDraw->DrawSegment(pos, currentCollisionPos, b2Color(1.0f, 1.0f, 1.0f, 0.3f));
-	world->m_debugDraw->DrawPoint(currentCollisionPos, 10.0f, b2Color(1.0f, 1.0f, 0.0f, 1.0f));
+	
 }

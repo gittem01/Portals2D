@@ -1,10 +1,10 @@
-#include "debugDrawer.h"
+#include "DebugDrawer.h"
 #include "Portal.h"
 #include <GLFW/glfw3.h>
 
 #define GL_SLIENCE_DEPRECATION
 
-void debugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color){
+void DebugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color){
 	glLineWidth(1.0f);
 	glColor4f(color.r, color.g, color.b, color.a);
 	glBegin(GL_LINES);
@@ -15,7 +15,7 @@ void debugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b
 	glEnd();
 }
 
-void debugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
+void DebugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
 	glColor4f(color.r, color.g, color.b, 0.4f);
 	glBegin(GL_POLYGON);
 	for (int i = 0; i < vertexCount; i+=1) {
@@ -33,7 +33,7 @@ void debugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, co
 	glEnd();
 }
 
-void debugDrawer::DrawSolidCircle(const b2Vec2& center, float radius, 
+void DebugDrawer::DrawSolidCircle(const b2Vec2& center, float radius, 
 									const b2Vec2& axis, const b2Color& color){
 
 	int n = 100;
@@ -62,7 +62,7 @@ void debugDrawer::DrawSolidCircle(const b2Vec2& center, float radius,
 	free(positions);
 }
 
-void debugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
+void DebugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
 	glLineWidth(2.0f);
 	glColor4f(color.r, color.g, color.b, color.a);
 	glBegin(GL_LINES);
@@ -71,7 +71,7 @@ void debugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color&
 	glEnd();
 }
 
-void debugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
+void DebugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
 	glPointSize(size);
 	glColor4f(color.r, color.g, color.b, 1.0f);
 	glBegin(GL_POINTS);
@@ -79,7 +79,7 @@ void debugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
 	glEnd();
 }
 
-void debugDrawer::drawWorld(b2World* world){
+void DebugDrawer::drawWorld(b2World* world){
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext()){
 
 		bodyData* bData = (bodyData*)b->GetUserData().pointer;
@@ -111,7 +111,7 @@ void debugDrawer::drawWorld(b2World* world){
 	}
 }
 
-void debugDrawer::drawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color& color){
+void DebugDrawer::drawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color& color){
 	switch (fixture->GetType())
 	{
 	case b2Shape::e_circle:
@@ -163,7 +163,7 @@ void debugDrawer::drawShape(b2Fixture* fixture, const b2Transform& xf, const b2C
 	case b2Shape::e_polygon:
 		{
 			if (fixture->IsSensor()) {
-				break;
+				//break;
 			}
 
 			b2PolygonShape* poly = (b2PolygonShape*)fixture->GetShape();

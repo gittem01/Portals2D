@@ -47,7 +47,7 @@ public:
     b2World* world;
     b2Body* body;
     b2Fixture* midFixture;
-    b2Fixture* collisionSensors[2];
+    b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
     std::vector<b2Fixture*> prepareBegins[2];

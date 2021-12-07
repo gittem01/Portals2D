@@ -99,27 +99,19 @@ void Portal::createPortalBody(b2World* world){
     float dirMult = 2.0f;
     b2Vec2 p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
     b2Vec2 p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+
     b2Vec2 p3 = p1 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
     b2Vec2 p4 = p2 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
+
+    p1 += b2Vec2(dir.x * dirMult * -1, dir.y * dirMult);
+    p2 += b2Vec2(dir.x * dirMult * -1, dir.y * dirMult);
     
     b2Vec2 polyPoints1[4] = { p1, p2, p3, p4 };
 
     b2PolygonShape polyShape;
     polyShape.Set(polyPoints1, 4);
-    collisionSensors[0] = body->CreateFixture(&polyShape, 0.0f);
-    collisionSensors[0]->SetSensor(true);
-
-    p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
-    p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
-    p3 = p1 + b2Vec2(dir.x * dirMult * -1, dir.y * dirMult * -1);
-    p4 = p2 + b2Vec2(dir.x * dirMult * -1, dir.y * dirMult * -1);
-    
-    b2Vec2 polyPoints2[4] = { p1, p2, p3, p4 };
-
-    polyShape.Set(polyPoints2, 4);
-
-    collisionSensors[1] = body->CreateFixture(&polyShape, 0.0f);
-    collisionSensors[1]->SetSensor(true);
+    collisionSensor = body->CreateFixture(&polyShape, 0.0f);
+    collisionSensor->SetSensor(true);
 }
 
 void Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
@@ -129,7 +121,7 @@ void Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2
     PortalBody* pBody = (PortalBody*)bData->data;
 
     for (int i = 0; i < 2; i++){
-        if  (fix1 == collisionSensors[i]){
+        if  (fix1 == collisionSensor){
             prepareBegins[i].push_back(fix2);
             return;
         }
@@ -147,7 +139,7 @@ void Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     PortalBody* pBody = (PortalBody*)bData->data;
 
     for (int i = 0; i < 2; i++){
-        if (fix1 == collisionSensors[i]){
+        if (fix1 == collisionSensor){
             prepareEnds[i].push_back(fix2);
             return;
         }

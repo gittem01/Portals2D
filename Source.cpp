@@ -14,11 +14,11 @@ int main(void)
     DestrucionListener dl;
     world->SetDestructionListener(&dl);
 
-    debugDrawer* drawer = new debugDrawer();
+    DebugDrawer* drawer = new DebugDrawer();
     world->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_jointBit);
     
-    mouseJointHandler mjh(world, wh);
+    mouseJointHandler mjh(world, wh, drawer);
 
     testCase1(world);
 

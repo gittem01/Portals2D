@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-class debugDrawer : public b2Draw
+class DebugDrawer : public b2Draw
 {
 public:
     void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
