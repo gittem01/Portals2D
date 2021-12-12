@@ -2,7 +2,7 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 0
+#define DRAW_RELEASES 1
 
 std::vector<PortalBody*> PortalBody::portalBodies;
 
@@ -90,18 +90,18 @@ void PortalBody::adjustVertices(b2Vec2* vertices, int vertexCount, b2Vec2** retV
     for (int i = 0; i < vertexCount + 1; i++){
         int vertexIndex = i % vertexCount;
         pSide = portal->getPointSide(vertices[vertexIndex]);
-        if (pSide == 1 - side && lastSide == side){
+        if (pSide == side && lastSide == 1 - side){
             b2Vec2 intersectionPoint = getLineIntersection(portal->points[0], portal->points[1], vertices[i - 1], vertices[vertexIndex]);
             (*retVertices1)[index1++] = intersectionPoint;
             (*retVertices2)[index2++] = intersectionPoint;
         }
-        else if (pSide == side && lastSide == 1 - side){
+        else if (pSide == 1 - side && lastSide == side){
             b2Vec2 intersectionPoint = getLineIntersection(portal->points[0], portal->points[1], vertices[i - 1], vertices[vertexIndex]);
             (*retVertices1)[index1++] = intersectionPoint;
             (*retVertices2)[index2++] = intersectionPoint;
         }
 
-        if (pSide == 1 - side && i != vertexCount){
+        if (pSide == side && i != vertexCount){
             (*retVertices1)[index1++] = vertices[vertexIndex];
         }
         else if (i != vertexCount){

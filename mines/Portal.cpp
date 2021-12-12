@@ -12,7 +12,7 @@ bool Portal::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){
 }
 
 int Portal::getPointSide(b2Vec2 point){
-    return (int)isLeft(points[0], points[1], point, 0.0f);
+    return isLeft(points[1], points[0], point, 0.0f);
 }
 
 float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c){
