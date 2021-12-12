@@ -55,7 +55,8 @@ int main(void)
             for (Portal* p : Portal::portals) {
                 p->draw();
             }
-            Portal* p = *(++Portal::portals.begin());
+            
+            // Portal* p = *(++Portal::portals.begin());
             // printf("%d__%d , %d__%d , %d__%d\n",  p->prepareFixtures[0].size(), p->prepareFixtures[1].size(),
             //                             p->collidingFixtures[0].size(), p->collidingFixtures[1].size(),
             //                             p->releaseFixtures[0].size(), p->releaseFixtures[1].size());

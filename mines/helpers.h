@@ -146,15 +146,28 @@ void testCase1(b2World* world){
     //Portal* portal6 = new Portal(b2Vec2(-9.0f, yPos - portalSize), b2Vec2(0.0f, 1.0f), portalSize, world);
 
     portal1->connect(portal2);
-
-    //portal5->connect(portal6);
+    portal1->connect(portal2, 0, 1);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
     
-    createObody(world, b2Vec2(0.0f, 0.0f));
-    createWbody(world, b2Vec2(0.0f, -3.0f));
+    //createObody(world, b2Vec2(0.0f, 0.0f));
+    //createWbody(world, b2Vec2(0.0f, -3.0f));
+    
     PortalBody* b1 = new PortalBody(createObody(world, b2Vec2(0.0f, 3.0f)), world);
     PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 6.0f)), world);
 
-    b1->bodyColor = b2Vec3(0.0f, 1.0f, 1.0f);
+    b2PolygonShape shape;
+    shape.SetAsBox(1.0f, 0.4f);
+
+    b2FixtureDef fDef;
+    fDef.shape = &shape;
+    fDef.density = 1.0f;
+
+    b2BodyDef def;
+    def.type = b2_dynamicBody;
+
+    b2Body* body = world->CreateBody(&def);
+    body->CreateFixture(&fDef);
+
+    new PortalBody(body, world);
 }

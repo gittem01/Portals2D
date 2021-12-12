@@ -34,7 +34,8 @@ struct portalConnection {
     int side1;
     int side2;
     int isReversed;
-    Portal* portal;
+    Portal* portal1;
+    Portal* portal2;
 };
 
 class Portal
@@ -50,6 +51,9 @@ public:
     b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
+    b2RayCastInput rcInp1;
+    b2RayCastInput rcInp2;
+
     std::vector<b2Fixture*> prepareBegins[2];
     std::vector<b2Fixture*> prepareEnds[2];
     std::vector<b2Fixture*> collideBegins;
@@ -61,7 +65,7 @@ public:
 
     std::set<b2Fixture*> handleFixtures;
 
-    std::vector<portalConnection*> connections;
+    std::vector<portalConnection*> connections[2];
 
     b2Vec2 points[2];
     b2Vec2 pos;
@@ -75,7 +79,6 @@ public:
     ~Portal();
     void clear();
 
-
     // fix1 is always a fixture of the portal
     void collisionBegin (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void collisionEnd   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
@@ -87,9 +90,16 @@ public:
     void createPortalBody(b2World* world);
 
     void draw();
-    void connect(Portal* portal2);
+    void connect(Portal* portal2, int side1=0, int side2=0, int isReversed=0);
 
     void connectBodies(b2Body* body1, b2Body* body2);
+
+    int getFixtureSide(b2Fixture* fix);
+    bool isCollisionProper(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    void handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    bool rayCheck(b2Fixture* fix);
+
+    int getPointSide(b2Vec2 point);
 
     std::vector<b2Vec2> getCollisionPoints(b2Fixture*& fix1, b2Fixture*& fix2);
 
@@ -99,6 +109,8 @@ public:
     std::vector<b2Vec2> collideEdgeOther(b2Fixture*& fix1, b2Fixture*& fix2);
 
     b2Vec2 getRayPoint(b2RayCastInput& input, b2RayCastOutput& output);
+
+    static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
 
     static void portalUpdate(){
         for (Portal* p : Portal::portals) {
