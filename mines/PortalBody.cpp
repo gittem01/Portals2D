@@ -1,7 +1,8 @@
 #include "Portal.h"
 #include "glm/common.hpp"
 
-#define CIRCLE_POINTS 20
+#define CIRCLE_POINTS 50
+#define DRAW_RELEASES 0
 
 std::vector<PortalBody*> PortalBody::portalBodies;
 
@@ -122,10 +123,12 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
     int renderStatus = getRenderStatus(fix, (void**)&portal, &side);
 
     if (renderStatus == 0){
-        b2Vec3 oldColor = bodyColor;
-        bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
-        drawVertices(body, vertices, vertexCount);
-        bodyColor = oldColor;
+#if DRAW_RELEASES == 1
+            b2Vec3 oldColor = bodyColor;
+            bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
+            drawVertices(body, vertices, vertexCount);
+            bodyColor = oldColor;
+#endif
     }
     else if (renderStatus == 1 || renderStatus == 2){
         b2Vec2* drawVecs = NULL;
@@ -138,10 +141,12 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
             bodyColor = oldColor;
         }
         if (releaseVecs){
+#if DRAW_RELEASES == 1
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
             drawVertices(body, releaseVecs, size2);
             bodyColor = oldColor;
+#endif
         }
         if (portal){ free(drawVecs); free(releaseVecs); }
     }
