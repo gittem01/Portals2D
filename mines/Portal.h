@@ -80,9 +80,9 @@ public:
     void clear();
 
     // fix1 is always a fixture of the portal
-    void collisionBegin (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
-    void collisionEnd   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
-    void preCollision   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    int collisionBegin (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    int collisionEnd   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    int preCollision   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
     void postHandle();
 
@@ -95,8 +95,8 @@ public:
     void connectBodies(b2Body* body1, b2Body* body2);
 
     int getFixtureSide(b2Fixture* fix);
+    int handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, int type);
     bool isCollisionProper(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
-    void handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     bool rayCheck(b2Fixture* fix);
 
     int getPointSide(b2Vec2 point);

@@ -2,7 +2,7 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 1
+#define DRAW_RELEASES 0
 
 std::vector<PortalBody*> PortalBody::portalBodies;
 
@@ -22,14 +22,16 @@ PortalBody::PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor){
 void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     if (bData && bData->type == PORTAL){
-        ((Portal*)bData->data)->collisionBegin(contact, fix2, fix1);
+        Portal* p = (Portal*)bData->data;
+        int out = p->collisionBegin(contact, fix2, fix1);
     }
 }
 
 void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     if (bData && bData->type == PORTAL){
-        ((Portal*)bData->data)->collisionEnd(contact, fix2, fix1);
+        Portal* p = (Portal*)bData->data;
+        int out = p->collisionEnd(contact, fix2, fix1);
     }
 }
 
@@ -38,7 +40,7 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
-        p->preCollision(contact, fix2, fix1);
+        int out = p->preCollision(contact, fix2, fix1);
     }
 }
 

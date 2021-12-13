@@ -130,25 +130,37 @@ void Portal::createPortalBody(b2World* world){
     collisionSensor->SetSensor(true);
 }
 
-void Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-    if (!bData || bData->type != PORTAL_BODY) return;
+    if (!bData || bData->type != PORTAL_BODY) return 0;
 
     PortalBody* pBody = (PortalBody*)bData->data;
 
     if (fix1 == midFixture){
-        handleCollidingFixtures(contact, fix1, fix2);
+        handleCollidingFixtures(contact, fix1, fix2, 0);
     }
 }
 
-void Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-    if (!bData || bData->type != PORTAL_BODY) return;
+    if (!bData || bData->type != PORTAL_BODY) return 0;
 
     PortalBody* pBody = (PortalBody*)bData->data;
 
     if (fix1 == midFixture){
-        handleCollidingFixtures(contact, fix1, fix2);
+        handleCollidingFixtures(contact, fix1, fix2, 1);
+    }
+}
+
+int Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    if (fix1 == midFixture){
+        handleCollidingFixtures(contact, fix1, fix2, 2);
+    }
+    
+    if (fix1 == midFixture && (collidingFixtures[0].find(fix2) != collidingFixtures[0].end() ||
+        collidingFixtures[1].find(fix2) != collidingFixtures[1].end()))
+    {
+        contact->SetEnabled(false);
     }
 }
 
@@ -164,31 +176,41 @@ bool Portal::rayCheck(b2Fixture* fix){
     return res1 & res2;
 }
 
-void Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+// no operation : 0
+// entered from side 0 : 1
+// entered from side 1 : 2
+// released from side 0 : 3
+// released from side 1 : 4
+int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, int type){
+    int ret = 0;
+
     b2WorldManifold manifold;
     contact->GetWorldManifold(&manifold);
     float angle = vecAngle(manifold.normal, dir);
 
-    if (angle < 0.01f || rayCheck(fix2) || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f))){
+    if (type != 1 && (angle < 0.01f || rayCheck(fix2) || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)))){
         if (angle < 0.01f){
             if (releaseFixtures[1].find(fix2) != releaseFixtures[1].end()){
                 collidingFixtures[1].insert(fix2);
                 releaseFixtures[1].erase(fix2);
+                ret = 2;
             }
             else if (collidingFixtures[1].find(fix2) == collidingFixtures[1].end() && connections[0].size() > 0){
                 collidingFixtures[0].insert(fix2);
                 releaseFixtures[0].erase(fix2);
+                ret = 1;
             }
         }
         else if (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)){
-
             if (releaseFixtures[0].find(fix2) != releaseFixtures[0].end()){
                 collidingFixtures[0].insert(fix2);
                 releaseFixtures[0].erase(fix2);
+                ret = 1;
             }
             else if (collidingFixtures[0].find(fix2) == collidingFixtures[0].end() && connections[1].size() > 0){
                 collidingFixtures[1].insert(fix2);
                 releaseFixtures[1].erase(fix2);
+                ret = 2;
             }
         }
     }
@@ -197,28 +219,20 @@ void Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixt
         if (side == 0){
             if (collidingFixtures[1].find(fix2) != collidingFixtures[1].end()){
                 releaseFixtures[1].insert(fix2);
+                ret = 4;
             }
         }
         else{
             if (collidingFixtures[0].find(fix2) != collidingFixtures[0].end()){
                 releaseFixtures[0].insert(fix2);
+                ret = 3;
             }
         }
         collidingFixtures[0].erase(fix2);
         collidingFixtures[1].erase(fix2);
     }
-}
 
-void Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
-    if (fix1 == midFixture){
-        handleCollidingFixtures(contact, fix1, fix2);
-    }
-    
-    if (fix1 == midFixture && (collidingFixtures[0].find(fix2) != collidingFixtures[0].end() ||
-        collidingFixtures[1].find(fix2) != collidingFixtures[1].end()))
-    {
-        contact->SetEnabled(false);
-    }
+    return ret;
 }
 
 int Portal::getFixtureSide(b2Fixture* fix){
