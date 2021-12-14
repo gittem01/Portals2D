@@ -253,7 +253,23 @@ int Portal::getFixtureSide(b2Fixture* fix){
 
 
 void Portal::postHandle(){
-    
+    for (int i = 0; i < 2; i++){
+        std::vector<b2Fixture*> erases;
+        for (b2Fixture* fix : collidingFixtures[i]){
+            bool check = rayCheck(fix);
+            
+            if (!check){
+                int side = getFixtureSide(fix);
+                erases.push_back(fix);
+                if (side != i){
+                    releaseFixtures[i].insert(fix);
+                }
+            }
+        }
+        for (b2Fixture* fix : erases){
+            collidingFixtures[i].erase(fix);
+        }
+    }
 }
 
 void Portal::connectBodies(b2Body* body1, b2Body* body2) {

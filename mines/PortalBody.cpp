@@ -47,7 +47,7 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 // 0 for no rendering
 // 1 for partial rendering
 // 2 for full renndering
-int PortalBody::getRenderStatus(b2Fixture* fix, void** portal, int* side){
+int PortalBody::getRenderStatus(b2Fixture* fix, std::vector<void*>* portals, int* side){
     // unoptimized version
     for (int i = 0; i < 2; i++){
         for (Portal* p : Portal::portals){
@@ -55,7 +55,7 @@ int PortalBody::getRenderStatus(b2Fixture* fix, void** portal, int* side){
                 return 0;
             }
             if (p->collidingFixtures[i].find(fix) != p->collidingFixtures[i].end()){
-                *((Portal**)portal) = p;
+                portals->push_back(p);
                 *side = i;
                 return i + 1;
             }
@@ -119,10 +119,10 @@ void PortalBody::adjustVertices(b2Vec2* vertices, int vertexCount, b2Vec2** retV
 void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount){
     b2Body* body = fix->GetBody();
 
-    Portal* portal = NULL;
+    std::vector<void*> portals;
     int side;
     int size1, size2;
-    int renderStatus = getRenderStatus(fix, (void**)&portal, &side);
+    int renderStatus = getRenderStatus(fix, &portals, &side);
 
     if (renderStatus == 0){
 #if DRAW_RELEASES == 1
@@ -135,7 +135,7 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
     else if (renderStatus == 1 || renderStatus == 2){
         b2Vec2* drawVecs = NULL;
         b2Vec2* releaseVecs = NULL;
-        if (portal) adjustVertices(vertices, vertexCount, &drawVecs, &releaseVecs, &size1, &size2, portal, side);
+        if (portals.size() > 0) adjustVertices(vertices, vertexCount, &drawVecs, &releaseVecs, &size1, &size2, (Portal*)(portals.at(0)), side);
         if (drawVecs){
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(1.0f, 1.0f, 1.0f);
@@ -150,7 +150,7 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
             bodyColor = oldColor;
 #endif
         }
-        if (portal){ free(drawVecs); free(releaseVecs); }
+        if (portals.size() > 0){ free(drawVecs); free(releaseVecs); }
     }
 
     else if (renderStatus == 3) drawVertices(body, vertices, vertexCount);
