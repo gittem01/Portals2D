@@ -2,7 +2,7 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 0
+#define DRAW_RELEASES 1
 
 std::vector<PortalBody*> PortalBody::portalBodies;
 

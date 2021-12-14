@@ -22,6 +22,10 @@ int main(void)
 
     testCase1(world);
 
+    for (Portal* p : Portal::portals){
+        p->drawer = drawer;
+    }
+
     bool done = false;
     int frame = 0;
     int totalIter = 1;
@@ -57,7 +61,7 @@ int main(void)
             }
             
             // Portal* p = *(++Portal::portals.begin());
-            // printf("%d__%d , %d__%d , %d__%d\n",  p->prepareFixtures[0].size(), p->prepareFixtures[1].size(),
+            // printf("%d , %d__%d , %d__%d\n",  p->prepareFixtures.size(),
             //                             p->collidingFixtures[0].size(), p->collidingFixtures[1].size(),
             //                             p->releaseFixtures[0].size(), p->releaseFixtures[1].size());
 

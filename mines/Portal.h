@@ -45,6 +45,8 @@ private:
 public:
     static std::set<Portal*> portals;
 
+    DebugDrawer* drawer;
+
     b2World* world;
     b2Body* body;
     b2Fixture* midFixture;
@@ -54,16 +56,9 @@ public:
     b2RayCastInput rcInp1;
     b2RayCastInput rcInp2;
 
-    std::vector<b2Fixture*> prepareBegins[2];
-    std::vector<b2Fixture*> prepareEnds[2];
-    std::vector<b2Fixture*> collideBegins;
-    std::vector<b2Fixture*> collideEnds;
-
-    std::set<b2Fixture*> prepareFixtures[2];
+    std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
     std::set<b2Fixture*> releaseFixtures[2];
-
-    std::set<b2Fixture*> handleFixtures;
 
     std::vector<portalConnection*> connections[2];
 

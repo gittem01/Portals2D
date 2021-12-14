@@ -60,9 +60,9 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
     rcInp1.p2 = points[1];
     rcInp1.maxFraction = 1.0f;
 
-    rcInp1.p1 = points[1];
-    rcInp1.p2 = points[0];
-    rcInp1.maxFraction = 1.0f;
+    rcInp2.p1 = points[1];
+    rcInp2.p2 = points[0];
+    rcInp2.maxFraction = 1.0f;
 
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
 
@@ -171,9 +171,10 @@ bool Portal::rayCheck(b2Fixture* fix){
     bool res2;
 
     res1 = fix->RayCast(&rcOutput, rcInp1, b2_dynamicBody);
-    res2 = fix->RayCast(&rcOutput, rcInp1, b2_dynamicBody);
+    
+    res2 = fix->RayCast(&rcOutput, rcInp2, b2_dynamicBody);
 
-    return res1 & res2;
+    return res1 && res2;
 }
 
 // no operation : 0
@@ -187,8 +188,10 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
     b2WorldManifold manifold;
     contact->GetWorldManifold(&manifold);
     float angle = vecAngle(manifold.normal, dir);
+    int side = getFixtureSide(fix2);
+    bool rayRes = rayCheck(fix2);
 
-    if (type != 1 && (angle < 0.01f || rayCheck(fix2) || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)))){
+    if (type != 1 && (angle < 0.01f || rayRes || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)))){
         if (angle < 0.01f){
             if (releaseFixtures[1].find(fix2) != releaseFixtures[1].end()){
                 collidingFixtures[1].insert(fix2);
@@ -215,19 +218,11 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
         }
     }
     else{
-        int side = getFixtureSide(fix2);
-        if (side == 0){
-            if (collidingFixtures[1].find(fix2) != collidingFixtures[1].end()){
-                releaseFixtures[1].insert(fix2);
-                ret = 4;
-            }
+        if (collidingFixtures[1 - side].find(fix2) != collidingFixtures[1 - side].end()){
+            releaseFixtures[1 - side].insert(fix2);
+            ret = 4 - side;
         }
-        else{
-            if (collidingFixtures[0].find(fix2) != collidingFixtures[0].end()){
-                releaseFixtures[0].insert(fix2);
-                ret = 3;
-            }
-        }
+        
         collidingFixtures[0].erase(fix2);
         collidingFixtures[1].erase(fix2);
     }
