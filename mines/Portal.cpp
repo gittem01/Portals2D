@@ -26,7 +26,6 @@ float calcAngle2(b2Vec2 vec) {
     return angle;
 }
 
-
 float vecAngle(b2Vec2 v1, b2Vec2 v2){
     return acos(b2Dot(v1, v2));
 }
@@ -133,35 +132,56 @@ void Portal::createPortalBody(b2World* world){
 int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     if (!bData || bData->type != PORTAL_BODY) return 0;
+    
+    int ret = -1;
 
     PortalBody* pBody = (PortalBody*)bData->data;
 
     if (fix1 == midFixture){
-        handleCollidingFixtures(contact, fix1, fix2, 0);
+        ret = handleCollidingFixtures(contact, fix1, fix2, 0);
     }
+
+    return ret;
 }
 
 int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     if (!bData || bData->type != PORTAL_BODY) return 0;
 
+    int ret = -1;
+
     PortalBody* pBody = (PortalBody*)bData->data;
 
     if (fix1 == midFixture){
-        handleCollidingFixtures(contact, fix1, fix2, 1);
+        int side = getFixtureSide(fix2);
+        if (collidingFixtures[1 - side].find(fix2) != collidingFixtures[1 - side].end()){
+            releaseFixtures[1 - side].insert(fix2);
+            ret = 3 - side;
+        }
+        else{
+            ret = 4;
+        }
+        collidingFixtures[0].erase(fix2);
+        collidingFixtures[1].erase(fix2);
     }
+
+    return ret;
 }
 
 int Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    int ret = -1;
+
     if (fix1 == midFixture){
-        handleCollidingFixtures(contact, fix1, fix2, 2);
+        ret = handleCollidingFixtures(contact, fix1, fix2, 2);
     }
-    
+
     if (fix1 == midFixture && (collidingFixtures[0].find(fix2) != collidingFixtures[0].end() ||
         collidingFixtures[1].find(fix2) != collidingFixtures[1].end()))
     {
         contact->SetEnabled(false);
     }
+
+    return ret;
 }
 
 bool Portal::rayCheck(b2Fixture* fix){
@@ -177,13 +197,13 @@ bool Portal::rayCheck(b2Fixture* fix){
     return res1 && res2;
 }
 
-// no operation : 0
-// entered from side 0 : 1
-// entered from side 1 : 2
-// released from side 0 : 3
-// released from side 1 : 4
+// collision started from side 0 : 0
+// collision started from side 1 : 1
+// released from side 0 : 2
+// released from side 1 : 3
+// released without being inserted into the releaseFixtures set: 4
 int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, int type){
-    int ret = 0;
+    int ret = -1;
 
     b2WorldManifold manifold;
     contact->GetWorldManifold(&manifold);
@@ -192,37 +212,45 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
     bool rayRes = rayCheck(fix2);
 
     if (type != 1 && (angle < 0.01f || rayRes || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)))){
+        std::set<b2Fixture*>::iterator iter0 = collidingFixtures[0].find(fix2);
+        std::set<b2Fixture*>::iterator iter1 = collidingFixtures[1].find(fix2);
         if (angle < 0.01f){
-            if (releaseFixtures[1].find(fix2) != releaseFixtures[1].end()){
+            if (releaseFixtures[1].find(fix2) != releaseFixtures[1].end())
+            {
+                if (iter1 == collidingFixtures[1].end()) ret = 1;
                 collidingFixtures[1].insert(fix2);
                 releaseFixtures[1].erase(fix2);
-                ret = 2;
             }
-            else if (collidingFixtures[1].find(fix2) == collidingFixtures[1].end() && connections[0].size() > 0){
+            else if (iter1 == collidingFixtures[1].end() && connections[0].size() > 0)
+            {
+                if (iter0 == collidingFixtures[0].end()) ret = 0;
                 collidingFixtures[0].insert(fix2);
                 releaseFixtures[0].erase(fix2);
-                ret = 1;
             }
         }
         else if (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)){
-            if (releaseFixtures[0].find(fix2) != releaseFixtures[0].end()){
+            if (releaseFixtures[0].find(fix2) != releaseFixtures[0].end())
+            {
+                if (iter0 == collidingFixtures[0].end()) ret = 0;
                 collidingFixtures[0].insert(fix2);
                 releaseFixtures[0].erase(fix2);
-                ret = 1;
             }
-            else if (collidingFixtures[0].find(fix2) == collidingFixtures[0].end() && connections[1].size() > 0){
+            else if (iter0 == collidingFixtures[0].end() && connections[1].size() > 0)
+            {
+                if (iter1 == collidingFixtures[1].end()) ret = 1;
                 collidingFixtures[1].insert(fix2);
                 releaseFixtures[1].erase(fix2);
-                ret = 2;
             }
         }
     }
     else{
         if (collidingFixtures[1 - side].find(fix2) != collidingFixtures[1 - side].end()){
             releaseFixtures[1 - side].insert(fix2);
-            ret = 4 - side;
+            ret = 3 - side;
         }
-        
+        else{
+            ret = 4;
+        }
         collidingFixtures[0].erase(fix2);
         collidingFixtures[1].erase(fix2);
     }
@@ -253,7 +281,7 @@ int Portal::getFixtureSide(b2Fixture* fix){
 
 
 void Portal::postHandle(){
-    for (int i = 0; i < 2; i++){
+    for (int i = 0; i < 0; i++){ // disabled for now
         std::vector<b2Fixture*> erases;
         for (b2Fixture* fix : collidingFixtures[i]){
             bool check = rayCheck(fix);

@@ -7,22 +7,29 @@
 #include <map>
 #include <GLFW/glfw3.h>
 
+typedef struct {
+    void* portal;
+    int status; // 0 for colliding 1 for released
+    int side;
+} portalCollision;
+
 class PortalBody{
 public:
     static std::vector<PortalBody*> portalBodies;
 
     std::map<b2Body*, std::vector<void*>*> bodyMaps;
+    std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     b2World* world;
     b2Vec3 bodyColor;
 
     PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor=b2Vec3(1.0f, 1.0f, 1.0f));
 
-    int getRenderStatus(b2Fixture* fix, std::vector<void*>* portals, int* side);
-
     // fix1 is always a fixture of this class
     void collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+
+    void handleOut(b2Fixture* fix, void* portal, int out);
 
     void drawBodies();
 

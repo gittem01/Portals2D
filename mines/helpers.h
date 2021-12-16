@@ -139,8 +139,8 @@ void testCase1(b2World* world){
     float yPos = -4.0f;
     float portalSize = 3.0f;
 
-    Portal* portal1 = new Portal(b2Vec2(-5.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
-    Portal* portal2 = new Portal(b2Vec2(+5.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
+    Portal* portal1 = new Portal(b2Vec2(-4.8f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
+    Portal* portal2 = new Portal(b2Vec2(+4.8f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
 
     //Portal* portal5 = new Portal(b2Vec2(+9.0f, yPos - portalSize), b2Vec2(0.0f, 1.0f), portalSize, world);
     //Portal* portal6 = new Portal(b2Vec2(-9.0f, yPos - portalSize), b2Vec2(0.0f, 1.0f), portalSize, world);

@@ -2,7 +2,7 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 1
+#define DRAW_RELEASES 0
 
 std::vector<PortalBody*> PortalBody::portalBodies;
 
@@ -17,6 +17,10 @@ PortalBody::PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor){
 
     this->bodyColor = bodyColor;
     PortalBody::portalBodies.push_back(this);
+
+    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
+        fixtureCollisions[fix] = new std::set<portalCollision*>();
+    }
 }
 
 void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
@@ -24,6 +28,7 @@ void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* 
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
         int out = p->collisionBegin(contact, fix2, fix1);
+        handleOut(fix1, (void*)p, out);
     }
 }
 
@@ -32,6 +37,7 @@ void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
         int out = p->collisionEnd(contact, fix2, fix1);
+        handleOut(fix1, (void*)p, out);
     }
 }
 
@@ -41,28 +47,81 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
         int out = p->preCollision(contact, fix2, fix1);
+        handleOut(fix1, (void*)p, out);
     }
 }
 
-// 0 for no rendering
-// 1 for partial rendering
-// 2 for full renndering
-int PortalBody::getRenderStatus(b2Fixture* fix, std::vector<void*>* portals, int* side){
-    // unoptimized version
-    for (int i = 0; i < 2; i++){
-        for (Portal* p : Portal::portals){
-            if (p->releaseFixtures[i].find(fix) != p->releaseFixtures[i].end()){
-                return 0;
+void PortalBody::handleOut(b2Fixture* fix, void* portal, int out){
+    switch (out)
+    {
+    case 0:
+        {
+            for (auto& col : *fixtureCollisions[fix]){
+                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
+                break;
             }
-            if (p->collidingFixtures[i].find(fix) != p->collidingFixtures[i].end()){
-                portals->push_back(p);
-                *side = i;
-                return i + 1;
+            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
+            portCol->portal = portal;
+            portCol->status = 1;
+            portCol->side = 0;
+            fixtureCollisions[fix]->insert(portCol);
+        }
+        break;
+    
+    case 1:
+        {
+            for (auto& col : *fixtureCollisions[fix]){
+                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
+                break;
+            }
+            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
+            portCol->portal = portal;
+            portCol->status = 1;
+            portCol->side = 1;
+            fixtureCollisions[fix]->insert(portCol);
+        }
+        break;
+    
+    case 2:
+        {
+            for (auto& col : *fixtureCollisions[fix]){
+                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
+                break;
+            }
+            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
+            portCol->portal = portal;
+            portCol->status = 0;
+            portCol->side = 0;
+            fixtureCollisions[fix]->insert(portCol);
+        }
+        break;
+    
+    case 3:
+        {
+            for (auto& col : *fixtureCollisions[fix]){
+                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
+                break;
+            }
+            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
+            portCol->portal = portal;
+            portCol->status = 0;
+            portCol->side = 1;
+            fixtureCollisions[fix]->insert(portCol);
+        }
+        break;
+    
+    case 4:
+        std::set<portalCollision*>* coll = fixtureCollisions[fix];
+        for (auto& a : *coll){
+            if (a->portal == portal){
+                free(a);
+                coll->erase(a);
+                break;
             }
         }
+        
+        break;
     }
-
-    return 3;
 }
 
 void PortalBody::drawBodies(){
@@ -122,7 +181,17 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
     std::vector<void*> portals;
     int side;
     int size1, size2;
-    int renderStatus = getRenderStatus(fix, &portals, &side);
+    int renderStatus = 2;
+
+    std::set<portalCollision*>::iterator iter = fixtureCollisions[fix]->begin();
+    
+    void* portal = NULL;
+    int s = -1;
+    if (iter != fixtureCollisions[fix]->end()){
+        portal = (*iter)->portal;
+        s = (*iter)->side;
+        renderStatus = (*iter)->status;
+    }
 
     if (renderStatus == 0){
 #if DRAW_RELEASES == 1
@@ -132,10 +201,10 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
             bodyColor = oldColor;
 #endif
     }
-    else if (renderStatus == 1 || renderStatus == 2){
+    else if (renderStatus == 1){
         b2Vec2* drawVecs = NULL;
         b2Vec2* releaseVecs = NULL;
-        if (portals.size() > 0) adjustVertices(vertices, vertexCount, &drawVecs, &releaseVecs, &size1, &size2, (Portal*)(portals.at(0)), side);
+        if (portal) adjustVertices(vertices, vertexCount, &drawVecs, &releaseVecs, &size1, &size2, (Portal*)(portal), s);
         if (drawVecs){
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(1.0f, 1.0f, 1.0f);
@@ -150,14 +219,10 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
             bodyColor = oldColor;
 #endif
         }
-        if (portals.size() > 0){ free(drawVecs); free(releaseVecs); }
+        if (portal){ free(drawVecs); free(releaseVecs); }
     }
 
-    else if (renderStatus == 3) drawVertices(body, vertices, vertexCount);
-
-    if (renderStatus == 0) bodyColor.x = 1.0f;
-    else if (renderStatus == 1) bodyColor.y = 1.0f;
-    else if (renderStatus == 2) bodyColor.z = 1.0f;
+    else if (renderStatus == 2) drawVertices(body, vertices, vertexCount);
 
     free(vertices);
 }
