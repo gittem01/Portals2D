@@ -2,7 +2,7 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 0
+#define DRAW_RELEASES 1
 
 std::vector<PortalBody*> PortalBody::portalBodies;
 
@@ -137,14 +137,9 @@ void PortalBody::drawBodies(){
     }
 }
 
-void PortalBody::adjustVertices(b2Vec2* vertices, int vertexCount, b2Vec2** retVertices1, b2Vec2** retVertices2, 
-                                int* size1, int* size2, void* p, int side){
+void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, int vertexCount, std::vector<b2Vec2>& retVertices1,
+                                std::vector<b2Vec2>& retVertices2, void* p, int side){
     Portal* portal = (Portal*)p;
-    *retVertices1 = (b2Vec2*)calloc(vertexCount + 1, sizeof(b2Vec2));
-    *retVertices2 = (b2Vec2*)calloc(vertexCount + 1, sizeof(b2Vec2));
-
-    int index1 = 0;
-    int index2 = 0;
 
     int pSide;
     int lastSide = portal->getPointSide(vertices[0]);
@@ -153,37 +148,35 @@ void PortalBody::adjustVertices(b2Vec2* vertices, int vertexCount, b2Vec2** retV
         pSide = portal->getPointSide(vertices[vertexIndex]);
         if (pSide == side && lastSide == 1 - side){
             b2Vec2 intersectionPoint = getLineIntersection(portal->points[0], portal->points[1], vertices[i - 1], vertices[vertexIndex]);
-            (*retVertices1)[index1++] = intersectionPoint;
-            (*retVertices2)[index2++] = intersectionPoint;
+            retVertices1.push_back(intersectionPoint);
+            retVertices2.push_back(intersectionPoint);
         }
         else if (pSide == 1 - side && lastSide == side){
             b2Vec2 intersectionPoint = getLineIntersection(portal->points[0], portal->points[1], vertices[i - 1], vertices[vertexIndex]);
-            (*retVertices1)[index1++] = intersectionPoint;
-            (*retVertices2)[index2++] = intersectionPoint;
+            retVertices1.push_back(intersectionPoint);
+            retVertices2.push_back(intersectionPoint);
         }
 
         if (pSide == side && i != vertexCount){
-            (*retVertices1)[index1++] = vertices[vertexIndex];
+            retVertices1.push_back(vertices[vertexIndex]);
         }
         else if (i != vertexCount){
-            (*retVertices2)[index2++] = vertices[vertexIndex];
+            retVertices2.push_back(vertices[vertexIndex]);
         }
 
         lastSide = pSide;
     }
-    *size1 = index1;
-    *size2 = index2;
 }
 
-void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount){
+void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices, int vertexCount){
     b2Body* body = fix->GetBody();
 
     std::vector<void*> portals;
     int side;
-    int size1, size2;
     int renderStatus = 2;
 
-    std::set<portalCollision*>::iterator iter = fixtureCollisions[fix]->begin();
+    std::map<b2Fixture*, std::set<portalCollision*>*>::iterator fixIter = fixtureCollisions.find(fix);
+    std::set<portalCollision*>::iterator iter = (*fixIter).second->begin();
     
     void* portal = NULL;
     int s = -1;
@@ -197,34 +190,36 @@ void PortalBody::portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount)
 #if DRAW_RELEASES == 1
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
-            drawVertices(body, vertices, vertexCount);
+            drawVertices(body, vertices);
             bodyColor = oldColor;
 #endif
     }
     else if (renderStatus == 1){
-        b2Vec2* drawVecs = NULL;
-        b2Vec2* releaseVecs = NULL;
-        if (portal) adjustVertices(vertices, vertexCount, &drawVecs, &releaseVecs, &size1, &size2, (Portal*)(portal), s);
-        if (drawVecs){
+        std::vector<b2Vec2> drawVecs;
+        std::vector<b2Vec2> releaseVecs;
+        
+        for(; fixIter != fixtureCollisions.end(); std::advance(fixIter, 1)){
+
+        }
+
+        if (portal) adjustVertices(vertices, vertexCount, drawVecs, releaseVecs, (Portal*)(portal), s);
+        if (drawVecs.size() > 0){
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(1.0f, 1.0f, 1.0f);
-            drawVertices(body, drawVecs, size1);
+            drawVertices(body, drawVecs);
             bodyColor = oldColor;
         }
-        if (releaseVecs){
+        if (releaseVecs.size() > 0){
 #if DRAW_RELEASES == 1
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
-            drawVertices(body, releaseVecs, size2);
+            drawVertices(body, releaseVecs);
             bodyColor = oldColor;
 #endif
         }
-        if (portal){ free(drawVecs); free(releaseVecs); }
     }
 
-    else if (renderStatus == 2) drawVertices(body, vertices, vertexCount);
-
-    free(vertices);
+    else if (renderStatus == 2) drawVertices(body, vertices);
 }
 
 void PortalBody::drawPolygonFix(b2Fixture* fix){
@@ -232,12 +227,12 @@ void PortalBody::drawPolygonFix(b2Fixture* fix){
     b2PolygonShape* shape = (b2PolygonShape*)fix->GetShape();
 
     int vertexCount = shape->m_count;
-    b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2*) * vertexCount);
+    std::vector<b2Vec2> vertices;
 
 	for (int i = 0; i < vertexCount; i++) {
-        b2Vec2 p1 = b2Vec2((shape->m_vertices + i)->x, (shape->m_vertices + i)->y);
-        p1 = body->GetWorldPoint(p1);
-        vertices[i] = p1;
+        b2Vec2 p = b2Vec2((shape->m_vertices + i)->x, (shape->m_vertices + i)->y);
+        p = body->GetWorldPoint(p);
+        vertices.push_back(p);
 	}
 
     portalRender(fix, vertices, vertexCount);
@@ -248,20 +243,20 @@ void PortalBody::drawCircleFix(b2Fixture* fix){
     b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
     float r = shape->m_radius;
 
-    b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2*) * CIRCLE_POINTS);
+    std::vector<b2Vec2> vertices;
 
     float angle = 0;
 	for (int i = 0; i < CIRCLE_POINTS; i++) {
         float angle0 = ((float)i / CIRCLE_POINTS) * b2_pi * 2;
         b2Vec2 p = b2Vec2(sin(angle0) * r, cos(angle0) * r) + shape->m_p;
         p = body->GetWorldPoint(p);
-        vertices[i] = p;
+        vertices.push_back(p);
 	}
 
     portalRender(fix, vertices, CIRCLE_POINTS);
 }
 
-void PortalBody::drawVertices(b2Body* body, b2Vec2* vertices, int vertexCount){
+void PortalBody::drawVertices(b2Body* body, std::vector<b2Vec2>& vertices){
     float transparency = 1.0f;
     if (!body->IsAwake()){
         transparency /= 2;
@@ -269,17 +264,17 @@ void PortalBody::drawVertices(b2Body* body, b2Vec2* vertices, int vertexCount){
     
     glColor4f(bodyColor.x, bodyColor.y, bodyColor.z, 0.5f * transparency);
 	glBegin(GL_POLYGON);
-	for (int i = 0; i < vertexCount; i++) {
-		glVertex2d((vertices + i)->x, (vertices + i)->y);
+	for (int i = 0; i < vertices.size(); i++) {
+		glVertex2d(vertices.at(i).x, vertices.at(i).y);
 	}
 	glEnd();
 
 	glLineWidth(1.0f);
 	glColor4f(bodyColor.x, bodyColor.y, bodyColor.z, transparency);
 	glBegin(GL_LINES);
-	for (int i = 0; i < vertexCount; i++) {
-		glVertex2d((vertices + i)->x, (vertices + i)->y);
-		glVertex2d((vertices + (i + 1) % vertexCount)->x, (vertices + (i + 1) % vertexCount)->y);
+	for (int i = 0; i < vertices.size(); i++) {
+		glVertex2d(vertices.at(i).x, vertices.at(i).y);
+		glVertex2d(vertices.at((i + 1) % vertices.size()).x, vertices.at((i + 1) % vertices.size()).y);
 	}
 	glEnd();
 }

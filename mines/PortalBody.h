@@ -33,15 +33,15 @@ public:
 
     void drawBodies();
 
-    void adjustVertices(b2Vec2* vertices, int vertexCount, b2Vec2** retVertices1, b2Vec2** retVertices2, 
-                        int* size1, int* size2, void* portal, int side);
-    void portalRender(b2Fixture* fix, b2Vec2* vertices, int vertexCount);
+    void adjustVertices(std::vector<b2Vec2>& vertices, int vertexCount, std::vector<b2Vec2>& retVertices1,
+                        std::vector<b2Vec2>& retVertices2, void* portal, int side);
+    void portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices, int vertexCount);
 
     // draw fixtures according to the portal collision status
     void drawPolygonFix(b2Fixture* fixture);
     void drawCircleFix(b2Fixture* fixture);
 
-    void drawVertices(b2Body* body, b2Vec2* vertices, int vertexCount);
+    void drawVertices(b2Body* body, std::vector<b2Vec2>& vertices);
 
     b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 };
