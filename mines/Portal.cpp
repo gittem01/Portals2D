@@ -300,7 +300,7 @@ void Portal::postHandle(){
     }
 }
 
-void Portal::connectBodies(b2Body* body1, b2Body* body2) {
+void Portal::connectBodies(b2Body* body1, b2Body* body2) { // later use
     b2PrismaticJointDef prismDef;
     prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
     prismDef.collideConnected = true;

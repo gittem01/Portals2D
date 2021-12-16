@@ -2,7 +2,13 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 1
+#define DRAW_RELEASES 0
+
+/*
+    There is a buggy rendering going on when a release part of the
+    fixture collided with another portal without exiting first portal
+    This will be resolved when collision handling added
+*/
 
 std::vector<PortalBody*> PortalBody::portalBodies;
 
@@ -51,75 +57,48 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
     }
 }
 
+void PortalBody::outHelper(b2Fixture* fix, void* portal, int status, int side){
+    for (auto& col : *fixtureCollisions[fix]){
+        if (col->portal == portal){
+            fixtureCollisions[fix]->erase(col);
+            break;
+        }
+    }
+    portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
+    portCol->portal = portal;
+    portCol->status = status;
+    portCol->side = side;
+    fixtureCollisions[fix]->insert(portCol);
+}
+
 void PortalBody::handleOut(b2Fixture* fix, void* portal, int out){
     switch (out)
     {
     case 0:
-        {
-            for (auto& col : *fixtureCollisions[fix]){
-                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
-                break;
-            }
-            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
-            portCol->portal = portal;
-            portCol->status = 1;
-            portCol->side = 0;
-            fixtureCollisions[fix]->insert(portCol);
-        }
+        outHelper(fix, portal, 1, 0);
         break;
     
     case 1:
-        {
-            for (auto& col : *fixtureCollisions[fix]){
-                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
-                break;
-            }
-            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
-            portCol->portal = portal;
-            portCol->status = 1;
-            portCol->side = 1;
-            fixtureCollisions[fix]->insert(portCol);
-        }
+        outHelper(fix, portal, 1, 1);
         break;
     
     case 2:
-        {
-            for (auto& col : *fixtureCollisions[fix]){
-                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
-                break;
-            }
-            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
-            portCol->portal = portal;
-            portCol->status = 0;
-            portCol->side = 0;
-            fixtureCollisions[fix]->insert(portCol);
-        }
+        outHelper(fix, portal, 0, 0);
         break;
     
     case 3:
-        {
-            for (auto& col : *fixtureCollisions[fix]){
-                if (col->portal == portal) fixtureCollisions[fix]->erase(col);
-                break;
-            }
-            portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
-            portCol->portal = portal;
-            portCol->status = 0;
-            portCol->side = 1;
-            fixtureCollisions[fix]->insert(portCol);
-        }
+        outHelper(fix, portal, 0, 1);
         break;
     
     case 4:
         std::set<portalCollision*>* coll = fixtureCollisions[fix];
         for (auto& a : *coll){
-            if (a->portal == portal){
-                free(a);
+            if (a->portal == portal && a->status == 1){
                 coll->erase(a);
+                free(a);
                 break;
             }
         }
-        
         break;
     }
 }
@@ -137,14 +116,14 @@ void PortalBody::drawBodies(){
     }
 }
 
-void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, int vertexCount, std::vector<b2Vec2>& retVertices1,
+void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
                                 std::vector<b2Vec2>& retVertices2, void* p, int side){
     Portal* portal = (Portal*)p;
 
     int pSide;
     int lastSide = portal->getPointSide(vertices[0]);
-    for (int i = 0; i < vertexCount + 1; i++){
-        int vertexIndex = i % vertexCount;
+    for (int i = 0; i < vertices.size() + 1; i++){
+        int vertexIndex = i % vertices.size();
         pSide = portal->getPointSide(vertices[vertexIndex]);
         if (pSide == side && lastSide == 1 - side){
             b2Vec2 intersectionPoint = getLineIntersection(portal->points[0], portal->points[1], vertices[i - 1], vertices[vertexIndex]);
@@ -157,10 +136,10 @@ void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, int vertexCount, 
             retVertices2.push_back(intersectionPoint);
         }
 
-        if (pSide == side && i != vertexCount){
+        if (pSide == side && i != vertices.size()){
             retVertices1.push_back(vertices[vertexIndex]);
         }
-        else if (i != vertexCount){
+        else if (i != vertices.size()){
             retVertices2.push_back(vertices[vertexIndex]);
         }
 
@@ -168,10 +147,9 @@ void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, int vertexCount, 
     }
 }
 
-void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices, int vertexCount){
+void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
     b2Body* body = fix->GetBody();
 
-    std::vector<void*> portals;
     int side;
     int renderStatus = 2;
 
@@ -180,10 +158,19 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices, int
     
     void* portal = NULL;
     int s = -1;
-    if (iter != fixtureCollisions[fix]->end()){
+    if (iter != (*fixIter).second->end()){
         portal = (*iter)->portal;
         s = (*iter)->side;
         renderStatus = (*iter)->status;
+    }
+    for (portalCollision* coll : *(*fixIter).second){
+        if (coll->status == 0){
+            renderStatus = 0;
+            break;
+        }
+        else{
+            renderStatus = 1;
+        }
     }
 
     if (renderStatus == 0){
@@ -196,27 +183,41 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices, int
     }
     else if (renderStatus == 1){
         std::vector<b2Vec2> drawVecs;
-        std::vector<b2Vec2> releaseVecs;
+        std::vector<std::vector<b2Vec2>> allReleases;
         
-        for(; fixIter != fixtureCollisions.end(); std::advance(fixIter, 1)){
+        if (iter != (*fixIter).second->end()){
+            for(;;){
+                std::vector<b2Vec2> releaseVecs;
+                adjustVertices(vertices, drawVecs, releaseVecs, (Portal*)(*iter)->portal, s);
+                
+                vertices.clear();
+                for (b2Vec2 v : drawVecs){
+                    vertices.push_back(v);
+                }
 
+                allReleases.push_back(releaseVecs);
+                
+                std::advance(iter, 1);
+                if (iter == (*fixIter).second->end()) break;
+
+                drawVecs.clear();
+            }
         }
 
-        if (portal) adjustVertices(vertices, vertexCount, drawVecs, releaseVecs, (Portal*)(portal), s);
         if (drawVecs.size() > 0){
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(1.0f, 1.0f, 1.0f);
             drawVertices(body, drawVecs);
             bodyColor = oldColor;
         }
-        if (releaseVecs.size() > 0){
 #if DRAW_RELEASES == 1
+        for (auto& vecs : allReleases){
             b2Vec3 oldColor = bodyColor;
             bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
-            drawVertices(body, releaseVecs);
+            drawVertices(body, vecs);
             bodyColor = oldColor;
-#endif
         }
+#endif
     }
 
     else if (renderStatus == 2) drawVertices(body, vertices);
@@ -235,7 +236,7 @@ void PortalBody::drawPolygonFix(b2Fixture* fix){
         vertices.push_back(p);
 	}
 
-    portalRender(fix, vertices, vertexCount);
+    portalRender(fix, vertices);
 }
 
 void PortalBody::drawCircleFix(b2Fixture* fix){
@@ -253,7 +254,7 @@ void PortalBody::drawCircleFix(b2Fixture* fix){
         vertices.push_back(p);
 	}
 
-    portalRender(fix, vertices, CIRCLE_POINTS);
+    portalRender(fix, vertices);
 }
 
 void PortalBody::drawVertices(b2Body* body, std::vector<b2Vec2>& vertices){

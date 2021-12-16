@@ -29,13 +29,14 @@ public:
     void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
+    void outHelper(b2Fixture* fix, void* portal, int status, int side);
     void handleOut(b2Fixture* fix, void* portal, int out);
 
     void drawBodies();
 
-    void adjustVertices(std::vector<b2Vec2>& vertices, int vertexCount, std::vector<b2Vec2>& retVertices1,
+    void adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
                         std::vector<b2Vec2>& retVertices2, void* portal, int side);
-    void portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices, int vertexCount);
+    void portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices);
 
     // draw fixtures according to the portal collision status
     void drawPolygonFix(b2Fixture* fixture);
