@@ -7,8 +7,11 @@
 #include <map>
 #include <GLFW/glfw3.h>
 
+struct bodyData;
+class Portal;
+
 typedef struct {
-    void* portal;
+    Portal* portal;
     int status; // 0 for colliding 1 for released
     int side;
 } portalCollision;
@@ -29,13 +32,14 @@ public:
     void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
-    void outHelper(b2Fixture* fix, void* portal, int status, int side);
-    void handleOut(b2Fixture* fix, void* portal, int out);
+    bool shouldCollide(b2Fixture* fix1, bodyData* bData);
+    void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
+    void handleOut(b2Fixture* fix, Portal* portal, int out);
 
     void drawBodies();
 
     void adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
-                        std::vector<b2Vec2>& retVertices2, void* portal, int side);
+                        std::vector<b2Vec2>& retVertices2, Portal* portal, int side);
     void portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices);
 
     // draw fixtures according to the portal collision status

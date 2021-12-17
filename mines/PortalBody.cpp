@@ -31,33 +31,68 @@ PortalBody::PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor){
 
 void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+    
+    bool shouldCollide = this->shouldCollide(fix1, bData);
+    if (!shouldCollide){
+        return;
+    }
+
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
         int out = p->collisionBegin(contact, fix2, fix1);
-        handleOut(fix1, (void*)p, out);
+        handleOut(fix1, p, out);
     }
 }
 
 void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+    
+    bool shouldCollide = this->shouldCollide(fix1, bData);
+    if (!shouldCollide){
+        return;
+    }
+
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
         int out = p->collisionEnd(contact, fix2, fix1);
-        handleOut(fix1, (void*)p, out);
+        handleOut(fix1, p, out);
     }
 }
 
 void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
 
+    bool shouldCollide = this->shouldCollide(fix1, bData);
+    if (!shouldCollide){
+        contact->SetEnabled(false);
+        return;
+    }
+
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
         int out = p->preCollision(contact, fix2, fix1);
-        handleOut(fix1, (void*)p, out);
+        handleOut(fix1, p, out);
     }
 }
 
-void PortalBody::outHelper(b2Fixture* fix, void* portal, int status, int side){
+bool PortalBody::shouldCollide(b2Fixture* fix1, bodyData* bData){
+    std::set<portalCollision*>* collidingPortals = fixtureCollisions[fix1];
+    if (bData && bData->type == PORTAL){
+        Portal* p = (Portal*)bData->data;
+        for (portalCollision* coll : *collidingPortals){
+            if (p == coll->portal) return true;
+        }
+    }
+    
+    for (portalCollision* coll : *collidingPortals){
+        Portal* p = (Portal*)coll->portal;
+        bool shouldCollide = p->shouldCollide(coll);
+        if (!shouldCollide) return false;
+    }
+    return true;
+}
+
+void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side){
     for (auto& col : *fixtureCollisions[fix]){
         if (col->portal == portal){
             fixtureCollisions[fix]->erase(col);
@@ -71,7 +106,7 @@ void PortalBody::outHelper(b2Fixture* fix, void* portal, int status, int side){
     fixtureCollisions[fix]->insert(portCol);
 }
 
-void PortalBody::handleOut(b2Fixture* fix, void* portal, int out){
+void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     switch (out)
     {
     case 0:
@@ -117,21 +152,20 @@ void PortalBody::drawBodies(){
 }
 
 void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
-                                std::vector<b2Vec2>& retVertices2, void* p, int side){
-    Portal* portal = (Portal*)p;
-
+                                std::vector<b2Vec2>& retVertices2, Portal* p, int side)
+{
     int pSide;
-    int lastSide = portal->getPointSide(vertices[0]);
+    int lastSide = p->getPointSide(vertices[0]);
     for (int i = 0; i < vertices.size() + 1; i++){
         int vertexIndex = i % vertices.size();
-        pSide = portal->getPointSide(vertices[vertexIndex]);
+        pSide = p->getPointSide(vertices[vertexIndex]);
         if (pSide == side && lastSide == 1 - side){
-            b2Vec2 intersectionPoint = getLineIntersection(portal->points[0], portal->points[1], vertices[i - 1], vertices[vertexIndex]);
+            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices[i - 1], vertices[vertexIndex]);
             retVertices1.push_back(intersectionPoint);
             retVertices2.push_back(intersectionPoint);
         }
         else if (pSide == 1 - side && lastSide == side){
-            b2Vec2 intersectionPoint = getLineIntersection(portal->points[0], portal->points[1], vertices[i - 1], vertices[vertexIndex]);
+            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices[i - 1], vertices[vertexIndex]);
             retVertices1.push_back(intersectionPoint);
             retVertices2.push_back(intersectionPoint);
         }

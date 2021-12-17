@@ -279,6 +279,9 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
+bool Portal::shouldCollide(portalCollision* coll){
+    return true;
+}
 
 void Portal::postHandle(){
     for (int i = 0; i < 0; i++){ // disabled for now

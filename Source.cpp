@@ -6,7 +6,7 @@ int main(void)
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -45.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -9.8f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -16,7 +16,7 @@ int main(void)
 
     DebugDrawer* drawer = new DebugDrawer();
     world->SetDebugDraw(drawer);
-    drawer->SetFlags(b2Draw::e_jointBit);
+    drawer->SetFlags(0);
     
     mouseJointHandler mjh(world, wh, drawer);
 
@@ -31,7 +31,7 @@ int main(void)
     int totalIter = 1;
     long sleepTime = 20; // millisecond
 
-    const int vsyncFps = 120;
+    const int vsyncFps = 60;
     while (!done)
     {
         frame++;
