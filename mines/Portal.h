@@ -94,7 +94,7 @@ public:
     bool isCollisionProper(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     bool rayCheck(b2Fixture* fix);
 
-    bool shouldCollide(portalCollision* coll);
+    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
 
     int getPointSide(b2Vec2 point);
 

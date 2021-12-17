@@ -32,7 +32,7 @@ public:
     void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
-    bool shouldCollide(b2Fixture* fix1, bodyData* bData);
+    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
     void handleOut(b2Fixture* fix, Portal* portal, int out);
 

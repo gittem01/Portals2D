@@ -2,7 +2,7 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 0
+#define DRAW_RELEASES 1
 
 /*
     There is a buggy rendering going on when a release part of the
@@ -32,7 +32,7 @@ PortalBody::PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor){
 void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     
-    bool shouldCollide = this->shouldCollide(fix1, bData);
+    bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
     if (!shouldCollide){
         return;
     }
@@ -47,7 +47,7 @@ void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* 
 void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     
-    bool shouldCollide = this->shouldCollide(fix1, bData);
+    bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
     if (!shouldCollide){
         return;
     }
@@ -62,7 +62,7 @@ void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
 
-    bool shouldCollide = this->shouldCollide(fix1, bData);
+    bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
     if (!shouldCollide){
         contact->SetEnabled(false);
         return;
@@ -75,7 +75,7 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
     }
 }
 
-bool PortalBody::shouldCollide(b2Fixture* fix1, bodyData* bData){
+bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData){
     std::set<portalCollision*>* collidingPortals = fixtureCollisions[fix1];
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
@@ -85,8 +85,9 @@ bool PortalBody::shouldCollide(b2Fixture* fix1, bodyData* bData){
     }
     
     for (portalCollision* coll : *collidingPortals){
+        if (coll->status == 0) return false;
         Portal* p = (Portal*)coll->portal;
-        bool shouldCollide = p->shouldCollide(coll);
+        bool shouldCollide = p->shouldCollide(contact, fix1, fix2, coll);
         if (!shouldCollide) return false;
     }
     return true;
@@ -210,7 +211,7 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
     if (renderStatus == 0){
 #if DRAW_RELEASES == 1
             b2Vec3 oldColor = bodyColor;
-            bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
+            bodyColor = b2Vec3(0.2f, 0.2f, 0.2f);
             drawVertices(body, vertices);
             bodyColor = oldColor;
 #endif
@@ -247,7 +248,7 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
 #if DRAW_RELEASES == 1
         for (auto& vecs : allReleases){
             b2Vec3 oldColor = bodyColor;
-            bodyColor = b2Vec3(0.1f, 0.1f, 0.1f);
+            bodyColor = b2Vec3(0.2f, 0.2f, 0.2f);
             drawVertices(body, vecs);
             bodyColor = oldColor;
         }

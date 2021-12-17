@@ -163,7 +163,7 @@ void DebugDrawer::drawShape(b2Fixture* fixture, const b2Transform& xf, const b2C
 	case b2Shape::e_polygon:
 		{
 			if (fixture->IsSensor()) {
-				//break;
+				break;
 			}
 
 			b2PolygonShape* poly = (b2PolygonShape*)fixture->GetShape();

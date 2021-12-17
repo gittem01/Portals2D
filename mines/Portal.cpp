@@ -104,10 +104,10 @@ void Portal::createPortalBody(b2World* world){
     normalize(&pVec);
     pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
 
-    shape.SetTwoSided(points[0], points[0] - 0.0f*pVec);
+    shape.SetTwoSided(points[0], points[0]);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
     
-    shape.SetTwoSided(points[1], points[1] + 0.0f*pVec);
+    shape.SetTwoSided(points[1], points[1]);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
 
     float widthMul = 10.0f;
@@ -279,7 +279,15 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
-bool Portal::shouldCollide(portalCollision* coll){
+bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll){
+    b2WorldManifold manifold;
+    contact->GetWorldManifold(&manifold);
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+        drawer->DrawPoint(manifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+    }
+    if (isLeft(points[1 - coll->side], points[coll->side], manifold.points[0], 0.01f)){
+        return false;
+    }
     return true;
 }
 
