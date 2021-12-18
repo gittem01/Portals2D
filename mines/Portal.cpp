@@ -184,6 +184,7 @@ int Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     return ret;
 }
 
+// sends 2 rays through the fixture from the edge points of portal
 bool Portal::rayCheck(b2Fixture* fix){
     b2RayCastOutput rcOutput;
 
@@ -283,7 +284,10 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     b2WorldManifold manifold;
     contact->GetWorldManifold(&manifold);
     for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        drawer->DrawPoint(manifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+        //drawer->DrawPoint(manifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+    }
+    if (collidingFixtures[1 - coll->side].find(fix2) != collidingFixtures[1 - coll->side].end()){
+        return false;
     }
     if (isLeft(points[1 - coll->side], points[coll->side], manifold.points[0], 0.01f)){
         return false;

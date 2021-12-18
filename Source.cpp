@@ -1,9 +1,11 @@
 #include "helpers.h"
+#include <vector>
 
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(NULL);
-    Camera* cam = new Camera(glm::vec2(0, 0), wh);
+    Camera* cam = new Camera(glm::vec2(0, -2), wh);
+    cam->zoom = 0.7f;
     wh->cam = cam;
 
     b2World* world = new b2World(b2Vec2(0.0f, -9.8f));
@@ -28,7 +30,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 1;
+    int totalIter = 10;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 60;

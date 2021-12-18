@@ -1,6 +1,6 @@
 #include "Portal.h"
 
-std::vector<b2Vec2> Portal::getCollisionPoints(b2Fixture*& fix1, b2Fixture*& fix2) {
+std::vector<b2Vec2> Portal::getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2) {
 	std::vector<b2Vec2> returnVector;
 
 	b2Shape::Type type1 = fix1->GetShape()->GetType();
@@ -26,19 +26,19 @@ std::vector<b2Vec2> Portal::getCollisionPoints(b2Fixture*& fix1, b2Fixture*& fix
 	}
 }
 
-std::vector<b2Vec2> Portal::collideCircleCircle(b2Fixture*& fix1, b2Fixture*& fix2) {
+std::vector<b2Vec2> Portal::collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2) {
 	std::vector<b2Vec2> returnVector;
 
 	return returnVector;
 }
 
-std::vector<b2Vec2> Portal::collidePolygonPolygon(b2Fixture*& fix1, b2Fixture*& fix2) {
+std::vector<b2Vec2> Portal::collidePolygonPolygon(b2Fixture* fix1, b2Fixture* fix2) {
 	std::vector<b2Vec2> returnVector;
 
 	return returnVector;
 }
 
-std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture*& fix1, b2Fixture*& fix2) {
+std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2) {
 	std::vector<b2Vec2> returnVector;
 
 	b2PolygonShape* shape = (b2PolygonShape*)(fix1->GetShape());
@@ -71,14 +71,15 @@ std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture*& fix1, b2Fixture*& fi
 		}
 	}
 
+	// inside of the other fixture or just started colliding
 	if (returnVector.size() == 0) {
-		returnVector.push_back(fix2->GetBody()->GetPosition());
+		returnVector.push_back(getFixtureCenter(fix2));
 	}
 
 	return returnVector;
 }
 
-std::vector<b2Vec2> Portal::collideEdgeOther(b2Fixture*& fix1, b2Fixture*& fix2) {
+std::vector<b2Vec2> Portal::collideEdgeOther(b2Fixture* fix1, b2Fixture* fix2) {
 	std::vector<b2Vec2> returnVector;
 
 	b2RayCastOutput rcOutput;
@@ -104,6 +105,21 @@ std::vector<b2Vec2> Portal::collideEdgeOther(b2Fixture*& fix1, b2Fixture*& fix2)
 	}
 
 	return returnVector;
+}
+
+b2Vec2 Portal::getFixtureCenter(b2Fixture* fix){
+	if (fix->GetType() == b2Shape::Type::e_circle){
+		b2Vec2 point = ((b2CircleShape*)fix->GetShape())->m_p;
+		return fix->GetBody()->GetWorldPoint(point);
+	}
+	else{
+		b2Vec2 avgPoints = b2Vec2(0, 0);
+		b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
+		for (int i = 0; i < polyShape->m_count; i++){
+			avgPoints += polyShape->m_vertices[i];
+		}
+		return (1.0f / polyShape->m_count) * avgPoints;
+	}
 }
 
 b2Vec2 Portal::getRayPoint(b2RayCastInput& rcInput, b2RayCastOutput& rcOutput) {

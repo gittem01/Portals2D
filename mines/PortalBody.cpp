@@ -2,17 +2,12 @@
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
-#define DRAW_RELEASES 1
 
-/*
-    There is a buggy rendering going on when a release part of the
-    fixture collided with another portal without exiting first portal
-    This will be resolved when collision handling added
-*/
-
+bool PortalBody::drawReleases = true;
+b2Color PortalBody::releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
 std::vector<PortalBody*> PortalBody::portalBodies;
 
-PortalBody::PortalBody(b2Body* body, b2World* world, b2Vec3 bodyColor){
+PortalBody::PortalBody(b2Body* body, b2World* world, b2Color bodyColor){
     this->world = world;
     this->bodyMaps[body] = new std::vector<void*>();
     
@@ -85,9 +80,13 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     }
     
     for (portalCollision* coll : *collidingPortals){
+        if (coll->portal->releaseFixtures[coll->side].find(fix2) != coll->portal->releaseFixtures[coll->side].end() ||
+            coll->portal->collidingFixtures[coll->side].find(fix2) != coll->portal->collidingFixtures[coll->side].end())
+        {
+            continue;
+        }
         if (coll->status == 0) return false;
-        Portal* p = (Portal*)coll->portal;
-        bool shouldCollide = p->shouldCollide(contact, fix1, fix2, coll);
+        bool shouldCollide = coll->portal->shouldCollide(contact, fix1, fix2, coll);
         if (!shouldCollide) return false;
     }
     return true;
@@ -208,22 +207,14 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
         }
     }
 
-    if (renderStatus == 0){
-#if DRAW_RELEASES == 1
-            b2Vec3 oldColor = bodyColor;
-            bodyColor = b2Vec3(0.2f, 0.2f, 0.2f);
-            drawVertices(body, vertices);
-            bodyColor = oldColor;
-#endif
-    }
-    else if (renderStatus == 1){
+    if (renderStatus == 1){
         std::vector<b2Vec2> drawVecs;
         std::vector<std::vector<b2Vec2>> allReleases;
         
         if (iter != (*fixIter).second->end()){
             for(;;){
                 std::vector<b2Vec2> releaseVecs;
-                adjustVertices(vertices, drawVecs, releaseVecs, (Portal*)(*iter)->portal, s);
+                adjustVertices(vertices, drawVecs, releaseVecs, (*iter)->portal, s);
                 
                 vertices.clear();
                 for (b2Vec2 v : drawVecs){
@@ -240,19 +231,22 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
         }
 
         if (drawVecs.size() > 0){
-            b2Vec3 oldColor = bodyColor;
-            bodyColor = b2Vec3(1.0f, 1.0f, 1.0f);
             drawVertices(body, drawVecs);
-            bodyColor = oldColor;
         }
-#if DRAW_RELEASES == 1
-        for (auto& vecs : allReleases){
-            b2Vec3 oldColor = bodyColor;
-            bodyColor = b2Vec3(0.2f, 0.2f, 0.2f);
-            drawVertices(body, vecs);
-            bodyColor = oldColor;
+        if (drawReleases){
+            for (auto& vecs : allReleases){
+                b2Color oldColor = bodyColor;
+                bodyColor = releaseColor;
+                drawVertices(body, vecs);
+                bodyColor = oldColor;
+            }
         }
-#endif
+    }
+    else if (drawReleases && renderStatus == 0){
+            b2Color oldColor = bodyColor;
+            bodyColor = releaseColor;
+            drawVertices(body, vertices);
+            bodyColor = oldColor;
     }
 
     else if (renderStatus == 2) drawVertices(body, vertices);
@@ -295,10 +289,10 @@ void PortalBody::drawCircleFix(b2Fixture* fix){
 void PortalBody::drawVertices(b2Body* body, std::vector<b2Vec2>& vertices){
     float transparency = 1.0f;
     if (!body->IsAwake()){
-        transparency /= 2;
+        transparency /= 1.5f;
     }
     
-    glColor4f(bodyColor.x, bodyColor.y, bodyColor.z, 0.5f * transparency);
+    glColor4f(bodyColor.r, bodyColor.g, bodyColor.b, bodyColor.a * transparency);
 	glBegin(GL_POLYGON);
 	for (int i = 0; i < vertices.size(); i++) {
 		glVertex2d(vertices.at(i).x, vertices.at(i).y);
@@ -306,7 +300,7 @@ void PortalBody::drawVertices(b2Body* body, std::vector<b2Vec2>& vertices){
 	glEnd();
 
 	glLineWidth(1.0f);
-	glColor4f(bodyColor.x, bodyColor.y, bodyColor.z, transparency);
+	glColor4f(bodyColor.r, bodyColor.g, bodyColor.b, bodyColor.a * 2.0f);
 	glBegin(GL_LINES);
 	for (int i = 0; i < vertices.size(); i++) {
 		glVertex2d(vertices.at(i).x, vertices.at(i).y);

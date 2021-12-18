@@ -2,8 +2,6 @@
 #include "Portal.h"
 #include <GLFW/glfw3.h>
 
-#define GL_SLIENCE_DEPRECATION
-
 void DebugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color){
 	glLineWidth(1.0f);
 	glColor4f(color.r, color.g, color.b, color.a);
