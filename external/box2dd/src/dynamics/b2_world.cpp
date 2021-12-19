@@ -39,6 +39,7 @@
 #include "box2d/b2_world.h"
 
 #include <new>
+#include <stdio.h>
 
 b2World::b2World(const b2Vec2& gravity)
 {
@@ -515,7 +516,7 @@ void b2World::Solve(const b2TimeStep& step)
 
 				b2Body* other = je->other;
 
-				// Don't simulate joints connected to disabled bodies.
+				// Don't simulate joints connected to diabled bodies.
 				if (other->IsEnabled() == false)
 				{
 					continue;

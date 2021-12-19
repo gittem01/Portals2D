@@ -58,7 +58,7 @@ void b2CollidePolygonAndCircle(
 	const b2CircleShape* circleB, const b2Transform& xfB)
 {
 	manifold->pointCount = 0;
-
+	
 	// Compute circle position in the frame of the polygon.
 	b2Vec2 c = b2Mul(xfB, circleB->m_p);
 	b2Vec2 cLocal = b2MulT(xfA, c);

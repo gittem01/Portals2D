@@ -118,7 +118,7 @@ void b2MouseJoint::InitVelocityConstraints(const b2SolverData& data)
 	m_C *= m_beta;
 
 	// Cheat with some damping
-	wB *= 1.0f - (data.step.dt / 0.016667f) * 0.02f;
+	wB *= 0.98f;
 
 	if (data.step.warmStarting)
 	{

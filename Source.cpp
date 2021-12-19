@@ -1,12 +1,14 @@
 #include "helpers.h"
+#include <vector>
 
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(NULL);
-    Camera* cam = new Camera(glm::vec2(0, 0), wh);
+    Camera* cam = new Camera(glm::vec2(0, -2), wh);
+    cam->zoom = 0.7f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -15.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -9.8f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -14,20 +16,24 @@ int main(void)
     DestrucionListener dl;
     world->SetDestructionListener(&dl);
 
-    debugDrawer* drawer = new debugDrawer();
+    DebugDrawer* drawer = new DebugDrawer();
     world->SetDebugDraw(drawer);
-    drawer->SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
+    drawer->SetFlags(0);
     
-    mouseJointHandler mjh(world, wh);
+    mouseJointHandler mjh(world, wh, drawer);
 
-    testCase2(world);
+    testCase1(world);
+
+    for (Portal* p : Portal::portals){
+        p->drawer = drawer;
+    }
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 1;
     long sleepTime = 20; // millisecond
 
-    const int vsyncFps = 120;
+    const int vsyncFps = 60;
     while (!done)
     {
         frame++;
@@ -46,22 +52,21 @@ int main(void)
 
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
-                for (Portal* p : Portal::portals) {
-                    p->creation();
-                }
-                for (Portal* p : Portal::portals) {
-                    p->destruction();
-                }
+                Portal::portalUpdate(); 
             }
 
             mjh.drawMouseBody();
             world->DebugDraw();
+            drawer->drawWorld(world);
             for (Portal* p : Portal::portals) {
                 p->draw();
             }
 
-            printBodyCount(world);
-            
+            for (PortalBody* body : PortalBody::portalBodies){
+                body->drawBodies();
+            }            
+            if (wh->keyData[GLFW_KEY_S] == 2) PortalBody::drawReleases ^= 1;
+
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);
         }
