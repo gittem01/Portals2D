@@ -8,7 +8,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glf
 
 set(GLAD_DIR "${CMAKE_SOURCE_DIR}/external/glad")
 
-include_directories(${CMAKE_SOURCE_DIR}/mines)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glm/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/box2d/include)
@@ -22,7 +22,7 @@ add_library(glad
             ${GLAD_DIR}/src/glad.c
 )
 
-file(GLOB files ${CMAKE_SOURCE_DIR}/mines/*.cpp)
+file(GLOB files ${CMAKE_SOURCE_DIR}/src/*.cpp)
 add_library(mines ${files})
 
 find_package(OpenGL REQUIRED)
