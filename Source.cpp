@@ -30,7 +30,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 1;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 60;
@@ -70,6 +70,7 @@ int main(void)
             for (PortalBody* body : PortalBody::portalBodies){
                 body->drawBodies();
             }            
+            if (wh->keyData[GLFW_KEY_S] == 2) PortalBody::drawReleases ^= 1;
 
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);

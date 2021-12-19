@@ -72,7 +72,7 @@ std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2
 	}
 
 	// inside of the other fixture or just started colliding
-	if (returnVector.size() == 0) {
+	if (returnVector.size() == 0 && fix2->GetType() == b2Shape::Type::e_polygon) {
 		returnVector.push_back(getFixtureCenter(fix2));
 	}
 
@@ -118,7 +118,9 @@ b2Vec2 Portal::getFixtureCenter(b2Fixture* fix){
 		for (int i = 0; i < polyShape->m_count; i++){
 			avgPoints += polyShape->m_vertices[i];
 		}
-		return (1.0f / polyShape->m_count) * avgPoints;
+		b2Vec2 avgPoint = (1.0f / polyShape->m_count) * avgPoints;
+		avgPoint = fix->GetBody()->GetWorldPoint(avgPoint);
+		return avgPoint;
 	}
 }
 

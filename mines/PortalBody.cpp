@@ -83,7 +83,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         if (coll->portal->releaseFixtures[coll->side].find(fix2) != coll->portal->releaseFixtures[coll->side].end() ||
             coll->portal->collidingFixtures[coll->side].find(fix2) != coll->portal->collidingFixtures[coll->side].end())
         {
-            continue;
+            return true;
         }
         if (coll->status == 0) return false;
         bool shouldCollide = coll->portal->shouldCollide(contact, fix1, fix2, coll);

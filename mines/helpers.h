@@ -141,9 +141,11 @@ void testCase1(b2World* world){
 
     Portal* portal1 = new Portal(b2Vec2(-0.8f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
     Portal* portal2 = new Portal(b2Vec2(+0.8f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
+    Portal* portal3 = new Portal(b2Vec2(+6.0f, yPos - portalSize), b2Vec2(0.0f, +1.0f), portalSize, world);
 
     portal1->connect(portal2);
     portal1->connect(portal2, 0, 1);
+    portal3->connect(portal2);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
     
@@ -176,4 +178,8 @@ void testCase1(b2World* world){
     body2->CreateFixture(&fDef);
 
     (new PortalBody(body2, world))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+
+    def.position = b2Vec2(0.0f, 3.0f);
+    b2Body* body3 = world->CreateBody(&def);
+    body3->CreateFixture(&fDef);
 }

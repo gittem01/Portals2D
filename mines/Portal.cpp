@@ -283,13 +283,26 @@ int Portal::getFixtureSide(b2Fixture* fix){
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll){
     b2WorldManifold manifold;
     contact->GetWorldManifold(&manifold);
-    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        //drawer->DrawPoint(manifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
-    }
+
     if (collidingFixtures[1 - coll->side].find(fix2) != collidingFixtures[1 - coll->side].end()){
         return false;
     }
-    if (isLeft(points[1 - coll->side], points[coll->side], manifold.points[0], 0.01f)){
+
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+        //drawer->DrawPoint(manifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+    }
+
+    std::vector<b2Vec2> collPoints = collidePolygonOther(fix1, fix2);
+    for (b2Vec2 p : collPoints){
+        //drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
+    }
+    for (b2Vec2 p : collPoints){
+        if (isLeft(points[1 - coll->side], points[coll->side], p, 0.0f)){
+            return false;
+        }
+    }
+    if (collPoints.size() > 0) return true;
+    if (isLeft(points[1 - coll->side], points[coll->side], manifold.points[0], 0.0f)){
         return false;
     }
     return true;
