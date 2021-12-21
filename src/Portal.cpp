@@ -102,7 +102,6 @@ void Portal::createPortalBody(b2World* world){
 
     b2Vec2 pVec = points[1] - points[0];
     normalize(&pVec);
-    pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
 
     shape.SetTwoSided(points[0], points[0]);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
@@ -110,17 +109,18 @@ void Portal::createPortalBody(b2World* world){
     shape.SetTwoSided(points[1], points[1]);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
 
-    float widthMul = 10.0f;
-    float dirMult = 2.0f;
-    b2Vec2 p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
-    b2Vec2 p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+    float widthMul = 1.0f;
+    float dirMult = 1.0f;
 
-    b2Vec2 p3 = p1 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
-    b2Vec2 p4 = p2 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
+    b2Vec2 p1 = points[0] - widthMul * pVec;
+    b2Vec2 p2 = points[1] + widthMul * pVec;
 
-    p1 += b2Vec2(dir.x * dirMult * -1, dir.y * dirMult);
-    p2 += b2Vec2(dir.x * dirMult * -1, dir.y * dirMult);
-    
+    b2Vec2 p3 = p1 + dirMult * dir;
+    b2Vec2 p4 = p2 + dirMult * dir;
+
+    p1 += -dirMult * dir;
+    p2 += -dirMult * dir;
+
     b2Vec2 polyPoints1[4] = { p1, p2, p3, p4 };
 
     b2PolygonShape polyShape;
