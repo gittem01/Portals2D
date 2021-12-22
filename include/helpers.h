@@ -148,10 +148,7 @@ void testCase1(b2World* world){
     portal3->connect(portal2);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
-    
-    //createObody(world, b2Vec2(0.0f, 0.0f));
-    //createWbody(world, b2Vec2(0.0f, -3.0f));
-    
+        
     PortalBody* b1 = new PortalBody(createObody(world, b2Vec2(0.0f, 3.0f)), world);
     PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 6.0f)), world);
 

@@ -281,30 +281,54 @@ int Portal::getFixtureSide(b2Fixture* fix){
 }
 
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll){
-    b2WorldManifold manifold;
-    contact->GetWorldManifold(&manifold);
+    b2WorldManifold wManifold;
+    contact->GetWorldManifold(&wManifold);
 
     if (collidingFixtures[1 - coll->side].find(fix2) != collidingFixtures[1 - coll->side].end()){
         return false;
     }
 
-    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        //drawer->DrawPoint(manifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+    float tHold = -0.01f;
+
+    std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
+
+    if (collPoints.size() == 0 && fix2->GetBody()->GetType() == b2_staticBody){
+        b2RayCastOutput rcOutput;
+        b2RayCastInput rcInput;
+        rcInput.maxFraction = 1.0f;
+        for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+            bool res;
+            rcInput.p1 = wManifold.points[i] - contact->GetManifold()->localNormal;
+            rcInput.p2 = wManifold.points[i] + contact->GetManifold()->localNormal;
+            res = fix2->RayCast(&rcOutput, rcInput, fix2->GetBody()->GetType());
+            if (res) {
+                b2Vec2 result = getRayPoint(rcInput, rcOutput);
+                collPoints.push_back(result);
+            }
+        }
     }
 
-    std::vector<b2Vec2> collPoints = collidePolygonOther(fix1, fix2);
-    for (b2Vec2 p : collPoints){
-        //drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+        drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
     }
+
     for (b2Vec2 p : collPoints){
-        if (isLeft(points[1 - coll->side], points[coll->side], p, 0.0f)){
+        drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
+    }
+
+    for (b2Vec2 p : collPoints){
+        if (isLeft(points[1 - coll->side], points[coll->side], p, tHold)){
             return false;
         }
     }
     if (collPoints.size() > 0) return true;
-    if (isLeft(points[1 - coll->side], points[coll->side], manifold.points[0], 0.0f)){
-        return false;
+
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+        if (isLeft(points[1 - coll->side], points[coll->side], wManifold.points[i], tHold)){
+            return false;
+        }
     }
+    
     return true;
 }
 
