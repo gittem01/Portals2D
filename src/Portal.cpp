@@ -138,7 +138,11 @@ int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2)
     PortalBody* pBody = (PortalBody*)bData->data;
 
     if (fix1 == midFixture){
-        ret = handleCollidingFixtures(contact, fix1, fix2, 0);
+        ret = handleCollidingFixtures(contact, fix1, fix2);
+    }
+    if (fix1 == collisionSensor){
+        prepareFixtures.insert(fix2);
+        ret = 5;
     }
 
     return ret;
@@ -154,8 +158,8 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
 
     if (fix1 == midFixture){
         int side = getFixtureSide(fix2);
-        if (collidingFixtures[1 - side].find(fix2) != collidingFixtures[1 - side].end()){
-            releaseFixtures[1 - side].insert(fix2);
+        if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
+            releaseFixtures[1 ^ side].insert(fix2);
             ret = 3 - side;
         }
         else{
@@ -163,6 +167,10 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
         }
         collidingFixtures[0].erase(fix2);
         collidingFixtures[1].erase(fix2);
+    }
+    else if (fix1 == collisionSensor){
+        prepareFixtures.erase(fix2);
+        ret = 6;
     }
 
     return ret;
@@ -172,7 +180,7 @@ int Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     int ret = -1;
 
     if (fix1 == midFixture){
-        ret = handleCollidingFixtures(contact, fix1, fix2, 2);
+        ret = handleCollidingFixtures(contact, fix1, fix2);
     }
 
     if (fix1 == midFixture && (collidingFixtures[0].find(fix2) != collidingFixtures[0].end() ||
@@ -203,16 +211,16 @@ bool Portal::rayCheck(b2Fixture* fix){
 // released from side 0 : 2
 // released from side 1 : 3
 // released without being inserted into the releaseFixtures set: 4
-int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, int type){
+int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     int ret = -1;
 
-    b2WorldManifold manifold;
-    contact->GetWorldManifold(&manifold);
-    float angle = vecAngle(manifold.normal, dir);
+    b2WorldManifold wManifold;
+    contact->GetWorldManifold(&wManifold);
+
+    float angle = vecAngle(wManifold.normal, dir);
     int side = getFixtureSide(fix2);
     bool rayRes = rayCheck(fix2);
-
-    if (type != 1 && (angle < 0.01f || rayRes || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)))){
+    if (angle < 0.01f || rayRes || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f))){
         std::set<b2Fixture*>::iterator iter0 = collidingFixtures[0].find(fix2);
         std::set<b2Fixture*>::iterator iter1 = collidingFixtures[1].find(fix2);
         if (angle < 0.01f){
@@ -245,8 +253,8 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
         }
     }
     else{
-        if (collidingFixtures[1 - side].find(fix2) != collidingFixtures[1 - side].end()){
-            releaseFixtures[1 - side].insert(fix2);
+        if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
+            releaseFixtures[1 ^ side].insert(fix2);
             ret = 3 - side;
         }
         else{
@@ -284,11 +292,12 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
-    if (collidingFixtures[1 - coll->side].find(fix2) != collidingFixtures[1 - coll->side].end()){
+    if (collidingFixtures[1 ^ coll->side].find(fix2) != collidingFixtures[1 ^ coll->side].end() ||
+        releaseFixtures[1 ^ coll->side].find(fix2) != releaseFixtures[1 ^ coll->side].end()){
         return false;
     }
 
-    float tHold = -0.01f;
+    float tHold = 0.0f;
 
     std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
 
@@ -309,22 +318,22 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     }
 
     for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+        //drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
     }
 
     for (b2Vec2 p : collPoints){
-        drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
+        //drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
     }
 
     for (b2Vec2 p : collPoints){
-        if (isLeft(points[1 - coll->side], points[coll->side], p, tHold)){
+        if (isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
             return false;
         }
     }
     if (collPoints.size() > 0) return true;
 
     for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        if (isLeft(points[1 - coll->side], points[coll->side], wManifold.points[i], tHold)){
+        if (isLeft(points[1 ^ coll->side], points[coll->side], wManifold.points[i], tHold)){
             return false;
         }
     }

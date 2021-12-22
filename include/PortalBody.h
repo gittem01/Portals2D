@@ -24,6 +24,7 @@ public:
 
     std::map<b2Body*, std::vector<void*>*> bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
+    std::map<b2Fixture*, std::set<Portal*>*> preparePortals;
     b2World* world;
     b2Color bodyColor;
 

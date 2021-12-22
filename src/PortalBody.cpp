@@ -21,6 +21,7 @@ PortalBody::PortalBody(b2Body* body, b2World* world, b2Color bodyColor){
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         fixtureCollisions[fix] = new std::set<portalCollision*>();
+        preparePortals[fix] = new std::set<Portal*>();
     }
 }
 
@@ -64,18 +65,18 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
     }
 
     if (bData && bData->type == PORTAL){
-        Portal* p = (Portal*)bData->data;
-        int out = p->preCollision(contact, fix2, fix1);
-        handleOut(fix1, p, out);
+        Portal* portal = (Portal*)bData->data;
+        int out = portal->preCollision(contact, fix2, fix1);
+        handleOut(fix1, portal, out);
     }
 }
 
 bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData){
     std::set<portalCollision*>* collidingPortals = fixtureCollisions[fix1];
     if (bData && bData->type == PORTAL){
-        Portal* p = (Portal*)bData->data;
+        Portal* portal = (Portal*)bData->data;
         for (portalCollision* coll : *collidingPortals){
-            if (p == coll->portal) return true;
+            if (portal == coll->portal) return true;
         }
     }
     
@@ -88,6 +89,9 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         if (coll->status == 0) return false;
         bool shouldCollide = coll->portal->shouldCollide(contact, fix1, fix2, coll);
         if (!shouldCollide) return false;
+    }
+    for (Portal* portal : *(preparePortals[fix1])){
+        
     }
     return true;
 }
@@ -112,7 +116,6 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     case 0:
         outHelper(fix, portal, 1, 0);
         break;
-    
     case 1:
         outHelper(fix, portal, 1, 1);
         break;
@@ -120,11 +123,17 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     case 2:
         outHelper(fix, portal, 0, 0);
         break;
-    
     case 3:
         outHelper(fix, portal, 0, 1);
         break;
     
+    case 5:
+        preparePortals[fix]->insert(portal);
+        break;
+    case 6:
+        preparePortals[fix]->erase(portal);
+        break;
+
     case 4:
         std::set<portalCollision*>* coll = fixtureCollisions[fix];
         for (auto& a : *coll){
