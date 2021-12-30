@@ -95,6 +95,7 @@ public:
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
+    bool prepareCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
     int getPointSide(b2Vec2 point);
 

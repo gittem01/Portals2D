@@ -30,13 +30,6 @@ float vecAngle(b2Vec2 v1, b2Vec2 v2){
     return acos(b2Dot(v1, v2));
 }
 
-void rotateVec(b2Vec2* vec, float angle){
-    float x = cos(angle) * vec->x - sin(angle) * vec->y;
-    float y = sin(angle) * vec->x + cos(angle) * vec->y;
-    vec->x = x;
-    vec->y = y;
-}
-
 void normalize(b2Vec2* vec){
     float length = sqrt(vec->x * vec->x + vec->y * vec->y);
     if (length == 0) { return; }
@@ -288,16 +281,20 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
+bool Portal::prepareCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    // none for now
+}
+
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll){
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
-    if (collidingFixtures[1 ^ coll->side].find(fix2) != collidingFixtures[1 ^ coll->side].end() ||
-        releaseFixtures[1 ^ coll->side].find(fix2) != releaseFixtures[1 ^ coll->side].end()){
+    if (collidingFixtures[1 ^ coll->side].find(fix2) != collidingFixtures[1 ^ coll->side].end()){
         return false;
     }
 
     float tHold = 0.0f;
+    if (fix2->GetBody()->GetType() == b2_staticBody) tHold = -0.001f;
 
     std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
 
@@ -360,40 +357,6 @@ void Portal::postHandle(){
         }
     }
 }
-
-void Portal::connectBodies(b2Body* body1, b2Body* body2) { // later use
-    b2PrismaticJointDef prismDef;
-    prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
-    prismDef.collideConnected = true;
-    prismDef.maxMotorForce = 0.0f;
-
-    body1->GetWorld()->CreateJoint(&prismDef);
-
-    b2Vec2 dirClone1 = connections[0].at(0)->portal2->dir;
-    b2Vec2 dirClone2 = this->dir;
-
-    float mult = 100000.0f;
-
-    b2PulleyJointDef pulleyDef;
-
-    b2Vec2 anchor1 = body1->GetPosition();
-    b2Vec2 anchor2 = body2->GetPosition();
-    b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
-    b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
-    pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    world->CreateJoint(&pulleyDef);
-
-    rotateVec(&dirClone1, b2_pi / 2.0f);
-    rotateVec(&dirClone2, b2_pi / 2.0f);
-
-    anchor1 = body1->GetPosition();
-    anchor2 = body2->GetPosition();
-    groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
-    groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
-    pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    world->CreateJoint(&pulleyDef);
-}
-
 
 void Portal::draw(){
     glLineWidth(2.0f);

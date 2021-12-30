@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 
 struct bodyData;
+struct portalConnection;
 class Portal;
 
 typedef struct {
@@ -39,6 +40,7 @@ public:
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
     void handleOut(b2Fixture* fix, Portal* portal, int out);
 
+    void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection);
     void drawBodies();
 
     void adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,

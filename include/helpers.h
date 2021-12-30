@@ -7,7 +7,6 @@
 #include <chrono>
 #include <thread>
 
-
 bool isPaused = false;
 bool tick = false;
 
@@ -142,10 +141,12 @@ void testCase1(b2World* world){
     Portal* portal1 = new Portal(b2Vec2(-9.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
     Portal* portal2 = new Portal(b2Vec2(-3.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
     Portal* portal3 = new Portal(b2Vec2(+6.0f, yPos - portalSize), b2Vec2(0.0f, +1.0f), portalSize, world);
+    Portal* portal4 = new Portal(b2Vec2(+10.0f - 0.2f, 0.0f), b2Vec2(-1.0f, 0.0f), portalSize, world);
 
     portal1->connect(portal2);
     portal2->connect(portal1, 0, 1);
     portal3->connect(portal2);
+    portal4->connect(portal2);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
         
@@ -179,4 +180,12 @@ void testCase1(b2World* world){
     def.position = b2Vec2(0.0f, 3.0f);
     b2Body* body3 = world->CreateBody(&def);
     body3->CreateFixture(&fDef);
+
+    def.position = b2Vec2(10.0f, 0.0f);
+    def.type = b2_staticBody;
+
+    shape.SetAsBox(0.2f, 10.0f);
+
+    b2Body* body4 = world->CreateBody(&def);
+    body4->CreateFixture(&fDef);
 }

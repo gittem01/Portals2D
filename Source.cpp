@@ -33,7 +33,7 @@ int main(void)
     int totalIter = 1;
     long sleepTime = 20; // millisecond
 
-    const int vsyncFps = 60;
+    const int vsyncFps = 30;
     while (!done)
     {
         frame++;
