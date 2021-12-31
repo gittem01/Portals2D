@@ -62,9 +62,15 @@ int main(void)
                 p->draw();
             }
 
+            int size0 = PortalBody::portalBodies.size();
+            for (int i = 0; i < size0; i++){
+                PortalBody* body = PortalBody::portalBodies.at(i);
+                body->postHandle();
+            }
             for (PortalBody* body : PortalBody::portalBodies){
                 body->drawBodies();
-            }            
+            }
+
             if (wh->keyData[GLFW_KEY_S] == 2) PortalBody::drawReleases ^= 1;
 
             glfwSwapInterval(1);

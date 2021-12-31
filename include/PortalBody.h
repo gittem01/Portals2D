@@ -13,9 +13,15 @@ class Portal;
 
 typedef struct {
     Portal* portal;
-    int status; // 0 for colliding 1 for released
+    int status; // 1 for colliding 0 for released
     int side;
 } portalCollision;
+
+typedef struct{
+    b2Body* body1;
+    Portal* collPortal;
+    int side;
+}bodyStruct;
 
 class PortalBody{
 public:
@@ -23,9 +29,12 @@ public:
     static b2Color releaseColor;
     static bool drawReleases;
 
+    std::vector<bodyStruct*> createBodies;
+
     std::map<b2Body*, std::vector<void*>*> bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     std::map<b2Fixture*, std::set<Portal*>*> preparePortals;
+    std::map<Portal*, std::map<b2Body*, int>> collFixCount;
     b2World* world;
     b2Color bodyColor;
 
@@ -40,7 +49,8 @@ public:
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
     void handleOut(b2Fixture* fix, Portal* portal, int out);
 
-    void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection);
+    void createCloneBody(b2Body* body1, Portal* collPortal, int side);
+    void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
     void drawBodies();
 
     void adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
@@ -52,6 +62,8 @@ public:
     void drawCircleFix(b2Fixture* fixture);
 
     void drawVertices(b2Body* body, std::vector<b2Vec2>& vertices);
+
+    void postHandle();
 
     b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 };

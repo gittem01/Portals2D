@@ -15,19 +15,19 @@ int Portal::getPointSide(b2Vec2 point){
     return isLeft(points[1], points[0], point, 0.0f);
 }
 
-float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c){
+float Portal::vecAngle(b2Vec2 v1, b2Vec2 v2){
+    return acos(b2Dot(v1, v2) / (v1.Length() * v2.Length()));
+}
+
+float Portal::getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c){
      return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x));
 }
 
-float calcAngle2(b2Vec2 vec) {
+float Portal::calcAngle2(b2Vec2 vec) {
     float angle = atan2(vec.y, vec.x);
     if (angle < 0) angle += b2_pi * 2.0f;
 
     return angle;
-}
-
-float vecAngle(b2Vec2 v1, b2Vec2 v2){
-    return acos(b2Dot(v1, v2));
 }
 
 void normalize(b2Vec2* vec){
@@ -155,7 +155,7 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
             releaseFixtures[1 ^ side].insert(fix2);
             ret = 3 - side;
         }
-        else{
+        else if (collidingFixtures[side].find(fix2) != collidingFixtures[side].end()){
             ret = 4;
         }
         collidingFixtures[0].erase(fix2);
@@ -250,7 +250,7 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
             releaseFixtures[1 ^ side].insert(fix2);
             ret = 3 - side;
         }
-        else{
+        else if (collidingFixtures[side].find(fix2) != collidingFixtures[side].end()){
             ret = 4;
         }
         collidingFixtures[0].erase(fix2);
@@ -279,10 +279,6 @@ int Portal::getFixtureSide(b2Fixture* fix){
     }
 
     return side;
-}
-
-bool Portal::prepareCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
-    // none for now
 }
 
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll){
@@ -323,11 +319,11 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     }
 
     for (b2Vec2 p : collPoints){
-        if (isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
-            return false;
+        if (!isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
+            return true;
         }
     }
-    if (collPoints.size() > 0) return true;
+    if (collPoints.size() > 0) return false;
 
     for (int i = 0; i < contact->GetManifold()->pointCount; i++){
         if (isLeft(points[1 ^ coll->side], points[coll->side], wManifold.points[i], tHold)){

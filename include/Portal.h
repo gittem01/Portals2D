@@ -110,6 +110,9 @@ public:
     b2Vec2 getRayPoint(b2RayCastInput& input, b2RayCastOutput& output);
 
     static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
+    static float vecAngle(b2Vec2 v1, b2Vec2 v2);
+    static float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c);
+    static float calcAngle2(b2Vec2 vec);
 
     static void portalUpdate(){
         for (Portal* p : Portal::portals) {

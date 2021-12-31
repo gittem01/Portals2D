@@ -86,13 +86,12 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         {
             return true;
         }
+
         if (coll->status == 0) return false;
         bool shouldCollide = coll->portal->shouldCollide(contact, fix1, fix2, coll);
         if (!shouldCollide) return false;
     }
-    for (Portal* portal : *(preparePortals[fix1])){
-        portal->prepareCheck(contact, fix1, fix2);
-    }
+    
     return true;
 }
 
@@ -110,20 +109,43 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
     fixtureCollisions[fix]->insert(portCol);
 }
 
+void PortalBody::postHandle(){
+    for (bodyStruct* s : createBodies){
+        createCloneBody(s->body1, s->collPortal, s->side);
+    }
+    createBodies.clear();
+}
+
 void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     switch (out)
     {
     case 0:
+        if (collFixCount[portal][fix->GetBody()] == 0)
+        {
+            bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
+            *s = {fix->GetBody(), portal, 0};
+            createBodies.push_back(s);
+        }
+        collFixCount[portal][fix->GetBody()]++;
         outHelper(fix, portal, 1, 0);
         break;
     case 1:
+        if (collFixCount[portal][fix->GetBody()] == 0)
+        {
+            bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
+            *s = {fix->GetBody(), portal, 1};
+            createBodies.push_back(s);
+        }
+        collFixCount[portal][fix->GetBody()]++;
         outHelper(fix, portal, 1, 1);
         break;
     
     case 2:
+        collFixCount[portal][fix->GetBody()]--;
         outHelper(fix, portal, 0, 0);
         break;
     case 3:
+        collFixCount[portal][fix->GetBody()]--;
         outHelper(fix, portal, 0, 1);
         break;
     
@@ -135,6 +157,7 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
         break;
 
     case 4:
+        collFixCount[portal][fix->GetBody()]--;
         std::set<portalCollision*>* coll = fixtureCollisions[fix];
         for (auto& a : *coll){
             if (a->portal == portal && a->status == 1){
@@ -154,8 +177,76 @@ void rotateVec(b2Vec2* vec, float angle){
     vec->y = y;
 }
 
-// later use
-void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection) {
+b2Vec2 rotateVec(b2Vec2 vec, float angle){
+    float x = cos(angle) * vec.x - sin(angle) * vec.y;
+    float y = sin(angle) * vec.x + cos(angle) * vec.y;
+
+    return b2Vec2(x, y);
+}
+
+void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
+    b2Vec2 dir1 = side ? -collPortal->dir : collPortal->dir;
+    b2Vec2 posDiff = collPortal->pos - body1->GetPosition();
+    b2Vec2 speed = body1->GetLinearVelocity();
+
+    for (portalConnection* c : collPortal->connections[side]){
+        Portal* portal2 = c->portal2;
+        
+        b2Vec2 dir2 = c->side2 ? -portal2->dir : portal2->dir;
+        float angleRot = Portal::vecAngle(dir1, dir2);
+        b2Vec2 v = b2Vec2();
+        if (angleRot > 0.01f && Portal::isLeft(dir1, v, dir2, 0.0f)){
+            angleRot -= b2_pi;
+        }
+
+        b2BodyDef def;
+        def.type = b2_dynamicBody;
+        def.position = portal2->pos + rotateVec(posDiff, angleRot);
+
+        b2Body* body2 = world->CreateBody(&def);
+        body2->SetLinearVelocity(-rotateVec(speed, angleRot));
+        body2->SetAngularVelocity(body1->GetAngularVelocity());
+        body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
+
+        for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
+            if (fix->GetType() == b2Shape::Type::e_polygon){
+                b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
+                b2FixtureDef fDef;
+                fDef.density = 1.0f;
+                b2PolygonShape newShape;
+                fDef.shape = &newShape;
+
+                newShape.m_count = polyShape->m_count;
+                b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
+
+                for (int i = 0; i < polyShape->m_count; i++){
+                    vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot + b2_pi);
+                }
+                newShape.Set(vertices, polyShape->m_count);
+                b2Fixture* f = body2->CreateFixture(&fDef);
+
+                portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
+                col->portal = portal2;
+                col->side = c->side2;
+                col->status = 1 - c->side1;
+
+                PortalBody* b = new PortalBody(body2, world);
+                b->fixtureCollisions[f]->insert(col);
+                b->bodyColor = this->bodyColor;
+                b->collFixCount[portal2][body2]++;
+                portal2->collidingFixtures[c->side2].insert(f);
+            }
+            // Circle shape
+            else{
+
+            }
+        }
+
+        connectBodies(body1, body2, c, side);
+    }
+}
+
+void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side) {
     b2PrismaticJointDef prismDef;
     prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
     prismDef.collideConnected = true;
@@ -163,8 +254,8 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
 
     body1->GetWorld()->CreateJoint(&prismDef);
 
-    b2Vec2 dirClone1 = connection->portal1->dir;
-    b2Vec2 dirClone2 = connection->portal2->dir;
+    b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
+    b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
 
     float mult = 100000.0f;
 
