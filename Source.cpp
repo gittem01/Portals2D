@@ -33,7 +33,7 @@ int main(void)
     int totalIter = 1;
     long sleepTime = 20; // millisecond
 
-    const int vsyncFps = 30;
+    const int vsyncFps = 60;
     while (!done)
     {
         frame++;
@@ -50,7 +50,7 @@ int main(void)
             for (int i = 0; i < totalIter; i++) {
                 mjh.mouseHandler(frame, totalIter);
 
-                world->Step(1.0f / (vsyncFps * totalIter), 800, 300);
+                world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
                 Portal::portalUpdate(); 
             }

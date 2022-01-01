@@ -206,7 +206,7 @@ bool Portal::rayCheck(b2Fixture* fix){
 // released without being inserted into the releaseFixtures set: 4
 int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     int ret = -1;
-
+    
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
@@ -335,23 +335,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 }
 
 void Portal::postHandle(){
-    for (int i = 0; i < 0; i++){ // disabled for now
-        std::vector<b2Fixture*> erases;
-        for (b2Fixture* fix : collidingFixtures[i]){
-            bool check = rayCheck(fix);
-            
-            if (!check){
-                int side = getFixtureSide(fix);
-                erases.push_back(fix);
-                if (side != i){
-                    releaseFixtures[i].insert(fix);
-                }
-            }
-        }
-        for (b2Fixture* fix : erases){
-            collidingFixtures[i].erase(fix);
-        }
-    }
+    
 }
 
 void Portal::draw(){
