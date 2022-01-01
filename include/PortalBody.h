@@ -35,8 +35,7 @@ public:
 
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     std::map<b2Fixture*, std::set<Portal*>*> preparePortals;
-    std::map<Portal*, std::map<b2Body*, int>> collFixCount;
-    std::map<Portal*, std::map<b2Body*, int>> relFixCount;
+
     b2World* world;
     b2Color bodyColor;
 

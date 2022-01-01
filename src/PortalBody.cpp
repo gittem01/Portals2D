@@ -141,29 +141,27 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
             *s = {fix->GetBody(), portal, 0};
             createBodies.push_back(s);
         }
-        collFixCount[portal][fix->GetBody()]++;
-        if (relFixCount[portal][fix->GetBody()] > 0) relFixCount[portal][fix->GetBody()]--;
         outHelper(fix, portal, 1, 0);
         break;
     case 1:
         if (shouldCreate(fix->GetBody(), portal, 1)){
+            bodyStruct* bs = new bodyStruct;
+            bs->body = nullptr;
+            bs->collPortal = portal;
+            bs->side = 1;
+            bodyMaps[fix->GetBody()]->push_back(bs);
+
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
             *s = {fix->GetBody(), portal, 1};
             createBodies.push_back(s);
         }
-        collFixCount[portal][fix->GetBody()]++;
-        if (relFixCount[portal][fix->GetBody()] > 0) relFixCount[portal][fix->GetBody()]--;
         outHelper(fix, portal, 1, 1);
         break;
     
     case 2:
-        collFixCount[portal][fix->GetBody()]--;
-        relFixCount[portal][fix->GetBody()]++;
         outHelper(fix, portal, 0, 0);
         break;
     case 3:
-        collFixCount[portal][fix->GetBody()]--;
-        relFixCount[portal][fix->GetBody()]++;
         outHelper(fix, portal, 0, 1);
         break;
     
@@ -175,7 +173,6 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
         break;
 
     case 4:
-        collFixCount[portal][fix->GetBody()]--;
         std::set<portalCollision*>* coll = fixtureCollisions[fix];
         for (auto& a : *coll){
             if (a->portal == portal && a->status == 1){
@@ -245,15 +242,12 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         body2->SetAngularVelocity(body1->GetAngularVelocity());
         body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
 
-        collFixCount[portal2][body2] = 0;
-        relFixCount[portal2][body2] = 0;
-
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
             b2Fixture* f = nullptr;
             if (fix->GetType() == b2Shape::Type::e_polygon){
                 b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
                 b2FixtureDef fDef;
-                fDef.density = 1.0f;
+                fDef.density = fix->GetDensity();
                 b2PolygonShape newShape;
                 fDef.shape = &newShape;
 
@@ -269,7 +263,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
             else{
                 b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
                 b2FixtureDef fDef;
-                fDef.density = 1.0f;
+                fDef.density = fix->GetDensity();
                 b2CircleShape newShape;
                 fDef.shape = &newShape;
 
@@ -290,12 +284,10 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
                     portal2->collidingFixtures[c->side2].insert(f);
                     col->status = 1;
-                    collFixCount[portal2][body2]++;
                 }
                 else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
                     portal2->releaseFixtures[c->side2].insert(f);
                     col->status = 0;
-                    relFixCount[portal2][body2]++;
                 }
 
                 fixtureCollisions[f]->insert(col);

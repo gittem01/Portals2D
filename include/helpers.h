@@ -134,6 +134,37 @@ float getRand(){
     return ((float)rand()) / RAND_MAX - 0.5f;
 }
 
+void testCase2(b2World* world){
+    Portal* portal1 = new Portal(b2Vec2(-7.0f, 0.0f), b2Vec2(+1.0f, 0.0f), 7.0f, world);
+    Portal* portal2 = new Portal(b2Vec2(+7.0f, 0.0f), b2Vec2(-1.0f, 0.0f), 7.0f, world);
+    Portal* portal3 = new Portal(b2Vec2(0.0f, -7.0f), b2Vec2(0.0f, +1.0f), 7.0f, world);
+    Portal* portal4 = new Portal(b2Vec2(0.0f, +7.0f), b2Vec2(0.0f, -1.0f), 7.0f, world);
+
+    portal1->connect(portal2);
+    portal3->connect(portal4);
+
+    createEdge(b2Vec2(-3.0f, 0.0f), b2Vec2(+3.0f, 0.0f), world, b2_staticBody);
+
+    //PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 3.0f)), world);
+
+    b2PolygonShape shape;
+    shape.SetAsBox(1.0f, 0.4f);
+
+    b2FixtureDef fDef;
+    fDef.shape = &shape;
+    fDef.density = 1.0f;
+
+    b2BodyDef def;
+    def.type = b2_dynamicBody;
+    def.position = b2Vec2(0, 3);
+
+    b2Body* body = world->CreateBody(&def);
+    body->CreateFixture(&fDef);
+
+    (new PortalBody(body, world))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+
+}
+
 void testCase1(b2World* world){
     float yPos = -4.0f;
     float portalSize = 3.0f;
@@ -142,13 +173,14 @@ void testCase1(b2World* world){
     Portal* portal2 = new Portal(b2Vec2(-3.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
     Portal* portal3 = new Portal(b2Vec2(+6.0f, yPos - portalSize + 0.1f), b2Vec2(0.0f, +1.0f), portalSize, world);
     Portal* portal4 = new Portal(b2Vec2(+10.0f - 0.3f, 0.0f), b2Vec2(-1.0f, 0.0f), portalSize, world);
-    Portal* portal5 = new Portal(b2Vec2(+6.0f, -3.0f), b2Vec2(0.0f, -1.0f), portalSize, world);
+    Portal* portal5 = new Portal(b2Vec2(+6.0f, -3.0f), b2Vec2(0.0f, +1.0f), portalSize, world);
 
     portal1->connect(portal2);
     portal2->connect(portal1, 0, 1);
-    portal3->connect(portal2);
+    //portal3->connect(portal2);
     //portal4->connect(portal2);
-    portal5->connect(portal4);
+    portal5->connect(portal3);
+    portal5->connect(portal3, 1, 1);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
         
