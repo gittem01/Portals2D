@@ -131,6 +131,12 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     case 0:
         //collFixCount[portal][fix->GetBody()] == 0 && relFixCount[portal][fix->GetBody()] == 0
         if (shouldCreate(fix->GetBody(), portal, 0)){
+            bodyStruct* bs = new bodyStruct;
+            bs->body = nullptr;
+            bs->collPortal = portal;
+            bs->side = 0;
+            bodyMaps[fix->GetBody()]->push_back(bs);
+
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
             *s = {fix->GetBody(), portal, 0};
             createBodies.push_back(s);
@@ -222,18 +228,18 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
 
         bodyMaps[body2] = new std::vector<bodyStruct*>();
 
-        bodyStruct* bs1 = new bodyStruct;
-        bs1->body = body1;
-        bs1->collPortal = portal2;
-        bs1->side = c->side2;
-        
-        bodyStruct* bs2 = new bodyStruct;
-        bs2->body = body2;
-        bs2->collPortal = collPortal;
-        bs2->side = c->side1;
+        bodyStruct* bs = new bodyStruct;
+        bs->body = body1;
+        bs->collPortal = portal2;
+        bs->side = c->side2;
 
-        bodyMaps[body1]->push_back(bs2);
-        bodyMaps[body2]->push_back(bs1);
+        for (bodyStruct* s : *bodyMaps[body1]){
+            if (s->collPortal == collPortal && s->side == side){
+                s->body = body2;
+                break;
+            }
+        }
+        bodyMaps[body2]->push_back(bs);
 
         body2->SetLinearVelocity(rotateVec(speed, angleRot));
         body2->SetAngularVelocity(body1->GetAngularVelocity());
@@ -243,6 +249,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         relFixCount[portal2][body2] = 0;
 
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
+            b2Fixture* f = nullptr;
             if (fix->GetType() == b2Shape::Type::e_polygon){
                 b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
                 b2FixtureDef fDef;
@@ -257,8 +264,14 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                     vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot);
                 }
                 newShape.Set(vertices, polyShape->m_count);
-                b2Fixture* f = body2->CreateFixture(&fDef);
+                f = body2->CreateFixture(&fDef);
+            }
+            // Circle shape
+            else{
 
+            }
+
+            if (f){
                 portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
                 col->portal = portal2;
                 col->side = c->side2;
@@ -278,10 +291,6 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 }
 
                 fixtureCollisions[f]->insert(col);
-            }
-            // Circle shape
-            else{
-
             }
         }
         
