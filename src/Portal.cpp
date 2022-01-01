@@ -357,15 +357,17 @@ void Portal::connect(Portal* portal2, int side1, int side2, int isReversed){
 
     this->connections[c1->side1].push_back(c1);
 
-    portalConnection* c2 = (portalConnection*)malloc(sizeof(portalConnection));
+    if (portal2 != this || side1 != side2){
+        portalConnection* c2 = (portalConnection*)malloc(sizeof(portalConnection));
 
-    c2->portal1 = portal2;
-    c2->portal2 = this;
-    c2->side1 = side2;
-    c2->side2 = side1;
-    c2->isReversed = isReversed;
+        c2->portal1 = portal2;
+        c2->portal2 = this;
+        c2->side1 = side2;
+        c2->side2 = side1;
+        c2->isReversed = isReversed;
 
-    portal2->connections[c2->side2].push_back(c2);
+        portal2->connections[c2->side1].push_back(c2);
+    }
 
     this->color = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
     portal2->color = b2Color(1.0f - this->color.r, this->color.g, 1.0f - this->color.b);
