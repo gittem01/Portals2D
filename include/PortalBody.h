@@ -23,6 +23,11 @@ typedef struct{
     int side;
 }bodyStruct;
 
+typedef struct{
+    b2Body* body;
+    portalConnection* connection;
+}bodyCollisionStatus;
+
 class PortalBody{
 public:
     static std::vector<PortalBody*> portalBodies;
@@ -31,7 +36,8 @@ public:
 
     std::vector<bodyStruct*> createBodies;
 
-    std::map<b2Body*, std::vector<bodyStruct*>*> bodyMaps;
+    std::map<b2Body*, std::vector<bodyCollisionStatus*>*> bodyMaps;
+    std::set<b2Body*> destroyBodies;
 
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     std::map<b2Fixture*, std::set<Portal*>*> preparePortals;
@@ -46,6 +52,7 @@ public:
     void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
+    void destroyCheck(b2Body* body, Portal* portal);
     bool shouldCreate(b2Body* body, Portal* portal, int side);
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
