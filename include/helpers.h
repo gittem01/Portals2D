@@ -147,8 +147,8 @@ void testCase1(b2World* world){
     portal1->connect(portal2);
     portal2->connect(portal1, 0, 1);
     portal3->connect(portal2);
-    portal4->connect(portal2);
-    portal5->connect(portal2);
+    //portal4->connect(portal2);
+    portal5->connect(portal4);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
         

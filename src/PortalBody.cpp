@@ -111,34 +111,42 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
 
 void PortalBody::postHandle(){
     for (bodyStruct* s : createBodies){
-        createCloneBody(s->body1, s->collPortal, s->side);
+        createCloneBody(s->body, s->collPortal, s->side);
     }
     createBodies.clear();
+}
+
+bool PortalBody::shouldCreate(b2Body* body, Portal* portal, int side){
+    for (bodyStruct* s : *bodyMaps[body]){
+        if (s->collPortal == portal && s->side == side)
+            return false;
+    }
+
+    return true;
 }
 
 void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     switch (out)
     {
     case 0:
-        if (collFixCount[portal][fix->GetBody()] == 0 && relFixCount[portal][fix->GetBody()] == 0)
-        {
+        //collFixCount[portal][fix->GetBody()] == 0 && relFixCount[portal][fix->GetBody()] == 0
+        if (shouldCreate(fix->GetBody(), portal, 0)){
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
             *s = {fix->GetBody(), portal, 0};
             createBodies.push_back(s);
         }
         collFixCount[portal][fix->GetBody()]++;
-        relFixCount[portal][fix->GetBody()]--;
+        if (relFixCount[portal][fix->GetBody()] > 0) relFixCount[portal][fix->GetBody()]--;
         outHelper(fix, portal, 1, 0);
         break;
     case 1:
-        if (collFixCount[portal][fix->GetBody()] == 0 && relFixCount[portal][fix->GetBody()] == 0)
-        {
+        if (shouldCreate(fix->GetBody(), portal, 1)){
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
             *s = {fix->GetBody(), portal, 1};
             createBodies.push_back(s);
         }
         collFixCount[portal][fix->GetBody()]++;
-        relFixCount[portal][fix->GetBody()]--;
+        if (relFixCount[portal][fix->GetBody()] > 0) relFixCount[portal][fix->GetBody()]--;
         outHelper(fix, portal, 1, 1);
         break;
     
@@ -214,9 +222,25 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
 
         bodyMaps[body2] = new std::vector<bodyStruct*>();
 
+        bodyStruct* bs1 = new bodyStruct;
+        bs1->body = body1;
+        bs1->collPortal = portal2;
+        bs1->side = c->side2;
+        
+        bodyStruct* bs2 = new bodyStruct;
+        bs2->body = body2;
+        bs2->collPortal = collPortal;
+        bs2->side = c->side1;
+
+        bodyMaps[body1]->push_back(bs2);
+        bodyMaps[body2]->push_back(bs1);
+
         body2->SetLinearVelocity(rotateVec(speed, angleRot));
         body2->SetAngularVelocity(body1->GetAngularVelocity());
         body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
+
+        collFixCount[portal2][body2] = 0;
+        relFixCount[portal2][body2] = 0;
 
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
             if (fix->GetType() == b2Shape::Type::e_polygon){
