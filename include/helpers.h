@@ -153,10 +153,10 @@ void testCase1(b2World* world){
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
         
     PortalBody* b1 = new PortalBody(createObody(world, b2Vec2(0.0f, 3.0f)), world);
-    //PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 6.0f)), world);
+    PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 6.0f)), world);
 
     b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
-    //b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
+    b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
 
     b2PolygonShape shape;
     shape.SetAsBox(1.0f, 0.4f);

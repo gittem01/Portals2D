@@ -266,9 +266,17 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 newShape.Set(vertices, polyShape->m_count);
                 f = body2->CreateFixture(&fDef);
             }
-            // Circle shape
             else{
+                b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
+                b2FixtureDef fDef;
+                fDef.density = 1.0f;
+                b2CircleShape newShape;
+                fDef.shape = &newShape;
 
+                newShape.m_radius = circleShape->m_radius;
+                newShape.m_p = rotateVec(circleShape->m_p, angleRot);
+                
+                f = body2->CreateFixture(&fDef);
             }
 
             if (f){
