@@ -8,7 +8,7 @@ int main(void)
     cam->zoom = 0.7f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -0.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -22,7 +22,7 @@ int main(void)
     
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase1(world);
+    testCase2(world);
 
     for (Portal* p : Portal::portals){
         p->drawer = drawer;
@@ -30,10 +30,10 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 1;
+    int totalIter = 10;
     long sleepTime = 20; // millisecond
 
-    const int vsyncFps = 30;
+    const int vsyncFps = 60;
     while (!done)
     {
         frame++;

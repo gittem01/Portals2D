@@ -142,12 +142,13 @@ void testCase2(b2World* world){
     Portal* portal3 = new Portal(b2Vec2(0.0f, -7.0f), b2Vec2(0.0f, +1.0f), 7.0f, world);
     Portal* portal4 = new Portal(b2Vec2(0.0f, +7.0f), b2Vec2(0.0f, -1.0f), 7.0f, world);
 
-    portal1->connect(portal2);
-    portal3->connect(portal4);
+    portal1->connect(portal3);
+    portal2->connect(portal4);
 
-    createEdge(b2Vec2(-3.0f, 0.0f), b2Vec2(+3.0f, 0.0f), world, b2_staticBody);
+    //createEdge(b2Vec2(-3.0f, 0.0f), b2Vec2(+3.0f, 0.0f), world, b2_staticBody);
 
-    //PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 3.0f)), world);
+    PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 3.0f)), world);
+    b2->bodyColor = b2Color(1, 0, 1, 0.5f);
 
     b2PolygonShape shape;
     shape.SetAsBox(1.0f, 0.4f);
@@ -164,7 +165,6 @@ void testCase2(b2World* world){
     body->CreateFixture(&fDef);
 
     (new PortalBody(body, world))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
-
 }
 
 void testCase1(b2World* world){
@@ -178,7 +178,7 @@ void testCase1(b2World* world){
     Portal* portal5 = new Portal(b2Vec2(+6.0f, -3.0f), b2Vec2(0.0f, -1.0f), portalSize, world);
 
     portal1->connect(portal2);
-    portal2->connect(portal1, 0, 1, 1);
+    portal2->connect(portal1, 0, 1, true);
     //portal3->connect(portal2);
     portal4->connect(portal4);
     portal5->connect(portal3);
