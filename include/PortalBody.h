@@ -34,15 +34,14 @@ public:
     static std::vector<PortalBody*> portalBodies;
     static b2Color releaseColor;
     static bool drawReleases;
+    static std::set<PortalBody*> destroyBodies;
 
     std::vector<bodyStruct*> createBodies;
 
     b2Body* _body;
     std::vector<bodyCollisionStatus*>* bodyMaps;
-    std::set<PortalBody*> destroyBodies;
 
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
-    std::map<b2Fixture*, std::set<Portal*>*> preparePortals;
 
     b2World* world;
     b2Color bodyColor;
@@ -75,6 +74,7 @@ public:
     void drawVertices(b2Body* body, std::vector<b2Vec2>& vertices);
 
     void postHandle();
+    static void globalPostHandle(b2World* world);
 
     b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 };

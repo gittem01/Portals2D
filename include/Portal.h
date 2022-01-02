@@ -50,13 +50,11 @@ public:
     b2World* world;
     b2Body* body;
     b2Fixture* midFixture;
-    b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
     b2RayCastInput rcInp1;
     b2RayCastInput rcInp2;
 
-    std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
     std::set<b2Fixture*> releaseFixtures[2];
 
@@ -95,7 +93,6 @@ public:
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
-    bool prepareCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
     int getPointSide(b2Vec2 point);
 

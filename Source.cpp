@@ -8,7 +8,7 @@ int main(void)
     cam->zoom = 0.7f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -9.8f));
+    b2World* world = new b2World(b2Vec2(0.0f, -0.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -30,7 +30,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 1;
+    int totalIter = 10;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 30;
@@ -62,8 +62,8 @@ int main(void)
                 p->draw();
             }
 
-            int size0 = PortalBody::portalBodies.size();
-            for (int i = 0; i < size0; i++){
+            PortalBody::globalPostHandle(world);
+            for (int i = 0; i < PortalBody::portalBodies.size(); i++){
                 PortalBody* body = PortalBody::portalBodies.at(i);
                 body->postHandle();
             }

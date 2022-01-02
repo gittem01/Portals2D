@@ -207,7 +207,7 @@ void testCase1(b2World* world){
     //(new PortalBody(body, world))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
 
     def.position = b2Vec2(0.0f, -2.0f);
-    def.linearDamping = 0.5f;
+    def.linearDamping = 0.0f;
     b2Body* body2 = world->CreateBody(&def);
     body2->CreateFixture(&fDef);
 

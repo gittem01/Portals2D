@@ -6,6 +6,7 @@
 bool PortalBody::drawReleases = true;
 b2Color PortalBody::releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
 std::vector<PortalBody*> PortalBody::portalBodies;
+std::set<PortalBody*> PortalBody::destroyBodies;
 
 PortalBody::PortalBody(b2Body* body, b2World* world, b2Color bodyColor){
     this->world = world;
@@ -22,7 +23,6 @@ PortalBody::PortalBody(b2Body* body, b2World* world, b2Color bodyColor){
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         fixtureCollisions[fix] = new std::set<portalCollision*>();
-        preparePortals[fix] = new std::set<Portal*>();
     }
 }
 
@@ -110,7 +110,7 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
     fixtureCollisions[fix]->insert(portCol);
 }
 
-void PortalBody::postHandle(){
+void PortalBody::globalPostHandle(b2World* world){
     for (PortalBody* b : destroyBodies){
         for (b2Fixture* fix = b->_body->GetFixtureList(); fix; fix = fix->GetNext()){
             for (Portal* p : Portal::portals){
@@ -118,31 +118,32 @@ void PortalBody::postHandle(){
                     p->collidingFixtures[i].erase(fix);
                     p->releaseFixtures[i].erase(fix);
                 }
-                p->prepareFixtures.erase(fix);
             }
         }
 
-        for (int i = 0; i < bodyMaps->size(); i++){
-            if (bodyMaps->at(i)->body == b){
-                delete(bodyMaps->at(i));
-                bodyMaps->erase(bodyMaps->begin() + i);
-                i--;
+        for (int i = 0; i < b->bodyMaps->size(); i++){
+            bodyCollisionStatus* body1Status = b->bodyMaps->at(i);
+            for (auto iter = body1Status->body->bodyMaps->begin(); iter != body1Status->body->bodyMaps->end(); std::advance(iter, 1)){
+                if ((*iter)->body == b){
+                    delete(*iter);
+                    body1Status->body->bodyMaps->erase(iter);
+                    break;
+                }
             }
-        }
-
-        for (bodyCollisionStatus* st : *bodyMaps){
-            delete(st);
         }
 
         world->DestroyBody(b->_body);
-        // for (int i = 0 ; i < PortalBody::portalBodies.size(); i++){
-        //     if (PortalBody::portalBodies.at(i) == b){
-        //         PortalBody::portalBodies.erase(PortalBody::portalBodies.begin() + i);
-        //         break;
-        //     }
-        // }
+        for (int i = 0 ; i < PortalBody::portalBodies.size(); i++){
+            if (PortalBody::portalBodies.at(i) == b){
+                PortalBody::portalBodies.erase(PortalBody::portalBodies.begin() + i);
+                delete(b);
+                break;
+            }
+        }
     }
+}
 
+void PortalBody::postHandle(){
     for (bodyStruct* s : createBodies){
         createCloneBody(s->body, s->collPortal, s->side);
     }
@@ -199,13 +200,6 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
         break;
     case 3:
         outHelper(fix, portal, 0, 1);
-        break;
-    
-    case 5:
-        preparePortals[fix]->insert(portal);
-        break;
-    case 6:
-        preparePortals[fix]->erase(portal);
         break;
 
     case 4:
@@ -334,7 +328,6 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
             }
 
             npb->fixtureCollisions[f] = new std::set<portalCollision*>();
-            npb->preparePortals[f] = new std::set<Portal*>();
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
             col->portal = portal2;

@@ -101,25 +101,6 @@ void Portal::createPortalBody(b2World* world){
     
     shape.SetTwoSided(points[1], points[1]);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
-
-    float widthMul = 1.0f;
-    float dirMult = 1.0f;
-
-    b2Vec2 p1 = points[0] - widthMul * pVec;
-    b2Vec2 p2 = points[1] + widthMul * pVec;
-
-    b2Vec2 p3 = p1 + dirMult * dir;
-    b2Vec2 p4 = p2 + dirMult * dir;
-
-    p1 += -dirMult * dir;
-    p2 += -dirMult * dir;
-
-    b2Vec2 polyPoints1[4] = { p1, p2, p3, p4 };
-
-    b2PolygonShape polyShape;
-    polyShape.Set(polyPoints1, 4);
-    collisionSensor = body->CreateFixture(&polyShape, 0.0f);
-    collisionSensor->SetSensor(true);
 }
 
 int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
@@ -132,10 +113,6 @@ int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2)
 
     if (fix1 == midFixture){
         ret = handleCollidingFixtures(contact, fix1, fix2);
-    }
-    if (fix1 == collisionSensor){
-        prepareFixtures.insert(fix2);
-        ret = 5;
     }
 
     return ret;
@@ -160,10 +137,6 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
         }
         collidingFixtures[0].erase(fix2);
         collidingFixtures[1].erase(fix2);
-    }
-    else if (fix1 == collisionSensor){
-        prepareFixtures.erase(fix2);
-        ret = 6;
     }
 
     return ret;
