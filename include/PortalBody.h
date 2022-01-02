@@ -10,6 +10,7 @@
 struct bodyData;
 struct portalConnection;
 class Portal;
+class PortalBody;
 
 typedef struct {
     Portal* portal;
@@ -24,7 +25,7 @@ typedef struct{
 }bodyStruct;
 
 typedef struct{
-    b2Body* body;
+    PortalBody* body;
     portalConnection* connection;
 }bodyCollisionStatus;
 
@@ -36,8 +37,9 @@ public:
 
     std::vector<bodyStruct*> createBodies;
 
-    std::map<b2Body*, std::vector<bodyCollisionStatus*>*> bodyMaps;
-    std::set<b2Body*> destroyBodies;
+    b2Body* _body;
+    std::vector<bodyCollisionStatus*>* bodyMaps;
+    std::set<PortalBody*> destroyBodies;
 
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     std::map<b2Fixture*, std::set<Portal*>*> preparePortals;

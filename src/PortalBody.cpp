@@ -9,7 +9,8 @@ std::vector<PortalBody*> PortalBody::portalBodies;
 
 PortalBody::PortalBody(b2Body* body, b2World* world, b2Color bodyColor){
     this->world = world;
-    this->bodyMaps[body] = new std::vector<bodyCollisionStatus*>();
+    this->_body = body;
+    this->bodyMaps = new std::vector<bodyCollisionStatus*>();
 
     bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
     bd->data = this;
@@ -110,12 +111,8 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
 }
 
 void PortalBody::postHandle(){
-    for (bodyStruct* s : createBodies){
-        createCloneBody(s->body, s->collPortal, s->side);
-    }
-
-    for (b2Body* b : destroyBodies){
-        for (b2Fixture* fix = b->GetFixtureList(); fix; fix = fix->GetNext()){
+    for (PortalBody* b : destroyBodies){
+        for (b2Fixture* fix = b->_body->GetFixtureList(); fix; fix = fix->GetNext()){
             for (Portal* p : Portal::portals){
                 for (int i = 0; i < 2; i++){
                     p->collidingFixtures[i].erase(fix);
@@ -124,25 +121,30 @@ void PortalBody::postHandle(){
                 p->prepareFixtures.erase(fix);
             }
         }
-        
-        for (auto iter = bodyMaps.begin(); iter != bodyMaps.end(); std::advance(iter, 1)){
-            auto vec = (*iter).second;
-            for (int i = 0; i < vec->size(); i++){
-                if (vec->at(i)->body == b){
-                    delete(vec->at(i));
-                    vec->erase(vec->begin() + i);
-                    i--;
-                }
+
+        for (int i = 0; i < bodyMaps->size(); i++){
+            if (bodyMaps->at(i)->body == b){
+                delete(bodyMaps->at(i));
+                bodyMaps->erase(bodyMaps->begin() + i);
+                i--;
             }
         }
 
-        for (bodyCollisionStatus* st : *bodyMaps[b]){
+        for (bodyCollisionStatus* st : *bodyMaps){
             delete(st);
         }
-        
-        delete(bodyMaps[b]);
-        bodyMaps.erase(b);
-        world->DestroyBody(b);
+
+        world->DestroyBody(b->_body);
+        // for (int i = 0 ; i < PortalBody::portalBodies.size(); i++){
+        //     if (PortalBody::portalBodies.at(i) == b){
+        //         PortalBody::portalBodies.erase(PortalBody::portalBodies.begin() + i);
+        //         break;
+        //     }
+        // }
+    }
+
+    for (bodyStruct* s : createBodies){
+        createCloneBody(s->body, s->collPortal, s->side);
     }
 
     createBodies.clear();
@@ -150,7 +152,7 @@ void PortalBody::postHandle(){
 }
 
 bool PortalBody::shouldCreate(b2Body* body, Portal* portal, int side){
-    for (bodyCollisionStatus* s : *bodyMaps[body]){
+    for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal && s->connection->side1 == side)
             return false;
     }
@@ -167,7 +169,7 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
                 bodyCollisionStatus* bcs = new bodyCollisionStatus;
                 bcs->body = nullptr;
                 bcs->connection = c;
-                bodyMaps[fix->GetBody()]->push_back(bcs);
+                bodyMaps->push_back(bcs);
             }
 
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
@@ -182,7 +184,7 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
                 bodyCollisionStatus* bcs = new bodyCollisionStatus;
                 bcs->body = nullptr;
                 bcs->connection = c;
-                bodyMaps[fix->GetBody()]->push_back(bcs);
+                bodyMaps->push_back(bcs);
             }
 
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
@@ -227,8 +229,9 @@ void PortalBody::destroyCheck(b2Body* body, Portal* portal){
                 return;
             }
         }
-    }   
-    for (bodyCollisionStatus* s : *bodyMaps[body]){
+    }
+
+    for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal){
             destroyBodies.insert(s->body);
         }
@@ -265,6 +268,8 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         b2BodyDef def;
         def.type = b2_dynamicBody;
         def.position = portal2->pos + rotateVec(posDiff, angleRot + b2_pi);
+        def.linearDamping = body1->GetLinearDamping();
+        def.angularDamping = body1->GetAngularDamping();
 
         b2Body* body2 = world->CreateBody(&def);
 
@@ -273,10 +278,12 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         bd->type = PORTAL_BODY;
         body2->GetUserData().pointer = (uintptr_t)bd;
 
-        bodyMaps[body2] = new std::vector<bodyCollisionStatus*>();
-
         bodyCollisionStatus* bcs = new bodyCollisionStatus;
-        bcs->body = body1;
+
+        PortalBody* npb = new PortalBody(body2, world, bodyColor);
+        npb->bodyMaps->push_back(bcs);
+
+        bcs->body = this;
         for (portalConnection* conn : portal2->connections[c->side2]){
             if (conn->portal2 == collPortal && conn->side2 == c->side1){
                 bcs->connection = conn;
@@ -284,20 +291,19 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
             }
         }
 
-        for (bodyCollisionStatus* s : *bodyMaps[body1]){
+        for (bodyCollisionStatus* s : *bodyMaps){
             if (s->connection == c){
-                s->body = body2;
+                s->body = npb;
                 break;
             }
         }
-        bodyMaps[body2]->push_back(bcs);
 
         body2->SetLinearVelocity(rotateVec(speed, angleRot));
         body2->SetAngularVelocity(body1->GetAngularVelocity());
         body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
 
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
-            b2Fixture* f = nullptr;
+            b2Fixture* f;
             if (fix->GetType() == b2Shape::Type::e_polygon){
                 b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
                 b2FixtureDef fDef;
@@ -327,27 +333,25 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 f = body2->CreateFixture(&fDef);
             }
 
-            if (f){
-                portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
-                col->portal = portal2;
-                col->side = c->side2;
+            npb->fixtureCollisions[f] = new std::set<portalCollision*>();
+            npb->preparePortals[f] = new std::set<Portal*>();
 
-                fixtureCollisions[f] = new std::set<portalCollision*>();
-                preparePortals[f] = new std::set<Portal*>();
-                
-                if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
-                    portal2->collidingFixtures[c->side2].insert(f);
-                    col->status = 1;
-                }
-                else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
-                    portal2->releaseFixtures[c->side2].insert(f);
-                    col->status = 0;
-                }
+            portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
+            col->portal = portal2;
+            col->side = c->side2;
 
-                fixtureCollisions[f]->insert(col);
+            if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
+                portal2->collidingFixtures[c->side2].insert(f);
+                col->status = 1;
             }
+            else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
+                portal2->releaseFixtures[c->side2].insert(f);
+                col->status = 0;
+            }
+
+            npb->fixtureCollisions[f]->insert(col);   
         }
-        
+
         connectBodies(body1, body2, c, side);
     }
 }
@@ -386,14 +390,12 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
 }
 
 void PortalBody::drawBodies(){
-    for (auto iter = bodyMaps.begin(); iter != bodyMaps.end(); iter++){
-        for (b2Fixture* fix = iter->first->GetFixtureList(); fix != nullptr; fix = fix->GetNext()){
-            if (fix->GetType() == b2Shape::Type::e_polygon){
-                drawPolygonFix(fix);
-            }
-            else if (fix->GetType() == b2Shape::Type::e_circle){
-                drawCircleFix(fix);
-            }
+    for (b2Fixture* fix = _body->GetFixtureList(); fix != nullptr; fix = fix->GetNext()){
+        if (fix->GetType() == b2Shape::Type::e_polygon){
+            drawPolygonFix(fix);
+        }
+        else if (fix->GetType() == b2Shape::Type::e_circle){
+            drawCircleFix(fix);
         }
     }
 }

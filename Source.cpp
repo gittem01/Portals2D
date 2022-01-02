@@ -8,7 +8,7 @@ int main(void)
     cam->zoom = 0.7f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -0.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -9.8f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
