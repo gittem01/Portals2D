@@ -30,7 +30,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 1;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 30;
@@ -53,22 +53,21 @@ int main(void)
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
                 Portal::portalUpdate(); 
+                PortalBody::globalPostHandle(world);
+                for (int i = 0; i < PortalBody::portalBodies.size(); i++){
+                    PortalBody* body = PortalBody::portalBodies.at(i);
+                    body->postHandle();
+                }
             }
 
             mjh.drawMouseBody();
-            world->DebugDraw();
+            //world->DebugDraw();
             drawer->drawWorld(world);
-            for (Portal* p : Portal::portals) {
-                p->draw();
-            }
-
-            PortalBody::globalPostHandle(world);
-            for (int i = 0; i < PortalBody::portalBodies.size(); i++){
-                PortalBody* body = PortalBody::portalBodies.at(i);
-                body->postHandle();
-            }
             for (PortalBody* body : PortalBody::portalBodies){
                 body->drawBodies();
+            }
+            for (Portal* p : Portal::portals) {
+                p->draw();
             }
 
             if (wh->keyData[GLFW_KEY_S] == 2) PortalBody::drawReleases ^= 1;
