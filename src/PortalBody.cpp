@@ -259,9 +259,14 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
 
         b2Vec2 v = b2Vec2();
 
+        b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
+        if (c->isReversed)
+            localPos = -localPos - 2.0f * (b2Dot(-localPos, dir2)) * dir2;
+
         b2BodyDef def;
         def.type = b2_dynamicBody;
-        def.position = portal2->pos + rotateVec(posDiff, angleRot + b2_pi);
+        def.position = portal2->pos + localPos;
+        
         def.linearDamping = body1->GetLinearDamping();
         def.angularDamping = body1->GetAngularDamping();
 
@@ -372,7 +377,11 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
     world->CreateJoint(&pulleyDef);
 
     rotateVec(&dirClone1, b2_pi / 2.0f);
-    rotateVec(&dirClone2, b2_pi / 2.0f);
+    if (connection->isReversed)
+        rotateVec(&dirClone2, -b2_pi / 2.0f);
+    else
+        rotateVec(&dirClone2, b2_pi / 2.0f);
+
 
     anchor1 = body1->GetPosition();
     anchor2 = body2->GetPosition();
