@@ -4,11 +4,11 @@
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(NULL);
-    Camera* cam = new Camera(glm::vec2(0, -2), wh);
-    cam->zoom = 0.7f;
+    Camera* cam = new Camera(glm::vec2(0, 0), wh);
+    cam->zoom = 0.6f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -20.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -30,7 +30,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 5;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 60;

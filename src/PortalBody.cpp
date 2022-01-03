@@ -3,7 +3,7 @@
 
 #define CIRCLE_POINTS 50
 
-bool PortalBody::drawReleases = true;
+bool PortalBody::drawReleases = false;
 b2Color PortalBody::releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
 std::vector<PortalBody*> PortalBody::portalBodies;
 std::set<PortalBody*> PortalBody::destroyBodies;

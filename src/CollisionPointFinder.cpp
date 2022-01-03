@@ -27,7 +27,7 @@ std::vector<b2Vec2> Portal::getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2)
 }
 
 std::vector<b2Vec2> Portal::collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2) {
-	std::vector<b2Vec2> returnVector;
+	std::vector<b2Vec2> returnVector = {getFixtureCenter(fix2)};
 
 	return returnVector;
 }
