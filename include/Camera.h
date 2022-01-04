@@ -11,6 +11,8 @@ public:
 	glm::vec2 pos;
 	glm::vec2 defaultXSides = glm::vec2(-8.0f, +8.0f);
 	glm::vec2 defaultYSides = glm::vec2(-4.5f, +4.5f);
+	
+	float baseX = 16.0f;
 
 	glm::vec2 zoomLimits = glm::vec2(0.5, 5);
 

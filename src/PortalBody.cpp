@@ -219,7 +219,7 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
 }
 
 void PortalBody::destroyCheck(b2Body* bBody, Portal* portal){
-    for (b2Fixture* fix = bBody->GetFixtureList(); fix; fix  = fix->GetNext()){
+    for (b2Fixture* fix = bBody->GetFixtureList(); fix; fix = fix->GetNext()){
         for (portalCollision* coll : *fixtureCollisions[fix]){
             if (coll->portal == portal){
                 return;

@@ -136,4 +136,8 @@ void WindowPainter::windowSizeEventCallback(GLFWwindow* window, int width, int h
     glViewport(0, 0, (int)(width * thisClass->dpiScaling), (int)(height * thisClass->dpiScaling));
     thisClass->windowSizes.x = width;
     thisClass->windowSizes.y = height;
+
+    float ratio = (float)height / width;
+
+    thisClass->cam->defaultYSides = glm::vec2(-thisClass->cam->baseX * ratio * 0.5f, thisClass->cam->baseX * ratio * 0.5f);
 }

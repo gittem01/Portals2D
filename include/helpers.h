@@ -121,6 +121,42 @@ b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
     return edgeBody;
 }
 
+b2Body* createBox(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type){
+    b2PolygonShape shape;
+    shape.SetAsBox(size.x, size.y);
+
+    b2FixtureDef fDef;
+    fDef.shape = &shape;
+    fDef.density = 1.0f;
+
+    b2BodyDef def;
+    def.type = type;
+    def.position = pos;
+
+    b2Body* body = world->CreateBody(&def);
+    body->CreateFixture(&fDef);
+
+    return body;
+}
+
+b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type){
+    b2CircleShape shape;
+    shape.m_radius = size;
+
+    b2FixtureDef fDef;
+    fDef.shape = &shape;
+    fDef.density = 1.0f;
+
+    b2BodyDef def;
+    def.type = type;
+    def.position = pos;
+
+    b2Body* body = world->CreateBody(&def);
+    body->CreateFixture(&fDef);
+
+    return body;
+}
+
 void keyHandler(WindowPainter* wh) {
     tick = false;
     if (wh->keyData[GLFW_KEY_P] == 2) {
@@ -163,33 +199,35 @@ void testCase2(b2World* world){
 }
 
 void testCase3(b2World* world){
-    Portal* portal1 = new Portal(b2Vec2(-10.0f, 0.0f), b2Vec2(+1.0f, 0.0f), 10.0f, world);
-    Portal* portal2 = new Portal(b2Vec2(+10.0f, 0.0f), b2Vec2(-1.0f, 0.0f), 10.0f, world);
-    Portal* portal3 = new Portal(b2Vec2(0.0f, -10.0f), b2Vec2(0.0f, +1.0f), 10.0f, world);
-    Portal* portal4 = new Portal(b2Vec2(0.0f, +10.0f), b2Vec2(0.0f, -1.0f), 10.0f, world);
+    float r = 10.0f;
+    const int n = 20; // n * 2 portals will be created
+    float anglePlus = glm::radians(0.0f);
+    Portal** circlePortals = (Portal**)malloc(2 * n * sizeof(Portal*));
 
-    portal1->connect(portal2);
-    portal3->connect(portal4);
+    for (int i = 0; i < n * 2; i++){
+        float angle1 = i * (b2_pi / n) + anglePlus;
+        float angle2 = (i + 1) * (b2_pi / n) + anglePlus;
+        b2Vec2 p1 = b2Vec2(sin(angle1) * r, cos(angle1) * r);
+        b2Vec2 p2 = b2Vec2(sin(angle2) * r, cos(angle2) * r);
+        float l = (p1 - p2).Length();
+        b2Vec2 pos = 0.5f * (p1 + p2);
+        Portal* portal = new Portal(pos, -pos, l / 2.0f, world);
+        circlePortals[i] = portal;
+    }
+    for (int i = 0; i < n; i++){
+        circlePortals[i]->connect(circlePortals[n + i]);
+    }
 
-    //new PortalBody(createObody(world, b2Vec2(0.0f, 0.0f)), world, b2Color(1.0f, 0.0f, 1.0f, 0.5f));
-    //new PortalBody(createWbody(world, b2Vec2(0.0f, -4.0f)), world, b2Color(1.0f, 1.0f, 0.0f, 0.5f));
+    float sizeM = 0.2f;
+    for (int i = 0; i < 200; i++){
+        b2Vec2 size = b2Vec2(sizeM + sizeM * (rand() / (double)RAND_MAX), sizeM + sizeM * (rand() / (double)RAND_MAX));
+        float r = sizeM + 2.0f * sizeM * (rand() / (double)RAND_MAX);
 
-    for (int i = 0; i < 400; i++){
-        b2PolygonShape shape;
-        shape.SetAsBox(0.4f + 0.2f * (rand() / (double)RAND_MAX), 0.4f + 0.2f * (rand() / (double)RAND_MAX));
+        b2Body* body1 = createBox(b2Vec2(0, 0), size, world, b2_dynamicBody);
+        b2Body* body2 = createCircle(b2Vec2(rand() % 5 + r, rand() % 5), r, world, b2_dynamicBody);
 
-        b2FixtureDef fDef;
-        fDef.shape = &shape;
-        fDef.density = 1.0f;
-
-        b2BodyDef def;
-        def.type = b2_dynamicBody;
-        def.position = b2Vec2(0, 0);
-
-        b2Body* body = world->CreateBody(&def);
-        body->CreateFixture(&fDef);
-
-        (new PortalBody(body, world))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+        (new PortalBody(body1, world))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+        (new PortalBody(body2, world))->bodyColor = b2Color(1.0f, 1.0f, 0.0f, 0.5f);
     }
 }
 

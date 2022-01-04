@@ -16,7 +16,7 @@ int Portal::getPointSide(b2Vec2 point){
 }
 
 float Portal::vecAngle(b2Vec2 v1, b2Vec2 v2){
-    return acos(b2Dot(v1, v2) / (v1.Length() * v2.Length()));
+    return abs(calcAngle2(v1) - calcAngle2(v2));
 }
 
 float Portal::getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c){
@@ -31,7 +31,7 @@ float Portal::calcAngle2(b2Vec2 vec) {
 }
 
 void normalize(b2Vec2* vec){
-    float length = sqrt(vec->x * vec->x + vec->y * vec->y);
+    float length = vec->Length();
     if (length == 0) { return; }
     
     vec->x /= length;
@@ -40,21 +40,22 @@ void normalize(b2Vec2* vec){
 
 
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
+    dir.Normalize();
+
     this->world = world;
     this->pos = pos;
     this->dir = dir;
-    normalize(&this->dir);
     this->size = size;
     calculatePoints();
     createPortalBody(world);
     
-    rcInp1.p1 = points[0];
-    rcInp1.p2 = points[1];
-    rcInp1.maxFraction = 1.0f;
+    this->rcInp1.p1 = points[0];
+    this->rcInp1.p2 = points[1];
+    this->rcInp1.maxFraction = 1.0f;
 
-    rcInp2.p1 = points[1];
-    rcInp2.p2 = points[0];
-    rcInp2.maxFraction = 1.0f;
+    this->rcInp2.p1 = points[1];
+    this->rcInp2.p2 = points[0];
+    this->rcInp2.maxFraction = 1.0f;
 
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
 
@@ -318,6 +319,13 @@ void Portal::draw(){
 	glVertex2d(points[0].x, points[0].y);
 	glVertex2d(points[1].x, points[1].y);
 	glEnd();
+
+    // glLineWidth(2.0f);
+    // glColor4f(1, 1, 1, 1);
+    // glBegin(GL_LINES);
+    // glVertex2d(pos.x, pos.y);
+    // glVertex2d(pos.x + dir.x * 4.0f, pos.y + dir.y * 4.0f);
+    // glEnd();
 }
 
 void Portal::connect(Portal* portal2, int side1, int side2, int isReversed){
