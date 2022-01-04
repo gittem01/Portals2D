@@ -84,7 +84,11 @@ public:
                 continue;
             }
 
-            b2Vec2 diff = clickedBody->GetPosition() - target;
+            b2MassData mData;
+            clickedBody->GetMassData(&mData);
+            b2Vec2 bodyPos = clickedBody->GetWorldPoint(mData.center);
+
+            b2Vec2 diff = bodyPos - target;
 
             selectedBodies.insert(clickedBody);
 
@@ -210,7 +214,9 @@ public:
 
     bool isCircleIn(b2Body* body, b2CircleShape* shape) {
         b2Vec2 thisPos = mouseBody->GetPosition();
-        b2Vec2 bodyPos = body->GetPosition();
+        b2MassData mData;
+        body->GetMassData(&mData);
+        b2Vec2 bodyPos = body->GetWorldPoint(mData.center);
         float r = bodyRadius - shape->m_radius;
 
         if ((bodyPos - thisPos).Length() > r)

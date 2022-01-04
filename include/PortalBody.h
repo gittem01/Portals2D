@@ -38,7 +38,7 @@ public:
 
     std::vector<bodyStruct*> createBodies;
 
-    b2Body* _body;
+    b2Body* body;
     std::vector<bodyCollisionStatus*>* bodyMaps;
 
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;

@@ -8,9 +8,9 @@ b2Color PortalBody::releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
 std::vector<PortalBody*> PortalBody::portalBodies;
 std::set<PortalBody*> PortalBody::destroyBodies;
 
-PortalBody::PortalBody(b2Body* body, b2World* world, b2Color bodyColor){
+PortalBody::PortalBody(b2Body* bBody, b2World* world, b2Color bodyColor){
     this->world = world;
-    this->_body = body;
+    this->body = bBody;
     this->bodyMaps = new std::vector<bodyCollisionStatus*>();
 
     bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
@@ -112,7 +112,7 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
 
 void PortalBody::globalPostHandle(b2World* world){
     for (PortalBody* b : destroyBodies){
-        for (b2Fixture* fix = b->_body->GetFixtureList(); fix; fix = fix->GetNext()){
+        for (b2Fixture* fix = b->body->GetFixtureList(); fix; fix = fix->GetNext()){
             for (Portal* p : Portal::portals){
                 for (int i = 0; i < 2; i++){
                     p->collidingFixtures[i].erase(fix);
@@ -132,7 +132,7 @@ void PortalBody::globalPostHandle(b2World* world){
             }
         }
 
-        world->DestroyBody(b->_body);
+        world->DestroyBody(b->body);
         for (int i = 0 ; i < PortalBody::portalBodies.size(); i++){
             if (PortalBody::portalBodies.at(i) == b){
                 PortalBody::portalBodies.erase(PortalBody::portalBodies.begin() + i);
@@ -141,6 +141,8 @@ void PortalBody::globalPostHandle(b2World* world){
             }
         }
     }
+
+    destroyBodies.clear();
 }
 
 void PortalBody::postHandle(){
@@ -149,10 +151,9 @@ void PortalBody::postHandle(){
     }
 
     createBodies.clear();
-    destroyBodies.clear();
 }
 
-bool PortalBody::shouldCreate(b2Body* body, Portal* portal, int side){
+bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal && s->connection->side1 == side)
             return false;
@@ -216,8 +217,8 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     }
 }
 
-void PortalBody::destroyCheck(b2Body* body, Portal* portal){
-    for (b2Fixture* fix = body->GetFixtureList(); fix; fix  = fix->GetNext()){
+void PortalBody::destroyCheck(b2Body* bBody, Portal* portal){
+    for (b2Fixture* fix = bBody->GetFixtureList(); fix; fix  = fix->GetNext()){
         for (portalCollision* coll : *fixtureCollisions[fix]){
             if (coll->portal == portal){
                 return;
@@ -369,8 +370,16 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
 
     b2PulleyJointDef pulleyDef;
 
-    b2Vec2 anchor1 = body1->GetPosition();
-    b2Vec2 anchor2 = body2->GetPosition();
+    b2MassData data1;
+    b2MassData data2;
+    body1->GetMassData(&data1);
+    body2->GetMassData(&data2);
+    
+    b2Vec2 center1 = body1->GetWorldPoint(data1.center);
+    b2Vec2 center2 = body2->GetWorldPoint(data2.center);
+
+    b2Vec2 anchor1 = center1;
+    b2Vec2 anchor2 = center2;
     b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
     b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
@@ -382,9 +391,8 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
     else
         rotateVec(&dirClone2, b2_pi / 2.0f);
 
-
-    anchor1 = body1->GetPosition();
-    anchor2 = body2->GetPosition();
+    anchor1 = center1;
+    anchor2 = center2;
     groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
     groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
@@ -392,7 +400,7 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
 }
 
 void PortalBody::drawBodies(){
-    for (b2Fixture* fix = _body->GetFixtureList(); fix != nullptr; fix = fix->GetNext()){
+    for (b2Fixture* fix = body->GetFixtureList(); fix != nullptr; fix = fix->GetNext()){
         if (fix->GetType() == b2Shape::Type::e_polygon){
             drawPolygonFix(fix);
         }
@@ -433,7 +441,7 @@ void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec
 }
 
 void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
-    b2Body* body = fix->GetBody();
+    b2Body* bBody = fix->GetBody();
 
     int side;
     int renderStatus = 2;
@@ -482,13 +490,13 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
         }
 
         if (drawVecs.size() > 0){
-            drawVertices(body, drawVecs);
+            drawVertices(bBody, drawVecs);
         }
         if (drawReleases){
             for (auto& vecs : allReleases){
                 b2Color oldColor = bodyColor;
                 bodyColor = releaseColor;
-                drawVertices(body, vecs);
+                drawVertices(bBody, vecs);
                 bodyColor = oldColor;
             }
         }
@@ -496,15 +504,15 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
     else if (drawReleases && renderStatus == 0){
             b2Color oldColor = bodyColor;
             bodyColor = releaseColor;
-            drawVertices(body, vertices);
+            drawVertices(bBody, vertices);
             bodyColor = oldColor;
     }
 
-    else if (renderStatus == 2) drawVertices(body, vertices);
+    else if (renderStatus == 2) drawVertices(bBody, vertices);
 }
 
 void PortalBody::drawPolygonFix(b2Fixture* fix){
-    b2Body* body = fix->GetBody();
+    b2Body* bBody = fix->GetBody();
     b2PolygonShape* shape = (b2PolygonShape*)fix->GetShape();
 
     int vertexCount = shape->m_count;
@@ -512,7 +520,7 @@ void PortalBody::drawPolygonFix(b2Fixture* fix){
 
 	for (int i = 0; i < vertexCount; i++) {
         b2Vec2 p = b2Vec2((shape->m_vertices + i)->x, (shape->m_vertices + i)->y);
-        p = body->GetWorldPoint(p);
+        p = bBody->GetWorldPoint(p);
         vertices.push_back(p);
 	}
 
@@ -520,7 +528,7 @@ void PortalBody::drawPolygonFix(b2Fixture* fix){
 }
 
 void PortalBody::drawCircleFix(b2Fixture* fix){
-    b2Body* body = fix->GetBody();
+    b2Body* bBody = fix->GetBody();
     b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
     float r = shape->m_radius;
 
@@ -537,9 +545,9 @@ void PortalBody::drawCircleFix(b2Fixture* fix){
     portalRender(fix, vertices);
 }
 
-void PortalBody::drawVertices(b2Body* body, std::vector<b2Vec2>& vertices){
+void PortalBody::drawVertices(b2Body* bBody, std::vector<b2Vec2>& vertices){
     float transparency = 1.0f;
-    if (!body->IsAwake()){
+    if (!bBody->IsAwake()){
         transparency /= 1.5f;
     }
     

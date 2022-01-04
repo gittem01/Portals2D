@@ -8,7 +8,7 @@ int main(void)
     cam->zoom = 0.6f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -20.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -10.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -53,11 +53,11 @@ int main(void)
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
                 Portal::portalUpdate(); 
-                PortalBody::globalPostHandle(world);
                 for (int i = 0; i < PortalBody::portalBodies.size(); i++){
                     PortalBody* body = PortalBody::portalBodies.at(i);
                     body->postHandle();
                 }
+                PortalBody::globalPostHandle(world);
             }
 
             mjh.drawMouseBody();
