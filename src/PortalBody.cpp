@@ -112,6 +112,7 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
 
 void PortalBody::globalPostHandle(b2World* world){
     for (PortalBody* b : destroyBodies){
+        if (!b) continue;
         for (b2Fixture* fix = b->body->GetFixtureList(); fix; fix = fix->GetNext()){
             for (Portal* p : Portal::portals){
                 for (int i = 0; i < 2; i++){

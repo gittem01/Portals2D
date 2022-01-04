@@ -174,7 +174,7 @@ void testCase3(b2World* world){
     //new PortalBody(createObody(world, b2Vec2(0.0f, 0.0f)), world, b2Color(1.0f, 0.0f, 1.0f, 0.5f));
     //new PortalBody(createWbody(world, b2Vec2(0.0f, -4.0f)), world, b2Color(1.0f, 1.0f, 0.0f, 0.5f));
 
-    for (int i = 0; i < 20; i++){
+    for (int i = 0; i < 400; i++){
         b2PolygonShape shape;
         shape.SetAsBox(0.4f + 0.2f * (rand() / (double)RAND_MAX), 0.4f + 0.2f * (rand() / (double)RAND_MAX));
 
@@ -184,7 +184,7 @@ void testCase3(b2World* world){
 
         b2BodyDef def;
         def.type = b2_dynamicBody;
-        def.position = b2Vec2(0, -2);
+        def.position = b2Vec2(0, 0);
 
         b2Body* body = world->CreateBody(&def);
         body->CreateFixture(&fDef);
