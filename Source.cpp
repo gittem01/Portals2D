@@ -22,7 +22,7 @@ int main(void)
     
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase3(world);
+    testCase4(world);
 
     for (Portal* p : Portal::portals){
         p->drawer = drawer;

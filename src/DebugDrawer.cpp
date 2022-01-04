@@ -81,7 +81,7 @@ void DebugDrawer::drawWorld(b2World* world){
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext()){
 
 		bodyData* bData = (bodyData*)b->GetUserData().pointer;
-		if (bData && bData->type == PORTAL_BODY) continue;
+		if (bData && (bData->type == PORTAL_BODY || bData->type == PORTAL)) continue;
 
 		const b2Transform& xf = b->GetTransform();
 		for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())

@@ -128,6 +128,8 @@ b2Body* createBox(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type){
     b2FixtureDef fDef;
     fDef.shape = &shape;
     fDef.density = 1.0f;
+    fDef.restitution = 0.0f;
+    fDef.friction = 0.2f;
 
     b2BodyDef def;
     def.type = type;
@@ -146,6 +148,8 @@ b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type){
     b2FixtureDef fDef;
     fDef.shape = &shape;
     fDef.density = 1.0f;
+    fDef.restitution = 0.0f;
+    fDef.friction = 0.2f;
 
     b2BodyDef def;
     def.type = type;
@@ -235,14 +239,14 @@ void testCase1(b2World* world){
     float yPos = -4.0f;
     float portalSize = 3.0f;
 
-    Portal* portal1 = new Portal(b2Vec2(-9.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
+    Portal* portal1 = new Portal(b2Vec2(-4.5f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
     Portal* portal2 = new Portal(b2Vec2(-3.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
     Portal* portal3 = new Portal(b2Vec2(+6.0f, yPos - portalSize + 0.1f), b2Vec2(0.0f, +1.0f), portalSize, world);
     Portal* portal4 = new Portal(b2Vec2(+10.0f - 0.3f, 0.0f), b2Vec2(-1.0f, 0.0f), portalSize, world);
     Portal* portal5 = new Portal(b2Vec2(+6.0f, -3.0f), b2Vec2(0.0f, -1.0f), portalSize, world);
 
     portal1->connect(portal2);
-    portal2->connect(portal1, 0, 1);
+    //portal2->connect(portal1, 0, 1);
     //portal3->connect(portal2);
     portal4->connect(portal4);
     portal5->connect(portal3);
@@ -288,4 +292,33 @@ void testCase1(b2World* world){
 
     //b2Body* body4 = world->CreateBody(&def);
     //body4->CreateFixture(&fDef);
+}
+
+void testCase4(b2World* world){
+    float yPos = -4.0f;
+    float portalSize = 3.0f;
+    float d = 0.5f;
+    int n = 41;
+
+    Portal** linePortals = (Portal**)malloc(n * sizeof(Portal*));
+
+    createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
+
+    b2Body* body1 = createBox(b2Vec2(-n * d - 4.0f, 0), b2Vec2(1.0f, 0.6f), world, b2_dynamicBody);
+    b2Body* body2 = createCircle(b2Vec2(-n * d - 4.0f, 1), 1, world, b2_dynamicBody);
+
+    (new PortalBody(body1, world))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+    (new PortalBody(body2, world))->bodyColor = b2Color(1.0f, 1.0f, 0.0f, 0.5f);
+
+    Portal* portal1 = new Portal(b2Vec2(-1 * d - n * d, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
+
+    for (int i = 0; i < n; i++){
+        Portal* portal = new Portal(b2Vec2(i * d - n * d, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
+        linePortals[i] = portal;
+    }
+
+    portal1->connect(linePortals[0]);
+    for (int i = 0; i < n - 1; i++){
+        linePortals[i]->connect(linePortals[i + 1], i % 2, 0);
+    }
 }

@@ -82,7 +82,7 @@ void Portal::createPortalBody(b2World* world){
     *data = { PORTAL, this };
     bd.userData.pointer = (uintptr_t)data;
 
-    bd.type = b2_kinematicBody;
+    bd.type = b2_staticBody;
     body = world->CreateBody(&bd);
 
     b2EdgeShape shape;
@@ -351,5 +351,5 @@ void Portal::connect(Portal* portal2, int side1, int side2, int isReversed){
     }
 
     this->color = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
-    portal2->color = b2Color(1.0f - this->color.r, this->color.g, 1.0f - this->color.b);
+    portal2->color = b2Color(1.0f - this->color.r, this->color.g, 1.0f - this->color.b, 1.0f);
 }

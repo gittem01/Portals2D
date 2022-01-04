@@ -259,8 +259,6 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         b2Vec2 dir2 = c->side2 ? -portal2->dir : portal2->dir;
         float angleRot = -Portal::calcAngle2(dir1) + Portal::calcAngle2(-dir2);
 
-        b2Vec2 v = b2Vec2();
-
         b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
         if (c->isReversed)
             localPos = -localPos - 2.0f * (b2Dot(-localPos, dir2)) * dir2;
@@ -309,6 +307,8 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
                 b2FixtureDef fDef;
                 fDef.density = fix->GetDensity();
+                fDef.restitution = fix->GetRestitution();
+                fDef.friction = fix->GetFriction();
                 b2PolygonShape newShape;
                 fDef.shape = &newShape;
 
@@ -316,7 +316,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
 
                 for (int i = 0; i < polyShape->m_count; i++){
-                    vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot);
+                    vertices[i] = rotateVec(polyShape->m_vertices[i], -angleRot);
                 }
                 newShape.Set(vertices, polyShape->m_count);
                 f = body2->CreateFixture(&fDef);
@@ -325,6 +325,8 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
                 b2FixtureDef fDef;
                 fDef.density = fix->GetDensity();
+                fDef.restitution = fix->GetRestitution();
+                fDef.friction = fix->GetFriction();
                 b2CircleShape newShape;
                 fDef.shape = &newShape;
 
@@ -474,7 +476,7 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
         if (iter != (*fixIter).second->end()){
             for(;;){
                 std::vector<b2Vec2> releaseVecs;
-                adjustVertices(vertices, drawVecs, releaseVecs, (*iter)->portal, s);
+                adjustVertices(vertices, drawVecs, releaseVecs, (*iter)->portal, (*iter)->side);
                 
                 vertices.clear();
                 for (b2Vec2 v : drawVecs){
