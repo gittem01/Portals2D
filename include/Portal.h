@@ -99,8 +99,7 @@ public:
     std::vector<b2Vec2> getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2);
 
     std::vector<b2Vec2> collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2);
-    std::vector<b2Vec2> collidePolygonPolygon(b2Fixture* fix1, b2Fixture* fix2);
-    std::vector<b2Vec2> collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2);
+    std::vector<b2Vec2> collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2, b2Fixture* cFix, b2Fixture* oFix);
     std::vector<b2Vec2> collideEdgeOther(b2Fixture* fix1, b2Fixture* fix2);
     b2Vec2 getFixtureCenter(b2Fixture* fix);
 

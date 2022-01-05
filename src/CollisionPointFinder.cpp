@@ -10,13 +10,13 @@ std::vector<b2Vec2> Portal::getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2)
 		return collideEdgeOther(fix2, fix1);
 	}
 	else if (type1 == b2Shape::e_polygon && type2 != b2Shape::e_polygon) {
-		return collidePolygonOther(fix1, fix2);
+		return collidePolygonOther(fix1, fix2, fix2, fix1);
 	}
 	else if (type1 != b2Shape::e_polygon && type2 == b2Shape::e_polygon) {
-		return collidePolygonOther(fix2, fix1);
+		return collidePolygonOther(fix2, fix1, fix2, fix1);
 	}
 	else if (type1 == b2Shape::e_polygon && type2 == b2Shape::e_polygon) {
-		return collidePolygonOther(fix1, fix2);
+		return collidePolygonOther(fix1, fix2, fix2, fix1);
 	}
 	if (type1 == b2Shape::e_circle && type2 == b2Shape::e_circle) {
 		return collideCircleCircle(fix1, fix2);
@@ -32,13 +32,7 @@ std::vector<b2Vec2> Portal::collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2
 	return returnVector;
 }
 
-std::vector<b2Vec2> Portal::collidePolygonPolygon(b2Fixture* fix1, b2Fixture* fix2) {
-	std::vector<b2Vec2> returnVector;
-
-	return returnVector;
-}
-
-std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2) {
+std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2, b2Fixture* cFix, b2Fixture* oFix) {
 	std::vector<b2Vec2> returnVector;
 
 	b2PolygonShape* shape = (b2PolygonShape*)(fix1->GetShape());
@@ -72,8 +66,13 @@ std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2
 	}
 
 	// inside of the other fixture or just started colliding
-	if (returnVector.size() == 0 && fix2->GetType() == b2Shape::Type::e_polygon) {
-		returnVector.push_back(getFixtureCenter(fix2));
+	if (returnVector.size() == 0) {
+		b2Vec2 center = getFixtureCenter(cFix);
+		// if true : inside
+		if (oFix->TestPoint(center)){
+			returnVector.push_back(getFixtureCenter(cFix));
+		}
+		// else : just started colliding
 	}
 
 	return returnVector;

@@ -1,14 +1,15 @@
 #include "helpers.h"
 #include <vector>
 
+
 int main(void)
 {
-    WindowPainter* wh = new WindowPainter(NULL);
+    WindowPainter* wh = new WindowPainter(nullptr);
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
     cam->zoom = 0.6f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -30.0f));
+    b2World* world = new b2World(b2Vec2(0.0f, -9.81f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -22,7 +23,7 @@ int main(void)
     
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase4(world);
+    testCase3(world);
 
     for (Portal* p : Portal::portals){
         p->drawer = drawer;
@@ -63,11 +64,11 @@ int main(void)
             mjh.drawMouseBody();
             //world->DebugDraw();
             drawer->drawWorld(world);
-            for (PortalBody* body : PortalBody::portalBodies){
-                body->drawBodies();
-            }
             for (Portal* p : Portal::portals) {
                 p->draw();
+            }
+            for (PortalBody* body : PortalBody::portalBodies){
+                body->drawBodies();
             }
 
             if (wh->keyData[GLFW_KEY_S] == 2) PortalBody::drawReleases ^= 1;
