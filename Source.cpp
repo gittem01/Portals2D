@@ -23,7 +23,7 @@ int main(void)
     
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase3(world);
+    testCase1(world);
 
     for (Portal* p : Portal::portals){
         p->drawer = drawer;
@@ -64,11 +64,11 @@ int main(void)
             mjh.drawMouseBody();
             //world->DebugDraw();
             drawer->drawWorld(world);
-            for (Portal* p : Portal::portals) {
-                p->draw();
-            }
             for (PortalBody* body : PortalBody::portalBodies){
                 body->drawBodies();
+            }
+            for (Portal* p : Portal::portals) {
+                p->draw();
             }
 
             if (wh->keyData[GLFW_KEY_S] == 2) PortalBody::drawReleases ^= 1;

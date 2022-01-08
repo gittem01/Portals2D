@@ -32,9 +32,9 @@ typedef struct{
 class PortalBody{
 public:
     static std::vector<PortalBody*> portalBodies;
+    static std::set<PortalBody*> destroyBodies;
     static b2Color releaseColor;
     static bool drawReleases;
-    static std::set<PortalBody*> destroyBodies;
 
     std::vector<bodyStruct*> createBodies;
 

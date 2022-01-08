@@ -269,6 +269,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         
         def.linearDamping = body1->GetLinearDamping();
         def.angularDamping = body1->GetAngularDamping();
+        def.bullet = body1->IsBullet();
 
         b2Body* body2 = world->CreateBody(&def);
 
@@ -316,7 +317,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
 
                 for (int i = 0; i < polyShape->m_count; i++){
-                    vertices[i] = rotateVec(polyShape->m_vertices[i], -angleRot);
+                    vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot);
                 }
                 newShape.Set(vertices, polyShape->m_count);
                 f = body2->CreateFixture(&fDef);
