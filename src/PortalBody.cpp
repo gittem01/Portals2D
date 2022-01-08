@@ -1,15 +1,11 @@
 #include "Portal.h"
+#include "PortalWorld.h"
 #include "glm/common.hpp"
 
 #define CIRCLE_POINTS 50
 
-bool PortalBody::drawReleases = false;
-b2Color PortalBody::releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
-std::vector<PortalBody*> PortalBody::portalBodies;
-std::set<PortalBody*> PortalBody::destroyBodies;
-
-PortalBody::PortalBody(b2Body* bBody, b2World* world, b2Color bodyColor){
-    this->world = world;
+PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
+    this->pWorld = pWorld;
     this->body = bBody;
     this->bodyMaps = new std::vector<bodyCollisionStatus*>();
 
@@ -19,7 +15,7 @@ PortalBody::PortalBody(b2Body* bBody, b2World* world, b2Color bodyColor){
     body->GetUserData().pointer = (uintptr_t)bd;
 
     this->bodyColor = bodyColor;
-    PortalBody::portalBodies.push_back(this);
+    pWorld->portalBodies.push_back(this);
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         fixtureCollisions[fix] = new std::set<portalCollision*>();
@@ -110,42 +106,6 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
     fixtureCollisions[fix]->insert(portCol);
 }
 
-void PortalBody::globalPostHandle(b2World* world){
-    for (PortalBody* b : destroyBodies){
-        if (!b) continue;
-        for (b2Fixture* fix = b->body->GetFixtureList(); fix; fix = fix->GetNext()){
-            for (Portal* p : Portal::portals){
-                for (int i = 0; i < 2; i++){
-                    p->collidingFixtures[i].erase(fix);
-                    p->releaseFixtures[i].erase(fix);
-                }
-            }
-        }
-
-        for (int i = 0; i < b->bodyMaps->size(); i++){
-            bodyCollisionStatus* body1Status = b->bodyMaps->at(i);
-            for (auto iter = body1Status->body->bodyMaps->begin(); iter != body1Status->body->bodyMaps->end(); std::advance(iter, 1)){
-                if ((*iter)->body == b){
-                    delete(*iter);
-                    body1Status->body->bodyMaps->erase(iter);
-                    break;
-                }
-            }
-        }
-
-        world->DestroyBody(b->body);
-        for (int i = 0 ; i < PortalBody::portalBodies.size(); i++){
-            if (PortalBody::portalBodies.at(i) == b){
-                PortalBody::portalBodies.erase(PortalBody::portalBodies.begin() + i);
-                delete(b);
-                break;
-            }
-        }
-    }
-
-    destroyBodies.clear();
-}
-
 void PortalBody::postHandle(){
     for (bodyStruct* s : createBodies){
         createCloneBody(s->body, s->collPortal, s->side);
@@ -229,7 +189,7 @@ void PortalBody::destroyCheck(b2Body* bBody, Portal* portal){
 
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal){
-            destroyBodies.insert(s->body);
+            pWorld->destroyBodies.insert(s->body);
         }
     }
 }
@@ -257,7 +217,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         Portal* portal2 = c->portal2;
         
         b2Vec2 dir2 = c->side2 ? -portal2->dir : portal2->dir;
-        float angleRot = -Portal::calcAngle2(dir1) + Portal::calcAngle2(-dir2);
+        float angleRot = -pWorld->calcAngle2(dir1) + pWorld->calcAngle2(-dir2);
 
         b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
         if (c->isReversed)
@@ -271,7 +231,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         def.angularDamping = body1->GetAngularDamping();
         def.bullet = body1->IsBullet();
 
-        b2Body* body2 = world->CreateBody(&def);
+        b2Body* body2 = pWorld->world->CreateBody(&def);
 
         bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
         bd->data = this;
@@ -280,7 +240,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
 
         bodyCollisionStatus* bcs = new bodyCollisionStatus;
 
-        PortalBody* npb = new PortalBody(body2, world, bodyColor);
+        PortalBody* npb = new PortalBody(body2, pWorld, bodyColor);
         npb->bodyMaps->push_back(bcs);
 
         bcs->body = this;
@@ -365,7 +325,7 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
     prismDef.collideConnected = true;
     prismDef.maxMotorForce = 0.0f;
 
-    body1->GetWorld()->CreateJoint(&prismDef);
+    pWorld->world->CreateJoint(&prismDef);
 
     b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
     b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
@@ -387,7 +347,7 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
     b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
     b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    world->CreateJoint(&pulleyDef);
+    pWorld->world->CreateJoint(&pulleyDef);
 
     rotateVec(&dirClone1, b2_pi / 2.0f);
     if (connection->isReversed)
@@ -400,7 +360,7 @@ void PortalBody::connectBodies(b2Body* body1, b2Body* body2, portalConnection* c
     groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
     groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    world->CreateJoint(&pulleyDef);
+    pWorld->world->CreateJoint(&pulleyDef);
 }
 
 void PortalBody::drawBodies(){
@@ -496,18 +456,18 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
         if (drawVecs.size() > 0){
             drawVertices(bBody, drawVecs);
         }
-        if (drawReleases){
+        if (pWorld->drawReleases){
             for (auto& vecs : allReleases){
                 b2Color oldColor = bodyColor;
-                bodyColor = releaseColor;
+                bodyColor = pWorld->releaseColor;
                 drawVertices(bBody, vecs);
                 bodyColor = oldColor;
             }
         }
     }
-    else if (drawReleases && renderStatus == 0){
+    else if (pWorld->drawReleases && renderStatus == 0){
             b2Color oldColor = bodyColor;
-            bodyColor = releaseColor;
+            bodyColor = pWorld->releaseColor;
             drawVertices(bBody, vertices);
             bodyColor = oldColor;
     }

@@ -5,49 +5,16 @@
 #include <thread>
 #include <GLFW/glfw3.h>
 
-std::set<Portal*> Portal::portals;
 
-bool Portal::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){
-     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t;
-}
-
-int Portal::getPointSide(b2Vec2 point){
-    return isLeft(points[1], points[0], point, 0.0f);
-}
-
-float Portal::vecAngle(b2Vec2 v1, b2Vec2 v2){
-    return abs(calcAngle2(v1) - calcAngle2(v2));
-}
-
-float Portal::getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c){
-     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x));
-}
-
-float Portal::calcAngle2(b2Vec2 vec) {
-    float angle = atan2(vec.y, vec.x);
-    if (angle < 0) angle += b2_pi * 2.0f;
-
-    return angle;
-}
-
-void normalize(b2Vec2* vec){
-    float length = vec->Length();
-    if (length == 0) { return; }
-    
-    vec->x /= length;
-    vec->y /= length;
-}
-
-
-Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
+Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     dir.Normalize();
 
-    this->world = world;
+    this->pWorld = pWorld;
     this->pos = pos;
     this->dir = dir;
     this->size = size;
     calculatePoints();
-    createPortalBody(world);
+    createPortalBody();
     
     this->rcInp1.p1 = points[0];
     this->rcInp1.p2 = points[1];
@@ -59,7 +26,7 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world){
 
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
 
-    portals.insert(this);
+    pWorld->portals.insert(this);
 }
 
 Portal::~Portal() {
@@ -67,7 +34,7 @@ Portal::~Portal() {
 }
 
 void Portal::calculatePoints(){
-    this->angle = calcAngle2(this->dir) + b2_pi / 2.0f;
+    this->angle = pWorld->calcAngle2(this->dir) + b2_pi / 2.0f;
 
     points[0].x = pos.x + cos(angle) * size;
     points[0].y = pos.y + sin(angle) * size;
@@ -76,14 +43,14 @@ void Portal::calculatePoints(){
     points[1].y = pos.y - sin(angle) * size;
 }
 
-void Portal::createPortalBody(b2World* world){
+void Portal::createPortalBody(){
     b2BodyDef bd;
     bodyData* data = (bodyData*)malloc(sizeof(bodyData));
     *data = { PORTAL, this };
     bd.userData.pointer = (uintptr_t)data;
 
     bd.type = b2_staticBody;
-    body = world->CreateBody(&bd);
+    body = pWorld->world->CreateBody(&bd);
 
     b2EdgeShape shape;
     shape.SetTwoSided(points[0], points[1]);
@@ -95,13 +62,17 @@ void Portal::createPortalBody(b2World* world){
     midFixture = body->CreateFixture(&midPortal);
 
     b2Vec2 pVec = points[1] - points[0];
-    normalize(&pVec);
+    pWorld->normalize(&pVec);
 
     shape.SetTwoSided(points[0], points[0]);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
     
     shape.SetTwoSided(points[1], points[1]);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
+}
+
+int Portal::getPointSide(b2Vec2 point){
+    return pWorld->isLeft(points[1], points[0], point, 0.0f);
 }
 
 int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
@@ -184,7 +155,7 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
-    float angle = vecAngle(wManifold.normal, dir);
+    float angle = pWorld->vecAngle(wManifold.normal, dir);
     int side = getFixtureSide(fix2);
     bool rayRes = rayCheck(fix2);
     if (angle < 0.01f || rayRes || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f))){
@@ -240,14 +211,14 @@ int Portal::getFixtureSide(b2Fixture* fix){
     if (fix->GetType() == b2Shape::Type::e_circle){
         b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
         b2Vec2 pos = fix->GetBody()->GetWorldPoint(shape->m_p);
-        if (isLeft(points[0], points[1], pos, 0.0f)) side = 0;
+        if (pWorld->isLeft(points[0], points[1], pos, 0.0f)) side = 0;
     }
     else{
         b2PolygonShape* shape = (b2PolygonShape*)fix->GetShape();
         float totalDist = 0.0f;
         for (int i = 0; i < shape->m_count; i++){
             b2Vec2 pos = fix->GetBody()->GetWorldPoint(shape->m_vertices[i]);
-            totalDist += getDist(points[0], points[1], pos);
+            totalDist += pWorld->getDist(points[0], points[1], pos);
         }
         if (totalDist >= 0.0f) side = 0;
     }
@@ -293,14 +264,14 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     }
 
     for (b2Vec2 p : collPoints){
-        if (!isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
+        if (!pWorld->isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
             return true;
         }
     }
     if (collPoints.size() > 0) return false;
 
     for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        if (isLeft(points[1 ^ coll->side], points[coll->side], wManifold.points[i], tHold)){
+        if (pWorld->isLeft(points[1 ^ coll->side], points[coll->side], wManifold.points[i], tHold)){
             return false;
         }
     }

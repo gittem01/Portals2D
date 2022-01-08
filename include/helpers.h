@@ -176,13 +176,13 @@ float getRand(){
     return ((float)rand()) / RAND_MAX - 0.5f;
 }
 
-void testCase2(b2World* world){
+void testCase2(PortalWorld* pWorld){
     b2Vec2 gravity(0.0f, -9.81f);
-    world->SetGravity(gravity);
-    Portal* portal1 = new Portal(b2Vec2(-7.0f, 0.0f), b2Vec2(+1.0f, 0.0f), 7.0f, world);
-    Portal* portal2 = new Portal(b2Vec2(+7.0f, 0.0f), b2Vec2(-1.0f, 0.0f), 7.0f, world);
-    Portal* portal3 = new Portal(b2Vec2(0.0f, -7.0f), b2Vec2(0.0f, +1.0f), 7.0f, world);
-    Portal* portal4 = new Portal(b2Vec2(0.0f, +7.0f), b2Vec2(0.0f, -1.0f), 7.0f, world);
+    pWorld->world->SetGravity(gravity);
+    Portal* portal1 = new Portal(b2Vec2(-7.0f, 0.0f), b2Vec2(+1.0f, 0.0f), 7.0f, pWorld);
+    Portal* portal2 = new Portal(b2Vec2(+7.0f, 0.0f), b2Vec2(-1.0f, 0.0f), 7.0f, pWorld);
+    Portal* portal3 = new Portal(b2Vec2(0.0f, -7.0f), b2Vec2(0.0f, +1.0f), 7.0f, pWorld);
+    Portal* portal4 = new Portal(b2Vec2(0.0f, +7.0f), b2Vec2(0.0f, -1.0f), 7.0f, pWorld);
 
     portal1->connect(portal3);
     portal2->connect(portal3);
@@ -198,15 +198,15 @@ void testCase2(b2World* world){
     def.type = b2_dynamicBody;
     def.position = b2Vec2(0, 0);
 
-    b2Body* body = world->CreateBody(&def);
+    b2Body* body = pWorld->world->CreateBody(&def);
     body->CreateFixture(&fDef);
 
-    (new PortalBody(body, world))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+    (new PortalBody(body, pWorld))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
 }
 
-void testCase3(b2World* world){
+void testCase3(PortalWorld* pWorld){
     b2Vec2 gravity(0.0f, -9.81f);
-    world->SetGravity(gravity);
+    pWorld->world->SetGravity(gravity);
     float r = 10.0f;
     const int n = 20; // n * 2 portals will be created
     float anglePlus = glm::radians(0.0f);
@@ -219,7 +219,7 @@ void testCase3(b2World* world){
         b2Vec2 p2 = b2Vec2(sin(angle2) * r, cos(angle2) * r);
         float l = (p1 - p2).Length();
         b2Vec2 pos = 0.5f * (p1 + p2);
-        Portal* portal = new Portal(pos, -pos, l / 2.0f, world);
+        Portal* portal = new Portal(pos, -pos, l / 2.0f, pWorld);
         circlePortals[i] = portal;
     }
     for (int i = 0; i < n; i++){
@@ -231,65 +231,65 @@ void testCase3(b2World* world){
         b2Vec2 size = b2Vec2(sizeM + sizeM * (rand() / (double)RAND_MAX), sizeM + sizeM * (rand() / (double)RAND_MAX));
         float r = sizeM + 2.0f * sizeM * (rand() / (double)RAND_MAX);
 
-        b2Body* body1 = createBox(b2Vec2(0, 0), size, world, b2_dynamicBody);
-        b2Body* body2 = createCircle(b2Vec2(rand() % 5 + r, rand() % 5), r, world, b2_dynamicBody);
+        b2Body* body1 = createBox(b2Vec2(0, 0), size, pWorld->world, b2_dynamicBody);
+        b2Body* body2 = createCircle(b2Vec2(rand() % 5 + r, rand() % 5), r, pWorld->world, b2_dynamicBody);
 
-        (new PortalBody(body1, world))->bodyColor = b2Color(0.25f, 1.0f, 0.9f, 0.5f);
-        (new PortalBody(body2, world))->bodyColor = b2Color(1.0f, 0.25f, 0.7f, 0.5f);
+        (new PortalBody(body1, pWorld))->bodyColor = b2Color(0.25f, 1.0f, 0.9f, 0.5f);
+        (new PortalBody(body2, pWorld))->bodyColor = b2Color(1.0f, 0.25f, 0.7f, 0.5f);
     }
 }
 
-void testCase1(b2World* world){
+void testCase1(PortalWorld* pWorld){
     b2Vec2 gravity(0.0f, -19.81f);
-    world->SetGravity(gravity);
+    pWorld->world->SetGravity(gravity);
 
     float yPos = -4.0f;
     float portalSize = 3.0f;
 
-    Portal* portal1 = new Portal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
-    Portal* portal2 = new Portal(b2Vec2(-3.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
-    Portal* portal3 = new Portal(b2Vec2(+6.0f, yPos - portalSize + 0.1f), b2Vec2(0.0f, +1.0f), portalSize, world);
-    Portal* portal4 = new Portal(b2Vec2(+10.0f - 0.3f, -3.0f), b2Vec2(-1.0f, 0.0f), portalSize, world);
+    Portal* portal1 = new Portal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize, pWorld);
+    Portal* portal2 = new Portal(b2Vec2(-3.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize, pWorld);
+    Portal* portal3 = new Portal(b2Vec2(+6.0f, yPos - portalSize + 0.1f), b2Vec2(0.0f, +1.0f), portalSize, pWorld);
+    Portal* portal4 = new Portal(b2Vec2(+10.0f - 0.3f, -3.0f), b2Vec2(-1.0f, 0.0f), portalSize, pWorld);
 
     portal1->connect(portal2);
     portal1->connect(portal2, 1, 1);
     portal4->connect(portal3);
 
-    createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
+    createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
         
-    PortalBody* b1 = new PortalBody(createObody(world, b2Vec2(0.0f, 3.0f)), world);
-    PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(0.0f, 6.0f)), world);
+    PortalBody* b1 = new PortalBody(createObody(pWorld->world, b2Vec2(0.0f, 3.0f)), pWorld);
+    PortalBody* b2 = new PortalBody(createWbody(pWorld->world, b2Vec2(0.0f, 6.0f)), pWorld);
 
     b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
     b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
 
     b2Vec2 p(0.0f, -2.0f);
     b2Vec2 s(1.0f, 0.4f);
-    b2Body* body2 = createBox(p, s, world, b2_dynamicBody);
-    (new PortalBody(body2, world))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    b2Body* body2 = createBox(p, s, pWorld->world, b2_dynamicBody);
+    (new PortalBody(body2, pWorld))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
 
     // artificial kinematic body creation
     p = b2Vec2(0.0f, -4.0f);
     s = b2Vec2(1.0f, 0.5f);
-    b2Body* body4 = createBox(p, s, world, b2_dynamicBody, 0.0f);
-    (new PortalBody(body4, world))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
+    (new PortalBody(body4, pWorld))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
     b2Vec2 vel(-1.0f, 0.0f);
     body4->SetLinearVelocity(vel);
     body4->SetBullet(true);
 
     p = b2Vec2(0.0f, 0.0f);
     float r = 1.0f;
-    b2Body* body3 = createCircle(p, r, world, b2_dynamicBody);
-    (new PortalBody(body3, world))->bodyColor = b2Color(1.0f, 1.0f, 0.0f, 0.5f);
+    b2Body* body3 = createCircle(p, r, pWorld->world, b2_dynamicBody);
+    (new PortalBody(body3, pWorld))->bodyColor = b2Color(1.0f, 1.0f, 0.0f, 0.5f);
 
     s = b2Vec2(0.2f, 10.0f);
     p = b2Vec2(10.0f, 0.0f);
-    b2Body* statBody = createBox(p, s, world, b2_staticBody);
+    b2Body* statBody = createBox(p, s, pWorld->world, b2_staticBody);
 }
 
-void testCase4(b2World* world){
+void testCase4(PortalWorld* pWorld){
     b2Vec2 gravity(0.0f, -9.81f);
-    world->SetGravity(gravity);
+    pWorld->world->SetGravity(gravity);
 
     float bias = 6.0f;
     float yPos = -4.0f;
@@ -299,17 +299,17 @@ void testCase4(b2World* world){
 
     Portal** linePortals = (Portal**)malloc(n * sizeof(Portal*));
 
-    createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), world, b2_staticBody);
+    createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
 
-    b2Body* body2 = createCircle(b2Vec2(-n * d - 7.0f + bias, yPos), 1, world, b2_dynamicBody);
+    b2Body* body2 = createCircle(b2Vec2(-n * d - 7.0f + bias, yPos), 1, pWorld->world, b2_dynamicBody);
 
     b2Vec2 vel(4, 0);
     body2->SetLinearVelocity(vel);
 
-    (new PortalBody(body2, world))->bodyColor = b2Color(1.0f, 1.0f, 0.0f, 0.5f);
+    (new PortalBody(body2, pWorld))->bodyColor = b2Color(1.0f, 1.0f, 0.0f, 0.5f);
 
-    PortalBody* b1 = new PortalBody(createObody(world, b2Vec2(-n * d - 10.0f + bias, yPos)), world);
-    PortalBody* b2 = new PortalBody(createWbody(world, b2Vec2(-n * d - 13.0f + bias, yPos)), world);
+    PortalBody* b1 = new PortalBody(createObody(pWorld->world, b2Vec2(-n * d - 10.0f + bias, yPos)), pWorld);
+    PortalBody* b2 = new PortalBody(createWbody(pWorld->world, b2Vec2(-n * d - 13.0f + bias, yPos)), pWorld);
 
     b1->body->SetLinearVelocity(vel);
     b2->body->SetLinearVelocity(vel);
@@ -317,11 +317,11 @@ void testCase4(b2World* world){
     b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
     b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
 
-    Portal* portal1 = new Portal(b2Vec2(-1 * d - n * d + bias, yPos), b2Vec2(-1.0f, +0.0f), portalSize, world);
+    Portal* portal1 = new Portal(b2Vec2(-1 * d - n * d + bias, yPos), b2Vec2(-1.0f, +0.0f), portalSize, pWorld);
 
     float p = -n*d + bias;
     for (int i = 0; i < n; i++){
-        Portal* portal = new Portal(b2Vec2(p, yPos), b2Vec2(+1.0f, +0.0f), portalSize, world);
+        Portal* portal = new Portal(b2Vec2(p, yPos), b2Vec2(+1.0f, +0.0f), portalSize, pWorld);
         linePortals[i] = portal;
         p += d;
     }

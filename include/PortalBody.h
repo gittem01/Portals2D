@@ -9,8 +9,10 @@
 
 struct bodyData;
 struct portalConnection;
+
 class Portal;
 class PortalBody;
+class PortalWorld;
 
 typedef struct {
     Portal* portal;
@@ -31,11 +33,6 @@ typedef struct{
 
 class PortalBody{
 public:
-    static std::vector<PortalBody*> portalBodies;
-    static std::set<PortalBody*> destroyBodies;
-    static b2Color releaseColor;
-    static bool drawReleases;
-
     std::vector<bodyStruct*> createBodies;
 
     b2Body* body;
@@ -43,10 +40,10 @@ public:
 
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
 
-    b2World* world;
+    PortalWorld* pWorld;
     b2Color bodyColor;
 
-    PortalBody(b2Body* body, b2World* world, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
+    PortalBody(b2Body* body, PortalWorld* pWorld, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
 
     // fix1 is always a fixture of this class
     void collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
@@ -74,7 +71,6 @@ public:
     void drawVertices(b2Body* body, std::vector<b2Vec2>& vertices);
 
     void postHandle();
-    static void globalPostHandle(b2World* world);
 
     b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 };

@@ -12,6 +12,8 @@ int main(void)
 
     b2World* world = new b2World(b2Vec2(0.0f, -9.81f));
 
+    PortalWorld* pWorld = new PortalWorld(world);
+
     ContactListener cl;
     world->SetContactListener(&cl);
 
@@ -24,11 +26,7 @@ int main(void)
     
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase1(world);
-
-    for (Portal* p : Portal::portals){
-        p->drawer = drawer;
-    }
+    testCase1(pWorld);
 
     bool done = false;
     int frame = 0;
@@ -54,25 +52,15 @@ int main(void)
 
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
-                Portal::portalUpdate(); 
-                for (int i = 0; i < PortalBody::portalBodies.size(); i++){
-                    PortalBody* body = PortalBody::portalBodies.at(i);
-                    body->postHandle();
-                }
-                PortalBody::globalPostHandle(world);
+                pWorld->portalUpdate(); 
             }
 
             mjh.drawMouseBody();
             //world->DebugDraw();
             drawer->drawWorld(world);
-            for (PortalBody* body : PortalBody::portalBodies){
-                body->drawBodies();
-            }
-            for (Portal* p : Portal::portals) {
-                p->draw();
-            }
+            pWorld->drawUpdate();
 
-            if (wh->keyData[GLFW_KEY_S] == 2) PortalBody::drawReleases ^= 1;
+            if (wh->keyData[GLFW_KEY_S] == 2) pWorld->drawReleases ^= 1;
 
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);

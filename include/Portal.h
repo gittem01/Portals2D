@@ -1,14 +1,6 @@
 #pragma once
 
-#include <box2d/box2d.h>
-#include <vector>
-#include <stdio.h>
-#include <algorithm>
-#include <vector>
-#include <map>
-#include <set>
-#include <unordered_set>
-#include <PortalBody.h>
+#include "PortalWorld.h"
 
 typedef enum{
     BEGIN_CONTACT = 1,
@@ -43,11 +35,10 @@ class Portal
 private:
 
 public:
-    static std::set<Portal*> portals;
 
     DebugDrawer* drawer;
 
-    b2World* world;
+    PortalWorld* pWorld;
     b2Body* body;
     b2Fixture* midFixture;
     b2Fixture* yFix[2];
@@ -68,9 +59,11 @@ public:
     b2Color color;
     int id;
 
-    Portal(b2Vec2 pos, b2Vec2 dir, float size, b2World* world);
+    Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
     ~Portal();
     void clear();
+
+    int getPointSide(b2Vec2 point);
 
     // fix1 is always a fixture of the portal
     int collisionBegin (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
@@ -80,7 +73,7 @@ public:
     void postHandle();
 
     void calculatePoints();
-    void createPortalBody(b2World* world);
+    void createPortalBody();
 
     void draw();
     void connect(Portal* portal2, int side1=0, int side2=0, int isReversed=0);
@@ -94,8 +87,6 @@ public:
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
 
-    int getPointSide(b2Vec2 point);
-
     std::vector<b2Vec2> getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2);
 
     std::vector<b2Vec2> collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2);
@@ -104,15 +95,4 @@ public:
     b2Vec2 getFixtureCenter(b2Fixture* fix);
 
     b2Vec2 getRayPoint(b2RayCastInput& input, b2RayCastOutput& output);
-
-    static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
-    static float vecAngle(b2Vec2 v1, b2Vec2 v2);
-    static float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c);
-    static float calcAngle2(b2Vec2 vec);
-
-    static void portalUpdate(){
-        for (Portal* p : Portal::portals) {
-            p->postHandle();
-        }
-    }
 };
