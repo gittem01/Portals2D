@@ -1,6 +1,7 @@
 #include "helpers.h"
 #include <vector>
 
+#define GL_SLIENCE_DEPRECATION
 
 int main(void)
 {

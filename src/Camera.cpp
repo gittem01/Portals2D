@@ -12,7 +12,7 @@ void Camera::updateOrtho() {
 	glm::vec2 xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
 	glm::vec2 ySides = this->defaultYSides / (this->zoom * this->zoom) + this->pos.y;
 	glLoadIdentity();
-	glOrtho(xSides.x, xSides.y, ySides.x, ySides.y, -999, 999);
+	glOrtho(xSides.x, xSides.y, ySides.x, ySides.y, -999.0, 999.0);
 }
 
 void Camera::changeZoom(float inc) {
