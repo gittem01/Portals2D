@@ -1,4 +1,5 @@
 #include "PortalWorld.h"
+#include "PortalBody.h"
 #include "Portal.h"
 
 PortalWorld::PortalWorld(b2World* world){
@@ -6,6 +7,20 @@ PortalWorld::PortalWorld(b2World* world){
 
     this->drawReleases = false;
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
+}
+
+Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size){
+    Portal* portal = new Portal(pos, dir, size, this);
+    portals.push_back(portal);
+
+    return portal;
+}
+
+PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor){
+    PortalBody* pBody = new PortalBody(body, this, bodyColor);
+    portalBodies.push_back(pBody);
+
+    return pBody;
 }
 
 void PortalWorld::portalUpdate(){

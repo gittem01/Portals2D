@@ -25,8 +25,6 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     this->rcInp2.maxFraction = 1.0f;
 
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
-
-    pWorld->portals.insert(this);
 }
 
 Portal::~Portal() {

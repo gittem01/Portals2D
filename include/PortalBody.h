@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DebugDrawer.h"
+#include "PortalWorld.h"
 #include <box2d/box2d.h>
 #include <vector>
 #include <set>
@@ -18,7 +19,7 @@ typedef struct {
     Portal* portal;
     int status; // 1 for colliding 0 for released
     int side;
-} portalCollision;
+}portalCollision;
 
 typedef struct{
     b2Body* body;
@@ -32,6 +33,12 @@ typedef struct{
 }bodyCollisionStatus;
 
 class PortalBody{
+    
+friend PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor);
+
+private:
+    PortalBody(b2Body* body, PortalWorld* pWorld, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
+
 public:
     std::vector<bodyStruct*> createBodies;
 
@@ -42,8 +49,6 @@ public:
 
     PortalWorld* pWorld;
     b2Color bodyColor;
-
-    PortalBody(b2Body* body, PortalWorld* pWorld, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
 
     // fix1 is always a fixture of this class
     void collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);

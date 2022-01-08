@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PortalBody.h"
 #include "PortalWorld.h"
 
 typedef enum{
@@ -30,9 +31,12 @@ struct portalConnection {
     Portal* portal2;
 };
 
-class Portal
-{
+class Portal{
+
+friend Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size);
+
 private:
+    Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
 
 public:
 
@@ -59,7 +63,6 @@ public:
     b2Color color;
     int id;
 
-    Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
     ~Portal();
     void clear();
 

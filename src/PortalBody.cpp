@@ -1,3 +1,4 @@
+#include "PortalBody.h"
 #include "Portal.h"
 #include "PortalWorld.h"
 #include "glm/common.hpp"
@@ -15,7 +16,6 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
     body->GetUserData().pointer = (uintptr_t)bd;
 
     this->bodyColor = bodyColor;
-    pWorld->portalBodies.push_back(this);
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         fixtureCollisions[fix] = new std::set<portalCollision*>();
@@ -189,7 +189,7 @@ void PortalBody::destroyCheck(b2Body* bBody, Portal* portal){
 
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal){
-            pWorld->destroyBodies.insert(s->body);
+            pWorld->destroyBodies.push_back(s->body);
         }
     }
 }
@@ -240,7 +240,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
 
         bodyCollisionStatus* bcs = new bodyCollisionStatus;
 
-        PortalBody* npb = new PortalBody(body2, pWorld, bodyColor);
+        PortalBody* npb = pWorld->createPortalBody(body2, bodyColor);
         npb->bodyMaps->push_back(bcs);
 
         bcs->body = this;
