@@ -9,6 +9,7 @@
 
 bool isPaused = false;
 bool tick = false;
+PortalWorld* pWorld;
 
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.0f) {
     b2BodyDef bodyDef;
@@ -170,6 +171,8 @@ void keyHandler(WindowPainter* wh) {
         isPaused = true;
         tick = true;
     }
+    if (wh->keyData[GLFW_KEY_S] == 2)
+        pWorld->drawReleases ^= 1;
 }
 
 float getRand(){
@@ -247,28 +250,27 @@ void testCase1(PortalWorld* pWorld){
     float portalSize = 3.0f;
 
     Portal* portal1 = pWorld->createPortal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
-    Portal* portal2 = pWorld->createPortal(b2Vec2(-3.0f, yPos), b2Vec2(-1.0f, +0.0f), portalSize);
-    Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.1f), b2Vec2(0.0f, +1.0f), portalSize);
-    Portal* portal4 = pWorld->createPortal(b2Vec2(+10.0f - 0.3f, -3.0f), b2Vec2(-1.0f, 0.0f), portalSize);
+    Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
+    Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize), b2Vec2(0.0f, +1.0f), portalSize);
+    Portal* portal4 = pWorld->createPortal(b2Vec2(+10.0f - 0.2f, 3.0f), b2Vec2(-1.0f, 0.0f), portalSize);
 
-    portal1->connect(portal2);
-    portal1->connect(portal2, 1, 1);
-    portal4->connect(portal3);
+    portal3->connect(portal2);
+    portal4->connect(portal1);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
         
-    PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld->world, b2Vec2(0.0f, 3.0f)));
-    PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld->world, b2Vec2(0.0f, 6.0f)));
+    //PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld->world, b2Vec2(0.0f, 3.0f)));
+    //PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld->world, b2Vec2(0.0f, 6.0f)));
 
-    b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
-    b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
+    //b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+    //b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
 
     b2Vec2 p(0.0f, -2.0f);
     b2Vec2 s(1.0f, 0.4f);
     b2Body* body2 = createBox(p, s, pWorld->world, b2_dynamicBody);
     (pWorld->createPortalBody(body2))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
 
-    // artificial kinematic body creation
+    // artificial kinematic body
     p = b2Vec2(0.0f, -4.0f);
     s = b2Vec2(1.0f, 0.5f);
     b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);

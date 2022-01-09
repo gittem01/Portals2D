@@ -45,6 +45,7 @@ public:
     PortalWorld* pWorld;
     b2Body* body;
     b2Fixture* midFixture;
+    b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
     b2RayCastInput rcInp1;

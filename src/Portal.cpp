@@ -5,7 +5,6 @@
 #include <thread>
 #include <GLFW/glfw3.h>
 
-
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     dir.Normalize();
 
@@ -67,6 +66,24 @@ void Portal::createPortalBody(){
     
     shape.SetTwoSided(points[1], points[1]);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
+
+    pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
+
+    float widthMul = 10.0f;
+    float dirMult = 2.0f;
+    b2Vec2 p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+    b2Vec2 p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
+    b2Vec2 p3 = p1 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
+    b2Vec2 p4 = p2 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
+    p1 -= b2Vec2(dir.x * dirMult, dir.y * dirMult);
+    p2 -= b2Vec2(dir.x * dirMult, dir.y * dirMult);
+    
+    b2Vec2 polyPoints[4] = { p1, p2, p3, p4 };
+
+    b2PolygonShape polyShape;
+    polyShape.Set(polyPoints, 4);
+    collisionSensor = body->CreateFixture(&polyShape, 0.0f);
+    collisionSensor->SetSensor(true);
 }
 
 int Portal::getPointSide(b2Vec2 point){
@@ -253,21 +270,26 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
         }
     }
 
-    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        //drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
-    }
+    // rendering things
+    {
+        for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+            //drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+        }
 
-    for (b2Vec2 p : collPoints){
-        //drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
-    }
-
-    for (b2Vec2 p : collPoints){
-        if (!pWorld->isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
-            return true;
+        for (b2Vec2 p : collPoints){
+            //drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
         }
     }
-    if (collPoints.size() > 0) return false;
-
+    
+    if (collPoints.size() > 0){
+        for (b2Vec2 p : collPoints){
+            if (!pWorld->isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
+                return true;
+            }
+        }
+        return false;
+    }
+    
     for (int i = 0; i < contact->GetManifold()->pointCount; i++){
         if (pWorld->isLeft(points[1 ^ coll->side], points[coll->side], wManifold.points[i], tHold)){
             return false;

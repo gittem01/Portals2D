@@ -1,5 +1,4 @@
 #include "helpers.h"
-#include <vector>
 
 #define GL_SLIENCE_DEPRECATION
 
@@ -12,7 +11,7 @@ int main(void)
 
     b2World* world = new b2World(b2Vec2(0.0f, -9.81f));
 
-    PortalWorld* pWorld = new PortalWorld(world);
+    pWorld = new PortalWorld(world);
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -30,7 +29,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 1;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 60;
@@ -59,8 +58,6 @@ int main(void)
             //world->DebugDraw();
             drawer->drawWorld(world);
             pWorld->drawUpdate();
-
-            if (wh->keyData[GLFW_KEY_S] == 2) pWorld->drawReleases ^= 1;
 
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);
