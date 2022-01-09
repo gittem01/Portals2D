@@ -6,10 +6,8 @@ set (CMAKE_CXX_STANDARD 14)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glfw)
 
-set(GLAD_DIR "${CMAKE_SOURCE_DIR}/external/glad")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glm/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/box2d/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glfw/include)
@@ -18,10 +16,6 @@ link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 
 add_executable(physicsTeleport Source.cpp)
 
-add_library(glad 
-            ${GLAD_DIR}/src/glad.c
-)
-
 file(GLOB files ${CMAKE_SOURCE_DIR}/src/*.cpp)
 add_library(mines ${files})
 
@@ -29,6 +23,5 @@ find_package(OpenGL REQUIRED)
 target_link_libraries(physicsTeleport OpenGL::GL)
 
 target_link_libraries(physicsTeleport mines)
-target_link_libraries(physicsTeleport glad)
 target_link_libraries(physicsTeleport box2d)
 target_link_libraries(physicsTeleport glfw)
