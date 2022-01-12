@@ -41,11 +41,11 @@ private:
 
 public:
     std::vector<bodyStruct*> createBodies;
+    std::vector<bodyCollisionStatus*>* bodyMaps;
+    std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
+    std::map<b2Fixture*, Portal*> prepareMap;
 
     b2Body* body;
-    std::vector<bodyCollisionStatus*>* bodyMaps;
-
-    std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
 
     PortalWorld* pWorld;
     b2Color bodyColor;

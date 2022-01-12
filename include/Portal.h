@@ -40,8 +40,6 @@ private:
 
 public:
 
-    DebugDrawer* drawer;
-
     PortalWorld* pWorld;
     b2Body* body;
     b2Fixture* midFixture;
@@ -51,6 +49,7 @@ public:
     b2RayCastInput rcInp1;
     b2RayCastInput rcInp2;
 
+    std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
     std::set<b2Fixture*> releaseFixtures[2];
 
@@ -90,6 +89,7 @@ public:
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
+    bool prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
     std::vector<b2Vec2> getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2);
 

@@ -2,8 +2,9 @@
 #include "PortalBody.h"
 #include "Portal.h"
 
-PortalWorld::PortalWorld(b2World* world){
+PortalWorld::PortalWorld(b2World* world, DebugDrawer* drawer){
     this->world = world;
+    this->drawer = drawer;
 
     this->drawReleases = false;
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);

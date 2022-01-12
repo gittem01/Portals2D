@@ -98,7 +98,11 @@ int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2)
 
     PortalBody* pBody = (PortalBody*)bData->data;
 
-    if (fix1 == midFixture){
+    if (fix1 == collisionSensor){
+        prepareFixtures.insert(fix2);
+        ret = 5;
+    }
+    else if (fix1 == midFixture){
         ret = handleCollidingFixtures(contact, fix1, fix2);
     }
 
@@ -113,7 +117,11 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
 
     PortalBody* pBody = (PortalBody*)bData->data;
 
-    if (fix1 == midFixture){
+    if (fix1 == collisionSensor){
+        prepareFixtures.erase(fix2);
+        ret = 6;
+    }
+    else if (fix1 == midFixture){
         int side = getFixtureSide(fix2);
         if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
             releaseFixtures[1 ^ side].insert(fix2);
@@ -273,11 +281,11 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     // rendering things
     {
         for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-            //drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
+            //pWorld->drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
         }
 
         for (b2Vec2 p : collPoints){
-            //drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
+            //pWorld->drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
         }
     }
     
@@ -299,6 +307,10 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     return true;
 }
 
+bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+
+}
+
 void Portal::postHandle(){
     
 }
@@ -311,6 +323,7 @@ void Portal::draw(){
 	glVertex2d(points[1].x, points[1].y);
 	glEnd();
 
+    // draw dir
     // glLineWidth(2.0f);
     // glColor4f(1, 1, 1, 1);
     // glBegin(GL_LINES);

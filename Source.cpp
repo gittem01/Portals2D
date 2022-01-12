@@ -11,8 +11,6 @@ int main(void)
 
     b2World* world = new b2World(b2Vec2(0.0f, -9.81f));
 
-    pWorld = new PortalWorld(world);
-
     ContactListener cl;
     world->SetContactListener(&cl);
 
@@ -23,6 +21,8 @@ int main(void)
     world->SetDebugDraw(drawer);
     drawer->SetFlags(0);
     
+    pWorld = new PortalWorld(world, drawer);
+
     mouseJointHandler mjh(world, wh, drawer);
 
     testCase1(pWorld);

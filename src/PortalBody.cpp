@@ -89,6 +89,12 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         if (!shouldCollide) return false;
     }
     
+    if (fix2->GetBody()->GetType() == b2_staticBody && prepareMap.find(fix1) != prepareMap.end()){        
+        for (auto iter = prepareMap.begin(); iter != prepareMap.end(); std::advance(iter, 1)){
+            (*iter).second->prepareCollisionCheck(contact, fix1, fix2);
+        }
+    }
+
     return true;
 }
 
@@ -162,6 +168,13 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
         break;
     case 3:
         outHelper(fix, portal, 0, 1);
+        break;
+
+    case 5:
+        prepareMap[fix] = portal;
+        break;
+    case 6:
+        prepareMap.erase(fix);
         break;
 
     case 4:

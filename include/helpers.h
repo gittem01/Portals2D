@@ -259,11 +259,11 @@ void testCase1(PortalWorld* pWorld){
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
         
-    //PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld->world, b2Vec2(0.0f, 3.0f)));
-    //PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld->world, b2Vec2(0.0f, 6.0f)));
+    PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld->world, b2Vec2(0.0f, 3.0f)));
+    PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld->world, b2Vec2(0.0f, 6.0f)));
 
-    //b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
-    //b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
+    b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+    b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
 
     b2Vec2 p(0.0f, -2.0f);
     b2Vec2 s(1.0f, 0.4f);

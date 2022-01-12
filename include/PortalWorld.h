@@ -11,10 +11,13 @@
 
 class PortalBody;
 class Portal;
+class DebugDrawer;
 
 class PortalWorld{
 
 private:
+    DebugDrawer* drawer;
+
     std::vector<PortalBody*> portalBodies;
     std::vector<Portal*> portals;
     std::vector<PortalBody*> destroyBodies;
@@ -31,7 +34,7 @@ public:
 
     b2World* world;
 
-    PortalWorld(b2World* world);
+    PortalWorld(b2World* world, DebugDrawer* drawer);
 
     void portalUpdate();
     void globalPostHandle();
