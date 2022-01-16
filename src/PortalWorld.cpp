@@ -32,6 +32,7 @@ void PortalWorld::portalUpdate(){
     for (Portal* p : portals) {
         p->postHandle();
     }
+
     globalPostHandle();
 }
 

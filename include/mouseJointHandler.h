@@ -101,7 +101,7 @@ public:
                 jd.target = target + diff;
             else
                 jd.target = target;
-            jd.maxForce = 10000.0f * clickedBody->GetMass();
+            jd.maxForce = 1000.0f * clickedBody->GetMass();
             jd.collideConnected = true;
             
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);

@@ -250,6 +250,58 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
+std::vector<b2Vec2> Portal::getUsableRayPoints(b2Fixture* fix, int side){
+    std::vector<b2Vec2> usablePoints;
+    b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
+    for (int i = 0; i < polyShape->m_count; i++){
+        b2Vec2 point = fix->GetBody()->GetWorldPoint(polyShape->m_vertices[i]);
+        float dist = pWorld->getDist(points[side], points[1 - side], point);
+        if (dist > 0.2f) usablePoints.push_back(point);
+    }
+
+    return usablePoints;
+}
+
+b2Vec2* Portal::getMaxRayPoints(std::vector<b2Vec2> usableRayPoints, int side){
+    if (usableRayPoints.size() == 0) return nullptr;
+
+    b2Vec2* retPoints = (b2Vec2*)calloc(2, sizeof(b2Vec2));
+
+    b2Vec2 copyDir = side ? -dir : dir;
+    float dirAngle = pWorld->calcAngle2(copyDir);
+
+    for (int i = 0; i < 2; i++){
+        float maxAngle = -999999.0f;
+        int j = 0;
+        for (b2Vec2 p : usableRayPoints){
+            b2Vec2 v = (p - points[i]);
+            float angle = pWorld->calcAngle2(v);
+            angle = (angle - dirAngle) * (i * 2 - 1);
+            if (angle > maxAngle){
+                retPoints[i] = p;
+                maxAngle = angle;
+            }
+        }
+    }
+
+    return retPoints;
+}
+
+bool Portal::isPointIn(b2Vec2 p1, b2Vec2 p2, b2Vec2 point, int side){
+    bool check1, check2;
+    if (side){
+        check1 = pWorld->isLeft(points[0], p1, point, -0.001f);
+        check2 = pWorld->isLeft(p2, points[1], point, -0.001f);
+    }else{
+        check1 = pWorld->isLeft(p1, points[0], point, -0.001f);
+        check2 = pWorld->isLeft(points[1], p2, point, -0.001f);
+    }
+    
+    bool check3 = pWorld->isLeft(points[1 ^ side], points[side], point, -0.001f);
+
+    return check1 && check2 && check3;
+}
+
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll){
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
@@ -263,15 +315,32 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 
     std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
 
+    if (fix1->GetType() == b2Shape::Type::e_circle){
+        b2CircleShape* cShape = (b2CircleShape*)fix1->GetShape();
+        b2Vec2 wCenter = fix1->GetBody()->GetWorldPoint(cShape->m_p);
+        bool res;
+        b2RayCastOutput rcOutput;
+        b2RayCastInput rcInput;
+        rcInput.maxFraction = 1.0f;
+        rcInput.p1 = wCenter + cShape->m_radius * contact->GetManifold()->localNormal;
+        rcInput.p2 = wCenter - cShape->m_radius * contact->GetManifold()->localNormal;
+        res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
+        if (res) {
+            b2Vec2 result = getRayPoint(rcInput, rcOutput);
+            collPoints.clear();
+            collPoints.push_back(result);
+        }
+    }
+
     if (collPoints.size() == 0 && fix2->GetBody()->GetType() == b2_staticBody){
         b2RayCastOutput rcOutput;
         b2RayCastInput rcInput;
         rcInput.maxFraction = 1.0f;
         for (int i = 0; i < contact->GetManifold()->pointCount; i++){
             bool res;
-            rcInput.p1 = wManifold.points[i] - contact->GetManifold()->localNormal;
-            rcInput.p2 = wManifold.points[i] + contact->GetManifold()->localNormal;
-            res = fix2->RayCast(&rcOutput, rcInput, fix2->GetBody()->GetType());
+            rcInput.p1 = wManifold.points[i] + contact->GetManifold()->localNormal;
+            rcInput.p2 = wManifold.points[i] - contact->GetManifold()->localNormal;
+            res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
             if (res) {
                 b2Vec2 result = getRayPoint(rcInput, rcOutput);
                 collPoints.push_back(result);
@@ -291,6 +360,26 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     }
     
     if (collPoints.size() > 0){
+        if (fix2->GetBody()->GetType() == b2_staticBody && fix1->GetType() != b2Shape::Type::e_circle &&
+            contact->GetManifold()->pointCount == 2 && collPoints.size() == 2)
+        {
+            std::vector<b2Vec2> points = getUsableRayPoints(fix1, coll->side);
+            if (points.size() != 0){
+                b2Vec2* maxRays = getMaxRayPoints(points, coll->side);
+                
+                bool in1 = isPointIn(maxRays[0], maxRays[1], collPoints.at(0), coll->side);
+                bool in2 = isPointIn(maxRays[0], maxRays[1], collPoints.at(1), coll->side);
+                if (in1 && !in2){
+                    contact->GetManifold()->points[0] = contact->GetManifold()->points[1];
+                    contact->GetManifold()->pointCount = 1;
+                    return true;
+                }
+                else if (!in1 && in2){
+                    contact->GetManifold()->pointCount = 1;
+                    return true;
+                }
+            }
+        }
         for (b2Vec2 p : collPoints){
             if (!pWorld->isLeft(points[1 ^ coll->side], points[coll->side], p, tHold)){
                 return true;

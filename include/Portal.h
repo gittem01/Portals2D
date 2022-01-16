@@ -81,16 +81,19 @@ public:
     void draw();
     void connect(Portal* portal2, int side1=0, int side2=0, int isReversed=0);
 
-    void connectBodies(b2Body* body1, b2Body* body2);
-
     int getFixtureSide(b2Fixture* fix);
     int handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
-    bool isCollisionProper(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
     bool prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
+    std::vector<b2Vec2> getUsableRayPoints(b2Fixture* fix, int side);
+
+    // always returns 2 point
+    b2Vec2* getMaxRayPoints(std::vector<b2Vec2> usableRayPoints, int side);
+    bool isPointIn(b2Vec2 p1, b2Vec2 p2, b2Vec2 point, int side);
+    
     std::vector<b2Vec2> getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2);
 
     std::vector<b2Vec2> collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2);
