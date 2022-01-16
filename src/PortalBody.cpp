@@ -317,7 +317,12 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
             col->side = c->side2;
 
             if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
-                bool rayCheck = collPortal->rayCheck(fix);
+                bool rayCheck;
+                int side = collPortal->getFixtureSide(fix);
+                
+                if (side == 1 - c->side1) rayCheck = collPortal->rayCheck(fix);
+                else rayCheck = 1;
+
                 if (rayCheck){
                     portal2->collidingFixtures[c->side2].insert(f);
                     col->status = 1;

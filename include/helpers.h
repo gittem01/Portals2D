@@ -250,8 +250,8 @@ void testCase1(PortalWorld* pWorld){
     float portalSize = 3.0f;
 
     Portal* portal1 = pWorld->createPortal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
-    Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 14.0f), b2Vec2(0.0f, -1.0f), portalSize);
-    Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.1f), b2Vec2(0.0f, +1.0f), portalSize);
+    Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
+    Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
     Portal* portal4 = pWorld->createPortal(b2Vec2(+10.0f - 0.2f, 3.0f), b2Vec2(-1.0f, 0.0f), portalSize);
 
     portal3->connect(portal2);
