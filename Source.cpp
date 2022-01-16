@@ -25,11 +25,11 @@ int main(void)
 
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase1(pWorld);
+    testCase2(pWorld);
 
     bool done = false;
     int frame = 0;
-    int totalIter = 1;
+    int totalIter = 10;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 60;

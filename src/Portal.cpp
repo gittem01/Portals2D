@@ -123,6 +123,7 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     }
     else if (fix1 == midFixture){
         int side = getFixtureSide(fix2);
+
         if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
             releaseFixtures[1 ^ side].insert(fix2);
             ret = 3 - side;

@@ -202,7 +202,7 @@ void PortalBody::destroyCheck(b2Body* bBody, Portal* portal){
 
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal){
-            pWorld->destroyBodies.push_back(s->body);
+            pWorld->destroyBodies.insert(s->body);
         }
     }
 }
@@ -317,15 +317,18 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
             col->side = c->side2;
 
             if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
-                portal2->collidingFixtures[c->side2].insert(f);
-                col->status = 1;
+                bool rayCheck = collPortal->rayCheck(fix);
+                if (rayCheck){
+                    portal2->collidingFixtures[c->side2].insert(f);
+                    col->status = 1;
+                    npb->fixtureCollisions[f]->insert(col);
+                }
             }
             else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
                 portal2->releaseFixtures[c->side2].insert(f);
                 col->status = 0;
+                npb->fixtureCollisions[f]->insert(col);
             }
-
-            npb->fixtureCollisions[f]->insert(col);   
         }
 
         connectBodies(body1, body2, c, side);
