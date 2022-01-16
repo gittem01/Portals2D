@@ -187,7 +187,7 @@ void testCase2(PortalWorld* pWorld){
     Portal* portal3 = pWorld->createPortal(b2Vec2(0.0f, -7.0f), b2Vec2(0.0f, +1.0f), 7.0f);
     Portal* portal4 = pWorld->createPortal(b2Vec2(0.0f, +7.0f), b2Vec2(0.0f, -1.0f), 7.0f);
 
-    portal1->connect(portal2);
+    portal1->connect(portal3);
     portal2->connect(portal3);
 
     b2PolygonShape shape;

@@ -275,6 +275,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         body2->SetAngularVelocity(body1->GetAngularVelocity());
         body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
 
+        bool allOut = false;
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
             b2Fixture* f;
             if (fix->GetType() == b2Shape::Type::e_polygon){
@@ -320,13 +321,18 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 bool rayCheck;
                 int side = collPortal->getFixtureSide(fix);
                 
-                if (side == 1 - c->side1) rayCheck = collPortal->rayCheck(fix);
+                if (side == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
                 else rayCheck = 1;
 
                 if (rayCheck){
                     portal2->collidingFixtures[c->side2].insert(f);
                     col->status = 1;
                     npb->fixtureCollisions[f]->insert(col);
+                    allOut = true;
+                }
+                else{
+                    free(col);
+                    destroyCheck(this->body, collPortal);
                 }
             }
             else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
@@ -334,9 +340,13 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
                 col->status = 0;
                 npb->fixtureCollisions[f]->insert(col);
             }
+            else{
+                free(col);
+            }
         }
 
-        connectBodies(body1, body2, c, side);
+        if (!allOut) pWorld->destroyBodies.insert(this);
+        else connectBodies(body1, body2, c, side);
     }
 }
 
