@@ -252,9 +252,17 @@ int Portal::getFixtureSide(b2Fixture* fix){
 
 std::vector<b2Vec2> Portal::getUsableRayPoints(b2Fixture* fix, int side){
     std::vector<b2Vec2> usablePoints;
-    b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
-    for (int i = 0; i < polyShape->m_count; i++){
-        b2Vec2 point = fix->GetBody()->GetWorldPoint(polyShape->m_vertices[i]);
+    if (fix->GetType() == b2Shape::Type::e_polygon){
+        b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
+        for (int i = 0; i < polyShape->m_count; i++){
+            b2Vec2 point = fix->GetBody()->GetWorldPoint(polyShape->m_vertices[i]);
+            float dist = pWorld->getDist(points[side], points[1 - side], point);
+            if (dist > 0.2f) usablePoints.push_back(point);
+        }
+    }
+    else{
+        b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
+        b2Vec2 point = fix->GetBody()->GetWorldPoint(circleShape->m_p);
         float dist = pWorld->getDist(points[side], points[1 - side], point);
         if (dist > 0.2f) usablePoints.push_back(point);
     }
@@ -398,7 +406,56 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 }
 
 bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    bodyData* data = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+    if (data && data->data == this) return false;
 
+    std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
+
+    if (fix1->GetType() == b2Shape::Type::e_circle){
+        b2CircleShape* cShape = (b2CircleShape*)fix1->GetShape();
+        b2Vec2 wCenter = fix1->GetBody()->GetWorldPoint(cShape->m_p);
+        bool res;
+        b2RayCastOutput rcOutput;
+        b2RayCastInput rcInput;
+        rcInput.maxFraction = 1.0f;
+        rcInput.p1 = wCenter + cShape->m_radius * contact->GetManifold()->localNormal;
+        rcInput.p2 = wCenter - cShape->m_radius * contact->GetManifold()->localNormal;
+        res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
+        if (res) {
+            b2Vec2 result = getRayPoint(rcInput, rcOutput);
+            collPoints.clear();
+            collPoints.push_back(result);
+        }
+    }
+
+    b2WorldManifold wManifold;
+    contact->GetWorldManifold(&wManifold);
+    if (collPoints.size() == 0 && fix2->GetBody()->GetType() == b2_staticBody){
+        b2RayCastOutput rcOutput;
+        b2RayCastInput rcInput;
+        rcInput.maxFraction = 1.0f;
+        for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+            bool res;
+            rcInput.p1 = wManifold.points[i] + contact->GetManifold()->localNormal;
+            rcInput.p2 = wManifold.points[i] - contact->GetManifold()->localNormal;
+            res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
+            if (res) {
+                b2Vec2 result = getRayPoint(rcInput, rcOutput);
+                collPoints.push_back(result);
+            }
+        }
+    }
+    int side = getFixtureSide(fix1);
+    std::vector<b2Vec2> points = getUsableRayPoints(fix1, side);
+    if (points.size() != 0){
+        b2Vec2* maxRays = getMaxRayPoints(points, side);
+        
+        for (int i = 0; i < collPoints.size(); i++){
+            if (isPointIn(maxRays[0], maxRays[1], collPoints.at(i), side)){
+                contact->SetEnabled(false);
+            }
+        }
+    }
 }
 
 void Portal::postHandle(){

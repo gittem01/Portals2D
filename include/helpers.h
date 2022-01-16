@@ -187,7 +187,7 @@ void testCase2(PortalWorld* pWorld){
     Portal* portal3 = pWorld->createPortal(b2Vec2(0.0f, -7.0f), b2Vec2(0.0f, +1.0f), 7.0f);
     Portal* portal4 = pWorld->createPortal(b2Vec2(0.0f, +7.0f), b2Vec2(0.0f, -1.0f), 7.0f);
 
-    portal1->connect(portal3);
+    portal1->connect(portal2);
     portal2->connect(portal3);
 
     b2PolygonShape shape;
@@ -250,7 +250,7 @@ void testCase1(PortalWorld* pWorld){
     float portalSize = 3.0f;
 
     Portal* portal1 = pWorld->createPortal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
-    Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
+    Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 8.0f), b2Vec2(0.0f, -1.0f), portalSize);
     Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
     Portal* portal4 = pWorld->createPortal(b2Vec2(+10.0f - 0.2f, 3.0f), b2Vec2(-1.0f, 0.0f), portalSize);
 
@@ -259,13 +259,13 @@ void testCase1(PortalWorld* pWorld){
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
         
-    //PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld->world, b2Vec2(0.0f, 3.0f)));
-    //PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld->world, b2Vec2(0.0f, 6.0f)));
+    PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld->world, b2Vec2(0.0f, 3.0f)));
+    PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld->world, b2Vec2(0.0f, 6.0f)));
 
-    //b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
-    //b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
+    b1->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+    b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
 
-    b2Vec2 p(5.0f, -5.0f);
+    b2Vec2 p(5.0f, 0.0f);
     b2Vec2 s(1.0f, 0.4f);
     b2Body* body2 = createBox(p, s, pWorld->world, b2_dynamicBody);
     (pWorld->createPortalBody(body2))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
@@ -277,7 +277,7 @@ void testCase1(PortalWorld* pWorld){
     // (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
     // b2Vec2 vel(-1.0f, 0.0f);
     // body4->SetLinearVelocity(vel);
-    // body4->SetBullet(true);
+    // body4->SetBullet(true); // for mimicing static body continuous collision
 
     p = b2Vec2(0.0f, 0.0f);
     float r = 1.0f;

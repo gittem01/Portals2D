@@ -88,8 +88,8 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         bool shouldCollide = coll->portal->shouldCollide(contact, fix1, fix2, coll);
         if (!shouldCollide) return false;
     }
-    
-    if (fix2->GetBody()->GetType() == b2_staticBody && prepareMap.find(fix1) != prepareMap.end()){        
+
+    if (fix2->GetBody()->GetType() == b2_staticBody && !fix2->IsSensor() && prepareMap.find(fix1) != prepareMap.end()){        
         for (auto iter = prepareMap.begin(); iter != prepareMap.end(); std::advance(iter, 1)){
             (*iter).second->prepareCollisionCheck(contact, fix1, fix2);
         }
