@@ -61,21 +61,41 @@ void PortalWorld::globalPostHandle(){
             bodyCollisionStatus* body1Status = b->bodyMaps->at(i);
             for (auto iter = body1Status->body->bodyMaps->begin(); iter != body1Status->body->bodyMaps->end(); std::advance(iter, 1)){
                 if ((*iter)->body == b){
-                    delete(*iter);
                     body1Status->body->bodyMaps->erase(iter);
+                    //delete *iter;
                     break;
                 }
             }
         }
+        b->bodyMaps->clear();
+
+        for (b2Fixture* fix = b->body->GetFixtureList(); fix; fix = fix->GetNext()){
+            for (auto vec : *b->allParts[fix]){
+                vec->clear();
+                delete vec;
+            }
+            delete b->allParts[fix];
+            
+            for (portalCollision* coll : *b->fixtureCollisions[fix]){
+                free(coll);
+            }
+
+            b->fixtureCollisions[fix]->clear();
+            delete b->fixtureCollisions[fix];
+        }
+
+        uintptr_t bData = b->body->GetUserData().pointer;
+        if (bData) free((void*)bData);
 
         world->DestroyBody(b->body);
         for (int i = 0 ; i < portalBodies.size(); i++){
             if (portalBodies.at(i) == b){
                 portalBodies.erase(portalBodies.begin() + i);
-                delete(b);
                 break;
             }
         }
+        b->prepareMap.clear();
+        delete(b);
     }
 
     destroyBodies.clear();

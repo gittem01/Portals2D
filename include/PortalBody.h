@@ -45,6 +45,10 @@ public:
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     std::map<b2Fixture*, Portal*> prepareMap;
 
+    // index 0 reserved for drawVertices
+    // remaining vertices are release vertices
+    std::map<b2Fixture*, std::vector<std::vector<b2Vec2>*>*> allParts;
+
     b2Body* body;
 
     PortalWorld* pWorld;
@@ -64,6 +68,8 @@ public:
     void createCloneBody(b2Body* body1, Portal* collPortal, int side);
     void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
     void drawBodies();
+
+    void calculateParts(b2Fixture* fix);
 
     void adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
                         std::vector<b2Vec2>& retVertices2, Portal* portal, int side);
