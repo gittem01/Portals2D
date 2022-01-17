@@ -1,7 +1,5 @@
 #include "helpers.h"
 
-#define GL_SLIENCE_DEPRECATION
-
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(nullptr);
@@ -13,9 +11,6 @@ int main(void)
 
     ContactListener cl;
     world->SetContactListener(&cl);
-
-    DestrucionListener dl;
-    world->SetDestructionListener(&dl);
 
     DebugDrawer* drawer = new DebugDrawer();
     world->SetDebugDraw(drawer);

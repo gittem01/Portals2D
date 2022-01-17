@@ -1,7 +1,6 @@
 #include "DebugDrawer.h"
 #include "mouseJointHandler.h"
 #include "ContactListener.h"
-#include "DestructionListener.h"
 #include "Portal.h"
 
 #include <chrono>
@@ -180,6 +179,9 @@ float getRand(){
 }
 
 void classicTest(PortalWorld* pWorld){
+    b2Vec2 gravity(0.0f, -20.00f);
+    pWorld->world->SetGravity(gravity);
+
     float xSize = 7.98f;
     float ySize = 4.48f;
     float width = 0.05f;
