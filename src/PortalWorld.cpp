@@ -95,7 +95,7 @@ void PortalWorld::globalPostHandle(){
                 break;
             }
         }
-        b->prepareMap.clear();
+
         delete(b);
     }
 

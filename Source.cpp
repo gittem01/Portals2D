@@ -29,7 +29,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 1;
+    int totalIter = 10;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 60;

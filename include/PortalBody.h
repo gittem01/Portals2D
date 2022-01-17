@@ -43,7 +43,7 @@ public:
     std::vector<bodyStruct*> createBodies;
     std::vector<bodyCollisionStatus*>* bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
-    std::map<b2Fixture*, Portal*> prepareMap;
+    std::map<b2Fixture*, std::set<Portal*>> prepareMaps;
 
     // index 0 reserved for drawVertices
     // remaining vertices are release vertices
