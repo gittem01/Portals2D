@@ -121,6 +121,8 @@ void PortalBody::postHandle(){
         createCloneBody(s->body, s->collPortal, s->side);
         free(s);
     }
+    body->ApplyForceToCenter(body->GetMass() * -pWorld->world->GetGravity(), true);
+
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         calculateParts(fix);
     }
@@ -512,7 +514,7 @@ b2Vec2 PortalBody::getCenterOfMass(b2Fixture* fix, int status){
 
     b2Vec2 center = findCentroid(vecs);
 
-    fix->GetBody()->ApplyForce(area * fix->GetDensity() * pWorld->gravity, center, true);
+    fix->GetBody()->ApplyForce(area * fix->GetDensity() * pWorld->world->GetGravity(), center, true);
 
     return center;
 }

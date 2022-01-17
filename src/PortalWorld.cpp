@@ -6,7 +6,6 @@ PortalWorld::PortalWorld(b2World* world, DebugDrawer* drawer){
     this->world = world;
     this->drawer = drawer;
 
-    this->gravity = b2Vec2(0.0f, -19.81f);
     this->drawReleases = false;
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
 }

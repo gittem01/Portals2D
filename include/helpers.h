@@ -229,7 +229,7 @@ void classicTest(PortalWorld* pWorld){
 }
 
 void testCase1(PortalWorld* pWorld){
-    b2Vec2 gravity(0.0f, 0.00f);
+    b2Vec2 gravity(0.0f, -20.00f);
     pWorld->world->SetGravity(gravity);
 
     float yPos = -4.0f;
@@ -254,7 +254,7 @@ void testCase1(PortalWorld* pWorld){
     b2Vec2 p(5.0f, 0.0f);
     b2Vec2 s(1.0f, 0.4f);
     b2Body* body2 = createBox(p, s, pWorld->world, b2_dynamicBody);
-    (pWorld->createPortalBody(body2))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    //(pWorld->createPortalBody(body2))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
 
     // artificial kinematic body
     // p = b2Vec2(0.0f, -4.0f);
