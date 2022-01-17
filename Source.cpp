@@ -9,7 +9,7 @@ int main(void)
     cam->zoom = 0.6f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, -9.81f));
+    b2World* world = new b2World(b2Vec2(0.0f, 0.0f));
 
     ContactListener cl;
     world->SetContactListener(&cl);
@@ -29,7 +29,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 1;
     long sleepTime = 20; // millisecond
 
     const int vsyncFps = 60;

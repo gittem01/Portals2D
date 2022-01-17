@@ -33,6 +33,7 @@ public:
     b2Color releaseColor;
 
     b2World* world;
+    b2Vec2 gravity;
 
     PortalWorld(b2World* world, DebugDrawer* drawer);
 

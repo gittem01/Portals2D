@@ -69,6 +69,8 @@ public:
     void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
     void drawBodies();
 
+    float getArea(b2Fixture* fix, int status);
+    b2Vec2 getCenterOfMass(b2Fixture* fix, int status);
     void calculateParts(b2Fixture* fix);
 
     void adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
