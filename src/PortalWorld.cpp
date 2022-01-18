@@ -77,11 +77,11 @@ void PortalWorld::globalPostHandle(){
             delete b->allParts[fix];
             
             for (portalCollision* coll : *b->fixtureCollisions[fix]){
-                free(coll);
+                //free(coll);
             }
 
-            b->fixtureCollisions[fix]->clear();
-            delete b->fixtureCollisions[fix];
+            //b->fixtureCollisions[fix]->clear();
+            //delete b->fixtureCollisions[fix];
         }
 
         uintptr_t bData = b->body->GetUserData().pointer;

@@ -564,19 +564,22 @@ void PortalBody::calculateParts(b2Fixture* fix){
         }
     }
 
-    std::vector<b2Vec2>* drawVecs = new std::vector<b2Vec2>;
-    
-    for (auto vec : *allParts[fix]){
-        vec->clear();
+    std::vector<std::vector<b2Vec2>*>* apf = allParts[fix];
+
+    for (std::vector<b2Vec2>* vec : *apf){
         delete vec;
     }
-    allParts[fix]->clear();
+
+    apf->clear();
+
     if (status == 2){
-        allParts[fix]->push_back(vertices);
+        apf->push_back(vertices);
         getCenterOfMass(fix, status);
         return;
     }
-    allParts[fix]->push_back(drawVecs);
+
+    std::vector<b2Vec2>* drawVecs = new std::vector<b2Vec2>;
+    apf->push_back(drawVecs);
     
     if (iter != (*fixIter).second->end()){
         for(;;){
@@ -589,7 +592,7 @@ void PortalBody::calculateParts(b2Fixture* fix){
                 vertices->push_back(v);
             }
 
-            allParts[fix]->push_back(releaseVecs);
+            apf->push_back(releaseVecs);
             
             std::advance(iter, 1);
             if (iter == (*fixIter).second->end()) break;
