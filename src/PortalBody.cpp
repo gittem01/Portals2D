@@ -130,7 +130,6 @@ void PortalBody::postHandle(){
 }
 
 bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
-    b2Shape;
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal && s->connection->side1 == side)
             return false;
@@ -468,6 +467,8 @@ float PortalBody::getArea(b2Fixture* fix, int status){
         baseArea = pow(cShape->m_radius, 2) * b2_pi;
     }
 
+    if (status == 2) return baseArea;
+
     std::vector<b2Vec2>* vecs = apf->at(0);
 
     for (int i = 0; i < vecs->size(); i++){
@@ -514,7 +515,9 @@ b2Vec2 PortalBody::getCenterOfMass(b2Fixture* fix, int status){
 
     b2Vec2 center = findCentroid(vecs);
 
-    fix->GetBody()->ApplyForce(area * fix->GetDensity() * pWorld->world->GetGravity(), center, true);
+    b2Vec2 force = area * fix->GetDensity() * pWorld->world->GetGravity();
+
+    fix->GetBody()->ApplyForce(((float)bodyMaps->size() + 1) * force, center, true);
 
     return center;
 }
