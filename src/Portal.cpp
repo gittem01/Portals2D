@@ -217,13 +217,15 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
     else{
         if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
             releaseFixtures[1 ^ side].insert(fix2);
+            collidingFixtures[1 ^ side].erase(fix2);
             ret = 3 - side;
         }
         else if (collidingFixtures[side].find(fix2) != collidingFixtures[side].end()){
+            collidingFixtures[side].erase(fix2);
             ret = 4;
         }
-        collidingFixtures[0].erase(fix2);
-        collidingFixtures[1].erase(fix2);
+        //collidingFixtures[0].erase(fix2);
+        //collidingFixtures[1].erase(fix2);
     }
 
     return ret;
@@ -455,6 +457,7 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
                 return false;
             }
         }
+        free(maxRays);
     }
 
     return true;

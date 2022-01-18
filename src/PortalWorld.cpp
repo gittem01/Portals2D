@@ -47,55 +47,14 @@ void PortalWorld::drawUpdate(){
 
 void PortalWorld::globalPostHandle(){
     for (PortalBody* b : destroyBodies){
-        if (!b) continue;
-        for (b2Fixture* fix = b->body->GetFixtureList(); fix; fix = fix->GetNext()){
-            for (Portal* p : portals){
-                for (int i = 0; i < 2; i++){
-                    p->collidingFixtures[i].erase(fix);
-                    p->releaseFixtures[i].erase(fix);
-                }
-            }
-        }
+        delete b;
 
-        for (int i = 0; i < b->bodyMaps->size(); i++){
-            bodyCollisionStatus* body1Status = b->bodyMaps->at(i);
-            for (auto iter = body1Status->body->bodyMaps->begin(); iter != body1Status->body->bodyMaps->end(); std::advance(iter, 1)){
-                if ((*iter)->body == b){
-                    body1Status->body->bodyMaps->erase(iter);
-                    //delete *iter;
-                    break;
-                }
-            }
-        }
-        b->bodyMaps->clear();
-
-        for (b2Fixture* fix = b->body->GetFixtureList(); fix; fix = fix->GetNext()){
-            for (auto vec : *b->allParts[fix]){
-                vec->clear();
-                delete vec;
-            }
-            delete b->allParts[fix];
-            
-            for (portalCollision* coll : *b->fixtureCollisions[fix]){
-                //free(coll);
-            }
-
-            //b->fixtureCollisions[fix]->clear();
-            //delete b->fixtureCollisions[fix];
-        }
-
-        uintptr_t bData = b->body->GetUserData().pointer;
-        if (bData) free((void*)bData);
-
-        world->DestroyBody(b->body);
         for (int i = 0 ; i < portalBodies.size(); i++){
             if (portalBodies.at(i) == b){
                 portalBodies.erase(portalBodies.begin() + i);
                 break;
             }
         }
-
-        delete(b);
     }
 
     destroyBodies.clear();

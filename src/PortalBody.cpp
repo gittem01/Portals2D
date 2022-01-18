@@ -23,6 +23,47 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
     }
 }
 
+PortalBody::~PortalBody(){
+    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
+        for (Portal* p : pWorld->portals){
+            for (int i = 0; i < 2; i++){
+                p->collidingFixtures[i].erase(fix);
+                p->releaseFixtures[i].erase(fix);
+            }
+        }
+    }
+
+    for (int i = 0; i < bodyMaps->size(); i++){
+        bodyCollisionStatus* body1Status = bodyMaps->at(i);
+        for (auto iter = body1Status->body->bodyMaps->begin(); iter != body1Status->body->bodyMaps->end(); iter++){
+            if ((*iter)->body == this){
+                delete *iter;
+                body1Status->body->bodyMaps->erase(iter--);
+            }
+        }
+    }
+    bodyMaps->clear();
+    delete bodyMaps;
+
+    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
+        for (auto vec : *allParts[fix]){
+            vec->clear();
+            delete vec;
+        }
+        delete allParts[fix];
+        
+        // for (portalCollision* coll : *fixtureCollisions[fix]){
+        //     free(coll);
+        // }
+        // delete fixtureCollisions[fix];
+    }
+
+    uintptr_t bData = body->GetUserData().pointer;
+    free((void*)bData);
+
+    pWorld->world->DestroyBody(body);
+}
+
 void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     
@@ -226,7 +267,7 @@ b2Vec2 rotateVec(b2Vec2 vec, float angle){
     float x = cos(angle) * vec.x - sin(angle) * vec.y;
     float y = sin(angle) * vec.x + cos(angle) * vec.y;
 
-    return b2Vec2(x, y);
+    return {x, y};
 }
 
 void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
@@ -283,7 +324,7 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         body2->SetAngularVelocity(body1->GetAngularVelocity());
         body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
 
-        bool allOut = false;
+        bool allOut = true;
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
             b2Fixture* f;
             if (fix->GetType() == b2Shape::Type::e_polygon){
@@ -331,8 +372,6 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
             }
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
-            col->portal = portal2;
-            col->side = c->side2;
 
             if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
                 bool rayCheck;
@@ -343,26 +382,26 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
 
                 if (rayCheck){
                     portal2->collidingFixtures[c->side2].insert(f);
+                    col->portal = portal2;
+                    col->side = c->side2;
                     col->status = 1;
                     npb->fixtureCollisions[f]->insert(col);
-                    allOut = true;
+                    allOut = false;
                 }
                 else{
                     free(col);
-                    destroyCheck(this->body, collPortal);
                 }
             }
             else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
                 portal2->releaseFixtures[c->side2].insert(f);
+                col->portal = portal2;
+                col->side = c->side2;
                 col->status = 0;
                 npb->fixtureCollisions[f]->insert(col);
             }
-            else{
-                free(col);
-            }
         }
 
-        if (!allOut) pWorld->destroyBodies.insert(this);
+        if (allOut) pWorld->destroyBodies.insert(this);
         else connectBodies(body1, body2, c, side);
     }
 }
@@ -594,7 +633,7 @@ void PortalBody::calculateParts(b2Fixture* fix){
 
             apf->push_back(releaseVecs);
             
-            std::advance(iter, 1);
+            iter++;
             if (iter == (*fixIter).second->end()) break;
 
             drawVecs->clear();

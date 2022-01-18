@@ -4,7 +4,7 @@ int main(void)
 {
     WindowPainter* wh = new WindowPainter(nullptr);
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
-    cam->zoom = 0.6f;
+    cam->zoom = 0.55f;
     wh->cam = cam;
 
     b2World* world = new b2World(b2Vec2(0.0f, 0.0f));

@@ -35,12 +35,15 @@ typedef struct{
 
 class PortalBody{
     
-friend PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor);
+friend PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor); 
 
 private:
     PortalBody(b2Body* body, PortalWorld* pWorld, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
 
 public:
+
+    ~PortalBody();
+
     std::vector<bodyStruct*> createBodies;
     std::vector<bodyCollisionStatus*>* bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
