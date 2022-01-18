@@ -15,7 +15,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
     bodyDef.angularDamping = 0.1f;
-    bodyDef.linearDamping = 0.1f;
+    bodyDef.linearDamping = 0.0f;
 
     b2Body* body = world->CreateBody(&bodyDef);
 
@@ -67,7 +67,7 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
     bodyDef.angularDamping = 0.1f;
-    bodyDef.linearDamping = 0.1f;
+    bodyDef.linearDamping = 0.0f;
 
     b2Body* body = world->CreateBody(&bodyDef);
 
@@ -238,12 +238,16 @@ void testCase1(PortalWorld* pWorld){
     float portalSize = 3.0f;
 
     Portal* portal1 = pWorld->createPortal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
-    Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
+    Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 1.8f), b2Vec2(0.0f, -1.0f), portalSize);
     Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
     Portal* portal4 = pWorld->createPortal(b2Vec2(+10.0f - 0.2f, 3.0f), b2Vec2(-1.0f, 0.0f), portalSize);
 
+    Portal* portal5 = pWorld->createPortal(b2Vec2(-12.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
+    Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
+
     portal3->connect(portal2);
     portal4->connect(portal1);
+    portal5->connect(portal6);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
         
@@ -256,7 +260,7 @@ void testCase1(PortalWorld* pWorld){
     b2Vec2 p(5.0f, 0.0f);
     b2Vec2 s(1.0f, 0.4f);
     b2Body* body2 = createBox(p, s, pWorld->world, b2_dynamicBody);
-    //(pWorld->createPortalBody(body2))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    (pWorld->createPortalBody(body2))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
 
     // artificial kinematic body
     // p = b2Vec2(0.0f, -4.0f);
@@ -268,7 +272,7 @@ void testCase1(PortalWorld* pWorld){
     // body4->SetBullet(true); // for mimicing static body continuous collision
 
     p = b2Vec2(0.0f, 0.0f);
-    float r = 1.0f;
+    float r = 0.7f;
     b2Body* body3 = createCircle(p, r, pWorld->world, b2_dynamicBody);
     (pWorld->createPortalBody(body3))->bodyColor = b2Color(1.0f, 1.0f, 0.0f, 0.5f);
 

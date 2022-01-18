@@ -14,7 +14,7 @@ int main(void)
 
     DebugDrawer* drawer = new DebugDrawer();
     world->SetDebugDraw(drawer);
-    drawer->SetFlags(0);
+    drawer->SetFlags(b2Draw::e_aabbBit);
     
     pWorld = new PortalWorld(world, drawer);
 

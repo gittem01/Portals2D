@@ -3,24 +3,6 @@
 #include "PortalBody.h"
 #include "PortalWorld.h"
 
-typedef enum{
-    BEGIN_CONTACT = 1,
-    END_CONTACT = 2,
-} contactType;
-
-enum dataTypes
-{
-	OTHER = 0,
-	PORTAL = 1,
-	PORTAL_BODY = 2,
-	MOUSE = 3,
-};
-
-struct bodyData {
-	dataTypes type;
-	void* data;
-};
-
 class Portal;
 
 struct portalConnection {

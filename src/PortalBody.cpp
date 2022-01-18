@@ -90,11 +90,10 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         if (!shouldCollide) return false;
     }
 
-    if (fix2->GetBody()->GetType() == b2_staticBody && !fix2->IsSensor() && prepareMaps.find(fix1) != prepareMaps.end()){        
-        for (auto iter = prepareMaps.begin(); iter != prepareMaps.end(); std::advance(iter, 1)){
-            for (Portal* p : (*iter).second){
-                p->prepareCollisionCheck(contact, fix1, fix2);
-            }
+    if (fix2->GetBody()->GetType() == b2_staticBody && !fix2->IsSensor() && prepareMaps.find(fix1) != prepareMaps.end()){
+        auto mapsFix = prepareMaps[fix1];
+        for (auto iter = mapsFix.begin(); iter != mapsFix.end(); std::advance(iter, 1)){
+            (*iter)->prepareCollisionCheck(contact, fix1, fix2);
         }
     }
 
@@ -325,6 +324,11 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
 
             npb->fixtureCollisions[f] = new std::set<portalCollision*>();
             npb->allParts[f] = new std::vector<std::vector<b2Vec2>*>();
+
+            for (Portal* portal : pWorld->portals){
+                std::vector<b2Vec2> ps = portal->getCollisionPoints(portal->collisionSensor, f);
+                if (ps.size() > 0) npb->prepareMaps[f].insert(portal);
+            }
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
             col->portal = portal2;

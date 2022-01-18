@@ -32,6 +32,7 @@ typedef struct{
     portalConnection* connection;
 }bodyCollisionStatus;
 
+
 class PortalBody{
     
 friend PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor);
@@ -50,9 +51,9 @@ public:
     std::map<b2Fixture*, std::vector<std::vector<b2Vec2>*>*> allParts;
 
     b2Body* body;
+    b2Color bodyColor;
 
     PortalWorld* pWorld;
-    b2Color bodyColor;
 
     // fix1 is always a fixture of this class
     void collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);

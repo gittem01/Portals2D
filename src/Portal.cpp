@@ -449,13 +449,15 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
     std::vector<b2Vec2> points = getUsableRayPoints(fix1, side);
     if (points.size() != 0){
         b2Vec2* maxRays = getMaxRayPoints(points, side);
-        
         for (int i = 0; i < collPoints.size(); i++){
             if (isPointIn(maxRays[0], maxRays[1], collPoints.at(i), side)){
                 contact->SetEnabled(false);
+                return false;
             }
         }
     }
+
+    return true;
 }
 
 void Portal::postHandle(){
