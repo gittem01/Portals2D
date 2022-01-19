@@ -411,6 +411,12 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
     bodyData* data = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     if (data && data->data == this) return false;
 
+    int side = getFixtureSide(fix1);
+
+    if (collidingFixtures[1 ^ side].find(fix1) != collidingFixtures[1 ^ side].end()){
+        return false;
+    }
+
     std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
 
     if (fix1->GetType() == b2Shape::Type::e_circle){
@@ -447,7 +453,7 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
             }
         }
     }
-    int side = getFixtureSide(fix1);
+
     std::vector<b2Vec2> points = getUsableRayPoints(fix1, side);
     if (points.size() != 0){
         b2Vec2* maxRays = getMaxRayPoints(points, side);
