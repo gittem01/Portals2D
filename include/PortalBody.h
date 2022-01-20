@@ -63,7 +63,7 @@ public:
     void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
-    void destroyCheck(b2Body* body, Portal* portal);
+    void destroyCheck(b2Fixture* fix, Portal* portal);
     bool shouldCreate(b2Body* body, Portal* portal, int side);
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
@@ -77,8 +77,8 @@ public:
     b2Vec2 getCenterOfMass(b2Fixture* fix, int status);
     void calculateParts(b2Fixture* fix);
 
-    void adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
-                        std::vector<b2Vec2>& retVertices2, Portal* portal, int side);
+    void adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
+                        std::vector<b2Vec2>* retVertices2, Portal* portal, int side);
     void portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices);
 
     // draw fixtures according to the portal collision status

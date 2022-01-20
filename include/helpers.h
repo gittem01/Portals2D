@@ -246,7 +246,7 @@ void testCase1(PortalWorld* pWorld){
     Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
 
     portal3->connect(portal2);
-    portal4->connect(portal1);
+    portal4->connect(portal1, 0, 1);
     portal5->connect(portal6);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
@@ -315,7 +315,7 @@ void testCase3(PortalWorld* pWorld){
     b2Vec2 gravity(0.0f, -9.81f);
     pWorld->world->SetGravity(gravity);
     float r = 10.0f;
-    const int n = 20; // n * 2 portals will be created
+    const int n = 15; // n * 2 portals will be created
     float anglePlus = glm::radians(0.0f);
     Portal** circlePortals = (Portal**)malloc(2 * n * sizeof(Portal*));
 
@@ -333,8 +333,8 @@ void testCase3(PortalWorld* pWorld){
         circlePortals[i]->connect(circlePortals[n + i]);
     }
 
-    float sizeM = 0.15f;
-    for (int i = 0; i < 200; i++){
+    float sizeM = 0.2f;
+    for (int i = 0; i < 150; i++){
         b2Vec2 size = b2Vec2(sizeM + sizeM * (rand() / (double)RAND_MAX), sizeM + sizeM * (rand() / (double)RAND_MAX));
         float r = sizeM + 2.0f * sizeM * (rand() / (double)RAND_MAX);
 
@@ -347,7 +347,7 @@ void testCase3(PortalWorld* pWorld){
 }
 
 void testCase4(PortalWorld* pWorld){
-    b2Vec2 gravity(0.0f, -9.81f);
+    b2Vec2 gravity(0.0f, 0.0f);
     pWorld->world->SetGravity(gravity);
 
     float bias = 6.0f;

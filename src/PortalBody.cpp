@@ -41,6 +41,7 @@ PortalBody::~PortalBody(){
                 body1Status->body->bodyMaps->erase(iter--);
             }
         }
+        //free(body1Status);
     }
     bodyMaps->clear();
     delete bodyMaps;
@@ -97,8 +98,8 @@ void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
 
-    bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
-    if (!shouldCollide){
+    bool sc = shouldCollide(contact, fix1, fix2, bData);
+    if (!sc){
         contact->SetEnabled(false);
         return;
     }
@@ -133,7 +134,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
 
     if (fix2->GetBody()->GetType() == b2_staticBody && !fix2->IsSensor() && prepareMaps.find(fix1) != prepareMaps.end()){
         auto mapsFix = prepareMaps[fix1];
-        for (auto iter = mapsFix.begin(); iter != mapsFix.end(); std::advance(iter, 1)){
+        for (auto iter = mapsFix.begin(); iter != mapsFix.end(); iter++){
             (*iter)->prepareCollisionCheck(contact, fix1, fix2);
         }
     }
@@ -161,6 +162,7 @@ void PortalBody::postHandle(){
         createCloneBody(s->body, s->collPortal, s->side);
         free(s);
     }
+
     body->ApplyForceToCenter(body->GetMass() * -pWorld->world->GetGravity(), true);
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
@@ -175,6 +177,11 @@ bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
             return false;
     }
 
+    for (bodyStruct* bs : createBodies){
+        if (bs->collPortal == portal && bs->side == side)
+            return false;
+    }
+
     return true;
 }
 
@@ -183,13 +190,6 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     {
     case 0:
         if (shouldCreate(fix->GetBody(), portal, 0)){
-            for (portalConnection* c : portal->connections[0]){
-                bodyCollisionStatus* bcs = new bodyCollisionStatus;
-                bcs->body = nullptr;
-                bcs->connection = c;
-                bodyMaps->push_back(bcs);
-            }
-
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
             *s = {fix->GetBody(), portal, 0};
             createBodies.push_back(s);
@@ -198,13 +198,6 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
         break;
     case 1:
         if (shouldCreate(fix->GetBody(), portal, 1)){
-            for (portalConnection* c : portal->connections[1]){
-                bodyCollisionStatus* bcs = new bodyCollisionStatus;
-                bcs->body = nullptr;
-                bcs->connection = c;
-                bodyMaps->push_back(bcs);
-            }
-
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
             *s = {fix->GetBody(), portal, 1};
             createBodies.push_back(s);
@@ -235,13 +228,14 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
                 break;
             }
         }
-        destroyCheck(fix->GetBody(), portal);
+        destroyCheck(fix, portal);
         break;
     }
 }
 
-void PortalBody::destroyCheck(b2Body* bBody, Portal* portal){
-    for (b2Fixture* fix = bBody->GetFixtureList(); fix; fix = fix->GetNext()){
+void PortalBody::destroyCheck(b2Fixture* f, Portal* portal){
+    for (b2Fixture* fix = f->GetBody()->GetFixtureList(); fix; fix = fix->GetNext()){
+        if (fix == f) continue;
         for (portalCollision* coll : *fixtureCollisions[fix]){
             if (coll->portal == portal){
                 return;
@@ -300,12 +294,12 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
         bd->type = PORTAL_BODY;
         body2->GetUserData().pointer = (uintptr_t)bd;
 
-        bodyCollisionStatus* bcs = new bodyCollisionStatus;
-
         PortalBody* npb = pWorld->createPortalBody(body2, bodyColor);
+        
+        bodyCollisionStatus* bcs = new bodyCollisionStatus;
+        bcs->body = this;
         npb->bodyMaps->push_back(bcs);
 
-        bcs->body = this;
         for (portalConnection* conn : portal2->connections[c->side2]){
             if (conn->portal2 == collPortal && conn->side2 == c->side1){
                 bcs->connection = conn;
@@ -313,12 +307,10 @@ void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
             }
         }
 
-        for (bodyCollisionStatus* s : *bodyMaps){
-            if (s->connection == c){
-                s->body = npb;
-                break;
-            }
-        }
+        bodyCollisionStatus* t_bcs = new bodyCollisionStatus;
+        t_bcs->body = npb;
+        this->bodyMaps->push_back(t_bcs);
+        t_bcs->connection = c;
 
         body2->SetLinearVelocity(rotateVec(speed, angleRot));
         body2->SetAngularVelocity(body1->GetAngularVelocity());
@@ -461,30 +453,33 @@ void PortalBody::drawBodies(){
     }
 }
 
-void PortalBody::adjustVertices(std::vector<b2Vec2>& vertices, std::vector<b2Vec2>& retVertices1,
-                                std::vector<b2Vec2>& retVertices2, Portal* p, int side)
+void PortalBody::adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
+                                std::vector<b2Vec2>* retVertices2, Portal* p, int side)
 {
     int pSide;
-    int lastSide = p->getPointSide(vertices[0]);
-    for (int i = 0; i < vertices.size() + 1; i++){
-        int vertexIndex = i % vertices.size();
-        pSide = p->getPointSide(vertices[vertexIndex]);
+    int lastSide = p->getPointSide(vertices->at(0));
+
+    for (int i = 0; i < vertices->size() + 1; i++){
+        int vertexIndex = i % vertices->size();
+        int vertexBefore = i ? i - 1 : 0;
+        pSide = p->getPointSide(vertices->at(vertexIndex));
+
         if (pSide == side && lastSide == 1 - side){
-            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices[i - 1], vertices[vertexIndex]);
-            retVertices1.push_back(intersectionPoint);
-            retVertices2.push_back(intersectionPoint);
+            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
+            retVertices1->push_back(intersectionPoint);
+            retVertices2->push_back(intersectionPoint);
         }
         else if (pSide == 1 - side && lastSide == side){
-            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices[i - 1], vertices[vertexIndex]);
-            retVertices1.push_back(intersectionPoint);
-            retVertices2.push_back(intersectionPoint);
+            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
+            retVertices1->push_back(intersectionPoint);
+            retVertices2->push_back(intersectionPoint);
         }
 
-        if (pSide == side && i != vertices.size()){
-            retVertices1.push_back(vertices[vertexIndex]);
+        if (pSide == side && i != vertices->size()){
+            retVertices1->push_back(vertices->at(vertexIndex));
         }
-        else if (i != vertices.size()){
-            retVertices2.push_back(vertices[vertexIndex]);
+        else if (i != vertices->size()){
+            retVertices2->push_back(vertices->at(vertexIndex));
         }
 
         lastSide = pSide;
@@ -567,7 +562,7 @@ b2Vec2 PortalBody::getCenterOfMass(b2Fixture* fix, int status){
 
 void PortalBody::calculateParts(b2Fixture* fix){
     std::map<b2Fixture*, std::set<portalCollision*>*>::iterator fixIter = fixtureCollisions.find(fix);
-    std::set<portalCollision*>::iterator iter = (*fixIter).second->begin();
+    std::set<portalCollision*>::iterator setIter = (*fixIter).second->begin();
 
     std::vector<b2Vec2>* vertices = new std::vector<b2Vec2>;
 
@@ -620,11 +615,11 @@ void PortalBody::calculateParts(b2Fixture* fix){
     std::vector<b2Vec2>* drawVecs = new std::vector<b2Vec2>;
     apf->push_back(drawVecs);
     
-    if (iter != (*fixIter).second->end()){
+    if (setIter != (*fixIter).second->end()){
         for(;;){
             std::vector<b2Vec2>* releaseVecs = new std::vector<b2Vec2>;
 
-            adjustVertices(*vertices, *drawVecs, *releaseVecs, (*iter)->portal, (*iter)->side);
+            adjustVertices(vertices, drawVecs, releaseVecs, (*setIter)->portal, (*setIter)->side);
 
             vertices->clear();
             for (b2Vec2 v : *drawVecs){
@@ -633,8 +628,8 @@ void PortalBody::calculateParts(b2Fixture* fix){
 
             apf->push_back(releaseVecs);
             
-            iter++;
-            if (iter == (*fixIter).second->end()) break;
+            setIter++;
+            if (setIter == (*fixIter).second->end()) break;
 
             drawVecs->clear();
         }

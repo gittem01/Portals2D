@@ -462,6 +462,7 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
         for (int i = 0; i < collPoints.size(); i++){
             if (isPointIn(maxRays[0], maxRays[1], collPoints.at(i), side)){
                 contact->SetEnabled(false);
+                free(maxRays);
                 return false;
             }
         }
