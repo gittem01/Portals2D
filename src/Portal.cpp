@@ -266,7 +266,7 @@ std::vector<b2Vec2> Portal::getUsableRayPoints(b2Fixture* fix, int side){
         b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
         b2Vec2 point = fix->GetBody()->GetWorldPoint(circleShape->m_p);
         float dist = pWorld->getDist(points[side], points[1 - side], point);
-        if (dist > 0.2f) usablePoints.push_back(point);
+        if (dist -circleShape->m_radius > 0.2f) usablePoints.push_back(point);
     }
 
     return usablePoints;
