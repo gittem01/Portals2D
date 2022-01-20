@@ -388,6 +388,8 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
                     contact->GetManifold()->pointCount = 1;
                     return true;
                 }
+
+                free(maxRays);
             }
         }
         for (b2Vec2 p : collPoints){

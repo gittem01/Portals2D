@@ -10,6 +10,7 @@ bool isPaused = false;
 bool tick = false;
 PortalWorld* pWorld;
 
+// O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.0f) {
     b2BodyDef bodyDef;
     bodyDef.position = bodyPos;
@@ -62,7 +63,8 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     return body;
 }
 
-b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f) {
+// Weird body (???)
+b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float circleR=0.15f, float rOut = 1.0f) {
     b2BodyDef bodyDef;
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
@@ -77,8 +79,6 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     degree /= 180 / glm::pi<float>();
     float n = 20;
     float incr = degree / n;
-    float bigCircleR = 1.0f;
-    float circleR = 0.15f;
 
     for (float currD = 0.0f; currD < degree;) {
         b2FixtureDef fDef;
@@ -86,8 +86,8 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
 
         float nextD = currD + incr;
 
-        float x = sin(currD) * (bigCircleR - circleR);
-        float y = cos(currD) * (bigCircleR - circleR);
+        float x = sin(currD) * (rOut - circleR);
+        float y = cos(currD) * (rOut - circleR);
 
         cShape.m_p = b2Vec2(x, y);
         cShape.m_radius = circleR;
