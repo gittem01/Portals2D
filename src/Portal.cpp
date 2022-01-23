@@ -277,8 +277,6 @@ std::vector<b2Vec2> Portal::getUsableRayPoints(b2Fixture* fix, int side){
 }
 
 b2Vec2* Portal::getMaxRayPoints(std::vector<b2Vec2> usableRayPoints, int side){
-    if (usableRayPoints.size() == 0) return nullptr;
-
     b2Vec2* retPoints = (b2Vec2*)calloc(2, sizeof(b2Vec2));
 
     b2Vec2 copyDir = side ? -dir : dir;
@@ -477,7 +475,7 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
 }
 
 void Portal::postHandle(){
-    
+
 }
 
 void Portal::draw(){

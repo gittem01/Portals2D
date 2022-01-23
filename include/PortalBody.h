@@ -69,9 +69,8 @@ public:
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
     void handleOut(b2Fixture* fix, Portal* portal, int out);
 
-    void createCloneBody(b2Body* body1, Portal* collPortal, int side);
+    void createCloneBody(bodyStruct* s);
     void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
-    void drawBodies();
 
     float getArea(b2Fixture* fix, int status);
     b2Vec2 getCenterOfMass(b2Fixture* fix, int status);
@@ -79,12 +78,11 @@ public:
 
     void adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
                         std::vector<b2Vec2>* retVertices2, Portal* portal, int side);
+    void drawBodies();
     void portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices);
-
     // draw fixtures according to the portal collision status
     void drawPolygonFix(b2Fixture* fixture);
     void drawCircleFix(b2Fixture* fixture);
-
     void drawVertices(b2Body* body, std::vector<b2Vec2>& vertices);
 
     void postHandle();

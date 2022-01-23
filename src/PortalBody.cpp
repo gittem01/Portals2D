@@ -43,12 +43,10 @@ PortalBody::~PortalBody(){
         }
         //free(bodyCollStatus);
     }
-    bodyMaps->clear();
     //delete bodyMaps;
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         for (auto vec : *allParts[fix]){
-            vec->clear();
             delete vec;
         }
         delete allParts[fix];
@@ -159,7 +157,7 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
 
 void PortalBody::postHandle(){
     for (bodyStruct* s : createBodies){
-        createCloneBody(s->body, s->collPortal, s->side);
+        createCloneBody(s);
         free(s);
     }
 
@@ -264,7 +262,10 @@ b2Vec2 rotateVec(b2Vec2 vec, float angle){
     return {x, y};
 }
 
-void PortalBody::createCloneBody(b2Body* body1, Portal* collPortal, int side){
+void PortalBody::createCloneBody(bodyStruct* s){
+    int side = s->side;
+    Portal* collPortal = s->collPortal;
+    b2Body* body1 = s->body;
     b2Vec2 dir1 = side ? -collPortal->dir : collPortal->dir;
     b2Vec2 posDiff = collPortal->pos - body1->GetPosition();
     b2Vec2 speed = body1->GetLinearVelocity();

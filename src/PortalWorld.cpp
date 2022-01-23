@@ -47,14 +47,13 @@ void PortalWorld::drawUpdate(){
 
 void PortalWorld::globalPostHandle(){
     for (PortalBody* b : destroyBodies){
-        delete b;
-
         for (int i = 0 ; i < portalBodies.size(); i++){
             if (portalBodies.at(i) == b){
                 portalBodies.erase(portalBodies.begin() + i);
                 break;
             }
         }
+        delete b;
     }
 
     destroyBodies.clear();
