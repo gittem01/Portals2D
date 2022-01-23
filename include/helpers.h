@@ -121,7 +121,7 @@ b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
     return edgeBody;
 }
 
-b2Body* createPotalCube(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, float density=1.0f){
+b2Body* createPortalCube(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, float density=1.0f){
     std::vector<b2Vec2> vertices = 
         {   b2Vec2(-0.1 * size.x, +0.5 * size.y), b2Vec2(-0.2 * size.x, +0.6 * size.y), b2Vec2(-0.5 * size.x, +0.6 * size.y),
             b2Vec2(-0.6 * size.x, +0.5 * size.y), b2Vec2(-0.6 * size.x, +0.2 * size.y), b2Vec2(-0.5 * size.x, +0.1 * size.y)};
@@ -305,7 +305,7 @@ void testCase1(PortalWorld* pWorld){
 
     b2Vec2 p(5.0f, 0.0f);
     b2Vec2 s(1.0f, 1.0f);
-    b2Body* body2 = createPotalCube(p, s, pWorld->world, b2_dynamicBody);
+    b2Body* body2 = createPortalCube(p, s, pWorld->world, b2_dynamicBody);
     (pWorld->createPortalBody(body2))->bodyColor = b2Color(1.0f, 0.6f, 0.5f, 0.5f);
 
     // artificial kinematic body
@@ -338,8 +338,8 @@ void testCase2(PortalWorld* pWorld){
     portal1->connect(portal2);
     portal3->connect(portal4);
 
-    for (int i = 0; i < 144; i++){
-        b2Body* body = createPotalCube(b2Vec2(i % 12 - 6, i / 12 - 6), b2Vec2(0.75f, 0.75f), pWorld->world, b2_dynamicBody);
+    for (int i = 0; i < 300; i++){
+        b2Body* body = createBox(b2Vec2(0, 0), b2Vec2(0.3f, 0.3f), pWorld->world, b2_dynamicBody);
 
         (pWorld->createPortalBody(body))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
     }
