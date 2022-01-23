@@ -174,6 +174,7 @@ bool Portal::rayCheck(b2Fixture* fix){
 // released from side 1 : 3
 // released without being inserted into the releaseFixtures set: 4
 int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    const float angleThold = 0.005f;
     int ret = -1;
     
     b2WorldManifold wManifold;
@@ -182,7 +183,7 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
     float angle = pWorld->vecAngle(wManifold.normal, dir);
     int side = getFixtureSide(fix2);
     bool rayRes = rayCheck(fix2);
-    if (angle < 0.01f || rayRes || (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f))){
+    if (angle < angleThold || rayRes || (angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold))){
         std::set<b2Fixture*>::iterator iter0 = collidingFixtures[0].find(fix2);
         std::set<b2Fixture*>::iterator iter1 = collidingFixtures[1].find(fix2);
         if (angle < 0.01f){
@@ -199,7 +200,7 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
                 releaseFixtures[0].erase(fix2);
             }
         }
-        else if (angle < (b2_pi + 0.01f) && angle > (b2_pi - 0.01f)){
+        else if (angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold)){
             if (releaseFixtures[0].find(fix2) != releaseFixtures[0].end())
             {
                 if (iter0 == collidingFixtures[0].end()) ret = 0;

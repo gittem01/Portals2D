@@ -34,17 +34,17 @@ PortalBody::~PortalBody(){
     }
 
     for (int i = 0; i < bodyMaps->size(); i++){
-        bodyCollisionStatus* body1Status = bodyMaps->at(i);
-        for (auto iter = body1Status->body->bodyMaps->begin(); iter != body1Status->body->bodyMaps->end(); iter++){
+        bodyCollisionStatus* bodyCollStatus = bodyMaps->at(i);
+        for (auto iter = bodyCollStatus->body->bodyMaps->begin(); iter != bodyCollStatus->body->bodyMaps->end(); iter++){
             if ((*iter)->body == this){
                 delete *iter;
-                body1Status->body->bodyMaps->erase(iter--);
+                bodyCollStatus->body->bodyMaps->erase(iter--);
             }
         }
-        //free(body1Status);
+        //free(bodyCollStatus);
     }
     bodyMaps->clear();
-    delete bodyMaps;
+    //delete bodyMaps;
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         for (auto vec : *allParts[fix]){
@@ -53,10 +53,10 @@ PortalBody::~PortalBody(){
         }
         delete allParts[fix];
         
-        // for (portalCollision* coll : *fixtureCollisions[fix]){
-        //     free(coll);
-        // }
-        // delete fixtureCollisions[fix];
+        for (portalCollision* coll : *fixtureCollisions[fix]){
+            //free(coll);
+        }
+        //delete fixtureCollisions[fix];
     }
 
     uintptr_t bData = body->GetUserData().pointer;
@@ -617,6 +617,8 @@ void PortalBody::calculateParts(b2Fixture* fix){
     
     if (setIter != (*fixIter).second->end()){
         for(;;){
+            if (vertices->size() == 0) break;
+
             std::vector<b2Vec2>* releaseVecs = new std::vector<b2Vec2>;
 
             adjustVertices(vertices, drawVecs, releaseVecs, (*setIter)->portal, (*setIter)->side);
@@ -625,8 +627,8 @@ void PortalBody::calculateParts(b2Fixture* fix){
             for (b2Vec2 v : *drawVecs){
                 vertices->push_back(v);
             }
-
-            apf->push_back(releaseVecs);
+            if (releaseVecs->size() != 0)
+                apf->push_back(releaseVecs);
             
             setIter++;
             if (setIter == (*fixIter).second->end()) break;
