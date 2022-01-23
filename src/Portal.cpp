@@ -381,6 +381,9 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
                 
                 bool in1 = isPointIn(maxRays[0], maxRays[1], collPoints.at(0), coll->side);
                 bool in2 = isPointIn(maxRays[0], maxRays[1], collPoints.at(1), coll->side);
+                
+                free(maxRays);
+
                 if (in1 && !in2){
                     contact->GetManifold()->points[0] = contact->GetManifold()->points[1];
                     contact->GetManifold()->pointCount = 1;
@@ -390,8 +393,6 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
                     contact->GetManifold()->pointCount = 1;
                     return true;
                 }
-
-                free(maxRays);
             }
         }
         for (b2Vec2 p : collPoints){
@@ -464,7 +465,6 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
         for (int i = 0; i < collPoints.size(); i++){
             if (isPointIn(maxRays[0], maxRays[1], collPoints.at(i), side)){
                 contact->SetEnabled(false);
-                free(maxRays);
                 return false;
             }
         }

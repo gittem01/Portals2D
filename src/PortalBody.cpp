@@ -41,12 +41,12 @@ PortalBody::~PortalBody(){
                 bodyCollStatus->body->bodyMaps->erase(iter--);
             }
         }
-        free(bodyCollStatus);
+        delete bodyCollStatus;
     }
     delete bodyMaps;
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
-        for (auto vec : *allParts[fix]){
+        for (std::vector<b2Vec2>* vec : *allParts[fix]){
             delete vec;
         }
         delete allParts[fix];
@@ -283,12 +283,7 @@ void PortalBody::createCloneBody(bodyStruct* s){
         def.bullet = body1->IsBullet();
 
         b2Body* body2 = pWorld->world->CreateBody(&def);
-
-        bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
-        bd->data = this;
-        bd->type = PORTAL_BODY;
-        body2->GetUserData().pointer = (uintptr_t)bd;
-
+        
         PortalBody* npb = pWorld->createPortalBody(body2, bodyColor);
         
         bodyCollisionStatus* bcs = new bodyCollisionStatus;
@@ -385,6 +380,9 @@ void PortalBody::createCloneBody(bodyStruct* s){
                 col->side = c->side2;
                 col->status = 0;
                 npb->fixtureCollisions[f]->insert(col);
+            }
+            else{
+                free(col);
             }
         }
 
@@ -624,7 +622,9 @@ void PortalBody::calculateParts(b2Fixture* fix){
             }
             if (releaseVecs->size() != 0)
                 apf->push_back(releaseVecs);
-            
+            else
+                free(releaseVecs);
+
             setIter++;
             if (setIter == (*fixIter).second->end()) break;
 

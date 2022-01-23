@@ -20,7 +20,7 @@ int main(void)
 
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase1(pWorld);
+    testCase2(pWorld);
 
     bool done = false;
     int frame = 0;
