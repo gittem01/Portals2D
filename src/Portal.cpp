@@ -181,12 +181,15 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
     contact->GetWorldManifold(&wManifold);
 
     float angle = pWorld->vecAngle(wManifold.normal, dir);
+    if (angle > b2_pi * 2) angle -= (int)(angle / (b2_pi * 2));
     int side = getFixtureSide(fix2);
     bool rayRes = rayCheck(fix2);
-    if (angle < angleThold || rayRes || (angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold))){
+    if (rayRes ||   angle < angleThold || b2_pi * 2 < (angle + angleThold) ||
+                    (angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold)))
+    {
         std::set<b2Fixture*>::iterator iter0 = collidingFixtures[0].find(fix2);
         std::set<b2Fixture*>::iterator iter1 = collidingFixtures[1].find(fix2);
-        if (angle < 0.01f){
+        if (angle < angleThold || b2_pi * 2 < (angle + angleThold)){
             if (releaseFixtures[1].find(fix2) != releaseFixtures[1].end())
             {
                 if (iter1 == collidingFixtures[1].end()) ret = 1;

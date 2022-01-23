@@ -24,7 +24,7 @@ int main(void)
 
     bool done = false;
     int frame = 0;
-    int totalIter = 10;
+    int totalIter = 5;
     long sleepTime = 20; // millisecond
     int vsyncFps = 60;
 
