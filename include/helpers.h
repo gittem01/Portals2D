@@ -327,7 +327,6 @@ void testCase1(PortalWorld* pWorld){
     b2Body* statBody = createBox(bPos, s, pWorld->world, b2_staticBody);
 }
 
-
 void testCase2(PortalWorld* pWorld){
     b2Vec2 gravity(0.0f, -9.81f);
     pWorld->world->SetGravity(gravity);

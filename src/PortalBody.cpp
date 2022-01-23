@@ -187,20 +187,13 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     switch (out)
     {
     case 0:
-        if (shouldCreate(fix->GetBody(), portal, 0)){
-            bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
-            *s = {fix->GetBody(), portal, 0};
-            createBodies.push_back(s);
-        }
-        outHelper(fix, portal, 1, 0);
-        break;
     case 1:
-        if (shouldCreate(fix->GetBody(), portal, 1)){
+        if (shouldCreate(fix->GetBody(), portal, out)){
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
-            *s = {fix->GetBody(), portal, 1};
+            *s = {fix->GetBody(), portal, out};
             createBodies.push_back(s);
         }
-        outHelper(fix, portal, 1, 1);
+        outHelper(fix, portal, 1, out);
         break;
     
     case 2:
