@@ -366,6 +366,7 @@ void testCase3(PortalWorld* pWorld){
     for (int i = 0; i < n; i++){
         circlePortals[i]->connect(circlePortals[n + i]);
     }
+    free(circlePortals);
 
     float sizeM = 0.2f;
     for (int i = 0; i < 150; i++){

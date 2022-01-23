@@ -250,14 +250,18 @@ public:
 
     void createMouseBody() {
         b2Vec2 oldMousePos = b2Vec2();
+        bodyData* bData = nullptr;
         if (mouseBody) {
             oldMousePos = mouseBody->GetTransform().p;
+            bData = (bodyData*)mouseBody->GetUserData().pointer;
             world->DestroyBody(mouseBody);
         }
         b2BodyDef bodyDef;
         bodyDef.type = b2_kinematicBody;
-        bodyData* bData = (bodyData*)malloc(sizeof(bodyData));
-        *bData = { MOUSE, this };
+        if (!bData){
+            bData = (bodyData*)malloc(sizeof(bodyData));
+            *bData = { MOUSE, this };
+        }
         bodyDef.userData.pointer = (uintptr_t)bData;
         mouseBody = world->CreateBody(&bodyDef);
 

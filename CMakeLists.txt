@@ -17,8 +17,9 @@ link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 
 add_executable(physicsTeleport Source.cpp)
 
-file(GLOB files ${CMAKE_SOURCE_DIR}/src/*.cpp)
-add_library(mines ${files})
+file(GLOB sourceFiles ${CMAKE_SOURCE_DIR}/src/*.cpp)
+file(GLOB headerFiles ${CMAKE_SOURCE_DIR}/include/*.h)
+add_library(mines ${sourceFiles} ${headerFiles})
 
 find_package(OpenGL REQUIRED)
 target_link_libraries(physicsTeleport OpenGL::GL)
