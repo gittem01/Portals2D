@@ -41,9 +41,9 @@ PortalBody::~PortalBody(){
                 bodyCollStatus->body->bodyMaps->erase(iter--);
             }
         }
-        //free(bodyCollStatus);
+        free(bodyCollStatus);
     }
-    //delete bodyMaps;
+    delete bodyMaps;
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         for (auto vec : *allParts[fix]){
@@ -52,12 +52,13 @@ PortalBody::~PortalBody(){
         delete allParts[fix];
         
         for (portalCollision* coll : *fixtureCollisions[fix]){
-            //free(coll);
+            free(coll);
         }
-        //delete fixtureCollisions[fix];
+        delete fixtureCollisions[fix];
     }
 
     uintptr_t bData = body->GetUserData().pointer;
+    body->GetUserData().pointer = 0;
     free((void*)bData);
 
     pWorld->world->DestroyBody(body);
