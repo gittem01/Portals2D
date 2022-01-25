@@ -16,7 +16,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
     bodyDef.angularDamping = 0.1f;
-    bodyDef.linearDamping = 0.0f;
+    bodyDef.linearDamping = 0.1f;
 
     b2Body* body = world->CreateBody(&bodyDef);
 
@@ -69,7 +69,7 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
     bodyDef.angularDamping = 0.1f;
-    bodyDef.linearDamping = 0.0f;
+    bodyDef.linearDamping = 0.1f;
 
     b2Body* body = world->CreateBody(&bodyDef);
 
@@ -137,6 +137,7 @@ b2Body* createPortalCube(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType typ
     b2BodyDef def;
     def.type = type;
     def.position = pos;
+    def.linearDamping = 0.1f;
 
     b2Body* body = world->CreateBody(&def);
     body->CreateFixture(&fDef1);
@@ -178,6 +179,7 @@ b2Body* createBox(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, floa
     b2BodyDef def;
     def.type = type;
     def.position = pos;
+    def.linearDamping = 0.1f;
 
     b2Body* body = world->CreateBody(&def);
     body->CreateFixture(&fDef);
@@ -198,6 +200,7 @@ b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type){
     b2BodyDef def;
     def.type = type;
     def.position = pos;
+    def.linearDamping = 0.1f;    
 
     b2Body* body = world->CreateBody(&def);
     body->CreateFixture(&fDef);

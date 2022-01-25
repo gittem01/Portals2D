@@ -8,6 +8,8 @@ WindowPainter::WindowPainter(Camera* cam) {
 
 void WindowPainter::handleMouseData() {
     this->mouseData[5] = 0;
+    this->trackpadData[0] = 0;
+    this->trackpadData[1] = 0;
     for (int i = 2; i < 5; i++) {
         if (this->mouseData[i] == 2) {
             this->mouseData[i] = 1;
