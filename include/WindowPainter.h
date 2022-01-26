@@ -10,8 +10,8 @@ class WindowPainter
 {
 public:
 	int* keyData = (int*)calloc(512, sizeof(int));
-	int* mouseData = (int*)calloc(7, sizeof(int));
-	int* trackpadData = (int*)calloc(2, sizeof(int));
+	double* mouseData = (double*)calloc(7, sizeof(double));
+	double* trackpadData = (double*)calloc(2, sizeof(int));
 	int* lastMousePos = (int*)calloc(2, sizeof(int));
 	glm::vec2 windowSizes = glm::vec2(1280, 720);
 	bool releaseQueue[3] = {false, false, false};

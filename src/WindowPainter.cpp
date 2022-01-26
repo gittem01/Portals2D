@@ -14,9 +14,9 @@ void WindowPainter::handleMouseData() {
         if (this->mouseData[i] == 2) {
             this->mouseData[i] = 1;
         }
-        if (releaseQueue[i-2]){
+        if (releaseQueue[i - 2]){
             mouseData[i] = 0;
-            releaseQueue[i-2] = false;
+            releaseQueue[i - 2] = false;
         }
     }
     if (lastMousePos[0] == mouseData[0] && lastMousePos[1] == mouseData[1]) {
@@ -109,7 +109,7 @@ void WindowPainter::buttonEventCallback(GLFWwindow* window, int button, int acti
 
 void WindowPainter::scrollEventCallback(GLFWwindow* window, double xoffset, double yoffset) {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
-    thisClass->mouseData[5] = (int)yoffset;
+    thisClass->mouseData[5] = yoffset;
     thisClass->trackpadData[0] = xoffset;
     thisClass->trackpadData[1] = yoffset;
 }

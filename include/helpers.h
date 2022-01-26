@@ -131,7 +131,7 @@ b2Body* createPortalCube(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType typ
     b2FixtureDef fDef1;
     fDef1.shape = &boxShape;
     fDef1.density = density;
-    fDef1.restitution = 0.0f;
+    fDef1.restitution = 0.2f;
     fDef1.friction = 0.2f;
 
     b2BodyDef def;
@@ -158,7 +158,7 @@ b2Body* createPortalCube(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType typ
         b2FixtureDef fDef2;
         fDef2.shape = &cornerShape;
         fDef2.density = density;
-        fDef2.restitution = 0.0f;
+        fDef2.restitution = 0.2f;
         fDef2.friction = 0.2f;
         body->CreateFixture(&fDef2);
     }
@@ -173,7 +173,7 @@ b2Body* createBox(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, floa
     b2FixtureDef fDef;
     fDef.shape = &shape;
     fDef.density = density;
-    fDef.restitution = 0.0f;
+    fDef.restitution = 0.2f;
     fDef.friction = 0.2f;
 
     b2BodyDef def;
@@ -194,7 +194,7 @@ b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type){
     b2FixtureDef fDef;
     fDef.shape = &shape;
     fDef.density = 1.0f;
-    fDef.restitution = 0.0f;
+    fDef.restitution = 0.2f;
     fDef.friction = 0.2f;
 
     b2BodyDef def;
