@@ -61,7 +61,6 @@ void DebugDrawer::DrawSolidCircle(const b2Vec2& center, float radius,
 }
 
 void DebugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
-	glLineWidth(2.0f);
 	glColor4f(color.r, color.g, color.b, color.a);
 	glBegin(GL_LINES);
 	glVertex2d(p1.x, p1.y);

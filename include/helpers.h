@@ -1,7 +1,7 @@
 #include "DebugDrawer.h"
 #include "mouseJointHandler.h"
 #include "ContactListener.h"
-#include "Portal.h"
+#include "TestPlayer.h"
 
 #include <chrono>
 #include <thread>
@@ -11,7 +11,7 @@ bool tick = false;
 PortalWorld* pWorld;
 
 // O shaped body
-b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.0f) {
+b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.2f) {
     b2BodyDef bodyDef;
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
@@ -64,7 +64,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
 }
 
 // Weird body (???)
-b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float circleR=0.15f, float rOut = 1.0f) {
+b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float circleR=0.15f, float rOut = 1.2f) {
     b2BodyDef bodyDef;
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
@@ -231,7 +231,7 @@ void classicTest(PortalWorld* pWorld){
 
     float xSize = 7.98f;
     float ySize = 4.48f;
-    float width = 0.05f;
+    float width = 0.5f;
     float m = 1.0f;
 
     Portal* portal1 = pWorld->createPortal(b2Vec2(0.0f, -ySize), b2Vec2(+0.0f, +1.0f), ySize * m);
@@ -251,10 +251,19 @@ void classicTest(PortalWorld* pWorld){
     createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), pWorld->world, b2_staticBody);
     createBox(b2Vec2(xSize + width, 0), b2Vec2(width, ySize), pWorld->world, b2_staticBody);
 
+    b2Vec2 p = b2Vec2(0.0f, 0.0f);
+    b2Vec2 s = b2Vec2(3.0f, 0.2f);
+    b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
+    (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    b2Vec2 vel(0.0f, 5.0f);
+    body4->SetLinearVelocity(vel);
+    body4->SetBullet(true); // for mimicing static body continuous collision
+    body4->SetLinearDamping(0.0f);
+
     float sizeM = 1.0f;
     float div = 2.25f;
-    uint32_t numCircles = 25;
-    uint32_t numPolygons = 75;
+    uint32_t numCircles = 50;
+    uint32_t numPolygons = 50;
     for (int i = 0; i < numCircles; i++) {
         b2Body* b = createCircle(b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f),
                                 (getRand() + sizeM) / div, pWorld->world, b2_dynamicBody);
@@ -266,7 +275,7 @@ void classicTest(PortalWorld* pWorld){
         pWorld->createPortalBody(b, b2Color(0, 1, 1, 0.5));
     }
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 5; i++) {
         b2Body* b1 = createCircle(b2Vec2(getRand() * xSize * 1.0f, 10.0f),
                                 (getRand() + sizeM) / div, pWorld->world, b2_dynamicBody);
         pWorld->createPortalBody(b1, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
@@ -278,7 +287,7 @@ void classicTest(PortalWorld* pWorld){
 }
 
 void testCase1(PortalWorld* pWorld){
-    b2Vec2 gravity(0.0f, -20.00f);
+    b2Vec2 gravity(0.0f, -50.00f);
     pWorld->world->SetGravity(gravity);
 
     float yPos = -4.0f;
@@ -287,8 +296,8 @@ void testCase1(PortalWorld* pWorld){
     Portal* portal1 = pWorld->createPortal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
     Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
     Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
-    Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, 3.0f), b2Vec2(+1.0f, 0.0f), portalSize);
-    Portal* portal42 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, 4.0f + portalSize * 2), b2Vec2(+1.0f, 0.0f), portalSize);
+    Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, 0.0f), b2Vec2(+1.0f, 0.0f), portalSize);
+    Portal* portal42 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, 1.0f + portalSize * 2), b2Vec2(+1.0f, 0.0f), portalSize);
 
     Portal* portal5 = pWorld->createPortal(b2Vec2(-12.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
     Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
@@ -307,18 +316,19 @@ void testCase1(PortalWorld* pWorld){
     b2->bodyColor = b2Color(1.0f, 0.0f, 1.0f, 0.5f);
 
     b2Vec2 p(5.0f, 0.0f);
-    b2Vec2 s(1.0f, 1.0f);
+    b2Vec2 s(0.75f, 0.75f);
     b2Body* body2 = createPortalCube(p, s, pWorld->world, b2_dynamicBody);
     (pWorld->createPortalBody(body2))->bodyColor = b2Color(1.0f, 0.6f, 0.5f, 0.5f);
 
     // artificial kinematic body
-    // p = b2Vec2(0.0f, -4.0f);
-    // s = b2Vec2(1.0f, 0.5f);
-    // b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
-    // (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
-    // b2Vec2 vel(-1.0f, 0.0f);
-    // body4->SetLinearVelocity(vel);
-    // body4->SetBullet(true); // for mimicing static body continuous collision
+    p = b2Vec2(0.0f, -6.0f);
+    s = b2Vec2(1.0f, 0.5f);
+    b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
+    (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    b2Vec2 vel(-1.0f, 0.0f);
+    body4->SetLinearVelocity(vel);
+    body4->SetBullet(true); // for mimicing static body continuous collision
+    body4->SetLinearDamping(0.0f);
 
     p = b2Vec2(0.0f, 0.0f);
     float r = 0.7f;

@@ -1,5 +1,6 @@
 #include "ContactListener.h"
 #include "mouseJointHandler.h"
+#include "TestPlayer.h"
 
 // for mouse
 void ContactListener::endBeginHandle(contactType type, b2Contact* contact) {
@@ -61,7 +62,6 @@ void ContactListener::BeginContact(b2Contact* contact){
         PortalBody* p = (PortalBody*)bDataB->data;
         p->collisionBegin(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
-
 }
 
 void ContactListener::EndContact(b2Contact* contact) {
@@ -92,8 +92,22 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
         PortalBody* p = (PortalBody*)bDataB->data;
         p->preCollision(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
+    if (bDataA && bDataA->extraData){
+        ((TestPlayer*)bDataA->extraData)->handleForces(contact, contact->GetFixtureB());
+    }
+    if (bDataB && bDataB->extraData){
+        ((TestPlayer*)bDataB->extraData)->handleForces(contact, contact->GetFixtureA());
+    }
 }
 
 void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impulse){
-
+    bodyData* bDataA = (bodyData*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+    bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+    
+    if (bDataA && bDataA->extraData){
+        ((TestPlayer*)bDataA->extraData)->reportContact(contact, contact->GetFixtureB());
+    }
+    if (bDataB && bDataB->extraData){
+        ((TestPlayer*)bDataB->extraData)->reportContact(contact, contact->GetFixtureA());
+    }
 }

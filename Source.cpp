@@ -4,7 +4,7 @@ int main(void)
 {
     WindowPainter* wh = new WindowPainter(nullptr);
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
-    cam->zoom = 0.55f;
+    cam->zoom = 0.6f;
     wh->cam = cam;
 
     b2World* world = new b2World(b2Vec2(0.0f, 0.0f));
@@ -18,9 +18,11 @@ int main(void)
     
     pWorld = new PortalWorld(world, drawer);
 
+    TestPlayer t(pWorld, wh);
+
     mouseJointHandler mjh(world, wh, drawer);
 
-    testCase3(pWorld);
+    testCase1(pWorld);
 
     bool done = false;
     int frame = 0;
@@ -46,7 +48,8 @@ int main(void)
 
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
-                pWorld->portalUpdate(); 
+                pWorld->portalUpdate();
+                t.update(1.0f / (vsyncFps * totalIter), totalIter);
             }
 
             mjh.drawMouseBody();

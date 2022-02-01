@@ -74,7 +74,7 @@ public:
 
     // always returns 2 point
     b2Vec2* getMaxRayPoints(std::vector<b2Vec2> usableRayPoints, int side);
-    bool isPointIn(b2Vec2 p1, b2Vec2 p2, b2Vec2 point, int side);
+    bool isPointIn(b2Vec2 p1, b2Vec2 p2, b2Vec2 point, int side, float sideThold=-0.001f);
     
     std::vector<b2Vec2> getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2);
 

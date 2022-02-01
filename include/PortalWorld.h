@@ -25,11 +25,22 @@ enum dataTypes
 struct bodyData {
 	dataTypes type;
 	void* data;
+
+    // reserved for user
+    void* extraData;
 };
+
+struct portalConnection;
 
 class PortalBody;
 class Portal;
 class DebugDrawer;
+
+typedef struct{
+    PortalBody* pBody;
+    Portal* collPortal;
+    int side;
+}bodyStruct;
 
 class PortalWorld{
 
@@ -46,13 +57,21 @@ private:
     float calcAngle2(b2Vec2 vec);
     void normalize(b2Vec2* vec);
 
+    // baseBody should not be NULL if isNew is false
+    void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
+
 public:
     bool drawReleases;
     b2Color releaseColor;
 
     b2World* world;
 
+    std::vector<std::vector<PortalBody*>*> bodyIndices;
+
     PortalWorld(b2World* world, DebugDrawer* drawer);
+
+    std::vector<PortalBody*> createCloneBody(bodyStruct* s);
+    void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
 
     void portalUpdate();
     void globalPostHandle();
@@ -61,6 +80,7 @@ public:
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
 
+    friend class TestPlayer;
     friend class PortalBody;
     friend class Portal;
 };

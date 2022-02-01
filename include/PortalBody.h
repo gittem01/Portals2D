@@ -22,12 +22,6 @@ typedef struct {
 }portalCollision;
 
 typedef struct{
-    b2Body* body;
-    Portal* collPortal;
-    int side;
-}bodyStruct;
-
-typedef struct{
     PortalBody* body;
     portalConnection* connection;
 }bodyCollisionStatus;
@@ -36,6 +30,7 @@ typedef struct{
 class PortalBody{
     
 friend PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor); 
+friend std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s);
 
 private:
     PortalBody(b2Body* body, PortalWorld* pWorld, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
@@ -44,10 +39,12 @@ public:
 
     ~PortalBody();
 
-    std::vector<bodyStruct*> createBodies;
+    std::vector<PortalBody*>* worldIndex;
+
     std::vector<bodyCollisionStatus*>* bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     std::map<b2Fixture*, std::set<Portal*>> prepareMaps;
+    std::vector<bodyStruct*> createBodies;
 
     // index 0 reserved for drawVertices
     // remaining vertices are release vertices
@@ -69,9 +66,6 @@ public:
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
     void handleOut(b2Fixture* fix, Portal* portal, int out);
 
-    void createCloneBody(bodyStruct* s);
-    void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
-
     float getArea(b2Fixture* fix, int status);
     b2Vec2 getCenterOfMass(b2Fixture* fix, int status);
     void calculateParts(b2Fixture* fix);
@@ -85,7 +79,7 @@ public:
     void drawCircleFix(b2Fixture* fixture);
     void drawVertices(b2Body* body, std::vector<b2Vec2>& vertices);
 
-    void postHandle();
+    std::vector<PortalBody*> postHandle();
 
     b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 };
