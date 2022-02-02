@@ -50,6 +50,9 @@ int main(void)
             if (reqZoom < 0.5f){
                 cam->zoom += (reqZoom - cam->zoom) / 10.0f;
             }
+            else{
+                cam->zoom += (0.5f - cam->zoom) / 50.0f;
+            }
         }
         else{
             b2Vec2 bp = t.pBody->at(0)->body->GetPosition();

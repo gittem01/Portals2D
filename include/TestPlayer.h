@@ -27,6 +27,10 @@ public:
     int lastKey;
     int keyBeforeSwitch;
 
+    bool right;
+    bool left;
+    int lastDoubleKey;
+
     b2Vec2 lastDirs[2];
 
     TestPlayer(PortalWorld* pWorld, WindowPainter* wp, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 2.0f)){
@@ -46,6 +50,10 @@ public:
         lastBody = nullptr;
         lastKey = -1;
         keyBeforeSwitch = -1;
+
+        right = false;
+        left = false;
+        lastDoubleKey = -1;
     }
 
     void createBody(b2Vec2 pos, b2Vec2 size){
@@ -150,10 +158,28 @@ public:
         float cnst = pb->body->GetMass() * (pBody->size() / dt);
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
+        if (wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A]){
+            if (lastDoubleKey == -1){
+                right = true;
+            }
+            else if (lastDoubleKey == GLFW_KEY_A){
+                right = true;
+            }
+            else if (lastDoubleKey == GLFW_KEY_D){
+                left = true;
+            }
+        }
+        else if (wp->keyData[GLFW_KEY_D]){
+            right = true;
+        }
+        else if (wp->keyData[GLFW_KEY_A]){
+            left = true;
+        }
+
         lastKey = -1;
         float mult = 1.0f;
-        if ((wp->keyData[GLFW_KEY_D] || wp->keyData[GLFW_KEY_A]) && !(wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A])){
-            if (wp->keyData[GLFW_KEY_D]){
+        if (left || right){
+            if (right){
                 if (keyBeforeSwitch == GLFW_KEY_D){
                     mult = -1.0f;
                 }
@@ -161,7 +187,7 @@ public:
                     keyBeforeSwitch = -1;
                 }
             }
-            else if (wp->keyData[GLFW_KEY_A]){
+            else if (left){
                 if (keyBeforeSwitch == GLFW_KEY_A){
                     mult = -1.0f;
                 }
@@ -173,10 +199,9 @@ public:
         else{
             keyBeforeSwitch = -1;
         }
-        if ((wp->keyData[GLFW_KEY_D] || wp->keyData[GLFW_KEY_A]) && 
-            !(wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A]))
+        if (left || right)
         {
-            if (wp->keyData[GLFW_KEY_D]){
+            if (right){
                 if (haveContact){
                     lv.x += 400.0f * dt * pBody->size() * mult;
                 }
@@ -185,7 +210,7 @@ public:
                 }
                 lastKey = GLFW_KEY_D;
             }
-            if (wp->keyData[GLFW_KEY_A]){
+            if (left){
                 if (haveContact){
                     lv.x -= 400.0f * dt * pBody->size() * mult;
                 }
@@ -233,11 +258,25 @@ public:
             lastDirs[1] = pc2->side ? -pc2->portal->dir : pc2->portal->dir;
         }
 
+        if (!(wp->keyData[GLFW_KEY_A] && wp->keyData[GLFW_KEY_D])){
+            if (wp->keyData[GLFW_KEY_A]){
+                lastDoubleKey = GLFW_KEY_A;
+            }
+            else if (wp->keyData[GLFW_KEY_D]){
+                lastDoubleKey = GLFW_KEY_D;
+            }
+            else{
+                lastDoubleKey = -1;
+            }
+        }
+
         haveContact = false;
         onPlatform = false;
         lastVelocity = lv;
         contactBody = nullptr;
         platformBody = nullptr;
+        right = false;
+        left = false;
         contactType = (b2BodyType)INT_MAX; // NULL
     }
 };
