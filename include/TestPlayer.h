@@ -24,6 +24,11 @@ public:
     b2Vec2 lastOriantation;
     b2Vec2 newOriantation;
 
+    int lastKey;
+    int keyBeforeSwitch;
+
+    b2Vec2 lastDirs[2];
+
     TestPlayer(PortalWorld* pWorld, WindowPainter* wp, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 2.0f)){
         this->pWorld = pWorld;
         this->wp = wp;
@@ -39,6 +44,8 @@ public:
 
         bodySwitch = false;
         lastBody = nullptr;
+        lastKey = -1;
+        keyBeforeSwitch = -1;
     }
 
     void createBody(b2Vec2 pos, b2Vec2 size){
@@ -102,7 +109,9 @@ public:
                 contactBody = fix2->GetBody();
                 if (fix2->GetBody()->GetType() == b2_dynamicBody){
                     contact->SetFriction(1.0f);
-                    if (fix2->GetDensity() == 0.0f){
+                    if (fix2->GetDensity() == 0.0f &&
+                    (contact->GetFixtureA() == pBody->at(0)->body->GetFixtureList() || contact->GetFixtureB() == pBody->at(0)->body->GetFixtureList()))
+                    {
                         onPlatform = true;
                         platformBody = fix2->GetBody();
                     }
@@ -119,6 +128,10 @@ public:
         if (pb != lastBody && lastBody != nullptr){
             bodySwitch = true;
             switchTimer = glfwGetTime();
+            float diff = abs(lastDirs[0].x + lastDirs[1].x);
+            if (lastKey != -1 && diff > 1.99f){
+                keyBeforeSwitch = lastKey;
+            }
         }
         if (bodySwitch){
             if (glfwGetTime() - switchTimer > totalTime){
@@ -137,24 +150,49 @@ public:
         float cnst = pb->body->GetMass() * (pBody->size() / dt);
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
+        lastKey = -1;
+        float mult = 1.0f;
+        if ((wp->keyData[GLFW_KEY_D] || wp->keyData[GLFW_KEY_A]) && !(wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A])){
+            if (wp->keyData[GLFW_KEY_D]){
+                if (keyBeforeSwitch == GLFW_KEY_D){
+                    mult = -1.0f;
+                }
+                else{
+                    keyBeforeSwitch = -1;
+                }
+            }
+            else if (wp->keyData[GLFW_KEY_A]){
+                if (keyBeforeSwitch == GLFW_KEY_A){
+                    mult = -1.0f;
+                }
+                else{
+                    keyBeforeSwitch = -1;
+                }
+            }
+        }
+        else{
+            keyBeforeSwitch = -1;
+        }
         if ((wp->keyData[GLFW_KEY_D] || wp->keyData[GLFW_KEY_A]) && 
             !(wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A]))
         {
             if (wp->keyData[GLFW_KEY_D]){
                 if (haveContact){
-                    lv.x += 400.0f * dt * pBody->size();
+                    lv.x += 400.0f * dt * pBody->size() * mult;
                 }
                 else{
-                    lv.x += 50.0f * dt * pBody->size();
+                    lv.x += 50.0f * dt * pBody->size() * mult;
                 }
+                lastKey = GLFW_KEY_D;
             }
             if (wp->keyData[GLFW_KEY_A]){
                 if (haveContact){
-                    lv.x -= 400.0f * dt * pBody->size();
+                    lv.x -= 400.0f * dt * pBody->size() * mult;
                 }
                 else{
-                    lv.x -= 50.0f * dt * pBody->size();
+                    lv.x -= 50.0f * dt * pBody->size() * mult;
                 }
+                lastKey = GLFW_KEY_A;
             }
         }
         else if (!haveContact){
@@ -185,14 +223,14 @@ public:
 
         lastBody = pb;
 
-        if (pBody->size() > 1 && !bodySwitch){
-            portalCollision* pc = (*pb->fixtureCollisions[pb->body->GetFixtureList()]->begin());
-            if (pc->side == 0){
-                lastOriantation = pc->portal->dir;
-            }
-            else{
-                lastOriantation = -pc->portal->dir;
-            }
+        if (pBody->size() > 1){
+            PortalBody* b1 = pBody->at(0);
+            PortalBody* b2 = pBody->at(1);
+            portalCollision* pc1 = (*b1->fixtureCollisions[b1->body->GetFixtureList()]->begin());
+            portalCollision* pc2 = (*b2->fixtureCollisions[b2->body->GetFixtureList()]->begin());
+
+            lastDirs[0] = pc1->side ? -pc1->portal->dir : pc1->portal->dir;
+            lastDirs[1] = pc2->side ? -pc2->portal->dir : pc2->portal->dir;
         }
 
         haveContact = false;

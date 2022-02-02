@@ -296,8 +296,8 @@ void testCase1(PortalWorld* pWorld){
     Portal* portal1 = pWorld->createPortal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
     Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
     Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
-    Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, -0.5f), b2Vec2(+1.0f, 0.0f), portalSize);
-    Portal* portal42 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, 1.0f + portalSize * 2), b2Vec2(+1.0f, 0.0f), portalSize);
+    Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos), b2Vec2(+1.0f, 0.0f), portalSize);
+    Portal* portal42 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos + portalSize * 2), b2Vec2(+1.0f, 0.0f), portalSize);
 
     Portal* portal5 = pWorld->createPortal(b2Vec2(-12.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
     Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
@@ -321,8 +321,8 @@ void testCase1(PortalWorld* pWorld){
     (pWorld->createPortalBody(body2))->bodyColor = b2Color(1.0f, 0.6f, 0.5f, 0.5f);
 
     // artificial kinematic body
-    p = b2Vec2(0.0f, -6.0f);
-    s = b2Vec2(7.0f, 0.5f);
+    p = b2Vec2(5.0f, -6.0f);
+    s = b2Vec2(10.0f, 0.5f);
     b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
     (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
     b2Vec2 vel(-5.0f, 0.0f);
