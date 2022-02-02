@@ -36,6 +36,28 @@ int main(void)
 
         done = wh->looper();
 
+        if (t.pBody->size() > 1){
+            b2Vec2 p1 = t.pBody->at(0)->body->GetPosition();
+            b2Vec2 p2 = t.pBody->at(1)->body->GetPosition();
+
+            glm::vec2 diff = glm::vec2(abs(p2.x - p1.x), abs(p2.y - p1.y)) / 2.0f + 5.0f;
+            glm::vec2 mid = glm::vec2(p2.x + p1.x, p2.y + p1.y) / 2.0f;
+            
+            glm::vec2 posDiff = mid - cam->pos;
+
+            cam->pos += posDiff / 50.0f;
+            float reqZoom = sqrt(abs(cam->defaultXSides.x / diff.x));
+            if (reqZoom < 0.5f){
+                cam->zoom += (reqZoom - cam->zoom) / 10.0f;
+            }
+        }
+        else{
+            b2Vec2 bp = t.pBody->at(0)->body->GetPosition();
+            glm::vec2 diff = glm::vec2(bp.x, bp.y) - wh->cam->pos;
+            cam->pos += diff / 50.0f;
+            cam->zoom += (0.5f - cam->zoom) / 50.0f;
+        }
+
         cam->update();
 
         keyHandler(wh);
@@ -49,6 +71,7 @@ int main(void)
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
                 pWorld->portalUpdate();
+             
                 t.update(1.0f / (vsyncFps * totalIter), totalIter);
             }
 

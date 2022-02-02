@@ -56,6 +56,7 @@ private:
     float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c);
     float calcAngle2(b2Vec2 vec);
     void normalize(b2Vec2* vec);
+    b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
 
     // baseBody should not be NULL if isNew is false
     void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);

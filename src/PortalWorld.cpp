@@ -133,8 +133,10 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         t_bcs->body = npb;
         pBody->bodyMaps->push_back(t_bcs);
         t_bcs->connection = c;
-
-        body2->SetLinearVelocity(rotateVec(speed, angleRot));
+        b2Vec2 lvToSet = rotateVec(speed, angleRot);
+        if (c->isReversed)
+            lvToSet = mirror(dir2, lvToSet);
+        body2->SetLinearVelocity(lvToSet);
         body2->SetAngularVelocity(body1->GetAngularVelocity());
         body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
 
@@ -294,4 +296,10 @@ void PortalWorld::normalize(b2Vec2* vec){
     
     vec->x /= length;
     vec->y /= length;
+}
+
+b2Vec2 PortalWorld::mirror(b2Vec2 mirror, b2Vec2 vec){
+    float angle1 = calcAngle2(mirror);
+    float angle2 = calcAngle2(vec);
+    return rotateVec(vec, 2 * (angle1 - angle2));
 }
