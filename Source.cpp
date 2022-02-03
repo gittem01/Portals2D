@@ -47,18 +47,18 @@ int main(void)
 
             cam->pos += posDiff / 50.0f;
             float reqZoom = sqrt(abs(cam->defaultXSides.x / diff.x));
-            if (reqZoom < 0.5f){
+            if (reqZoom < 0.65f){
                 cam->zoom += (reqZoom - cam->zoom) / 10.0f;
             }
             else{
-                cam->zoom += (0.5f - cam->zoom) / 50.0f;
+                cam->zoom += (0.65f - cam->zoom) / 50.0f;
             }
         }
         else{
             b2Vec2 bp = t.pBody->at(0)->body->GetPosition();
             glm::vec2 diff = glm::vec2(bp.x, bp.y) - wh->cam->pos;
             cam->pos += diff / 50.0f;
-            cam->zoom += (0.5f - cam->zoom) / 50.0f;
+            cam->zoom += (0.65f - cam->zoom) / 50.0f;
         }
 
         cam->update();
@@ -74,7 +74,8 @@ int main(void)
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
                 pWorld->portalUpdate();
-             
+                
+                glfwPollEvents();
                 t.update(1.0f / (vsyncFps * totalIter), totalIter);
             }
 

@@ -31,6 +31,8 @@ public:
     bool left;
     int lastDoubleKey;
 
+    int onAirFor;
+
     b2Vec2 lastDirs[2];
 
     TestPlayer(PortalWorld* pWorld, WindowPainter* wp, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 2.0f)){
@@ -54,6 +56,8 @@ public:
         right = false;
         left = false;
         lastDoubleKey = -1;
+
+        onAirFor = -1;
     }
 
     void createBody(b2Vec2 pos, b2Vec2 size){
@@ -106,13 +110,16 @@ public:
         b2WorldManifold wManifold;
         contact->GetWorldManifold(&wManifold);
         b2Vec2 normal = wManifold.normal;
+        float l = normal.Length();
+        normal.x /= l;
+        normal.y /= l;
 
         b2Vec2 cPos = wManifold.points[0];
         float tHold = 0.1f;
         for (PortalBody* pb : *pBody){
             b2Vec2 bodyPos = pb->body->GetPosition();
             float botY = bodyPos.y - size.y / 2.0f;
-            if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.3f){
+            if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.1f){
                 contactType = fix2->GetBody()->GetType();
                 contactBody = fix2->GetBody();
                 if (fix2->GetBody()->GetType() == b2_dynamicBody){
@@ -199,6 +206,8 @@ public:
         else{
             keyBeforeSwitch = -1;
         }
+        if (!contactBody) onAirFor++;
+        else onAirFor = -1;
         if (left || right)
         {
             if (right){
@@ -223,7 +232,7 @@ public:
         else if (!haveContact){
             lv.x = (1 - 0.05f / totalIter) * lv.x;
         }
-        else if ((contactBody && contactBody->GetMass() != 0.0f)){
+        else if (contactBody && contactBody->GetMass() != 0.0f){
             lv.x = (1 - 0.95f / totalIter) * lv.x;
         }
         else if (contactBody && contactType == b2_staticBody){
@@ -239,9 +248,14 @@ public:
         if (lv.x < -maxSpeed + speedOffset){
             lv.x = -maxSpeed + speedOffset;
         }
-        
-        if (wp->keyData[GLFW_KEY_W] && contactBody && lv.y <= 0.01f){
-            lv.y += 20.0f * pBody->size();
+
+        if (wp->keyData[GLFW_KEY_W] && ((contactBody && lv.y <= 0.01f) || 
+            (lv.y < 0.0f && onAirFor < 4 * totalIter && onAirFor != -1 && pBody->size() == 1))){
+            lv.y = 20.0f * pBody->size();
+        }
+
+        if (lv.y < -40.0f){
+            lv.y = -40.0f;
         }
 
         pb->body->SetLinearVelocity(lv);

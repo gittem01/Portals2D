@@ -218,6 +218,12 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             else{
                 free(col);
             }
+
+            if (collPortal->collidingFixtures[0].find(fix) == collPortal->collidingFixtures[0].end() &&
+                collPortal->collidingFixtures[1].find(fix) == collPortal->collidingFixtures[1].end())
+            {
+                allOut = false;
+            }
         }
         createPortalBody_i(npb, pBody, false);
         if (allOut) destroyBodies.insert(pBody);

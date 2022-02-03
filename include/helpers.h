@@ -287,7 +287,7 @@ void classicTest(PortalWorld* pWorld){
 }
 
 void testCase1(PortalWorld* pWorld){
-    b2Vec2 gravity(0.0f, -50.00f);
+    b2Vec2 gravity(0.0f, -40.00f);
     pWorld->world->SetGravity(gravity);
 
     float yPos = -4.0f;
