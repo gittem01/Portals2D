@@ -123,7 +123,6 @@ public:
                 contactType = fix2->GetBody()->GetType();
                 contactBody = fix2->GetBody();
                 if (fix2->GetBody()->GetType() == b2_dynamicBody){
-                    contact->SetFriction(1.0f);
                     if (fix2->GetDensity() == 0.0f &&
                     (contact->GetFixtureA() == pBody->at(0)->body->GetFixtureList() || contact->GetFixtureB() == pBody->at(0)->body->GetFixtureList()))
                     {
@@ -165,6 +164,11 @@ public:
         float cnst = pb->body->GetMass() * (pBody->size() / dt);
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
+        if (onPlatform){
+            b2Vec2 pVel = platformBody->GetLinearVelocity();
+            speedOffset = pVel.x;
+        }
+
         if (wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A]){
             if (lastDoubleKey == -1){
                 right = true;
@@ -185,6 +189,9 @@ public:
 
         lastKey = -1;
         float mult = 1.0f;
+        if (!left && !right && onPlatform){
+            lv.x = platformBody->GetLinearVelocity().x;
+        }
         if (left || right){
             if (right){
                 if (keyBeforeSwitch == GLFW_KEY_D){
@@ -214,8 +221,15 @@ public:
                 if (haveContact){
                     lv.x += 400.0f * dt * pBody->size() * mult;
                 }
+                else if (mult > 0.0f){
+                    if (lv.x < maxSpeed + speedOffset){
+                        lv.x += 50.0f * dt * pBody->size() * mult;
+                    }
+                }
                 else{
-                    lv.x += 50.0f * dt * pBody->size() * mult;
+                    if (lv.x > -maxSpeed + speedOffset){
+                        lv.x += 50.0f * dt * pBody->size() * mult;
+                    }
                 }
                 lastKey = GLFW_KEY_D;
             }
@@ -223,14 +237,22 @@ public:
                 if (haveContact){
                     lv.x -= 400.0f * dt * pBody->size() * mult;
                 }
-                else{
-                    lv.x -= 50.0f * dt * pBody->size() * mult;
+                else if (mult > 0.0f){
+                    if (lv.x > -maxSpeed + speedOffset){
+                        lv.x -= 50.0f * dt * pBody->size() * mult;
+                    }
                 }
+                else{
+                    if (lv.x < maxSpeed + speedOffset){
+                        lv.x -= 50.0f * dt * pBody->size() * mult;
+                    }
+                }
+                
                 lastKey = GLFW_KEY_A;
             }
         }
         else if (!haveContact){
-            lv.x = (1 - 0.05f / totalIter) * lv.x;
+            lv.x = (1 - 0.01f / totalIter) * lv.x;
         }
         else if (contactBody && contactBody->GetMass() != 0.0f){
             lv.x = (1 - 0.95f / totalIter) * lv.x;
@@ -238,19 +260,20 @@ public:
         else if (contactBody && contactType == b2_staticBody){
             lv.x = (1 - 0.95f / totalIter) * lv.x;
         }
-        if (onPlatform){
-            b2Vec2 pVel = platformBody->GetLinearVelocity();
-            speedOffset += pVel.x;
-        }
-        if (lv.x > +maxSpeed + speedOffset){
-            lv.x = +maxSpeed + speedOffset;
-        }
-        if (lv.x < -maxSpeed + speedOffset){
-            lv.x = -maxSpeed + speedOffset;
+
+        if (haveContact){
+            if (lv.x > +maxSpeed + speedOffset){
+                lv.x = +maxSpeed + speedOffset;
+            }
+            if (lv.x < -maxSpeed + speedOffset){
+                lv.x = -maxSpeed + speedOffset;
+            }
         }
 
+        printf("Speed : %f\n", lv.x);
+
         if (wp->keyData[GLFW_KEY_W] && ((contactBody && lv.y <= 0.01f) || 
-            (lv.y < 0.0f && onAirFor < 4 * totalIter && onAirFor != -1 && pBody->size() == 1))){
+            (lv.y < 0.0f && onAirFor < 5 * totalIter && onAirFor != -1))){
             lv.y = 20.0f * pBody->size();
         }
 
