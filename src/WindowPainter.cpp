@@ -135,7 +135,7 @@ void WindowPainter::buttonEventCallback(GLFWwindow* window, int button, int acti
     else {
         thisClass->releaseQueue[button] = true;
     }
-    if (button == GLFW_MOUSE_BUTTON_1)
+    if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
         thisClass->disableCursor();
 }
 

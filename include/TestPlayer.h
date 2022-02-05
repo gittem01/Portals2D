@@ -136,6 +136,33 @@ public:
         }
     }
 
+    void camHandle(){
+        if (pBody->size() > 1){
+            b2Vec2 p1 = pBody->at(0)->body->GetPosition();
+            b2Vec2 p2 = pBody->at(1)->body->GetPosition();
+
+            glm::vec2 diff = glm::vec2(abs(p2.x - p1.x), abs(p2.y - p1.y)) / 2.0f + 5.0f;
+            glm::vec2 mid = glm::vec2(p2.x + p1.x, p2.y + p1.y) / 2.0f;
+            
+            glm::vec2 posDiff = mid - wp->cam->pos;
+
+            wp->cam->pos += posDiff / 10.0f;
+            float reqZoom = sqrt(abs(wp->cam->defaultXSides.x / diff.x));
+            if (reqZoom < 0.65f){
+                wp->cam->zoom += (reqZoom - wp->cam->zoom) / 10.0f;
+            }
+            else{
+                wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
+            }
+        }
+        else{
+            b2Vec2 bp = pBody->at(0)->body->GetPosition();
+            glm::vec2 diff = glm::vec2(bp.x, bp.y) - wp->cam->pos;
+            wp->cam->pos += diff / 10.0f;
+            wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
+        }
+    }
+
     void update(float dt, int totalIter){
         const float maxSpeed = 10.0f;
         float speedOffset = 0.0f;

@@ -303,9 +303,9 @@ void testCase1(PortalWorld* pWorld){
     Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
 
     portal3->connect(portal2);
-    portal41->connect(portal1, 0, 0, true);
+    portal41->connect(portal1, 0, 0);
     portal42->connect(portal1, 0, 1);
-    portal5->connect(portal6, 0, 0, true);
+    portal5->connect(portal6, 0, 0);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
 

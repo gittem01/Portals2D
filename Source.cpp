@@ -18,8 +18,6 @@ int main(void)
     
     pWorld = new PortalWorld(world, drawer);
 
-    TestPlayer t(pWorld, wh);
-
     mouseJointHandler mjh(world, wh, drawer);
 
     testCase1(pWorld);
@@ -36,31 +34,6 @@ int main(void)
 
         done = wh->looper();
 
-        if (t.pBody->size() > 1){
-            b2Vec2 p1 = t.pBody->at(0)->body->GetPosition();
-            b2Vec2 p2 = t.pBody->at(1)->body->GetPosition();
-
-            glm::vec2 diff = glm::vec2(abs(p2.x - p1.x), abs(p2.y - p1.y)) / 2.0f + 5.0f;
-            glm::vec2 mid = glm::vec2(p2.x + p1.x, p2.y + p1.y) / 2.0f;
-            
-            glm::vec2 posDiff = mid - cam->pos;
-
-            cam->pos += posDiff / 10.0f;
-            float reqZoom = sqrt(abs(cam->defaultXSides.x / diff.x));
-            if (reqZoom < 0.65f){
-                cam->zoom += (reqZoom - cam->zoom) / 10.0f;
-            }
-            else{
-                cam->zoom += (0.65f - cam->zoom) / 50.0f;
-            }
-        }
-        else{
-            b2Vec2 bp = t.pBody->at(0)->body->GetPosition();
-            glm::vec2 diff = glm::vec2(bp.x, bp.y) - wh->cam->pos;
-            cam->pos += diff / 10.0f;
-            cam->zoom += (0.65f - cam->zoom) / 50.0f;
-        }
-
         cam->update();
 
         keyHandler(wh);
@@ -76,7 +49,6 @@ int main(void)
                 pWorld->portalUpdate();
                 
                 glfwPollEvents();
-                t.update(1.0f / (vsyncFps * totalIter), totalIter);
             }
 
             //world->DebugDraw();
