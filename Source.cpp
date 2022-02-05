@@ -47,8 +47,6 @@ int main(void)
                 world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
                 pWorld->portalUpdate();
-                
-                glfwPollEvents();
             }
 
             //world->DebugDraw();

@@ -61,7 +61,8 @@ void Camera::update() {
 	if (windowHandler->mouseData[5] != 0 && 
 		!windowHandler->keyData[GLFW_KEY_LEFT_CONTROL] &&
 		!windowHandler->keyData[GLFW_KEY_RIGHT_CONTROL] &&
-		!windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]) {
+		!windowHandler->keyData[GLFW_KEY_LEFT_SHIFT])
+	{
 		this->neededZoom += zoom * windowHandler->mouseData[5] / 10.0f;
 		this->zoomPoint.x = windowHandler->mouseData[0]; this->zoomPoint.y = height - windowHandler->mouseData[1];
 	}
@@ -90,20 +91,22 @@ void Camera::dragFunc(int width, int height) {
 	}
 
 
-	if (windowHandler->mouseData[4] == 2 && !windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]) {
-		lastPos->x = windowHandler->mouseData[0];
-		lastPos->y = windowHandler->mouseData[1];
-
-		dragTo->x = windowHandler->mouseData[0];
-		dragTo->y = windowHandler->mouseData[1];
-	}
-	else if (windowHandler->mouseData[4] == 1 && !windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]) {
-		dragTo->x = windowHandler->mouseData[0];
-		dragTo->y = windowHandler->mouseData[1];
-	}
-	else if (windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]){
+	if (windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]){
 		pos.x -= windowHandler->trackpadData[0] * (sideDiffs.x / width) * dragSmth / (zoom * zoom) * 5.0f;
 		pos.y += windowHandler->trackpadData[1] * (sideDiffs.y / height) * dragSmth / (zoom * zoom) * 5.0f;
+	}
+	else{
+		if (windowHandler->mouseData[4] == 2) {
+			lastPos->x = windowHandler->mouseData[0];
+			lastPos->y = windowHandler->mouseData[1];
+
+			dragTo->x = windowHandler->mouseData[0];
+			dragTo->y = windowHandler->mouseData[1];
+		}
+		else if (windowHandler->mouseData[4] == 1) {
+			dragTo->x = windowHandler->mouseData[0];
+			dragTo->y = windowHandler->mouseData[1];
+		}
 	}
 }
 
