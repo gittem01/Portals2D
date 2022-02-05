@@ -110,6 +110,8 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         def.linearDamping = body1->GetLinearDamping();
         def.angularDamping = body1->GetAngularDamping();
         def.bullet = body1->IsBullet();
+        def.allowSleep = body1->IsSleepingAllowed();
+        def.gravityScale = 0.0f;
 
         b2Body* body2 = world->CreateBody(&def);
         

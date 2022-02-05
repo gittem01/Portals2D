@@ -15,6 +15,7 @@ public:
 	int* lastMousePos = (int*)calloc(2, sizeof(int));
 	glm::vec2 windowSizes = glm::vec2(1280, 720);
 	bool releaseQueue[3] = {false, false, false};
+	bool cursorDisabled = false;
 	float dpiScaling = 1.0f;
 	std::set<int> newPressIndices;
 	GLFWwindow* window;
@@ -26,6 +27,9 @@ public:
 	bool looper();
 	void handleMouseData();
 	void handleKeyData();
+
+	void disableCursor();
+	void enableCursor();
 
 	static void mouseEventCallback(GLFWwindow*, double, double);
 	static void buttonEventCallback(GLFWwindow*, int, int, int);

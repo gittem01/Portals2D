@@ -45,7 +45,7 @@ int main(void)
             
             glm::vec2 posDiff = mid - cam->pos;
 
-            cam->pos += posDiff / 50.0f;
+            cam->pos += posDiff / 10.0f;
             float reqZoom = sqrt(abs(cam->defaultXSides.x / diff.x));
             if (reqZoom < 0.65f){
                 cam->zoom += (reqZoom - cam->zoom) / 10.0f;
@@ -57,7 +57,7 @@ int main(void)
         else{
             b2Vec2 bp = t.pBody->at(0)->body->GetPosition();
             glm::vec2 diff = glm::vec2(bp.x, bp.y) - wh->cam->pos;
-            cam->pos += diff / 50.0f;
+            cam->pos += diff / 10.0f;
             cam->zoom += (0.65f - cam->zoom) / 50.0f;
         }
 
@@ -79,10 +79,11 @@ int main(void)
                 t.update(1.0f / (vsyncFps * totalIter), totalIter);
             }
 
-            mjh.drawMouseBody();
             //world->DebugDraw();
             drawer->drawWorld(world);
             pWorld->drawUpdate();
+            
+            mjh.drawMouseBody();
 
             glfwSwapInterval(1);
             glfwSwapBuffers(wh->window);

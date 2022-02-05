@@ -87,12 +87,42 @@ void WindowPainter::massInit() {
     glEnable(GL_POINT_SMOOTH);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    mouseData[0] = windowSizes.x / 2.0f;
+    mouseData[1] = windowSizes.y / 2.0f;
+
+    disableCursor();
 }
 
+void WindowPainter::disableCursor(){
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    cursorDisabled = true;
+}
+
+void WindowPainter::enableCursor(){
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    cursorDisabled = false;
+}
 
 void WindowPainter::mouseEventCallback(GLFWwindow* window, double xpos, double ypos)
 {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
+    if (thisClass->cursorDisabled){
+        double x0, y0;
+        x0 = xpos; y0 = ypos;
+        if (xpos > thisClass->windowSizes.x) xpos = thisClass->windowSizes.x;
+        else if (xpos < 0) xpos = 0;
+
+        if (ypos > thisClass->windowSizes.y) ypos = thisClass->windowSizes.y;
+        else if (ypos < 0) ypos = 0;
+
+        if (x0 != xpos || y0 != ypos){
+            glfwSetCursorPos(window, xpos, ypos);
+        }
+    }
+
     thisClass->mouseData[0] = (int)xpos;
     thisClass->mouseData[1] = (int)ypos;
 }
@@ -105,6 +135,8 @@ void WindowPainter::buttonEventCallback(GLFWwindow* window, int button, int acti
     else {
         thisClass->releaseQueue[button] = true;
     }
+    if (button == GLFW_MOUSE_BUTTON_1)
+        thisClass->disableCursor();
 }
 
 void WindowPainter::scrollEventCallback(GLFWwindow* window, double xoffset, double yoffset) {
@@ -123,6 +155,9 @@ void WindowPainter::glfwKeyEventCallback(GLFWwindow* window, int key, int scanco
     else if (!action) {
         thisClass->keyData[key] = 0;
     }
+
+    if (key == GLFW_KEY_ESCAPE)
+        thisClass->enableCursor();
 }
 
 void WindowPainter::glfwWindowFocusCallback(GLFWwindow* window, int isFocused) {

@@ -67,6 +67,7 @@ public:
         bodyDef.fixedRotation = true;
         bodyDef.linearDamping = 0.1f;
         bodyDef.bullet = true;
+        bodyDef.allowSleep = false;
 
         b2Body* body = pWorld->world->CreateBody(&bodyDef);
 
@@ -119,7 +120,8 @@ public:
         for (PortalBody* pb : *pBody){
             b2Vec2 bodyPos = pb->body->GetPosition();
             float botY = bodyPos.y - size.y / 2.0f;
-            if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.1f){
+            // TODO : check slope manualy
+            if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.6f){
                 contactType = fix2->GetBody()->GetType();
                 contactBody = fix2->GetBody();
                 if (fix2->GetBody()->GetType() == b2_dynamicBody){

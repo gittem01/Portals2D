@@ -10,6 +10,8 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
     this->body = bBody;
     this->bodyMaps = new std::vector<bodyCollisionStatus*>();
 
+    this->body->SetGravityScale(0.0f);
+
     bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
     bd->data = this;
     bd->type = PORTAL_BODY;
@@ -165,8 +167,6 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
 }
 
 std::vector<PortalBody*> PortalBody::postHandle(){
-    body->ApplyForceToCenter(body->GetMass() * -pWorld->world->GetGravity(), true);
-
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         calculateParts(fix);
     }
@@ -377,7 +377,7 @@ b2Vec2 PortalBody::getCenterOfMass(b2Fixture* fix, int status){
 
     b2Vec2 force = area * fix->GetDensity() * pWorld->world->GetGravity();
 
-    fix->GetBody()->ApplyForce(((float)bodyMaps->size() + 1) * force, center, true);
+    fix->GetBody()->ApplyForce(((float)bodyMaps->size() + 1) * force, center, false);
 
     return center;
 }
