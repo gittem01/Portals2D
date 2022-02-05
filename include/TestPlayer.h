@@ -164,6 +164,8 @@ public:
         float cnst = pb->body->GetMass() * (pBody->size() / dt);
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
+        printf("Speed : %f\n", lv.x);
+
         if (onPlatform){
             b2Vec2 pVel = platformBody->GetLinearVelocity();
             speedOffset = pVel.x;
@@ -213,8 +215,7 @@ public:
         else{
             keyBeforeSwitch = -1;
         }
-        if (!contactBody) onAirFor++;
-        else onAirFor = -1;
+        
         if (left || right)
         {
             if (right){
@@ -254,10 +255,10 @@ public:
         else if (!haveContact){
             lv.x = (1 - 0.01f / totalIter) * lv.x;
         }
-        else if (contactBody && contactBody->GetMass() != 0.0f){
+        else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == -1){
             lv.x = (1 - 0.95f / totalIter) * lv.x;
         }
-        else if (contactBody && contactType == b2_staticBody){
+        else if (contactBody && contactType == b2_staticBody && onAirFor == -1){
             lv.x = (1 - 0.95f / totalIter) * lv.x;
         }
 
@@ -270,7 +271,8 @@ public:
             }
         }
 
-        printf("Speed : %f\n", lv.x);
+        if (!contactBody) onAirFor++;
+        else onAirFor = -1;
 
         if (wp->keyData[GLFW_KEY_W] && ((contactBody && lv.y <= 0.01f) || 
             (lv.y < 0.0f && onAirFor < 5 * totalIter && onAirFor != -1))){
