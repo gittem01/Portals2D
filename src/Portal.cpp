@@ -61,10 +61,10 @@ void Portal::createPortalBody(){
     b2Vec2 pVec = points[1] - points[0];
     pWorld->normalize(&pVec);
 
-    shape.SetTwoSided(points[0], points[0]);
+    shape.SetTwoSided(points[0], points[0] + 0.0001f * pVec);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
-    
-    shape.SetTwoSided(points[1], points[1]);
+
+    shape.SetTwoSided(points[1], points[1] - 0.0001f * pVec);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
 
     pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
