@@ -35,6 +35,7 @@ struct portalConnection;
 class PortalBody;
 class Portal;
 class DebugDrawer;
+class PortalWorld;
 
 typedef struct{
     PortalBody* pBody;
@@ -42,10 +43,31 @@ typedef struct{
     int side;
 }bodyStruct;
 
+// ray goes through portals
+class PortalRay : public b2RayCastCallback
+{
+public:
+    PortalWorld* pWorld;
+    float fraction = 1.0f;
+
+    // ray fraction of the portal midFixture
+    float portalFraction;
+
+    // portals can be on top of static bodies, and this
+    // should resolve portal ray hitting issue in that case
+    // if smallestFraction + portalThold < portalFraction then portal hit
+    float portalThold = 0.001f;
+
+    PortalRay(PortalWorld* pWorld);
+    
+    float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction);
+};
+
 class PortalWorld{
 
 private:
     DebugDrawer* drawer;
+    PortalRay* rayHandler;
 
     std::vector<PortalBody*> portalBodies;
     std::vector<Portal*> portals;
@@ -84,4 +106,5 @@ public:
     friend class TestPlayer;
     friend class PortalBody;
     friend class Portal;
+    friend class PortalRay;
 };

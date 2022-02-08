@@ -146,7 +146,7 @@ public:
             
             glm::vec2 posDiff = mid - wp->cam->pos;
 
-            wp->cam->pos += posDiff / 10.0f;
+            wp->cam->pos += posDiff / 50.0f;
             float reqZoom = sqrt(abs(wp->cam->defaultXSides.x / diff.x));
             if (reqZoom < 0.65f){
                 wp->cam->zoom += (reqZoom - wp->cam->zoom) / 10.0f;
@@ -158,7 +158,7 @@ public:
         else{
             b2Vec2 bp = pBody->at(0)->body->GetPosition();
             glm::vec2 diff = glm::vec2(bp.x, bp.y) - wp->cam->pos;
-            wp->cam->pos += diff / 10.0f;
+            wp->cam->pos += diff / 50.0f;
             wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
         }
     }

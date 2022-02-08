@@ -8,6 +8,8 @@ PortalWorld::PortalWorld(b2World* world, DebugDrawer* drawer){
 
     this->drawReleases = false;
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
+
+    this->rayHandler = new PortalRay(this);
 }
 
 Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size){
@@ -50,6 +52,16 @@ void PortalWorld::portalUpdate(){
     }
 
     globalPostHandle();
+
+    b2Vec2 rayStart = b2Vec2(5.0f, -4.0f);
+    b2Vec2 rayEnd = rayStart + b2Vec2(3.0f, -8);
+    b2Vec2 diff = rayEnd - rayStart;
+
+    world->RayCast(rayHandler, rayStart, rayEnd);
+
+    diff = rayHandler->fraction * diff;
+    rayHandler->fraction = 1.0f;
+    drawer->DrawSegment(rayStart, rayStart + diff, b2Color(1, 0, 0));
 }
 
 void PortalWorld::drawUpdate(){
@@ -310,4 +322,19 @@ b2Vec2 PortalWorld::mirror(b2Vec2 mirror, b2Vec2 vec){
     float angle1 = calcAngle2(mirror);
     float angle2 = calcAngle2(vec);
     return rotateVec(vec, 2 * (angle1 - angle2));
+}
+
+PortalRay::PortalRay(PortalWorld* pWorld){
+    this->pWorld = pWorld;
+}
+
+float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction){
+    if (!fixture->IsSensor()){
+        pWorld->drawer->DrawPoint(point, 15, b2Color(1, 1, 1, 1));
+        if (fraction <= this->fraction){
+            this->fraction = fraction;
+        }
+    }
+
+    return 1.0f;
 }

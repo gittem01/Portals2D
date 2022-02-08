@@ -8,6 +8,7 @@
 
 bool isPaused = false;
 bool tick = false;
+int totalIter = 10;
 PortalWorld* pWorld;
 
 // O shaped body
@@ -187,13 +188,13 @@ b2Body* createBox(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, floa
     return body;
 }
 
-b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type){
+b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type, float density=1.0f){
     b2CircleShape shape;
     shape.m_radius = size;
 
     b2FixtureDef fDef;
     fDef.shape = &shape;
-    fDef.density = 1.0f;
+    fDef.density = density;
     fDef.restitution = 0.2f;
     fDef.friction = 0.2f;
 
@@ -286,6 +287,59 @@ void classicTest(PortalWorld* pWorld){
     }
 }
 
+void testRooms(PortalWorld* pWorld){
+    b2Vec2 gravity(0.0f, -40.00f);
+    pWorld->world->SetGravity(gravity);
+
+    float roomWidth = 10.0f;
+    float roomHeight = 20.0f;
+    float bottomPos = -10.0f;
+    int numOfCubes = 100;
+    int numOfCircles = 100;
+
+    // bottom portals
+    Portal* portal1 = pWorld->createPortal(b2Vec2(-roomWidth - 1.0f, bottomPos), b2Vec2(0.0f, +1.0f), roomWidth);
+    Portal* portal2 = pWorld->createPortal(b2Vec2(+roomWidth + 1.0f, bottomPos), b2Vec2(0.0f, +1.0f), roomWidth);
+
+    // top portals
+    Portal* portal3 = pWorld->createPortal(b2Vec2(-roomWidth - 1.0f, bottomPos + roomHeight), b2Vec2(0.0f, -1.0f), roomWidth);
+    Portal* portal4 = pWorld->createPortal(b2Vec2(+roomWidth + 1.0f, bottomPos + roomHeight), b2Vec2(0.0f, -1.0f), roomWidth);
+
+    portal1->connect(portal2);
+    portal3->connect(portal4);
+
+    createEdge(b2Vec2(-roomWidth * 2 - 1, bottomPos), b2Vec2(-roomWidth * 2 - 1, roomHeight + bottomPos), pWorld->world, b2_staticBody);
+    createEdge(b2Vec2(-1, bottomPos), b2Vec2(-1, roomHeight + bottomPos), pWorld->world, b2_staticBody);
+
+    createEdge(b2Vec2(+roomWidth * 2 + 1, bottomPos), b2Vec2(+roomWidth * 2 + 1, roomHeight + bottomPos), pWorld->world, b2_staticBody);
+    createEdge(b2Vec2(+1, bottomPos), b2Vec2(+1, roomHeight + bottomPos), pWorld->world, b2_staticBody);
+
+    for (int i = 0; i < numOfCubes; i++){
+        double sizex = ((double)rand() / RAND_MAX) * 0.5f + 0.3f;
+        double sizey = ((double)rand() / RAND_MAX) * 0.5f + 0.3f;
+        b2Body* b = createBox(b2Vec2(-roomWidth - 1, 0.0f), b2Vec2(sizex, sizey), pWorld->world, b2_dynamicBody);
+        pWorld->createPortalBody(b, b2Color(1.0f, 1.0f, 0.25f, 0.5f));
+    }
+
+    for (int i = 0; i < numOfCircles; i++){
+        double size = ((double)rand() / RAND_MAX) * 0.5f + 0.3f;
+        b2Body* b = createCircle(b2Vec2(-roomWidth - 1, 0.0f), size, pWorld->world, b2_dynamicBody);
+        pWorld->createPortalBody(b, b2Color(0.25f, 1.0f, 0.7f, 0.5f));
+    }
+
+    srand(77);
+    for (int i = 0; i < 10; i++){
+        b2Vec2 p = b2Vec2(2 + i * 2, 0.0f);
+        b2Vec2 s = b2Vec2(roomWidth / 10, 0.1f);
+        b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
+        (pWorld->createPortalBody(body4))->bodyColor = b2Color(1.0f, 1.0f, 1.0f, 1.0f);
+        b2Vec2 vel(0.0f, ((double)rand() / RAND_MAX) * 10.0f + 5.0f);
+        body4->SetLinearVelocity(vel);
+        body4->SetBullet(true);
+        body4->SetLinearDamping(0.0f);
+    }
+}
+
 void testCase1(PortalWorld* pWorld){
     b2Vec2 gravity(0.0f, -40.00f);
     pWorld->world->SetGravity(gravity);
@@ -321,14 +375,14 @@ void testCase1(PortalWorld* pWorld){
     (pWorld->createPortalBody(body2))->bodyColor = b2Color(1.0f, 0.6f, 0.5f, 0.5f);
 
     // artificial kinematic body
-    p = b2Vec2(5.0f, -6.0f);
-    s = b2Vec2(10.0f, 0.5f);
-    b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
-    (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
-    b2Vec2 vel(-8.0f, 0.0f);
-    body4->SetLinearVelocity(vel);
-    body4->SetBullet(true); // for mimicing static body continuous collision
-    body4->SetLinearDamping(0.0f);
+    // p = b2Vec2(5.0f, -6.0f);
+    // s = b2Vec2(10.0f, 0.5f);
+    // b2Body* body4 = createBox(p, s, pWorld->world, b2_dynamicBody, 0.0f);
+    // (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    // b2Vec2 vel(-8.0f, 0.0f);
+    // body4->SetLinearVelocity(vel);
+    // body4->SetBullet(true); // for mimicing static body continuous collision
+    // body4->SetLinearDamping(0.0f);
 
     p = b2Vec2(0.0f, 0.0f);
     float r = 0.7f;
