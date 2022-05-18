@@ -90,7 +90,6 @@ void Camera::dragFunc(int width, int height) {
 		lastPos->y += diffVec.y * dragSmth;
 	}
 
-
 	if (windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]){
 		pos.x -= windowHandler->trackpadData[0] * (sideDiffs.x / width) * dragSmth / (zoom * zoom) * 5.0f;
 		pos.y += windowHandler->trackpadData[1] * (sideDiffs.y / height) * dragSmth / (zoom * zoom) * 5.0f;

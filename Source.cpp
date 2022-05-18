@@ -14,7 +14,7 @@ int main(void)
 
     DebugDrawer* drawer = new DebugDrawer();
     world->SetDebugDraw(drawer);
-    drawer->SetFlags(b2Draw::e_aabbBit);
+    drawer->SetFlags(b2Draw::e_centerOfMassBit);
     
     pWorld = new PortalWorld(world, drawer);
 
@@ -34,7 +34,6 @@ int main(void)
         done = wh->looper();
 
         cam->update();
-
         keyHandler(wh);
 
         if (!isPaused || tick) {

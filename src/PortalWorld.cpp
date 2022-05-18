@@ -152,7 +152,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             lvToSet = mirror(dir2, lvToSet);
         body2->SetLinearVelocity(lvToSet);
         body2->SetAngularVelocity(body1->GetAngularVelocity());
-        body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle());
+        body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle() + angleRot);
 
         bool allOut = true;
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
@@ -167,16 +167,10 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 fDef.shape = &newShape;
 
                 newShape.m_count = polyShape->m_count;
-                b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
 
-                for (int i = 0; i < polyShape->m_count; i++){
-                    vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot);
-                }
-                newShape.Set(vertices, polyShape->m_count);
+                newShape.Set(polyShape->m_vertices, polyShape->m_count);
                 
                 f = body2->CreateFixture(&fDef);
-
-                free(vertices);
             }
             else{
                 b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
@@ -188,7 +182,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 fDef.shape = &newShape;
 
                 newShape.m_radius = circleShape->m_radius;
-                newShape.m_p = rotateVec(circleShape->m_p, angleRot);
+                newShape.m_p = circleShape->m_p;
                 
                 f = body2->CreateFixture(&fDef);
             }

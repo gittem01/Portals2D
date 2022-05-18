@@ -76,6 +76,31 @@ void DebugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
 	glEnd();
 }
 
+void DebugDrawer::DrawTransform(const b2Transform& xf){
+	const float k_axisScale = 0.4f;
+	
+	b2Vec2 p1 = xf.p, p2;
+
+	glLineWidth(1.0f);
+	glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+	glBegin(GL_LINES);
+
+	glVertex2d(p1.x, p1.y);
+	p2 = p1 + k_axisScale * xf.q.GetXAxis();
+	glVertex2d(p2.x, p2.y);
+
+	glEnd();
+
+	glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
+	glBegin(GL_LINES);
+
+	glVertex2d(p1.x, p1.y);
+	p2 = p1 + k_axisScale * xf.q.GetYAxis();
+	glVertex2d(p2.x, p2.y);
+
+	glEnd();
+}
+
 void DebugDrawer::drawWorld(b2World* world){
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext()){
 
