@@ -97,6 +97,7 @@ void PortalWorld::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
             b2Vec2 posDiff = p->pos - collPoint;
             int raySide = p->getPointSide(rayStart);
             b2Vec2 p1Dir = raySide ? -p->dir : p->dir;
+            float minFrac = rayHandler->minFraction;
             for (portalConnection* conn : p->connections[raySide]){
                 b2Vec2 p2Dir = conn->side2 ? -conn->portal2->dir : conn->portal2->dir;
 
@@ -108,7 +109,7 @@ void PortalWorld::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
                 b2Vec2 dir2 = rotateVec(dirVec, angleRot);
 
-                sendRay(ray2Pos, dir2, rayLength - rayHandler->minFraction * rayLength, rayIndex + 1, conn->portal2);
+                sendRay(ray2Pos, dir2, rayLength - minFrac * rayLength, rayIndex + 1, conn->portal2);
             }
         }
     }
