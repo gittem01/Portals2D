@@ -65,6 +65,7 @@ public:
     
     void reset();
     void endHandle();
+    bool portalOutCheck(Portal* portal, b2Vec2 rayStart, b2Vec2 dirVec);
 
     float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction);
 };
@@ -108,7 +109,7 @@ public:
     void globalPostHandle();
     void drawUpdate();
 
-    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex=0);
+    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex=0, Portal* rayOutPortal=NULL);
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
