@@ -100,7 +100,7 @@ void PortalWorld::portalUpdate(){
         p->postHandle();
     }
 
-    sendRay(b2Vec2(5.0f, -4.0f), b2Vec2(0.5f, -8.0f), 20.0f);
+    sendRay(b2Vec2(15.0f, -4.0f), b2Vec2(-1, 0), 10.0f);
 
     globalPostHandle();
 }
@@ -350,11 +350,28 @@ PortalRay::PortalRay(PortalWorld* pWorld){
 }
 
 float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction){
+    if (fixture->IsSensor()) return 1.0f;
+
+    pWorld->drawer->DrawPoint(point, 5.0f, b2Color(0.0f, 1.0f, 0.0f));
+
     bool isPortal = false;
     bodyData* bd = (bodyData*)(fixture->GetBody()->GetUserData().pointer);
-    if (bd && bd->type == PORTAL) isPortal = true;
-    
-    if (!fixture->IsSensor() && fraction > this->portalThold){
+    if (bd){
+        if (bd->type == PORTAL){
+            isPortal = true;
+        }
+        else if (bd->type == PORTAL_BODY){
+            PortalBody* pb = (PortalBody*)bd->data;
+            std::set<portalCollision*>* collidingPortals = pb->fixtureCollisions[fixture];
+            for (portalCollision* pc : *collidingPortals){
+                if (!pc->status || pc->portal->getPointSide(point) == (pc->side ^ 1)){
+                    return 1.0f;
+                }
+            }
+        }
+    }
+
+    if (fraction > this->portalThold){
         if (isPortal && fraction < this->portalFraction){
             this->portalFraction = fraction;
             this->closestPortalFixture = fixture;
