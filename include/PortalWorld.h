@@ -50,6 +50,8 @@ public:
     PortalWorld* pWorld;
     float minFraction = 1.0f;
 
+    int maxRayCount = 30;
+
     // ray fraction of the portal midFixture
     float portalFraction = 1.0f;
 
@@ -73,8 +75,6 @@ public:
 class PortalWorld{
 
 private:
-    int maxRayCount = 20;
-
     DebugDrawer* drawer;
     PortalRay* rayHandler;
 

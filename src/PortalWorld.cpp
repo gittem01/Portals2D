@@ -68,7 +68,7 @@ bool PortalRay::portalOutCheck(Portal* portal, b2Vec2 rayStart, b2Vec2 dirVec){
 }
 
 void PortalWorld::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal){
-    if (rayIndex >= maxRayCount || rayLength < 0.0001f){
+    if (rayIndex >= rayHandler->maxRayCount || rayLength < 0.0001f){
         return;
     }
     normalize(&dirVec);
@@ -96,8 +96,11 @@ void PortalWorld::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
             Portal* p = (Portal*)bd->data;
             b2Vec2 posDiff = p->pos - collPoint;
             int raySide = p->getPointSide(rayStart);
+            b2Vec2 p1Dir = raySide ? -p->dir : p->dir;
             for (portalConnection* conn : p->connections[raySide]){
-                float angleRot = -calcAngle2(p->dir) + calcAngle2(-conn->portal2->dir);
+                b2Vec2 p2Dir = conn->side2 ? -conn->portal2->dir : conn->portal2->dir;
+
+                float angleRot = -calcAngle2(p1Dir) + calcAngle2(-p2Dir);
 
                 b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
 
@@ -121,7 +124,7 @@ void PortalWorld::portalUpdate(){
         p->postHandle();
     }
 
-    sendRay(b2Vec2(15.0f, -4.0f), b2Vec2(-1, 0), 10.0f);
+    sendRay(b2Vec2(+0.0f, 0.0f), b2Vec2(-1, 0), 15.0f);
 
     globalPostHandle();
 }
