@@ -352,6 +352,9 @@ void testCase1(PortalWorld* pWorld){
     Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
     Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos), b2Vec2(+1.0f, 0.0f), portalSize);
     Portal* portal42 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos + portalSize * 2), b2Vec2(+1.0f, 0.0f), portalSize);
+    
+    Portal* diagonalPortal1 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize), b2Vec2(+1.0f, 0.0f), portalSize);
+    Portal* diagonalPortal2 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize * 2 + 5.0f), b2Vec2(+1.0f, -1.0f), portalSize);
 
     Portal* portal5 = pWorld->createPortal(b2Vec2(-12.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
     Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
@@ -360,6 +363,7 @@ void testCase1(PortalWorld* pWorld){
     portal41->connect(portal1, 0, 0);
     portal42->connect(portal1, 0, 1);
     portal5->connect(portal6, 0, 0);
+    diagonalPortal1->connect(diagonalPortal2, 0, 0);
 
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld->world, b2_staticBody);
 

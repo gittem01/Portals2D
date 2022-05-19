@@ -112,8 +112,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
 
         b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
-        if (c->isReversed)
-            localPos = -localPos - 2.0f * (b2Dot(-localPos, dir2)) * dir2;
 
         b2BodyDef def;
         def.type = b2_dynamicBody;
@@ -148,8 +146,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         pBody->bodyMaps->push_back(t_bcs);
         t_bcs->connection = c;
         b2Vec2 lvToSet = rotateVec(speed, angleRot);
-        if (c->isReversed)
-            lvToSet = mirror(dir2, lvToSet);
         body2->SetLinearVelocity(lvToSet);
         body2->SetAngularVelocity(body1->GetAngularVelocity());
         body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle() + angleRot);
@@ -272,10 +268,7 @@ void PortalWorld::connectBodies(b2Body* body1, b2Body* body2, portalConnection* 
     world->CreateJoint(&pulleyDef);
 
     dirClone1 = rotateVec(dirClone1, b2_pi / 2.0f);
-    if (connection->isReversed)
-        dirClone2 = rotateVec(dirClone2, -b2_pi / 2.0f);
-    else
-        dirClone2 = rotateVec(dirClone2, b2_pi / 2.0f);
+    dirClone2 = rotateVec(dirClone2, b2_pi / 2.0f);
 
     anchor1 = center1;
     anchor2 = center2;

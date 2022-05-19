@@ -503,15 +503,13 @@ void Portal::draw(){
 }
 
 
-// reversing portal connections is not working properly yet
 // concave shapes create lots of problems with reversed option enabled
-void Portal::connect(Portal* portal2, int side1, int side2, int isReversed){
+void Portal::connect(Portal* portal2, int side1, int side2){
     portalConnection* c1 = (portalConnection*)malloc(sizeof(portalConnection));
     c1->portal1 = this;
     c1->portal2 = portal2;
     c1->side1 = side1;
     c1->side2 = side2;
-    c1->isReversed = isReversed;
 
     this->connections[c1->side1].push_back(c1);
 
@@ -522,7 +520,6 @@ void Portal::connect(Portal* portal2, int side1, int side2, int isReversed){
         c2->portal2 = this;
         c2->side1 = side2;
         c2->side2 = side1;
-        c2->isReversed = isReversed;
 
         portal2->connections[c2->side1].push_back(c2);
     }
