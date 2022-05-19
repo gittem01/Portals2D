@@ -41,6 +41,55 @@ void PortalWorld::createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bo
     }
 }
 
+b2Vec2 rotateVec(b2Vec2 vec, float angle){
+    float x = cos(angle) * vec.x - sin(angle) * vec.y;
+    float y = sin(angle) * vec.x + cos(angle) * vec.y;
+
+    return {x, y};
+}
+
+void PortalWorld::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex){
+    if (rayIndex >= maxRayCount){
+        return;
+    }
+    normalize(&dirVec);
+    b2Vec2 rayEnd = rayStart + rayLength * dirVec;
+    b2Vec2 diff = rayEnd - rayStart;
+
+    rayHandler->reset();
+
+    world->RayCast(rayHandler, rayStart, rayEnd);
+
+    rayHandler->endHandle();
+
+    diff = rayHandler->minFraction * diff;
+    b2Vec2 collPoint = rayStart + diff;
+
+    drawer->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
+
+    if (rayHandler->closestFixture != NULL){
+        bodyData* bd = (bodyData*)rayHandler->closestFixture->GetBody()->GetUserData().pointer;
+        if (bd != NULL && bd->type == PORTAL){
+            Portal* p = (Portal*)bd->data;
+            int raySide = p->getPointSide(rayStart);
+            for (portalConnection* conn : p->connections[raySide]){
+                float angleRot = -calcAngle2(p->dir) + calcAngle2(-conn->portal2->dir);
+                b2Vec2 posDiff = p->pos - collPoint;
+
+                b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
+
+                b2Vec2 ray2Pos = conn->portal2->pos + localPos;
+
+                b2Vec2 dir2 = rotateVec(dirVec, angleRot);
+
+                sendRay(ray2Pos, dir2, rayLength - rayHandler->minFraction, rayIndex + 1);
+
+                break;
+            }
+        }
+    }
+}
+
 void PortalWorld::portalUpdate(){
     for (int i = 0; i < portalBodies.size(); i++){
         PortalBody* body = portalBodies.at(i);
@@ -51,17 +100,9 @@ void PortalWorld::portalUpdate(){
         p->postHandle();
     }
 
+    sendRay(b2Vec2(5.0f, -4.0f), b2Vec2(0.5f, -8.0f), 20.0f);
+
     globalPostHandle();
-
-    b2Vec2 rayStart = b2Vec2(5.0f, -4.0f);
-    b2Vec2 rayEnd = rayStart + b2Vec2(3.0f, -8);
-    b2Vec2 diff = rayEnd - rayStart;
-
-    world->RayCast(rayHandler, rayStart, rayEnd);
-
-    diff = rayHandler->fraction * diff;
-    rayHandler->fraction = 1.0f;
-    drawer->DrawSegment(rayStart, rayStart + diff, b2Color(1, 0, 0));
 }
 
 void PortalWorld::drawUpdate(){
@@ -85,13 +126,6 @@ void PortalWorld::globalPostHandle(){
     }
 
     destroyBodies.clear();
-}
-
-b2Vec2 rotateVec(b2Vec2 vec, float angle){
-    float x = cos(angle) * vec.x - sin(angle) * vec.y;
-    float y = sin(angle) * vec.x + cos(angle) * vec.y;
-
-    return {x, y};
 }
 
 std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
@@ -316,12 +350,35 @@ PortalRay::PortalRay(PortalWorld* pWorld){
 }
 
 float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction){
-    if (!fixture->IsSensor()){
-        pWorld->drawer->DrawPoint(point, 15, b2Color(1, 1, 1, 1));
-        if (fraction <= this->fraction){
-            this->fraction = fraction;
+    bool isPortal = false;
+    bodyData* bd = (bodyData*)(fixture->GetBody()->GetUserData().pointer);
+    if (bd && bd->type == PORTAL) isPortal = true;
+    
+    if (!fixture->IsSensor() && fraction > this->portalThold){
+        if (isPortal && fraction < this->portalFraction){
+            this->portalFraction = fraction;
+            this->closestPortalFixture = fixture;
+        }
+        if (fraction <= this->minFraction){
+            this->minFraction = fraction;
+            this->closestFixture = fixture;
         }
     }
 
     return 1.0f;
+}
+
+void PortalRay::reset(){
+    this->minFraction = 1.0f;
+    this->portalFraction = 1.0f;
+
+    this->closestFixture = NULL;
+    this->closestPortalFixture = NULL;
+}
+
+void PortalRay::endHandle(){
+    if (this->minFraction > this->portalFraction - this->portalThold){
+        this->closestFixture = this->closestPortalFixture;
+        this->minFraction = this->portalFraction;
+    }
 }

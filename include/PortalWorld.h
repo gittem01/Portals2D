@@ -48,24 +48,32 @@ class PortalRay : public b2RayCastCallback
 {
 public:
     PortalWorld* pWorld;
-    float fraction = 1.0f;
+    float minFraction = 1.0f;
 
     // ray fraction of the portal midFixture
-    float portalFraction;
+    float portalFraction = 1.0f;
+
+    b2Fixture* closestFixture;
+    b2Fixture* closestPortalFixture;
 
     // portals can be on top of static bodies, and this
     // should resolve portal ray hitting issue in that case
     // if smallestFraction + portalThold < portalFraction then portal hit
-    float portalThold = 0.001f;
+    float portalThold = 0.0001f;
 
     PortalRay(PortalWorld* pWorld);
     
+    void reset();
+    void endHandle();
+
     float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction);
 };
 
 class PortalWorld{
 
 private:
+    int maxRayCount = 20;
+
     DebugDrawer* drawer;
     PortalRay* rayHandler;
 
@@ -99,6 +107,8 @@ public:
     void portalUpdate();
     void globalPostHandle();
     void drawUpdate();
+
+    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex=0);
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));

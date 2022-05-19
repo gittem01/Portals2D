@@ -47,7 +47,7 @@ int main(void)
                 pWorld->portalUpdate();
             }
 
-            world->DebugDraw();
+            //world->DebugDraw();
             drawer->drawWorld(world);
             pWorld->drawUpdate();
             
