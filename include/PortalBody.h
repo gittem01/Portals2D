@@ -15,16 +15,18 @@ class Portal;
 class PortalBody;
 class PortalWorld;
 
-typedef struct {
+typedef struct
+{
     Portal* portal;
     int status; // 1 for colliding 0 for released
     int side;
-}portalCollision;
+} portalCollision;
 
-typedef struct{
+typedef struct
+{
     PortalBody* body;
     portalConnection* connection;
-}bodyCollisionStatus;
+} bodyCollisionStatus;
 
 
 class PortalBody{

@@ -7,28 +7,6 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <unordered_set>
-
-typedef enum{
-    BEGIN_CONTACT = 1,
-    END_CONTACT = 2,
-} contactType;
-
-enum dataTypes
-{
-	OTHER = 0,
-	PORTAL = 1,
-	PORTAL_BODY = 2,
-	MOUSE = 3,
-};
-
-struct bodyData {
-	dataTypes type;
-	void* data;
-
-    // reserved for user
-    void* extraData;
-};
 
 struct portalConnection;
 
@@ -37,15 +15,49 @@ class Portal;
 class DebugDrawer;
 class PortalWorld;
 
-typedef struct{
+typedef enum
+{
+    BEGIN_CONTACT = 1,
+    END_CONTACT = 2,
+} contactType;
+
+typedef enum
+{
+	OTHER = 0,
+	PORTAL = 1,
+	PORTAL_BODY = 2,
+	MOUSE = 3,
+} dataTypes;
+
+typedef struct rayData
+{
+    b2Vec2 endPos;
+    b2Vec2 dir;
+} rayData;
+
+typedef struct bodyData
+{
+	dataTypes type;
+	void* data;
+
+    // reserved for user
+    void* extraData;
+} bodyData;
+
+typedef struct
+{
     PortalBody* pBody;
     Portal* collPortal;
     int side;
-}bodyStruct;
+} bodyStruct;
 
 // ray goes through portals
 class PortalRay : public b2RayCastCallback
 {
+private:
+    void sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal);
+    void prepareRaySend();
+
 public:
     PortalWorld* pWorld;
     float minFraction = 1.0f;
@@ -58,6 +70,8 @@ public:
     b2Fixture* closestFixture;
     b2Fixture* closestPortalFixture;
 
+    std::vector<rayData*> rayResult;
+
     // portals can be on top of static bodies, and this
     // should resolve portal ray hitting issue in that case
     // if smallestFraction + portalThold < portalFraction then portal hit
@@ -65,6 +79,8 @@ public:
 
     PortalRay(PortalWorld* pWorld);
     
+    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex=0, Portal* rayOutPortal=NULL);
+
     void reset();
     void endHandle();
     bool portalOutCheck(Portal* portal, b2Vec2 rayStart, b2Vec2 dirVec);
@@ -108,8 +124,6 @@ public:
     void portalUpdate();
     void globalPostHandle();
     void drawUpdate();
-
-    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex=0, Portal* rayOutPortal=NULL);
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));

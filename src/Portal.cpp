@@ -382,7 +382,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
                 
                 bool in1 = isPointIn(maxRays[0], maxRays[1], collPoints.at(0), coll->side);
                 bool in2 = isPointIn(maxRays[0], maxRays[1], collPoints.at(1), coll->side);
-                
+
                 free(maxRays);
 
                 if (in1 && !in2){

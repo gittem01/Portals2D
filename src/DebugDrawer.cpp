@@ -2,6 +2,12 @@
 #include "Portal.h"
 #include <GLFW/glfw3.h>
 
+b2Vec2 rotateVector(b2Vec2 vec, float angle){
+    float x = cos(angle) * vec.x - sin(angle) * vec.y;
+    float y = sin(angle) * vec.x + cos(angle) * vec.y;
+
+    return {x, y};
+}
 void DebugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color){
 	glLineWidth(1.0f);
 	glColor4f(color.r, color.g, color.b, color.a);
@@ -66,6 +72,16 @@ void DebugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color&
 	glVertex2d(p1.x, p1.y);
 	glVertex2d(p2.x, p2.y);
 	glEnd();
+}
+
+void DebugDrawer::DrawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color){
+	b2Vec2 dir = 0.25f * (p2 - p1);
+	b2Vec2 vec1 = rotateVector(dir, b2_pi * (5 / 6.0f));
+	b2Vec2 vec2 = rotateVector(dir, b2_pi * (7 / 6.0f));
+
+	DrawSegment(p1, p2, color);
+	DrawSegment(p2, p2 + vec1, color);
+	DrawSegment(p2, p2 + vec2, color);
 }
 
 void DebugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
