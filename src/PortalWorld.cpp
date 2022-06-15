@@ -292,7 +292,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
 
                 for (int i = 0; i < polyShape->m_count; i++){
-                    if (c->isReversed && 1){
+                    if (c->isReversed){
                         b2Vec2 m = rotateVec(polyShape->m_vertices[i], angleRot + body2->GetAngle());
                         m = mirror(portal2->dir, m);
                         m = rotateVec(m, -body2->GetAngle());
@@ -319,7 +319,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 newShape.m_radius = circleShape->m_radius;
 
                 b2Vec2 v;
-                if (c->isReversed && 1){
+                if (c->isReversed){
                     v = rotateVec(circleShape->m_p, angleRot + body2->GetAngle());
                     v = mirror(portal2->dir, v);
                     v = rotateVec(v, -body2->GetAngle());

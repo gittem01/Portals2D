@@ -66,8 +66,8 @@ public:
     // ray fraction of the portal midFixture
     float portalFraction = 1.0f;
 
-    b2Fixture* closestFixture;
-    b2Fixture* closestPortalFixture;
+    b2Fixture* closestFixture{};
+    b2Fixture* closestPortalFixture{};
 
     std::vector<rayData*> rayResult;
 
@@ -97,12 +97,12 @@ private:
     std::vector<Portal*> portals;
     std::set<PortalBody*> destroyBodies;
 
-    bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
-    float vecAngle(b2Vec2 v1, b2Vec2 v2);
-    float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c);
-    float calcAngle2(b2Vec2 vec);
-    void normalize(b2Vec2* vec);
-    b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
+    static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
+    static float vecAngle(b2Vec2 v1, b2Vec2 v2);
+    static float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c);
+    static float calcAngle2(b2Vec2 vec);
+    static void normalize(b2Vec2* vec);
+    static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
 
     // baseBody should not be NULL if isNew is false
     void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
