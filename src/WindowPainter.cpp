@@ -109,16 +109,18 @@ void WindowPainter::enableCursor(){
 void WindowPainter::mouseEventCallback(GLFWwindow* window, double xpos, double ypos)
 {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
-    double x0, y0;
-    x0 = xpos; y0 = ypos;
-    if (xpos > thisClass->windowSizes.x) xpos = thisClass->windowSizes.x;
-    else if (xpos < 0) xpos = 0;
+    if (thisClass->cursorDisabled){
+        double x0, y0;
+        x0 = xpos; y0 = ypos;
+        if (xpos > thisClass->windowSizes.x) xpos = thisClass->windowSizes.x;
+        else if (xpos < 0) xpos = 0;
 
-    if (ypos > thisClass->windowSizes.y) ypos = thisClass->windowSizes.y;
-    else if (ypos < 0) ypos = 0;
+        if (ypos > thisClass->windowSizes.y) ypos = thisClass->windowSizes.y;
+        else if (ypos < 0) ypos = 0;
 
-    if (x0 != xpos || y0 != ypos){
-        glfwSetCursorPos(window, xpos, ypos);
+        if (x0 != xpos || y0 != ypos){
+            glfwSetCursorPos(window, xpos, ypos);
+        }
     }
 
     thisClass->mouseData[0] = (int)xpos;
