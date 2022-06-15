@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(Teleporter VERSION 2.0.0)
 
 set(CMAKE_CXX_STANDARD 14)
+
 add_definitions(-DGL_SLIENCE_DEPRECATION)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)

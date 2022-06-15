@@ -71,7 +71,7 @@ PortalBody::~PortalBody(){
     body->GetUserData().pointer = 0;
     free((void*)bData);
 
-    pWorld->world->DestroyBody(body);
+    pWorld->DestroyBody(body);
 }
 
 void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
@@ -186,6 +186,12 @@ std::vector<PortalBody*> PortalBody::postHandle(){
 }
 
 bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
+    bodyData* bd = (bodyData*)bBody->GetUserData().pointer;
+    std::set<PortalBody*>::iterator iter = pWorld->destroyBodies.find((PortalBody*)(bd->data));
+    if (iter != pWorld->destroyBodies.end()){
+        pWorld->destroyBodies.erase(iter);
+    }
+    
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal && s->connection->side1 == side)
             return false;
@@ -375,7 +381,7 @@ b2Vec2 PortalBody::getCenterOfMass(b2Fixture* fix, int status){
 
     b2Vec2 center = findCentroid(vecs);
 
-    b2Vec2 force = area * fix->GetDensity() * pWorld->world->GetGravity();
+    b2Vec2 force = area * fix->GetDensity() * pWorld->GetGravity();
 
     fix->GetBody()->ApplyForce(((float)bodyMaps->size() + 1) * force, center, false);
 

@@ -7,18 +7,16 @@ int main(void)
     cam->zoom = 0.6f;
     wh->cam = cam;
 
-    b2World* world = new b2World(b2Vec2(0.0f, 0.0f));
-
-    ContactListener cl;
-    world->SetContactListener(&cl);
-
     DebugDrawer* drawer = new DebugDrawer();
-    world->SetDebugDraw(drawer);
+    ContactListener cl;
+    pWorld = new PortalWorld(drawer);
+    pWorld->SetContactListener(&cl);
+
+    pWorld->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_centerOfMassBit);
     
-    pWorld = new PortalWorld(world, drawer);
 
-    mouseJointHandler mjh(world, wh, drawer);
+    mouseJointHandler mjh(pWorld, wh, drawer);
 
     testCase1(pWorld);
 
@@ -42,13 +40,13 @@ int main(void)
             for (int i = 0; i < totalIter; i++) {
                 mjh.mouseHandler(frame, totalIter);
 
-                world->Step(1.0f / (vsyncFps * totalIter), 8, 3);
+                pWorld->Step(1.0f / (vsyncFps * totalIter), 8, 3);
 
                 pWorld->portalUpdate();
             }
 
-            //world->DebugDraw();
-            drawer->drawWorld(world);
+            //pWorld->DebugDraw();
+            drawer->drawWorld(pWorld);
             pWorld->drawUpdate();
             
             mjh.drawMouseBody();

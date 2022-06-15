@@ -385,6 +385,9 @@ public:
 	/// Dump this body to a file
 	void Dump();
 
+	// CHANGED
+	b2JointEdge* m_jointList;
+	// CHANGED
 private:
 
 	friend class b2World;
@@ -451,7 +454,6 @@ private:
 	b2Fixture* m_fixtureList;
 	int32 m_fixtureCount;
 
-	b2JointEdge* m_jointList;
 	b2ContactEdge* m_contactList;
 
 	float m_mass, m_invMass;

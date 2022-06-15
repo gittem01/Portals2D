@@ -1,6 +1,6 @@
 #pragma once
 
-#include <box2d/box2d.h>
+#include <RotationJoint.h>
 #include <vector>
 #include <stdio.h>
 #include <algorithm>
@@ -51,7 +51,6 @@ typedef struct
     int side;
 } bodyStruct;
 
-// ray goes through portals
 class PortalRay : public b2RayCastCallback
 {
 private:
@@ -88,7 +87,7 @@ public:
     float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction);
 };
 
-class PortalWorld{
+class PortalWorld : public b2World{
 
 private:
     DebugDrawer* drawer;
@@ -108,15 +107,15 @@ private:
     // baseBody should not be NULL if isNew is false
     void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
 
+    b2Joint* CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed);
+
 public:
     bool drawReleases;
     b2Color releaseColor;
 
-    b2World* world;
-
     std::vector<std::vector<PortalBody*>*> bodyIndices;
 
-    PortalWorld(b2World* world, DebugDrawer* drawer);
+    PortalWorld(DebugDrawer* drawer);
 
     std::vector<PortalBody*> createCloneBody(bodyStruct* s);
     void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
@@ -128,8 +127,11 @@ public:
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
 
+    b2Joint* CreateRotationJoint(b2JointDef* def);
+
     friend class TestPlayer;
     friend class PortalBody;
     friend class Portal;
     friend class PortalRay;
+    friend class b2World;
 };

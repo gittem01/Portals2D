@@ -69,7 +69,7 @@ public:
         bodyDef.bullet = true;
         bodyDef.allowSleep = false;
 
-        b2Body* body = pWorld->world->CreateBody(&bodyDef);
+        b2Body* body = pWorld->CreateBody(&bodyDef);
 
         b2PolygonShape boxShape;
         boxShape.SetAsBox(size.x / 2.0f, size.y / 2.0f);
@@ -120,7 +120,7 @@ public:
         for (PortalBody* pb : *pBody){
             b2Vec2 bodyPos = pb->body->GetPosition();
             float botY = bodyPos.y - size.y / 2.0f;
-            // TODO : check slope manualy
+            // TODO_01 : check slope manualy
             if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.6f){
                 contactType = fix2->GetBody()->GetType();
                 contactBody = fix2->GetBody();

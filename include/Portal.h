@@ -6,10 +6,12 @@
 class Portal;
 
 struct portalConnection {
-    int side1;
-    int side2;
     Portal* portal1;
     Portal* portal2;
+    int side1;
+    int side2;
+
+    bool isReversed;
 };
 
 class Portal{
@@ -60,7 +62,7 @@ public:
     void createPortalBody();
 
     void draw();
-    void connect(Portal* portal2, int side1=0, int side2=0);
+    void connect(Portal* portal2, bool isReversed=false, int side1=0, int side2=0);
 
     int getFixtureSide(b2Fixture* fix);
     int handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);

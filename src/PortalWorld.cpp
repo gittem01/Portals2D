@@ -2,8 +2,7 @@
 #include "PortalBody.h"
 #include "Portal.h"
 
-PortalWorld::PortalWorld(b2World* world, DebugDrawer* drawer){
-    this->world = world;
+PortalWorld::PortalWorld(DebugDrawer* drawer) : b2World(b2Vec2(0, -10)){
     this->drawer = drawer;
 
     this->drawReleases = false;
@@ -116,7 +115,7 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
         return;
     }
 
-    pWorld->world->RayCast(this, rayStart, rayEnd);
+    pWorld->RayCast(this, rayStart, rayEnd);
 
     endHandle();
 
@@ -141,6 +140,9 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
                 float angleRot = -pWorld->calcAngle2(p1Dir) + pWorld->calcAngle2(-p2Dir);
 
                 b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
+                if (conn->isReversed){
+                    localPos = pWorld->mirror(p2Dir, localPos);
+                }
 
                 b2Vec2 ray2Pos = conn->portal2->pos + localPos;
 
@@ -221,10 +223,13 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
 
         b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
+        if (c->isReversed)
+            localPos = mirror(portal2->dir, localPos);
 
         b2BodyDef def;
         def.type = b2_dynamicBody;
         def.position = portal2->pos + localPos;
+        def.angle = body1->GetTransform().q.GetAngle();
         def.fixedRotation = body1->IsFixedRotation();
         def.linearDamping = body1->GetLinearDamping();
         def.angularDamping = body1->GetAngularDamping();
@@ -232,7 +237,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         def.allowSleep = body1->IsSleepingAllowed();
         def.gravityScale = 0.0f;
 
-        b2Body* body2 = world->CreateBody(&def);
+        b2Body* body2 = CreateBody(&def);
         
         PortalBody* npb = new PortalBody(body2, this, pBody->bodyColor);
         portalBodies.push_back(npb);
@@ -256,8 +261,19 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         t_bcs->connection = c;
         b2Vec2 lvToSet = rotateVec(speed, angleRot);
         body2->SetLinearVelocity(lvToSet);
-        body2->SetAngularVelocity(body1->GetAngularVelocity());
-        body2->SetTransform(body2->GetPosition(), body1->GetTransform().q.GetAngle() + angleRot);
+        if (c->isReversed){
+            body2->SetAngularVelocity(-body1->GetAngularVelocity());
+        }
+        else{
+            body2->SetAngularVelocity(body1->GetAngularVelocity());
+        }
+
+        float b2Angle = body1->GetTransform().q.GetAngle() + angleRot;
+        if (c->isReversed){
+            b2Angle -= b2_pi;
+            b2Vec2 m = mirror(portal2->dir, b2Vec2(cos(b2Angle), sin(b2Angle)));            
+            b2Angle = calcAngle2(m);
+        }
 
         bool allOut = true;
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
@@ -272,10 +288,23 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 fDef.shape = &newShape;
 
                 newShape.m_count = polyShape->m_count;
+                b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
 
-                newShape.Set(polyShape->m_vertices, polyShape->m_count);
-                
+                for (int i = 0; i < polyShape->m_count; i++){
+                    if (c->isReversed && 1){
+                        b2Vec2 m = rotateVec(polyShape->m_vertices[i], angleRot + body2->GetAngle());
+                        m = mirror(portal2->dir, m);
+                        m = rotateVec(m, -body2->GetAngle());
+                        vertices[i] = m;
+                    }
+                    else{
+                        vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot);
+                    }
+                }
+                newShape.Set(vertices, polyShape->m_count);
+
                 f = body2->CreateFixture(&fDef);
+                free(vertices);
             }
             else{
                 b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
@@ -287,7 +316,17 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 fDef.shape = &newShape;
 
                 newShape.m_radius = circleShape->m_radius;
-                newShape.m_p = circleShape->m_p;
+
+                b2Vec2 v;
+                if (c->isReversed && 1){
+                    v = rotateVec(circleShape->m_p, angleRot + body2->GetAngle());
+                    v = mirror(portal2->dir, v);
+                    v = rotateVec(v, -body2->GetAngle());
+                }
+                else{
+                    v = rotateVec(circleShape->m_p, angleRot);
+                }
+                newShape.m_p = v;
                 
                 f = body2->CreateFixture(&fDef);
             }
@@ -350,9 +389,8 @@ void PortalWorld::connectBodies(b2Body* body1, b2Body* body2, portalConnection* 
     b2PrismaticJointDef prismDef;
     prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
     prismDef.collideConnected = true;
-    prismDef.maxMotorForce = 0.0f;
 
-    world->CreateJoint(&prismDef);
+    CreateRotationJoint(&prismDef, connection->isReversed);
 
     b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
     b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
@@ -374,17 +412,54 @@ void PortalWorld::connectBodies(b2Body* body1, b2Body* body2, portalConnection* 
     b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
     b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    world->CreateJoint(&pulleyDef);
+    CreateJoint(&pulleyDef);
 
     dirClone1 = rotateVec(dirClone1, b2_pi / 2.0f);
-    dirClone2 = rotateVec(dirClone2, b2_pi / 2.0f);
+    if (connection->isReversed)
+        dirClone2 = rotateVec(dirClone2, -b2_pi / 2.0f);
+    else
+        dirClone2 = rotateVec(dirClone2, b2_pi / 2.0f);
 
     anchor1 = center1;
     anchor2 = center2;
     groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
     groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
     pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    world->CreateJoint(&pulleyDef);
+    CreateJoint(&pulleyDef);
+}
+
+b2Joint* PortalWorld::CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed){
+    b2Assert(IsLocked() == false);
+	if (IsLocked())
+	{
+		return nullptr;
+	}
+
+    void* mem = m_blockAllocator.Allocate(sizeof(RotationJoint));
+	RotationJoint* j = new (mem) RotationJoint(def, isReversed);
+
+	j->m_prev = nullptr;
+	j->m_next = m_jointList;
+	if (m_jointList)
+	{
+		((RotationJoint*)m_jointList)->m_prev = j;
+	}
+	m_jointList = j;
+	++m_jointCount;
+	
+	j->m_edgeA.joint = j;
+	j->m_edgeA.other = j->m_bodyB;
+	j->m_edgeA.prev = nullptr;
+	j->m_edgeA.next = j->m_bodyA->m_jointList;
+	if (j->m_bodyA->m_jointList) j->m_bodyA->m_jointList->prev = &j->m_edgeA;
+	j->m_bodyA->m_jointList = &j->m_edgeA;
+
+	j->m_edgeB.joint = j;
+	j->m_edgeB.other = j->m_bodyA;
+	j->m_edgeB.prev = nullptr;
+	j->m_edgeB.next = j->m_bodyB->m_jointList;
+	if (j->m_bodyB->m_jointList) j->m_bodyB->m_jointList->prev = &j->m_edgeB;
+	j->m_bodyB->m_jointList = &j->m_edgeB;
 }
 
 bool PortalWorld::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){

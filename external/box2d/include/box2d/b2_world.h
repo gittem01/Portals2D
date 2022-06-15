@@ -214,6 +214,12 @@ public:
 	/// @warning this should be called outside of a time step.
 	void Dump();
 
+// CHANGED
+protected:
+	b2BlockAllocator m_blockAllocator;
+	b2Joint* m_jointList;
+	int32 m_jointCount;
+// CHANGED
 private:
 
 	friend class b2Body;
@@ -226,16 +232,13 @@ private:
 
 	void DrawShape(b2Fixture* shape, const b2Transform& xf, const b2Color& color);
 
-	b2BlockAllocator m_blockAllocator;
 	b2StackAllocator m_stackAllocator;
 
 	b2ContactManager m_contactManager;
 
 	b2Body* m_bodyList;
-	b2Joint* m_jointList;
 
 	int32 m_bodyCount;
-	int32 m_jointCount;
 
 	b2Vec2 m_gravity;
 	bool m_allowSleep;
