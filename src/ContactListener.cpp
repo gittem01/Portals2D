@@ -92,6 +92,7 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
         PortalBody* p = (PortalBody*)bDataB->data;
         p->preCollision(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
+    
     if (bDataA && bDataA->extraData){
         ((TestPlayer*)bDataA->extraData)->handleForces(contact, contact->GetFixtureB());
     }

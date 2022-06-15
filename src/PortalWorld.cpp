@@ -238,8 +238,26 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         def.gravityScale = 0.0f;
 
         b2Body* body2 = CreateBody(&def);
-        
         PortalBody* npb = new PortalBody(body2, this, pBody->bodyColor);
+
+        if (c->isReversed){
+            b2Vec2 v = rotateVec(b2Vec2(1, 0), angleRot + body2->GetAngle());
+            float ang1 = calcAngle2(v);
+            v = mirror(portal2->dir, v);
+            float ang2 = calcAngle2(v);
+            v = rotateVec(v, -body2->GetAngle());
+            npb->offsetAngle = ang2 - ang1 + angleRot - b2_pi - pBody->offsetAngle;
+        }
+        else{
+            npb->offsetAngle = angleRot + pBody->offsetAngle;
+        }
+        if (npb->offsetAngle > b2_pi){
+            npb->offsetAngle -= 2 * b2_pi;
+        }
+        else{
+            npb->offsetAngle += 2 * b2_pi;
+        }
+
         portalBodies.push_back(npb);
 
         retBodies.push_back(npb);
@@ -269,13 +287,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         }
         body2->SetLinearVelocity(lvToSet);
 
-        float b2Angle = body1->GetTransform().q.GetAngle() + angleRot;
-        if (c->isReversed){
-            b2Angle -= b2_pi;
-            b2Vec2 m = mirror(portal2->dir, b2Vec2(cos(b2Angle), sin(b2Angle)));            
-            b2Angle = calcAngle2(m);
-        }
-
         bool allOut = true;
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
             b2Fixture* f;
@@ -293,10 +304,10 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
 
                 for (int i = 0; i < polyShape->m_count; i++){
                     if (c->isReversed){
-                        b2Vec2 m = rotateVec(polyShape->m_vertices[i], angleRot + body2->GetAngle());
-                        m = mirror(portal2->dir, m);
-                        m = rotateVec(m, -body2->GetAngle());
-                        vertices[i] = m;
+                        b2Vec2 v = rotateVec(polyShape->m_vertices[i], angleRot + body2->GetAngle());
+                        v = mirror(portal2->dir, v);
+                        v = rotateVec(v, -body2->GetAngle());
+                        vertices[i] = v;
                     }
                     else{
                         vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot);

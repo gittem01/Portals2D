@@ -57,7 +57,7 @@ public:
 
     PortalWorld* pWorld;
 
-    // TODO_01 : add extra functionality to handle rotation angle
+    float offsetAngle;
 
     // fix1 is always a fixture of this class
     void collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);

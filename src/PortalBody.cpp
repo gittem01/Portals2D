@@ -11,6 +11,7 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
     this->bodyMaps = new std::vector<bodyCollisionStatus*>();
 
     this->body->SetGravityScale(0.0f);
+    this->offsetAngle = 0;
 
     bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
     bd->data = this;
@@ -279,6 +280,11 @@ void PortalBody::drawBodies(){
             drawCircleFix(fix);
         }
     }
+#if 0
+    b2Transform t = body->GetTransform();
+    t.q.Set(offsetAngle + body->GetAngle());
+    pWorld->drawer->DrawTransform(t);
+#endif
 }
 
 void PortalBody::adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,

@@ -15,7 +15,6 @@ int main(void)
     pWorld->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_centerOfMassBit);
     
-
     mouseJointHandler mjh(pWorld, wh, drawer);
 
     testCase1(pWorld);

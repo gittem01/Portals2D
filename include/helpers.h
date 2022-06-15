@@ -409,15 +409,17 @@ void testCase1(PortalWorld* pWorld){
     (pWorld->createPortalBody(body20))->bodyColor = b2Color(0.5f, 0.6f, 1.0f, 0.5f);
     (pWorld->createPortalBody(body21))->bodyColor = b2Color(0.6f, 1.0f, 0.5f, 0.5f);
 
-    // artificial kinematic body
-    // p = b2Vec2(5.0f, -6.0f);
-    // s = b2Vec2(10.0f, 0.5f);
-    // b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
-    // (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
-    // b2Vec2 vel(-8.0f, 0.0f);
-    // body4->SetLinearVelocity(vel);
-    // body4->SetBullet(true); // for mimicing static body continuous collision
-    // body4->SetLinearDamping(0.0f);
+#if 0
+    //artificial kinematic body
+    p = b2Vec2(5.0f, -6.0f);
+    s = b2Vec2(10.0f, 0.5f);
+    b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
+    (pWorld->createPortalBody(body4))->bodyColor = b2Color(0.0f, 0.0f, 1.0f, 0.5f);
+    b2Vec2 vel(-8.0f, 0.0f);
+    body4->SetLinearVelocity(vel);
+    body4->SetBullet(true); // for mimicing static body continuous collision
+    body4->SetLinearDamping(0.0f);
+#endif
 
     p = b2Vec2(0.0f, 0.0f);
     float r = 0.7f;

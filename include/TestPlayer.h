@@ -35,7 +35,7 @@ public:
 
     b2Vec2 lastDirs[2];
 
-    TestPlayer(PortalWorld* pWorld, WindowPainter* wp, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 2.0f)){
+    TestPlayer(PortalWorld* pWorld, WindowPainter* wp, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 1.5f)){
         this->pWorld = pWorld;
         this->wp = wp;
         this->size = size;
@@ -65,7 +65,7 @@ public:
         bodyDef.type = b2_dynamicBody;
         bodyDef.position = pos;
         bodyDef.fixedRotation = true;
-        bodyDef.linearDamping = 0.1f;
+        bodyDef.linearDamping = 0.0f;
         bodyDef.bullet = true;
         bodyDef.allowSleep = false;
 
@@ -193,7 +193,7 @@ public:
         float cnst = pb->body->GetMass() * (pBody->size() / dt);
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
-        printf("Speed : %f\n", lv.x);
+        //printf("Speed : %f\n", lv.x);
 
         if (onPlatform){
             b2Vec2 pVel = platformBody->GetLinearVelocity();
@@ -338,6 +338,28 @@ public:
             }
         }
 
+#if 0
+        if (pBody->size() == 1){
+            PortalBody* pb = pBody->at(0);
+            printf("%f - %f\n", pb->body->GetAngle(), pb->offsetAngle);
+            float ang1 = fmod(pb->offsetAngle, 2 * b2_pi);
+            float ang2 = fmod(pb->body->GetAngle(), 2 * b2_pi);
+            if (ang1 > b2_pi) ang1 = ang1 - 2 * b2_pi;
+            if (ang2 > b2_pi) ang2 = ang2 - 2 * b2_pi;
+
+            float ang = ang1 + ang2;
+
+            if (ang > 0.01f){
+                pb->body->SetAngularVelocity(-10.0f);
+            }
+            else if (ang < -0.01f){
+                pb->body->SetAngularVelocity(+10.0f);
+            }
+            else{
+                pb->body->SetAngularVelocity(0.0f);
+            }
+        }
+#endif
         haveContact = false;
         onPlatform = false;
         lastVelocity = lv;
