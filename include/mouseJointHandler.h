@@ -41,8 +41,8 @@ public:
 
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
-    float bodyRadius = 0.1f;
-    float radiusLimits[2] = { 0.1f, 2.5f };
+    float bodyRadius = 0.0f;
+    float radiusLimits[2] = { 0.0f, 2.5f };
 
     int lastFrame = INT_MIN;
 
@@ -116,8 +116,6 @@ public:
     }
 
     void mouseHandler(int frame, int totalIter) {
-        if (!wh->cursorDisabled) return;
-
         glm::vec2 mp = wh->cam->getMouseCoords();
         mouseBody->SetTransform(b2Vec2(mp.x, mp.y), 0.0f);
 

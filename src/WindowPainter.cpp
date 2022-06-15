@@ -91,7 +91,7 @@ void WindowPainter::massInit() {
     mouseData[0] = windowSizes.x / 2.0f;
     mouseData[1] = windowSizes.y / 2.0f;
 
-    disableCursor();
+    //disableCursor();
 }
 
 void WindowPainter::disableCursor(){
@@ -109,18 +109,16 @@ void WindowPainter::enableCursor(){
 void WindowPainter::mouseEventCallback(GLFWwindow* window, double xpos, double ypos)
 {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
-    if (thisClass->cursorDisabled){
-        double x0, y0;
-        x0 = xpos; y0 = ypos;
-        if (xpos > thisClass->windowSizes.x) xpos = thisClass->windowSizes.x;
-        else if (xpos < 0) xpos = 0;
+    double x0, y0;
+    x0 = xpos; y0 = ypos;
+    if (xpos > thisClass->windowSizes.x) xpos = thisClass->windowSizes.x;
+    else if (xpos < 0) xpos = 0;
 
-        if (ypos > thisClass->windowSizes.y) ypos = thisClass->windowSizes.y;
-        else if (ypos < 0) ypos = 0;
+    if (ypos > thisClass->windowSizes.y) ypos = thisClass->windowSizes.y;
+    else if (ypos < 0) ypos = 0;
 
-        if (x0 != xpos || y0 != ypos){
-            glfwSetCursorPos(window, xpos, ypos);
-        }
+    if (x0 != xpos || y0 != ypos){
+        glfwSetCursorPos(window, xpos, ypos);
     }
 
     thisClass->mouseData[0] = (int)xpos;
@@ -135,8 +133,6 @@ void WindowPainter::buttonEventCallback(GLFWwindow* window, int button, int acti
     else {
         thisClass->releaseQueue[button] = true;
     }
-    if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
-        thisClass->disableCursor();
 }
 
 void WindowPainter::scrollEventCallback(GLFWwindow* window, double xoffset, double yoffset) {
