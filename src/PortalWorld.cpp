@@ -260,13 +260,14 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         pBody->bodyMaps->push_back(t_bcs);
         t_bcs->connection = c;
         b2Vec2 lvToSet = rotateVec(speed, angleRot);
-        body2->SetLinearVelocity(lvToSet);
         if (c->isReversed){
             body2->SetAngularVelocity(-body1->GetAngularVelocity());
+            lvToSet = mirror(dir2, lvToSet);
         }
         else{
             body2->SetAngularVelocity(body1->GetAngularVelocity());
         }
+        body2->SetLinearVelocity(lvToSet);
 
         float b2Angle = body1->GetTransform().q.GetAngle() + angleRot;
         if (c->isReversed){

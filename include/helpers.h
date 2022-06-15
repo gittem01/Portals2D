@@ -71,7 +71,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
             float y = cos(0.5f * (currD + nextD)) * (rOut - thickness * 0.5f);
 
             cShape.m_p = b2Vec2(x, y);
-            cShape.m_radius = thickness * 0.5f;
+            cShape.m_radius = thickness * 0.65f;
 
             fDef.shape = &cShape;
             fDef.density = 0.2f;
@@ -386,7 +386,7 @@ void testCase1(PortalWorld* pWorld){
     portal3->connect(portal2, false);
     portal41->connect(portal1, true, 0, 0);
     portal42->connect(portal1, false, 0, 1);
-    portal5->connect(portal6, false, 0, 0);
+    portal5->connect(portal6, true, 0, 0);
     diagonalPortal1->connect(diagonalPortal2, true, 0, 0);
     diagonalPortal2->connect(topPortal1, true, 1, 0);
     diagonalPortal2->connect(topPortal2, false, 1, 0);
