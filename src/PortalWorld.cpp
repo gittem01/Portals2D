@@ -1,6 +1,7 @@
 #include "PortalWorld.h"
 #include "PortalBody.h"
 #include "Portal.h"
+#include <RotationJoint.h>
 
 PortalWorld::PortalWorld(DebugDrawer* drawer) : b2World(b2Vec2(0, -10)){
     this->drawer = drawer;
@@ -391,18 +392,18 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         }
         createPortalBody_i(npb, pBody, false);
         if (allOut) destroyBodies.insert(pBody);
-        else connectBodies(body1, body2, c, side);
+        else connectBodies(pBody, npb, c, side, calcAngle2(dir1) - calcAngle2(dir2));
     }
 
     return retBodies;
 }
 
-void PortalWorld::connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side) {
+void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot) {
     b2PrismaticJointDef prismDef;
-    prismDef.Initialize(body1, body2, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
+    prismDef.Initialize(body1->body, body2->body, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
     prismDef.collideConnected = true;
 
-    CreateRotationJoint(&prismDef, connection->isReversed);
+    CreateRotationJoint(&prismDef, connection->isReversed, body1, body2, angleRot);
 
     b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
     b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
@@ -413,17 +414,17 @@ void PortalWorld::connectBodies(b2Body* body1, b2Body* body2, portalConnection* 
 
     b2MassData data1;
     b2MassData data2;
-    body1->GetMassData(&data1);
-    body2->GetMassData(&data2);
+    body1->body->GetMassData(&data1);
+    body2->body->GetMassData(&data2);
     
-    b2Vec2 center1 = body1->GetWorldPoint(data1.center);
-    b2Vec2 center2 = body2->GetWorldPoint(data2.center);
+    b2Vec2 center1 = body1->body->GetWorldPoint(data1.center);
+    b2Vec2 center2 = body2->body->GetWorldPoint(data2.center);
 
     b2Vec2 anchor1 = center1;
     b2Vec2 anchor2 = center2;
     b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
     b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
-    pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
+    pulleyDef.Initialize(body1->body, body2->body, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
     CreateJoint(&pulleyDef);
 
     dirClone1 = rotateVec(dirClone1, b2_pi / 2.0f);
@@ -436,19 +437,19 @@ void PortalWorld::connectBodies(b2Body* body1, b2Body* body2, portalConnection* 
     anchor2 = center2;
     groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
     groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
-    pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
+    pulleyDef.Initialize(body1->body, body2->body, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
     CreateJoint(&pulleyDef);
 }
 
-b2Joint* PortalWorld::CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed){
+void PortalWorld::CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot){
     b2Assert(IsLocked() == false);
 	if (IsLocked())
 	{
-		return nullptr;
+		return;
 	}
 
     void* mem = m_blockAllocator.Allocate(sizeof(RotationJoint));
-	RotationJoint* j = new (mem) RotationJoint(def, isReversed);
+	RotationJoint* j = new (mem) RotationJoint(def, isReversed, pb1, pb2, angleRot);
 
 	j->m_prev = nullptr;
 	j->m_next = m_jointList;

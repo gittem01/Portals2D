@@ -1,6 +1,6 @@
 #pragma once
 
-#include <RotationJoint.h>
+#include <box2d/box2d.h>
 #include <vector>
 #include <stdio.h>
 #include <algorithm>
@@ -107,7 +107,7 @@ private:
     // baseBody should not be NULL if isNew is false
     void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
 
-    b2Joint* CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed);
+    void CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
 
 public:
     bool drawReleases;
@@ -118,7 +118,7 @@ public:
     PortalWorld(DebugDrawer* drawer);
 
     std::vector<PortalBody*> createCloneBody(bodyStruct* s);
-    void connectBodies(b2Body* body1, b2Body* body2, portalConnection* connection, int side);
+    void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot);
 
     void portalUpdate();
     void globalPostHandle();
@@ -126,8 +126,6 @@ public:
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
-
-    b2Joint* CreateRotationJoint(b2JointDef* def);
 
     friend class TestPlayer;
     friend class PortalBody;

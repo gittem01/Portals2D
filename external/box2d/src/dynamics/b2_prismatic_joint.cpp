@@ -192,21 +192,21 @@ void b2PrismaticJoint::InitVelocityConstraints(const b2SolverData& data)
 	if (data.step.warmStarting)
 	{
 		// Account for variable time step.
-		// m_impulse *= data.step.dtRatio;
-		// m_motorImpulse *= data.step.dtRatio;
-		// m_lowerImpulse *= data.step.dtRatio;
-		// m_upperImpulse *= data.step.dtRatio;
+		m_impulse *= data.step.dtRatio;
+		m_motorImpulse *= data.step.dtRatio;
+		m_lowerImpulse *= data.step.dtRatio;
+		m_upperImpulse *= data.step.dtRatio;
 
-		// float axialImpulse = m_motorImpulse + m_lowerImpulse - m_upperImpulse;
-		// b2Vec2 P = m_impulse.x * m_perp + axialImpulse * m_axis;
-		// float LA = m_impulse.x * m_s1 + m_impulse.y + axialImpulse * m_a1;
-		// float LB = m_impulse.x * m_s2 + m_impulse.y + axialImpulse * m_a2;
+		float axialImpulse = m_motorImpulse + m_lowerImpulse - m_upperImpulse;
+		b2Vec2 P = m_impulse.x * m_perp + axialImpulse * m_axis;
+		float LA = m_impulse.x * m_s1 + m_impulse.y + axialImpulse * m_a1;
+		float LB = m_impulse.x * m_s2 + m_impulse.y + axialImpulse * m_a2;
 
-		// vA -= mA * P;
-		// wA -= iA * LA;
+		vA -= mA * P;
+		wA -= iA * LA;
 
-		// vB += mB * P;
-		// wB += iB * LB;
+		vB += mB * P;
+		wB += iB * LB;
 	}
 	else
 	{

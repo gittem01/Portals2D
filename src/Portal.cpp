@@ -494,12 +494,7 @@ void Portal::draw(){
 	glEnd();
 
     // draw dir
-    // glLineWidth(2.0f);
-    // glColor4f(1, 1, 1, 1);
-    // glBegin(GL_LINES);
-    // glVertex2d(pos.x, pos.y);
-    // glVertex2d(pos.x + dir.x * 4.0f, pos.y + dir.y * 4.0f);
-    // glEnd();
+    // pWorld->drawer->DrawArrow(pos, pos + 1.0f * dir, b2Color(1, 1, 1, 1));
 }
 
 
