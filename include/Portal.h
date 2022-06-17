@@ -5,14 +5,14 @@
 
 class Portal;
 
-struct portalConnection {
+typedef struct portalConnection {
     Portal* portal1;
     Portal* portal2;
     int side1;
     int side2;
 
     bool isReversed;
-};
+} portalConnection;
 
 class Portal{
 
@@ -20,8 +20,10 @@ friend Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size);
 
 private:
     Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
+    std::set<b2Fixture*> extraFixtures;
 
 public:
+    static std::map<b2Fixture*, b2Vec2> noCollData;
 
     PortalWorld* pWorld;
     b2Body* body;
@@ -35,6 +37,7 @@ public:
     std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
     std::set<b2Fixture*> releaseFixtures[2];
+
 
     std::vector<portalConnection*> connections[2];
 
@@ -63,6 +66,8 @@ public:
 
     void draw();
     void connect(Portal* portal2, bool isReversed=false, int side1=0, int side2=0);
+
+    void evaluateWorld();
 
     int getFixtureSide(b2Fixture* fix);
     int handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);

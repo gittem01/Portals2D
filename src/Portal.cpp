@@ -5,6 +5,8 @@
 #include <thread>
 #include <GLFW/glfw3.h>
 
+std::map<b2Fixture*, b2Vec2> Portal::noCollData;
+
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     dir.Normalize();
 
@@ -24,6 +26,59 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     this->rcInp2.maxFraction = 1.0f;
 
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
+}
+
+void Portal::evaluateWorld(){
+    b2FixtureDef fDef;
+    b2EdgeShape extraShape;
+    fDef.shape = &extraShape;
+    pWorld->evalRayHandler->rayCast(points[0] + 0.005f * dir, points[0] - 0.005f * dir);
+    if (pWorld->evalRayHandler->closestFixture){
+        b2Fixture* fix = pWorld->evalRayHandler->closestFixture;
+        pWorld->drawer->DrawPoint(points[0] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+        for (auto& d : pWorld->evalRayHandler->hitFixtures){
+            Portal::noCollData[d.first] = d.second;
+        }
+        //Portal::noCollData[fix] = pWorld->evalRayHandler->rayNormal;
+        if (fix->GetType() == b2Shape::e_edge){
+            b2EdgeShape shape = *(b2EdgeShape*)fix->GetShape();
+            b2Vec2 plus = points[0] + dir;
+            if (pWorld->isLeft(points[0], plus, shape.m_vertex1, 0.0001f)){
+                pWorld->drawer->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                extraShape.SetTwoSided(points[0], shape.m_vertex1);
+                extraFixtures.insert(body->CreateFixture(&fDef));
+            }
+            else if (pWorld->isLeft(points[0], plus, shape.m_vertex2, 0.0001f)){
+                pWorld->drawer->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                extraShape.SetTwoSided(points[0], shape.m_vertex2);
+                extraFixtures.insert(body->CreateFixture(&fDef));
+            }
+        }
+    }
+
+    pWorld->evalRayHandler->rayCast(points[1] + 0.005f * dir, points[1] - 0.005f * dir);
+    if (pWorld->evalRayHandler->closestFixture){
+        b2Fixture* fix = pWorld->evalRayHandler->closestFixture;
+        pWorld->drawer->DrawPoint(points[1] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+        for (auto& d : pWorld->evalRayHandler->hitFixtures){
+            Portal::noCollData[d.first] = d.second;
+        }
+        //Portal::noCollData[fix] = pWorld->evalRayHandler->rayNormal;
+        if (fix->GetType() == b2Shape::e_edge){
+            b2EdgeShape shape = *(b2EdgeShape*)fix->GetShape();
+            b2Vec2 plus = points[1] - dir;
+            if (pWorld->isLeft(points[1], plus, shape.m_vertex1, 0.0001f)){
+                pWorld->drawer->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                extraShape.SetTwoSided(points[1], shape.m_vertex1);
+                extraFixtures.insert(body->CreateFixture(&fDef));
+            }
+            else if (pWorld->isLeft(points[1], plus, shape.m_vertex2, 0.0001f)){
+                pWorld->drawer->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                extraShape.SetTwoSided(points[1], shape.m_vertex2);
+                extraFixtures.insert(body->CreateFixture(&fDef));
+            }
+        }
+    }    
 }
 
 Portal::~Portal() {
@@ -140,7 +195,7 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
 
 int Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     int ret = -1;
-
+    
     if (fix1 == midFixture){
         ret = handleCollidingFixtures(contact, fix1, fix2);
     }
@@ -181,7 +236,6 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
     contact->GetWorldManifold(&wManifold);
 
     float angle = pWorld->vecAngle(wManifold.normal, dir);
-    if (angle > b2_pi * 2) angle -= (int)(angle / (b2_pi * 2));
     int side = getFixtureSide(fix2);
     bool rayRes = rayCheck(fix2);
     if (rayRes ||   angle < angleThold || b2_pi * 2 < (angle + angleThold) ||
@@ -360,17 +414,15 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
         }
     }
 
-    bool draw = false;
-    if (draw)
-    {
-        for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-            pWorld->drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
-        }
-
-        for (b2Vec2 p : collPoints){
-            pWorld->drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
-        }
+#if 0
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+        pWorld->drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
     }
+
+    for (b2Vec2 p : collPoints){
+        pWorld->drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
+    }
+#endif
 
     if (collPoints.size() > 0){
         if (fix2->GetBody()->GetType() == b2_staticBody && fix1->GetType() != b2Shape::Type::e_circle &&
@@ -523,4 +575,52 @@ void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
 
     this->color = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
     portal2->color = b2Color(1.0f - this->color.r, this->color.g, 1.0f - this->color.b, 1.0f);
+}
+
+
+
+EvaluationRay::EvaluationRay(PortalWorld* pWorld){
+    this->pWorld = pWorld;
+}
+
+void EvaluationRay::rayCast(b2Vec2 p1, b2Vec2 p2){
+    closestFixture = NULL;
+
+    hitFixtures.clear();
+    
+    pWorld->RayCast(this, p1, p2);
+
+    if (closestFixture_i){
+        closestFixture = closestFixture_i;
+        minFraction = minFraction_i;
+    }
+    
+    closestFixture_i = NULL;
+    minFraction_i = 1.0f;
+}
+
+float EvaluationRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction){
+    if (fixture->IsSensor() || fixture->GetBody()->GetType() != b2_staticBody) return 1.0f;
+
+    bool isPortal = false;
+    bodyData* bd = (bodyData*)(fixture->GetBody()->GetUserData().pointer);
+    if (bd){
+        switch (bd->type)
+        {
+        case PORTAL:
+            return 1.0f;
+            break;
+
+        default:
+            break;
+        }
+    }
+    hitFixtures.push_back(std::pair<b2Fixture*, b2Vec2>(fixture, normal));
+    if (fraction < minFraction_i){
+        minFraction_i = fraction;
+        closestFixture_i = fixture;
+        rayNormal = normal;
+    }
+
+    return 1.0f;
 }

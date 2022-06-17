@@ -10,6 +10,7 @@ PortalWorld::PortalWorld(DebugDrawer* drawer) : b2World(b2Vec2(0, -10)){
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
 
     this->rayHandler = new PortalRay(this);
+    this->evalRayHandler = new EvaluationRay(this);
 }
 
 Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size){
@@ -89,6 +90,9 @@ void PortalRay::prepareRaySend(){
         delete rd;
     }
     rayResult.clear();
+
+    closestFixture = NULL;
+    closestPortalFixture = NULL;
 }
 
 void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal){
@@ -171,7 +175,7 @@ void PortalWorld::portalUpdate(){
     for (Portal* p : portals) {
         p->postHandle();
     }
-
+    
     rayHandler->sendRay(b2Vec2(-10.0f, 10.0f), b2Vec2(1, -1), 15.0f);
 
     glLineWidth(3.0f);

@@ -84,11 +84,42 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
     bodyData* bDataA = (bodyData*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
     bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
 
+#if 0
+    b2WorldManifold wManifold;
+    contact->GetWorldManifold(&wManifold);
+#endif
     if (bDataA && bDataA->type == PORTAL_BODY){
+#if 0
+        auto iter = Portal::noCollData.find(contact->GetFixtureB());
+        
+        if (iter != Portal::noCollData.end())
+        {
+            float ang = PortalWorld::calcAngle2(iter->second);
+            float ang2 = PortalWorld::calcAngle2(wManifold.normal);
+            ang = ang - ang2;
+            if (cos(ang) < -0.999f){
+                contact->SetEnabled(false);
+                return;
+            }
+        }
+#endif
         PortalBody* p = (PortalBody*)bDataA->data;
         p->preCollision(contact, contact->GetFixtureA(), contact->GetFixtureB());
     }
     if (bDataB && bDataB->type == PORTAL_BODY){
+#if 0
+        auto iter = Portal::noCollData.find(contact->GetFixtureA());
+        if (iter != Portal::noCollData.end())
+        {
+            float ang = PortalWorld::calcAngle2(iter->second);
+            float ang2 = PortalWorld::calcAngle2(wManifold.normal);
+            ang = ang - ang2;
+            if (cos(ang) > 0.999f){
+                contact->SetEnabled(false);
+                return;
+            }
+        }
+#endif
         PortalBody* p = (PortalBody*)bDataB->data;
         p->preCollision(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
