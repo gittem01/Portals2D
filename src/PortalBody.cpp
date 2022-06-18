@@ -373,7 +373,15 @@ b2Vec2 findCentroid(std::vector<b2Vec2>* vecs){
 
     f = twicearea * 3;
 
-    return b2Vec2(x / f + off.x, y / f + off.y);
+    float rv1 = x / f + off.x;
+    float rv2 = y / f + off.y;
+
+    // Nan check
+    if (rv1 != rv1 || rv2 != rv2){
+        return b2Vec2(0, 0);
+    }
+
+    return b2Vec2(rv1, rv2);
 }
 
 b2Vec2 PortalBody::getCenterOfMass(b2Fixture* fix, int status){
