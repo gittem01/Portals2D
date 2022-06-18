@@ -386,12 +386,14 @@ b2Vec2 findCentroid(std::vector<b2Vec2>* vecs){
 
 b2Vec2 PortalBody::getCenterOfMass(b2Fixture* fix, int status){
     auto apf = allParts[fix];
-    if (apf->size() == 0 || status == 0) return b2Vec2();
+    if (apf->size() == 0 || status == 0) return { };
 
     std::vector<b2Vec2>* vecs = apf->at(0);
-    if (vecs->size() == 0) return b2Vec2();
+    if (vecs->size() == 0) return { };
 
     float area = getArea(fix, status);
+
+    if (area == 0) return { };
 
     b2Vec2 center = findCentroid(vecs);
 
