@@ -188,14 +188,10 @@ std::vector<PortalBody*> PortalBody::postHandle(){
 
 bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
     bodyData* bd = (bodyData*)bBody->GetUserData().pointer;
-    PortalBody* pBody = (PortalBody*)bd->data;
-    auto iter = pWorld->destroyBodies.find((PortalBody*)(bd->data));
-    if (iter != pWorld->destroyBodies.end()){
-        pWorld->destroyBodies.erase(iter);
-    }
-    for (bodyCollisionStatus* c : *bodyMaps){
-        iter = pWorld->destroyBodies.find(c->body);
-        if (iter != pWorld->destroyBodies.end()){
+    for (bodyCollisionStatus* s : *bodyMaps){
+        const auto iter = pWorld->destroyBodies.find(s->body);
+        if (iter != pWorld->destroyBodies.end() && s->connection->portal1 == portal){
+            //pWorld->drawer->DrawPoint(s->body->body->GetPosition(), 50.0f, b2Color(1, 0, 0));
             pWorld->destroyBodies.erase(iter);
             break;
         }
@@ -223,6 +219,7 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
             *s = {this, portal, out};
             createBodies.push_back(s);
+            //pWorld->drawer->DrawPoint(body->GetPosition() + b2Vec2(0.05f, 0.0f), 10.0f, b2Color(0.0f, 0.0f, 1.0f));
         }
         outHelper(fix, portal, 1, out);
         break;
@@ -268,6 +265,7 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal){
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal){
             pWorld->destroyBodies.insert(s->body);
+            //pWorld->drawer->DrawPoint(body->GetPosition() - b2Vec2(0.05f, 0.0f), 10.0f, b2Color(1.0f, 0.0f, 0.0f));
         }
     }
 }
@@ -392,7 +390,7 @@ b2Vec2 findCentroid(std::vector<b2Vec2>* vecs){
     return b2Vec2(rv1, rv2);
 }
 
-void PortalBody::getCenterOfMass(b2Fixture* fix, int status){
+void PortalBody::applyGravity(b2Fixture* fix, int status){
     auto apf = allParts[fix];
     if (apf->size() == 0 || status == 0) return;
 
@@ -458,7 +456,7 @@ void PortalBody::calculateParts(b2Fixture* fix){
 
     if (status == 2){
         apf->push_back(vertices);
-        getCenterOfMass(fix, status);
+        applyGravity(fix, status);
         return;
     }
 
@@ -490,7 +488,7 @@ void PortalBody::calculateParts(b2Fixture* fix){
     }
     delete(vertices);
 
-    getCenterOfMass(fix, status);
+    applyGravity(fix, status);
 }
 
 void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){

@@ -71,7 +71,7 @@ private:
 
     float getArea(b2Fixture* fix, int status);
 
-    void getCenterOfMass(b2Fixture* fix, int status);
+    void applyGravity(b2Fixture* fix, int status);
     void calculateParts(b2Fixture* fix);
 
     void adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
