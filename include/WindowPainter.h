@@ -18,7 +18,7 @@ public:
 	bool cursorDisabled = false;
 	float dpiScaling = 1.0f;
 	std::set<int> newPressIndices;
-	GLFWwindow* window;
+	GLFWwindow* window{};
 	Camera* cam;
 
 	WindowPainter(Camera* cam);

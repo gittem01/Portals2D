@@ -31,20 +31,24 @@ typedef struct
 
 class PortalBody{
     
-friend PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor); 
-friend std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s);
+friend class PortalWorld;
+friend class ContactListener;
+
+public:
+
+    std::vector<PortalBody*>* worldIndex;
+    std::vector<bodyCollisionStatus*>* bodyMaps;
+    std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
+
+    b2Color bodyColor;
+    b2Body* body;
+    float offsetAngle;
 
 private:
     PortalBody(b2Body* body, PortalWorld* pWorld, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
 
-public:
-
     ~PortalBody();
 
-    std::vector<PortalBody*>* worldIndex;
-
-    std::vector<bodyCollisionStatus*>* bodyMaps;
-    std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
     std::map<b2Fixture*, std::set<Portal*>> prepareMaps;
     std::vector<bodyStruct*> createBodies;
 
@@ -52,12 +56,7 @@ public:
     // remaining vertices are release vertices
     std::map<b2Fixture*, std::vector<std::vector<b2Vec2>*>*> allParts;
 
-    b2Body* body;
-    b2Color bodyColor;
-
     PortalWorld* pWorld;
-
-    float offsetAngle;
 
     // fix1 is always a fixture of this class
     void collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
@@ -71,7 +70,8 @@ public:
     void handleOut(b2Fixture* fix, Portal* portal, int out);
 
     float getArea(b2Fixture* fix, int status);
-    b2Vec2 getCenterOfMass(b2Fixture* fix, int status);
+
+    void getCenterOfMass(b2Fixture* fix, int status);
     void calculateParts(b2Fixture* fix);
 
     void adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
