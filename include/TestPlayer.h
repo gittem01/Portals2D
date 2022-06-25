@@ -350,10 +350,10 @@ public:
             float ang = ang1 + ang2;
 
             if (ang > 0.01f){
-                pb->body->SetAngularVelocity(-10.0f);
+                pb->body->SetAngularVelocity(-20.0f * (abs(ang) / b2_pi));
             }
             else if (ang < -0.01f){
-                pb->body->SetAngularVelocity(+10.0f);
+                pb->body->SetAngularVelocity(+20.0f * (abs(ang) / b2_pi));
             }
             else{
                 pb->body->SetAngularVelocity(0.0f);

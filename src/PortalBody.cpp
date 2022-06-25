@@ -153,6 +153,23 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
 }
 
 void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side){
+    if (portal->isVoid[side] && status == 0){
+        bool found = false;
+        for (b2Fixture* f = fix->GetBody()->GetFixtureList(); f; f = f->GetNext()){
+            if (f == fix) continue;
+            if (portal->releaseFixtures[side].find(f) == portal->releaseFixtures[side].end())
+            {
+                found = true;
+                f = nullptr;
+                break;
+            }
+        }
+        if (!found){
+            pWorld->destroyBodies.insert(this);
+            return;
+        }
+    }
+
     for (auto& col : *fixtureCollisions[fix]){
         if (col->portal == portal){
             fixtureCollisions[fix]->erase(col);
@@ -187,6 +204,8 @@ std::vector<PortalBody*> PortalBody::postHandle(){
 }
 
 bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
+    if (portal->isVoid[side]) return false;
+
     bodyData* bd = (bodyData*)bBody->GetUserData().pointer;
     for (bodyCollisionStatus* s : *bodyMaps){
         const auto iter = pWorld->destroyBodies.find(s->body);
@@ -286,7 +305,7 @@ void PortalBody::drawBodies(){
             drawCircleFix(fix);
         }
     }
-#if 0
+#if 1
     b2Transform t = body->GetTransform();
     t.q.Set(offsetAngle + body->GetAngle());
     pWorld->drawer->DrawTransform(t);

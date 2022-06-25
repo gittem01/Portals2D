@@ -76,8 +76,8 @@ void Camera::update() {
 void Camera::dragFunc(int width, int height) {
 	WindowPainter* windowHandler = (WindowPainter*)wh;
 
-	glm::vec2 diffVec = glm::vec2(dragTo->x - lastPos->x,
-		dragTo->y - lastPos->y);
+	glm::vec2 diffVec = glm::vec2(dragTo.x - lastPos.x,
+		dragTo.y - lastPos.y);
 	glm::vec2 sideDiffs = glm::vec2(defaultXSides.y - defaultXSides.x,
 		defaultYSides.y - defaultYSides.x);
 
@@ -86,8 +86,9 @@ void Camera::dragFunc(int width, int height) {
 	if (abs(lng) > 0) {
 		pos.x -= diffVec.x * (sideDiffs.x / width) * dragSmth / (zoom * zoom);
 		pos.y += diffVec.y * (sideDiffs.y / height) * dragSmth / (zoom * zoom);
-		lastPos->x += diffVec.x * dragSmth;
-		lastPos->y += diffVec.y * dragSmth;
+		
+		lastPos.x += diffVec.x * dragSmth;
+		lastPos.y += diffVec.y * dragSmth;
 	}
 
 	if (windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]){
@@ -96,15 +97,15 @@ void Camera::dragFunc(int width, int height) {
 	}
 	else{
 		if (windowHandler->mouseData[4] == 2) {
-			lastPos->x = windowHandler->mouseData[0];
-			lastPos->y = windowHandler->mouseData[1];
+			lastPos.x = windowHandler->mouseData[0];
+			lastPos.y = windowHandler->mouseData[1];
 
-			dragTo->x = windowHandler->mouseData[0];
-			dragTo->y = windowHandler->mouseData[1];
+			dragTo.x = windowHandler->mouseData[0];
+			dragTo.y = windowHandler->mouseData[1];
 		}
 		else if (windowHandler->mouseData[4] == 1) {
-			dragTo->x = windowHandler->mouseData[0];
-			dragTo->y = windowHandler->mouseData[1];
+			dragTo.x = windowHandler->mouseData[0];
+			dragTo.y = windowHandler->mouseData[1];
 		}
 	}
 }

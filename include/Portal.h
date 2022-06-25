@@ -48,6 +48,7 @@ public:
     float angle;
     b2Color color;
     int id;
+    bool isVoid[2];
 
     ~Portal();
     void clear();
@@ -66,6 +67,7 @@ public:
 
     void draw();
     void connect(Portal* portal2, bool isReversed=false, int side1=0, int side2=0);
+    void setVoid(int side);
 
     void evaluateWorld();
 

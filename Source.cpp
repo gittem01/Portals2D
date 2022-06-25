@@ -3,8 +3,8 @@
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(nullptr);
-    Camera* cam = new Camera(glm::vec2(0, 0), wh);
-    cam->zoom = 0.6f;
+    Camera* cam = new Camera(glm::vec2(0, 6), wh);
+    cam->zoom = 0.55f;
     wh->cam = cam;
 
     DebugDrawer* drawer = new DebugDrawer();

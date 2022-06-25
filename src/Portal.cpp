@@ -14,6 +14,7 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     this->pos = pos;
     this->dir = dir;
     this->size = size;
+    this->isVoid[0] = false; this->isVoid[1] = false;
     calculatePoints();
     createPortalBody();
     
@@ -552,6 +553,8 @@ void Portal::draw(){
 
 // concave shapes create lots of problems with reversed option enabled
 void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
+    if (this->isVoid[side1] || portal2->isVoid[side2]) return;
+
     portalConnection* c1 = (portalConnection*)malloc(sizeof(portalConnection));
     c1->portal1 = this;
     c1->portal2 = portal2;
@@ -577,6 +580,18 @@ void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
     portal2->color = b2Color(1.0f - this->color.r, this->color.g, 1.0f - this->color.b, 1.0f);
 }
 
+void Portal::setVoid(int side){
+    isVoid[side] = true;
+
+    portalConnection* c1 = (portalConnection*)malloc(sizeof(portalConnection));
+    c1->portal1 = this;
+    c1->portal2 = this;
+    c1->side1 = side;
+    c1->side2 = side;
+    c1->isReversed = false;
+
+    connections[side].push_back(c1);
+}
 
 
 EvaluationRay::EvaluationRay(PortalWorld* pWorld){

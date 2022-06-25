@@ -24,8 +24,8 @@ public:
 	float dragSmth = 0.5f;
 	float neededZoom = 0;
 	glm::vec2 zoomPoint;
-	glm::vec2* lastPos = new glm::vec2(-1, -1);
-	glm::vec2* dragTo = new glm::vec2(0, 0);
+	glm::vec2 lastPos = glm::vec2(-1, -1);
+	glm::vec2 dragTo = glm::vec2(0, 0);
 
 	void* wh;
 
