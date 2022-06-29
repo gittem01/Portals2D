@@ -119,11 +119,6 @@ if(MSVC)
     COMPILE_PDB_NAME box2d
   )
 
-  install(
-    FILES "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/box2d.pdb"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    OPTIONAL
-  )
 endif()
 
 if (BUILD_SHARED_LIBS)
