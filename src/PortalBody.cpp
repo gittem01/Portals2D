@@ -5,6 +5,16 @@
 
 #define CIRCLE_POINTS 50
 
+#if RENDER_COLOURFUL
+    b2Color colors[] = {
+        b2Color(0, 1, 0, 0.5f),
+        b2Color(0, 0, 1, 0.5f),
+        b2Color(0, 1, 1, 0.5f),
+        b2Color(1, 1, 0, 0.5f),
+        b2Color(1, 1, 1, 0.2f)
+    };
+#endif
+
 PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
     this->pWorld = pWorld;
     this->body = bBody;
@@ -131,8 +141,8 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     }
     
     for (portalCollision* coll : *collidingPortals){
-        if (coll->portal->releaseFixtures[coll->side].find(fix2) != coll->portal->releaseFixtures[coll->side].end() ||
-            coll->portal->collidingFixtures[coll->side].find(fix2) != coll->portal->collidingFixtures[coll->side].end())
+        if (coll->portal->collidingFixtures[coll->side].find(fix2) != coll->portal->collidingFixtures[coll->side].end() &&
+            coll->portal->collidingFixtures[coll->side].find(fix1) != coll->portal->collidingFixtures[coll->side].end())
         {
             return true;
         }
@@ -229,6 +239,25 @@ bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
     return true;
 }
 
+void PortalBody::releaseOut2(b2Fixture* fix, Portal* portal){
+    b2Body* body = fix->GetBody();
+    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
+        auto iter0 = portal->releaseFixtures[0].find(fix);
+        auto iter1 = portal->releaseFixtures[1].find(fix);
+        if (iter0 != portal->releaseFixtures[0].end()){
+            if (iter0->second < 3){
+                return;
+            }
+        }
+        if (iter1 != portal->releaseFixtures[1].end()){
+            if (iter1->second < 3){
+                return;
+            }
+        }
+    }
+    pWorld->destroyBodies.insert(this);
+}
+
 void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
     switch (out)
     {
@@ -257,6 +286,10 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
         prepareMaps[fix].erase(portal);
         break;
 
+    case 7:
+        releaseOut2(fix, portal);
+        break;
+
     case 4:
         std::set<portalCollision*>* coll = fixtureCollisions[fix];
         for (auto& a : *coll){
@@ -276,7 +309,10 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal){
         if (fix == f) continue;
         for (portalCollision* coll : *fixtureCollisions[fix]){
             if (coll->portal == portal){
-                return;
+                auto iter = portal->releaseFixtures[coll->side].find(fix);
+                if (iter == portal->releaseFixtures[coll->side].end()){
+                    return;
+                }
             }
         }
     }
@@ -284,7 +320,6 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal){
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal){
             pWorld->destroyBodies.insert(s->body);
-            //pWorld->drawer->DrawPoint(body->GetPosition() - b2Vec2(0.05f, 0.0f), 10.0f, b2Color(1.0f, 0.0f, 0.0f));
         }
     }
 }
@@ -305,7 +340,7 @@ void PortalBody::drawBodies(){
             drawCircleFix(fix);
         }
     }
-#if 1
+#if 0
     b2Transform t = body->GetTransform();
     t.q.Set(offsetAngle + body->GetAngle());
     pWorld->drawer->DrawTransform(t);
@@ -538,13 +573,22 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
 
     if (renderStatus == 1){
         if (allParts[fix]->at(0)->size() > 0){
+            b2Color oldColor = bodyColor;
+#if RENDER_COLOURFUL
+            bodyColor = b2Color(1, 0, 1, 0.5f);
+#endif
             drawVertices(bBody, *allParts[fix]->at(0));
+            bodyColor = oldColor;
         }
         if (pWorld->drawReleases){
             for (int i = 1; i < allParts[fix]->size(); i++){
-                auto& vecs = allParts[fix]->at(i);
                 b2Color oldColor = bodyColor;
+                auto& vecs = allParts[fix]->at(i);                
+#if RENDER_COLOURFUL
+                bodyColor = b2Color(1, 0, 0, 0.5f);
+#else
                 bodyColor = pWorld->releaseColor;
+#endif
                 drawVertices(bBody, *vecs);
                 bodyColor = oldColor;
             }
@@ -552,7 +596,17 @@ void PortalBody::portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices){
     }
     else if (pWorld->drawReleases && renderStatus == 0){
             b2Color oldColor = bodyColor;
+
+#if RENDER_COLOURFUL
+            auto iter = fixtureCollisions[fix]->begin();
+            int val = (*iter)->portal->releaseFixtures[(*iter)->side][fix];
+            if (val <= sizeof(colors) / sizeof(colors[0])){
+                bodyColor = colors[val - 1];
+            }
+
+#else
             bodyColor = pWorld->releaseColor;
+#endif
             drawVertices(bBody, vertices);
             bodyColor = oldColor;
     }

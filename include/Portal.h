@@ -3,6 +3,8 @@
 #include "PortalBody.h"
 #include "PortalWorld.h"
 
+#define portal_rayThreshold 0.02f
+
 class Portal;
 
 typedef struct portalConnection {
@@ -36,7 +38,7 @@ public:
 
     std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
-    std::set<b2Fixture*> releaseFixtures[2];
+    std::map<b2Fixture*, int> releaseFixtures[2];
 
 
     std::vector<portalConnection*> connections[2];
@@ -89,7 +91,7 @@ public:
     std::vector<b2Vec2> collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2);
     std::vector<b2Vec2> collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2, b2Fixture* cFix, b2Fixture* oFix);
     std::vector<b2Vec2> collideEdgeOther(b2Fixture* fix1, b2Fixture* fix2);
-    b2Vec2 getFixtureCenter(b2Fixture* fix);
+    static b2Vec2 getFixtureCenter(b2Fixture* fix);
 
     b2Vec2 getRayPoint(b2RayCastInput& input, b2RayCastOutput& output);
 };

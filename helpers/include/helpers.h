@@ -17,7 +17,7 @@ int totalIter = 10;
 PortalWorld* pWorld;
 
 // O shaped body
-b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float thickness=0.3f, float rOut = 1.2f) {
+b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f) {
     b2BodyDef bodyDef;
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
@@ -30,28 +30,28 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
 
     degree /= 180 / b2_pi;
     // keep it even for non-symmetrical shape
-    float n = 20;
     float incr = degree / n;
 
     int dec = 0;
+    float f = 1.0f;
     for (float currD = 0.0f; currD < degree;) {
-        if (dec++ % 2 == 0){
+        if (dec % 2 == 0){
             b2FixtureDef fDef;
             b2PolygonShape shape;
 
             float nextD = currD + incr;
 
-            float x1 = sin(currD) * rOut;
-            float y1 = cos(currD) * rOut;
+            float x1 = sin(currD) * rOut * (f + fd);
+            float y1 = cos(currD) * rOut * (f + fd);
 
-            float x2 = sin(currD) * (rOut - thickness);
-            float y2 = cos(currD) * (rOut - thickness);
+            float x2 = sin(currD) * (rOut * (f + fd) - thickness);
+            float y2 = cos(currD) * (rOut * (f + fd) - thickness);
 
-            float x3 = sin(nextD) * rOut;
-            float y3 = cos(nextD) * rOut;
+            float x3 = sin(nextD) * rOut * f;
+            float y3 = cos(nextD) * rOut * f;
 
-            float x4 = sin(nextD) * (rOut - thickness);
-            float y4 = cos(nextD) * (rOut - thickness);
+            float x4 = sin(nextD) * (rOut * f - thickness);
+            float y4 = cos(nextD) * (rOut * f - thickness);
 
             vertices[0].x = x1; vertices[0].y = y1;
             vertices[1].x = x2; vertices[1].y = y2;
@@ -75,7 +75,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
             float x = sin(0.5f * (currD + nextD)) * (rOut - thickness * 0.5f);
             float y = cos(0.5f * (currD + nextD)) * (rOut - thickness * 0.5f);
 
-            cShape.m_p = b2Vec2(x, y);
+            cShape.m_p = f * b2Vec2(x, y);
             cShape.m_radius = thickness * 0.65f;
 
             fDef.shape = &cShape;
@@ -85,6 +85,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
 
             currD = nextD;
         }
+        f -= fd;
     }
 
     free(vertices);
@@ -93,7 +94,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
 }
 
 // Weird body (???)
-b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, float circleR=0.15f, float rOut = 1.2f) {
+b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float circleR=0.15f, float rOut=1.2f, float fd=0.0f) {
     b2BodyDef bodyDef;
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
@@ -106,9 +107,9 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     b2CircleShape shape;
     
     degree /= 180 / b2_pi;
-    float n = 20;
     float incr = degree / n;
-
+    float f = 1.0f;
+    
     for (float currD = 0.0f; currD < degree;) {
         b2CircleShape cShape;
 
@@ -117,7 +118,7 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
         float x = sin(currD) * (rOut - circleR);
         float y = cos(currD) * (rOut - circleR);
 
-        cShape.m_p = b2Vec2(x, y);
+        cShape.m_p = f * b2Vec2(x, y);
         cShape.m_radius = circleR;
 
         fDef.shape = &cShape;
@@ -126,6 +127,7 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
         body->CreateFixture(&fDef);
 
         currD = nextD;
+        f -= fd;
     }
 
     return body;
@@ -404,6 +406,8 @@ void testCase1(PortalWorld* portalWorld){
     diagonalPortal2->connect(topPortal2, false, 1, 0);
 
     createEdge(b2Vec2(-30.0f, yPos - portalSize), b2Vec2(+30.0f, yPos - portalSize), portalWorld, b2_staticBody);
+    createEdge(b2Vec2(+30.0f, yPos - portalSize), b2Vec2(+30.0f, 21), portalWorld, b2_staticBody);
+    createEdge(b2Vec2(+30.0f, 21), b2Vec2(-30.0f, 21), portalWorld, b2_staticBody);
 
     PortalBody* b1 = portalWorld->createPortalBody(createObody(portalWorld, b2Vec2(0.0f, 3.0f)));
     PortalBody* b2 = portalWorld->createPortalBody(createWbody(portalWorld, b2Vec2(0.0f, 6.0f)));
@@ -415,15 +419,15 @@ void testCase1(PortalWorld* portalWorld){
     b2Vec2 s(0.75f, 0.75f);
     b2Body* body2 = createPortalCube(p, s, portalWorld, b2_dynamicBody);
     b2Body* body20 = createPortalCube(p + b2Vec2(1, 0), s, portalWorld, b2_dynamicBody);
-    //b2Body* body21 = createPortalCube(p + b2Vec2(2, 0), s, pWorld, b2_dynamicBody);
-    b2Body* body21 = createBox(p + b2Vec2(2, 0), s, portalWorld, b2_dynamicBody);
+    b2Body* body21 = createPortalCube(p + b2Vec2(2, 0), s, pWorld, b2_dynamicBody);
+    //b2Body* body21 = createBox(p + b2Vec2(2, 0), s, portalWorld, b2_dynamicBody);
 
-    (portalWorld->createPortalBody(body2))->bodyColor = b2Color(1.0f, 0.6f, 0.5f, 0.5f);
-    (portalWorld->createPortalBody(body20))->bodyColor = b2Color(0.5f, 0.6f, 1.0f, 0.5f);
-    (portalWorld->createPortalBody(body21))->bodyColor = b2Color(0.6f, 1.0f, 0.5f, 0.5f);
+   (portalWorld->createPortalBody(body2))->bodyColor = b2Color(1.0f, 0.6f, 0.5f, 0.5f);
+   (portalWorld->createPortalBody(body20))->bodyColor = b2Color(0.5f, 0.6f, 1.0f, 0.5f);
+   (portalWorld->createPortalBody(body21))->bodyColor = b2Color(0.6f, 1.0f, 0.5f, 0.5f);
 
 #if 0
-    //artificial kinematic body
+    artificial kinematic body
     p = b2Vec2(6.0f, -6.0f);
     s = b2Vec2(0.5f, 0.2f);
     b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
@@ -538,4 +542,22 @@ void testCase4(PortalWorld* portalWorld){
     for (int i = 0; i < n; i+=2){
         linePortals[i]->connect(linePortals[i + 1], true, (i + 1) % 2, 0);
     }
+}
+
+void multiReleaseTest(PortalWorld* portalWorld){
+    createEdge(b2Vec2(-100.0f, -10.0f), b2Vec2(+100.0f, -10.0f), portalWorld, b2_staticBody);
+    
+    Portal* portal1 = portalWorld->createPortal(b2Vec2(0.0f, -5.0f), b2Vec2(0.0f, +1.0f), 5.0f);
+    Portal* portal2 = portalWorld->createPortal(b2Vec2(0.0f, +5.0f), b2Vec2(0.0f, -1.0f), 5.0f);
+    
+    portal1->connect(portal2);
+    portal1->connect(portal2, true, 1, 1);
+    
+    b2Body* body1 = createWbody(portalWorld, b2Vec2(+4.0f, -7.5f), 540.0f, 100, 0.16f, 3.0f, 0.008f);
+    PortalBody* b1 = portalWorld->createPortalBody(body1);
+
+    body1->ApplyTorque(10000.0f, true);
+
+    b2Body* body2 = createObody(portalWorld, b2Vec2(-15.0f, 0.0f), 540.0f, 50, 0.3f, 3.0f, 0.008f);
+    PortalBody* b2 = portalWorld->createPortalBody(body2);
 }

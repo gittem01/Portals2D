@@ -8,6 +8,8 @@
 #include <map>
 #include <GLFW/glfw3.h>
 
+#define RENDER_COLOURFUL 0
+
 struct bodyData;
 struct portalConnection;
 
@@ -29,7 +31,8 @@ typedef struct
 } bodyCollisionStatus;
 
 
-class PortalBody{
+class PortalBody
+{
     
 friend class PortalWorld;
 friend class ContactListener;
@@ -68,6 +71,7 @@ private:
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
     void handleOut(b2Fixture* fix, Portal* portal, int out);
+    void releaseOut2(b2Fixture* fix, Portal* portal);
 
     float getArea(b2Fixture* fix, int status);
 

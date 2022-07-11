@@ -176,7 +176,7 @@ void PortalWorld::portalUpdate(){
         p->postHandle();
     }
     
-    rayHandler->sendRay(b2Vec2(-10.0f, 10.0f), b2Vec2(1, -1), 15.0f);
+    rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
 
     glLineWidth(3.0f);
     for (rayData* rd : rayHandler->rayResult){
@@ -359,10 +359,10 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
 
             if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
-                bool rayCheck;
-                int side = collPortal->getFixtureSide(fix);
+                int fixSide = collPortal->getFixtureSide(fix);
                 
-                if (side == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
+                bool rayCheck;
+                if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
                 else rayCheck = 1;
 
                 if (rayCheck){
@@ -378,11 +378,47 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 }
             }
             else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
-                portal2->releaseFixtures[c->side2].insert(f);
-                col->portal = portal2;
-                col->side = c->side2;
-                col->status = 0;
-                npb->fixtureCollisions[f]->insert(col);
+                if (collPortal->collidingFixtures[side ^ 1].find(fix) != collPortal->collidingFixtures[side ^ 1].end()){
+                    portal2->releaseFixtures[c->side2][f] = 2;
+                    col->portal = portal2;
+                    col->side = c->side2;
+                    col->status = 0;
+                    npb->fixtureCollisions[f]->insert(col);
+
+                    bool rayCheck;
+                    int fixSide = collPortal->getFixtureSide(fix);
+                    if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
+                    else rayCheck = 1;
+
+                    if (!rayCheck){
+                        portal2->releaseFixtures[c->side2][f]--;
+                    }
+                }
+                else if (collPortal->releaseFixtures[side ^ 1].find(fix) != collPortal->releaseFixtures[side ^ 1].end()){
+                    portal2->releaseFixtures[c->side2][f] = collPortal->releaseFixtures[side ^ 1][fix] + 2;
+                    col->portal = portal2;
+                    col->side = c->side2;
+                    col->status = 0;
+                    npb->fixtureCollisions[f]->insert(col);
+
+                    if (collPortal->releaseFixtures[side ^ 1][fix] % 2 == 0){
+                        bool rayCheck;
+                        int fixSide = collPortal->getFixtureSide(fix);
+                        if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
+                        else rayCheck = 1;
+
+                        if (!rayCheck){
+                            portal2->releaseFixtures[c->side2][f]--;
+                        }
+                    }
+                }
+                else{
+                    portal2->releaseFixtures[c->side2][f] = 1;
+                    col->portal = portal2;
+                    col->side = c->side2;
+                    col->status = 0;
+                    npb->fixtureCollisions[f]->insert(col);
+                }
             }
             else{
                 free(col);

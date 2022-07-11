@@ -74,17 +74,21 @@ public:
 
 class PortalRay : public b2RayCastCallback
 {
+
+friend class PortalWorld;
+
 private:
+    PortalRay(PortalWorld* pWorld);
+    
     void sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal);
     void prepareRaySend();
 
-public:
     PortalWorld* pWorld;
     float minFraction = 1.0f;
 
     int maxRayCount = 30;
 
-    // ray fraction of the portal midFixture(collision point on the midFixture)
+    // ray fraction of the portal midFixture (collision point on the midFixture)
     float portalFraction = 1.0f;
 
     b2Fixture* closestFixture{};
@@ -96,8 +100,6 @@ public:
     // should resolve portal ray hitting issue in that case
     // if smallestFraction + portalThold < portalFraction then portal hit
     float portalThold = 0.0001f;
-
-    PortalRay(PortalWorld* pWorld);
     
     void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex=0, Portal* rayOutPortal=NULL);
 
@@ -108,7 +110,15 @@ public:
     float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction);
 };
 
-class PortalWorld : public b2World{
+class PortalWorld : public b2World
+{
+
+friend class TestPlayer;
+friend class PortalBody;
+friend class Portal;
+friend class PortalRay;
+friend class b2World;
+friend class ContactListener;
 
 private:
     DebugDrawer* drawer;
@@ -148,11 +158,4 @@ public:
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
-
-    friend class TestPlayer;
-    friend class PortalBody;
-    friend class Portal;
-    friend class PortalRay;
-    friend class b2World;
-    friend class ContactListener;
 };
