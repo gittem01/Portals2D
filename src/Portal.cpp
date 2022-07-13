@@ -18,13 +18,15 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     calculatePoints();
     createPortalBody();
     
+    float inMargin = 0.01f / b2Distance(points[0], points[1]);
+
     this->rcInp1.p1 = points[0];
     this->rcInp1.p2 = points[1];
-    this->rcInp1.maxFraction = 1.0f;
+    this->rcInp1.maxFraction = 1.0f - inMargin;
 
     this->rcInp2.p1 = points[1];
     this->rcInp2.p2 = points[0];
-    this->rcInp2.maxFraction = 1.0f;
+    this->rcInp2.maxFraction = 1.0f - inMargin;
 
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
 }
@@ -259,16 +261,11 @@ bool Portal::rayCheck(b2Fixture* fix){
     
     res2 = fix->RayCast(&rcOutput, rcInp2, b2_dynamicBody);
 
-    return res1 && res2;
+    return res1 || res2;
 }
 
-// collision started from side 0 : 0
-// collision started from side 1 : 1
-// released from side 0 : 2
-// released from side 1 : 3
-// released without being inserted into the releaseFixtures set: 4
 PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
-    const float angleThold = 0.005f;
+    const float angleThold = 0.0001f;
     PortalCollisionType ret = DEFAULT_COLLISION;
     
     b2WorldManifold wManifold;

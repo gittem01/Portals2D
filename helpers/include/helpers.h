@@ -556,9 +556,9 @@ void multiReleaseTest(PortalWorld* portalWorld){
     b2Body* body1 = createWbody(portalWorld, b2Vec2(+6.0f, -7.5f), 540.0f, 100, 0.16f, 3.0f, 0.008f);
     PortalBody* b1 = portalWorld->createPortalBody(body1);
 
-    b2Body* body2 = createObody(portalWorld, b2Vec2(-15.0f, 0.0f), 1080.0f, 50, 0.3f, 3.0f, 0.01f);
+    b2Body* body2 = createObody(portalWorld, b2Vec2(-15.0f, -5.0f), 1080.0f, 50, 0.3f, 3.0f, 0.01f);
     PortalBody* b2 = portalWorld->createPortalBody(body2);
 
-    b2Body* body3 = createBox(b2Vec2(0, 0), b2Vec2(10, 1), portalWorld, b2_dynamicBody);
+    b2Body* body3 = createBox(b2Vec2(0, 0), b2Vec2(30, 0.5), portalWorld, b2_dynamicBody);
     PortalBody* b3 = portalWorld->createPortalBody(body3);
 }
