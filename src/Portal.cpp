@@ -18,15 +18,13 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     calculatePoints();
     createPortalBody();
     
-    float rcThold = (b2_lengthUnitsPerMeter * portal_rayThreshold) / b2Distance(points[0], points[1]);
-
     this->rcInp1.p1 = points[0];
     this->rcInp1.p2 = points[1];
-    this->rcInp1.maxFraction = 1.0f - rcThold;
+    this->rcInp1.maxFraction = 1.0f;
 
     this->rcInp2.p1 = points[1];
     this->rcInp2.p2 = points[0];
-    this->rcInp2.maxFraction = 1.0f - rcThold;
+    this->rcInp2.maxFraction = 1.0f;
 
     this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
 }
@@ -148,15 +146,15 @@ int Portal::getPointSide(b2Vec2 point){
     return pWorld->isLeft(points[1], points[0], point, 0.0f);
 }
 
-int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+PortalCollisionType Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-    if (!bData || bData->type != PORTAL_BODY) return 0;
+    if (!bData || bData->type != PORTAL_BODY) return DEFAULT_COLLISION;
     
-    int ret = -1;
+    PortalCollisionType ret = DEFAULT_COLLISION;
 
     if (fix1 == collisionSensor){
         prepareFixtures.insert(fix2);
-        ret = 5;
+        ret = PREPARE_IN;
     }
     else if (fix1 == midFixture){
         ret = handleCollidingFixtures(contact, fix1, fix2);
@@ -165,31 +163,31 @@ int Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2)
     return ret;
 }
 
-int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+PortalCollisionType Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-    if (!bData || bData->type != PORTAL_BODY) return 0;
+    if (!bData || bData->type != PORTAL_BODY) return DEFAULT_COLLISION;
 
-    int ret = -1;
+    PortalCollisionType ret = DEFAULT_COLLISION;
 
     PortalBody* pBody = (PortalBody*)bData->data;
 
     if (fix1 == collisionSensor){
         prepareFixtures.erase(fix2);
-        ret = 6;
+        ret = PREPARE_OUT;
     }
     else if (fix1 == midFixture){
         int side = getFixtureSide(fix2);
 
         if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
             releaseFixtures[1 ^ side][fix2] = 1;
-            ret = 3 - side;
+            ret = (PortalCollisionType)((int)COLLIDING_RELEASE_0 << (1 ^ side));
             collidingFixtures[0].erase(fix2);
             collidingFixtures[1].erase(fix2);
             
             return ret;
         }
         else if (collidingFixtures[side].find(fix2) != collidingFixtures[side].end()){
-            ret = 4;
+            ret = (PortalCollisionType)((int)COLLIDING_NONE_0 << side);
         }
         collidingFixtures[0].erase(fix2);
         collidingFixtures[1].erase(fix2);
@@ -200,7 +198,7 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
             if (f2Stat0 != releaseFixtures[0].end()){
                 if (f2Stat0->second % 2 == 0){
                     f2Stat0->second++;
-                    ret = 7;
+                    ret = E_COLLIDING_RELEASE_0;
                 }
             }
 
@@ -223,7 +221,7 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
             if (f2Stat1 != releaseFixtures[1].end()){
                 if (f2Stat1->second % 2 == 0){
                     f2Stat1->second++;
-                    ret = 7;
+                    ret = E_COLLIDING_RELEASE_1;
                 }
             }
         }
@@ -232,8 +230,8 @@ int Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     return ret;
 }
 
-int Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
-    int ret = -1;
+PortalCollisionType Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    PortalCollisionType ret = DEFAULT_COLLISION;
     
     if (fix1 == midFixture){
         ret = handleCollidingFixtures(contact, fix1, fix2);
@@ -261,7 +259,7 @@ bool Portal::rayCheck(b2Fixture* fix){
     
     res2 = fix->RayCast(&rcOutput, rcInp2, b2_dynamicBody);
 
-    return res1 || res2;
+    return res1 && res2;
 }
 
 // collision started from side 0 : 0
@@ -269,9 +267,9 @@ bool Portal::rayCheck(b2Fixture* fix){
 // released from side 0 : 2
 // released from side 1 : 3
 // released without being inserted into the releaseFixtures set: 4
-int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     const float angleThold = 0.005f;
-    int ret = -1;
+    PortalCollisionType ret = DEFAULT_COLLISION;
     
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
@@ -297,7 +295,7 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
                     f2Stat1->second--;
                 }
                 else if (val % 2 != 0){
-                    if (iter1 == collidingFixtures[1].end()) ret = 1;
+                    if (iter1 == collidingFixtures[1].end()) ret = RELEASE_COLLIDING_1;
                     collidingFixtures[1].insert(fix2);
                     releaseFixtures[1].erase(fix2);
                 }
@@ -305,12 +303,11 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
             else if (iter1 == collidingFixtures[1].end() && connections[0].size() > 0)
             {
                 if (f2Stat0 == releaseFixtures[0].end()){
-                    if (iter0 == collidingFixtures[0].end()) ret = 0;
+                    if (iter0 == collidingFixtures[0].end()) ret = NONE_COLLIDING_0;
                     collidingFixtures[0].insert(fix2);
                 }
                 else if (f2Stat0->second % 2 == 1){
                     f2Stat0->second++;
-                    ret = 7;
                 }
             }
         }
@@ -322,7 +319,7 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
                     f2Stat0->second--;
                 }
                 else if (val % 2 != 0){
-                    if (iter0 == collidingFixtures[0].end()) ret = 0;
+                    if (iter0 == collidingFixtures[0].end()) ret = RELEASE_COLLIDING_0;
                     collidingFixtures[0].insert(fix2);
                     releaseFixtures[0].erase(fix2);
                 }
@@ -330,12 +327,11 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
             else if (iter0 == collidingFixtures[0].end() && connections[1].size() > 0)
             {
                 if (f2Stat1 == releaseFixtures[1].end()){
-                    if (iter1 == collidingFixtures[1].end()) ret = 1;
+                    if (iter1 == collidingFixtures[1].end()) ret = NONE_COLLIDING_1;
                     collidingFixtures[1].insert(fix2);
                 }
                 else if (f2Stat1->second % 2 == 1){
                     f2Stat1->second++;
-                    ret = 7;
                 }
             }
         }
@@ -344,17 +340,17 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
         if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
             releaseFixtures[1 ^ side][fix2] = 1;
             collidingFixtures[1 ^ side].erase(fix2);
-            ret = 3 - side;
+            ret = (PortalCollisionType)((int)COLLIDING_RELEASE_0 << (1 ^ side));
         }
         else if (collidingFixtures[side].find(fix2) != collidingFixtures[side].end()){
             collidingFixtures[side].erase(fix2);
-            ret = 4;
+            ret = (PortalCollisionType)((int)COLLIDING_NONE_0 << side);
         }
         
         if (f2Stat0 != releaseFixtures[0].end() && f2Stat0->second % 2 == 0){
             if (side){
                 f2Stat0->second++;
-                ret = 7;
+                ret = E_COLLIDING_RELEASE_0;
             }
             else{
                 f2Stat0->second--;
@@ -363,7 +359,7 @@ int Portal::handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixtu
         else if (f2Stat1 != releaseFixtures[1].end() && f2Stat1->second % 2 == 0){
             if (!side){
                 f2Stat1->second++;
-                ret = 7;
+                ret = E_RELEASE_COLLIDING_1;
             }
             else{
                 f2Stat1->second--;

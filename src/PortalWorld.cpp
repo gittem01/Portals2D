@@ -293,6 +293,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         body2->SetLinearVelocity(lvToSet);
 
         bool allOut = true;
+        int fixMargin = 0;
         for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
             b2Fixture* f;
             if (fix->GetType() == b2Shape::Type::e_polygon){
@@ -361,15 +362,34 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
                 int fixSide = collPortal->getFixtureSide(fix);
                 
-                bool rayCheck;
+                bool rayCheck = false;
+                bool release = false;
                 if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
-                else rayCheck = 1;
+                else{
+                    bool check = collPortal->rayCheck(fix);
+                    if (!check){
+                        release = true;
+                    }
+                    else{
+                        rayCheck = true;
+                    }
+                }
 
                 if (rayCheck){
+                    fixMargin -= 1;
                     portal2->collidingFixtures[c->side2].insert(f);
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 1;
+                    npb->fixtureCollisions[f]->insert(col);
+                    allOut = false;
+                }
+                else if (release){
+                    fixMargin -= 2;
+                    portal2->releaseFixtures[c->side2][f] = 1;
+                    col->portal = portal2;
+                    col->side = c->side2;
+                    col->status = 0;
                     npb->fixtureCollisions[f]->insert(col);
                     allOut = false;
                 }
@@ -379,6 +399,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             }
             else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
                 if (collPortal->collidingFixtures[side ^ 1].find(fix) != collPortal->collidingFixtures[side ^ 1].end()){
+                    fixMargin -= 2;
                     portal2->releaseFixtures[c->side2][f] = 2;
                     col->portal = portal2;
                     col->side = c->side2;
@@ -395,6 +416,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                     }
                 }
                 else if (collPortal->releaseFixtures[side ^ 1].find(fix) != collPortal->releaseFixtures[side ^ 1].end()){
+                    fixMargin -= 2;
                     portal2->releaseFixtures[c->side2][f] = collPortal->releaseFixtures[side ^ 1][fix] + 2;
                     col->portal = portal2;
                     col->side = c->side2;
@@ -413,6 +435,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                     }
                 }
                 else{
+                    fixMargin -= 2;
                     portal2->releaseFixtures[c->side2][f] = 1;
                     col->portal = portal2;
                     col->side = c->side2;
@@ -430,9 +453,13 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 allOut = false;
             }
         }
+
         createPortalBody_i(npb, pBody, false);
         if (allOut) destroyBodies.insert(pBody);
         else connectBodies(pBody, npb, c, side, calcAngle2(dir1) - calcAngle2(dir2));
+
+        npb->numFixtures = pBody->numFixtures;
+        npb->outFixtures[c->side2][portal2] = npb->numFixtures + fixMargin;
     }
 
     return retBodies;

@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 
 #define RENDER_COLOURFUL 0
+#define ODD_MASK 0b10101010101010101010101010101010
 
 struct bodyData;
 struct portalConnection;
@@ -16,6 +17,34 @@ struct portalConnection;
 class Portal;
 class PortalBody;
 class PortalWorld;
+
+enum PortalCollisionType
+{
+    // status type : BEFORE_AFTER_SIDE
+    NONE_COLLIDING_0 = 1 << 0,
+    NONE_COLLIDING_1 = 1 << 1,
+
+    COLLIDING_NONE_0 = 1 << 2,
+    COLLIDING_NONE_1 = 1 << 3,
+
+    COLLIDING_RELEASE_0 = 1 << 4,
+    COLLIDING_RELEASE_1 = 1 << 5,
+
+    RELEASE_COLLIDING_0 = 1 << 6,
+    RELEASE_COLLIDING_1 = 1 << 7,
+
+    // For release values greater than 1
+    E_RELEASE_COLLIDING_0 = 1 << 8,
+    E_RELEASE_COLLIDING_1 = 1 << 9,
+
+    E_COLLIDING_RELEASE_0 = 1 << 10,
+    E_COLLIDING_RELEASE_1 = 1 << 11,
+
+    PREPARE_IN = 1 << 12,
+    PREPARE_OUT = 1 << 13,
+
+    DEFAULT_COLLISION = 1 << 31,
+};
 
 typedef struct
 {
@@ -42,9 +71,11 @@ public:
     std::vector<PortalBody*>* worldIndex;
     std::vector<bodyCollisionStatus*>* bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
+    std::map<Portal*, int> outFixtures[2];
 
     b2Color bodyColor;
     b2Body* body;
+    int numFixtures;
     float offsetAngle;
 
 private:
@@ -66,11 +97,11 @@ private:
     void collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     void preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
-    void destroyCheck(b2Fixture* fix, Portal* portal);
-    bool shouldCreate(b2Body* body, Portal* portal, int side);
+    void destroyCheck(b2Fixture* fix, Portal* portal, PortalCollisionType out);
+    bool shouldCreate(b2Body* body, Portal* portal, PortalCollisionType out);
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
-    void outHelper(b2Fixture* fix, Portal* portal, int status, int side);
-    void handleOut(b2Fixture* fix, Portal* portal, int out);
+    void outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out);
+    void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     void releaseOut2(b2Fixture* fix, Portal* portal);
 
     float getArea(b2Fixture* fix, int status);

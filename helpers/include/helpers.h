@@ -371,7 +371,7 @@ void testRooms(PortalWorld* portalWorld){
 }
 
 void testCase1(PortalWorld* portalWorld){
-    b2Vec2 gravity(0.0f, -40.00f);
+    b2Vec2 gravity(0.0f, -10.0f);
     portalWorld->SetGravity(gravity);
 
     float yPos = -4.0f;
@@ -547,17 +547,18 @@ void testCase4(PortalWorld* portalWorld){
 void multiReleaseTest(PortalWorld* portalWorld){
     createEdge(b2Vec2(-100.0f, -10.0f), b2Vec2(+100.0f, -10.0f), portalWorld, b2_staticBody);
     
-    Portal* portal1 = portalWorld->createPortal(b2Vec2(0.0f, -5.0f), b2Vec2(0.0f, +1.0f), 5.0f);
-    Portal* portal2 = portalWorld->createPortal(b2Vec2(0.0f, +5.0f), b2Vec2(0.0f, -1.0f), 5.0f);
+    Portal* portal1 = portalWorld->createPortal(b2Vec2(0.0f, -3.0f), b2Vec2(0.0f, +1.0f), 5.0f);
+    Portal* portal2 = portalWorld->createPortal(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -1.0f), 5.0f);
     
     portal1->connect(portal2);
     portal1->connect(portal2, true, 1, 1);
     
-    b2Body* body1 = createWbody(portalWorld, b2Vec2(+4.0f, -7.5f), 540.0f, 100, 0.16f, 3.0f, 0.008f);
+    b2Body* body1 = createWbody(portalWorld, b2Vec2(+6.0f, -7.5f), 540.0f, 100, 0.16f, 3.0f, 0.008f);
     PortalBody* b1 = portalWorld->createPortalBody(body1);
 
-    body1->ApplyTorque(10000.0f, true);
-
-    b2Body* body2 = createObody(portalWorld, b2Vec2(-15.0f, 0.0f), 540.0f, 50, 0.3f, 3.0f, 0.008f);
+    b2Body* body2 = createObody(portalWorld, b2Vec2(-15.0f, 0.0f), 1080.0f, 50, 0.3f, 3.0f, 0.01f);
     PortalBody* b2 = portalWorld->createPortalBody(body2);
+
+    b2Body* body3 = createBox(b2Vec2(0, 0), b2Vec2(10, 1), portalWorld, b2_dynamicBody);
+    PortalBody* b3 = portalWorld->createPortalBody(body3);
 }

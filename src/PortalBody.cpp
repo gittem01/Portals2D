@@ -22,6 +22,7 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
 
     this->body->SetGravityScale(0.0f);
     this->offsetAngle = 0;
+    this->bodyColor = bodyColor;
 
     bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
     bd->data = this;
@@ -29,11 +30,12 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld, b2Color bodyColor){
     bd->extraData = nullptr;
     body->GetUserData().pointer = (uintptr_t)bd;
 
-    this->bodyColor = bodyColor;
 
+    this->numFixtures = 0;
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         fixtureCollisions[fix] = new std::set<portalCollision*>();
         allParts[fix] = new std::vector<std::vector<b2Vec2>*>();
+        numFixtures++;
     }
 }
 
@@ -95,7 +97,7 @@ void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* 
 
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
-        int out = p->collisionBegin(contact, fix2, fix1);
+        PortalCollisionType out = p->collisionBegin(contact, fix2, fix1);
         handleOut(fix1, p, out);
     }
 }
@@ -110,7 +112,7 @@ void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
-        int out = p->collisionEnd(contact, fix2, fix1);
+        PortalCollisionType out = p->collisionEnd(contact, fix2, fix1);
         handleOut(fix1, p, out);
     }
 }
@@ -126,7 +128,7 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 
     if (bData && bData->type == PORTAL){
         Portal* portal = (Portal*)bData->data;
-        int out = portal->preCollision(contact, fix2, fix1);
+        PortalCollisionType out = portal->preCollision(contact, fix2, fix1);
         handleOut(fix1, portal, out);
     }
 }
@@ -162,8 +164,33 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     return true;
 }
 
-void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side){
+void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out){
+    int side = (uint32_t)out & ODD_MASK ? 1 : 0;
+    if (status == 0){
+        outFixtures[side][portal]--;
+    }
+    else{
+        if (out & (RELEASE_COLLIDING_0 | RELEASE_COLLIDING_1)){
+            outFixtures[side][portal]++;
+        }
+        else if (out & (NONE_COLLIDING_0 | NONE_COLLIDING_1)){
+            if (outFixtures[side].find(portal) == outFixtures[side].end()){
+                outFixtures[side][portal] = numFixtures - 1;
+            }
+            else{
+                outFixtures[side][portal]--;
+            }
+        }
+    }
+
+    // Extra void portal logic
     if (portal->isVoid[side] && status == 0){
+#if 1
+        if (outFixtures[side][portal] == -numFixtures){
+            pWorld->destroyBodies.insert(this);
+            return;
+        }
+#else
         bool found = false;
         for (b2Fixture* f = fix->GetBody()->GetFixtureList(); f; f = f->GetNext()){
             if (f == fix) continue;
@@ -178,13 +205,14 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, int side)
             pWorld->destroyBodies.insert(this);
             return;
         }
+#endif
     }
+    // -------------------------------------------------
 
     for (auto& col : *fixtureCollisions[fix]){
         if (col->portal == portal){
-            fixtureCollisions[fix]->erase(col);
-            free(col);
-            break;
+            col->status = status;
+            return;
         }
     }
     portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
@@ -213,14 +241,14 @@ std::vector<PortalBody*> PortalBody::postHandle(){
     return retBodies;
 }
 
-bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, int side){
+bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, PortalCollisionType out){
+    int side = (uint32_t)out & ODD_MASK ? 1 : 0;
     if (portal->isVoid[side]) return false;
 
     bodyData* bd = (bodyData*)bBody->GetUserData().pointer;
     for (bodyCollisionStatus* s : *bodyMaps){
         const auto iter = pWorld->destroyBodies.find(s->body);
         if (iter != pWorld->destroyBodies.end() && s->connection->portal1 == portal){
-            //pWorld->drawer->DrawPoint(s->body->body->GetPosition(), 50.0f, b2Color(1, 0, 0));
             pWorld->destroyBodies.erase(iter);
             break;
         }
@@ -258,39 +286,43 @@ void PortalBody::releaseOut2(b2Fixture* fix, Portal* portal){
     pWorld->destroyBodies.insert(this);
 }
 
-void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
+void PortalBody::handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out){
     switch (out)
     {
-    case 0:
-    case 1:
+    case NONE_COLLIDING_0:
+    case NONE_COLLIDING_1:
+    case RELEASE_COLLIDING_0:
+    case RELEASE_COLLIDING_1:
         if (shouldCreate(fix->GetBody(), portal, out)){
+            int side = (uint32_t)out & ODD_MASK ? 1 : 0;
             bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
-            *s = {this, portal, out};
+            *s = {this, portal, side};
             createBodies.push_back(s);
-            //pWorld->drawer->DrawPoint(body->GetPosition() + b2Vec2(0.05f, 0.0f), 10.0f, b2Color(0.0f, 0.0f, 1.0f));
         }
         outHelper(fix, portal, 1, out);
         break;
     
-    case 2:
-        outHelper(fix, portal, 0, 0);
+    case COLLIDING_RELEASE_0:
+        outHelper(fix, portal, 0, out);
         break;
-    case 3:
-        outHelper(fix, portal, 0, 1);
+    case COLLIDING_RELEASE_1:
+        outHelper(fix, portal, 0, out);
         break;
 
-    case 5:
+    case PREPARE_IN:
         prepareMaps[fix].insert(portal);
         break;
-    case 6:
+    case PREPARE_OUT:
         prepareMaps[fix].erase(portal);
         break;
 
-    case 7:
+    case E_COLLIDING_RELEASE_0:
+    case E_COLLIDING_RELEASE_1:
         releaseOut2(fix, portal);
         break;
 
-    case 4:
+    case COLLIDING_NONE_0:
+    case COLLIDING_NONE_1:
         std::set<portalCollision*>* coll = fixtureCollisions[fix];
         for (auto& a : *coll){
             if (a->portal == portal && a->status == 1){
@@ -299,12 +331,26 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, int out){
                 break;
             }
         }
-        destroyCheck(fix, portal);
+        destroyCheck(fix, portal, out);
         break;
     }
 }
 
-void PortalBody::destroyCheck(b2Fixture* f, Portal* portal){
+void PortalBody::destroyCheck(b2Fixture* f, Portal* portal, PortalCollisionType out){
+    int side = (uint32_t)out & ODD_MASK ? 1 : 0;
+    outFixtures[side][portal]++;
+
+// Experimental
+// Disable it if it is causing problems
+#if 1
+    if (outFixtures[side][portal] == numFixtures){
+        for (bodyCollisionStatus* s : *bodyMaps){
+            if (s->connection->portal1 == portal && s->connection->side1 == side){
+                pWorld->destroyBodies.insert(s->body);
+            }
+        }
+    }
+#else
     for (b2Fixture* fix = f->GetBody()->GetFixtureList(); fix; fix = fix->GetNext()){
         if (fix == f) continue;
         for (portalCollision* coll : *fixtureCollisions[fix]){
@@ -322,6 +368,7 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal){
             pWorld->destroyBodies.insert(s->body);
         }
     }
+#endif
 }
 
 void rotateVec(b2Vec2* vec, float angle){

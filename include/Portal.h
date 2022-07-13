@@ -3,8 +3,6 @@
 #include "PortalBody.h"
 #include "PortalWorld.h"
 
-#define portal_rayThreshold 0.02f
-
 class Portal;
 
 typedef struct portalConnection {
@@ -58,9 +56,9 @@ public:
     int getPointSide(b2Vec2 point);
 
     // fix1 is always a fixture of the portal
-    int collisionBegin (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
-    int collisionEnd   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
-    int preCollision   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    PortalCollisionType collisionBegin (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    PortalCollisionType collisionEnd   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    PortalCollisionType preCollision   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
     void postHandle();
 
@@ -74,7 +72,7 @@ public:
     void evaluateWorld();
 
     int getFixtureSide(b2Fixture* fix);
-    int handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    PortalCollisionType handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
