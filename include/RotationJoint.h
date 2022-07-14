@@ -14,7 +14,6 @@ private:
     PortalBody* pBodyA;
     PortalBody* pBodyB;
 
-public:
     RotationJoint(const b2PrismaticJointDef* def, const bool rev, PortalBody* pb1, PortalBody* pb2, float pAngle) : b2PrismaticJoint(def)
     {
         isReversed = rev;

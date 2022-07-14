@@ -3,7 +3,9 @@
 #include "PortalWorld.h"
 #include "glm/common.hpp"
 
+#define RENDER_COLOURFUL 0
 #define CIRCLE_POINTS 50
+#define ODD_MASK 0b10101010101010101010101010101010
 
 #if RENDER_COLOURFUL
     b2Color colors[] = {

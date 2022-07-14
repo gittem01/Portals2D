@@ -120,6 +120,19 @@ friend class PortalRay;
 friend class b2World;
 friend class ContactListener;
 
+public:
+    bool drawReleases;
+    b2Color releaseColor;
+    void drawUpdate();
+
+    std::vector<std::vector<PortalBody*>*> bodyIndices;
+
+    PortalWorld(DebugDrawer* drawer);
+    void PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations);
+
+    Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
+    PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
+
 private:
     DebugDrawer* drawer;
     PortalRay* rayHandler;
@@ -136,26 +149,13 @@ private:
     static void normalize(b2Vec2* vec);
     static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
 
-    // baseBody should not be NULL if isNew is false
-    void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
-
-    void CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
-
-public:
-    bool drawReleases;
-    b2Color releaseColor;
-
-    std::vector<std::vector<PortalBody*>*> bodyIndices;
-
-    PortalWorld(DebugDrawer* drawer);
+    void globalPostHandle();
 
     std::vector<PortalBody*> createCloneBody(bodyStruct* s);
     void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot);
 
-    void portalUpdate();
-    void globalPostHandle();
-    void drawUpdate();
+    // baseBody should not be NULL if isNew is false
+    void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
 
-    Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
-    PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
+    void CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
 };

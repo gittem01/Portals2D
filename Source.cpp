@@ -39,9 +39,7 @@ int main(void)
             for (int i = 0; i < totalIter; i++) {
                 mjh.mouseHandler(frame, totalIter);
 
-                pWorld->Step(1.0f / (vsyncFps * totalIter), 8, 3);
-
-                pWorld->portalUpdate();
+                pWorld->PortalStep(1.0f / (vsyncFps * totalIter), 8, 3);
             }
 
             //pWorld->DebugDraw();

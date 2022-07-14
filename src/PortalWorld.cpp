@@ -166,14 +166,12 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
     }
 }
 
-void PortalWorld::portalUpdate(){
+void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations){
+    Step(timeStep, velocityIterations, positionIterations);
+    
     for (int i = 0; i < portalBodies.size(); i++){
         PortalBody* body = portalBodies.at(i);
         body->postHandle();
-    }
-
-    for (Portal* p : portals) {
-        p->postHandle();
     }
     
     rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);

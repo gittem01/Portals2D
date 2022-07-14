@@ -89,7 +89,7 @@ Portal::~Portal() {
 }
 
 void Portal::calculatePoints(){
-    this->angle = pWorld->calcAngle2(this->dir) + b2_pi / 2.0f;
+    float angle = pWorld->calcAngle2(this->dir) + b2_pi / 2.0f;
 
     points[0].x = pos.x + cos(angle) * size;
     points[0].y = pos.y + sin(angle) * size;
@@ -609,10 +609,6 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
     }
 
     return true;
-}
-
-void Portal::postHandle(){
-
 }
 
 void Portal::draw(){

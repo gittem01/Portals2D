@@ -8,9 +8,6 @@
 #include <map>
 #include <GLFW/glfw3.h>
 
-#define RENDER_COLOURFUL 0
-#define ODD_MASK 0b10101010101010101010101010101010
-
 struct bodyData;
 struct portalConnection;
 
@@ -67,13 +64,12 @@ friend class PortalWorld;
 friend class ContactListener;
 
 public:
+    b2Color bodyColor;
 
     std::vector<PortalBody*>* worldIndex;
     std::vector<bodyCollisionStatus*>* bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
-    std::map<Portal*, int> outFixtures[2];
 
-    b2Color bodyColor;
     b2Body* body;
     int numFixtures;
     float offsetAngle;
@@ -85,6 +81,7 @@ private:
 
     std::map<b2Fixture*, std::set<Portal*>> prepareMaps;
     std::vector<bodyStruct*> createBodies;
+    std::map<Portal*, int> outFixtures[2];
 
     // index 0 reserved for drawVertices
     // remaining vertices are release vertices

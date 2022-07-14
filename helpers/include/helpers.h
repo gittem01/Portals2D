@@ -419,8 +419,8 @@ void testCase1(PortalWorld* portalWorld){
     b2Vec2 s(0.75f, 0.75f);
     b2Body* body2 = createPortalCube(p, s, portalWorld, b2_dynamicBody);
     b2Body* body20 = createPortalCube(p + b2Vec2(1, 0), s, portalWorld, b2_dynamicBody);
-    b2Body* body21 = createPortalCube(p + b2Vec2(2, 0), s, pWorld, b2_dynamicBody);
-    //b2Body* body21 = createBox(p + b2Vec2(2, 0), s, portalWorld, b2_dynamicBody);
+    //b2Body* body21 = createPortalCube(p + b2Vec2(2, 0), s, pWorld, b2_dynamicBody);
+    b2Body* body21 = createBox(p + b2Vec2(2, 0), s, portalWorld, b2_dynamicBody);
 
    (portalWorld->createPortalBody(body2))->bodyColor = b2Color(1.0f, 0.6f, 0.5f, 0.5f);
    (portalWorld->createPortalBody(body20))->bodyColor = b2Color(0.5f, 0.6f, 1.0f, 0.5f);
@@ -546,7 +546,8 @@ void testCase4(PortalWorld* portalWorld){
 
 void multiReleaseTest(PortalWorld* portalWorld){
     createEdge(b2Vec2(-100.0f, -10.0f), b2Vec2(+100.0f, -10.0f), portalWorld, b2_staticBody);
-    
+    //createEdge(b2Vec2(7, -1), b2Vec2(3, -5), portalWorld, b2_staticBody);
+
     Portal* portal1 = portalWorld->createPortal(b2Vec2(0.0f, -3.0f), b2Vec2(0.0f, +1.0f), 5.0f);
     Portal* portal2 = portalWorld->createPortal(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -1.0f), 5.0f);
     
