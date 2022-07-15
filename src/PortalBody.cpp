@@ -151,9 +151,61 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
             return true;
         }
 
-        if (coll->status == 0) return false;
+        bool reverse = false;
+        auto iter1 = coll->portal->releaseFixtures[coll->side].find(fix1);
+        auto iter2 = coll->portal->releaseFixtures[coll->side].find(fix2);
+        bool found1 = iter1 != coll->portal->releaseFixtures[coll->side].end();
+        bool found2 = iter2 != coll->portal->releaseFixtures[coll->side].end();
+        if (coll->status == 0){
+            if (found2){
+                int diff = iter1->second - iter2->second;
+                if (diff == 0){
+                    return true;
+                }
+                else if (abs(diff) > 1){
+                    return false;
+                }
+                else{
+                    if (iter1->second % 2 == 0){
+                        if (iter2->second > iter1->second){
+                            reverse = true;
+                        }
+                    }
+                    else if (iter1->second > iter2->second){
+                        reverse = true;
+                    }   
+                }
+            }
+            else if (coll->portal->collidingFixtures[coll->side].find(fix2) == coll->portal->collidingFixtures[coll->side].end()){
+                return false;
+            }
+        }
+
+        if (!reverse){
+            if ((found1 && iter1->second == 1 &&
+                coll->portal->collidingFixtures[coll->side].find(fix2) !=
+                coll->portal->collidingFixtures[coll->side].end()) ||
+                (found2 && iter2->second == 1 &&
+                coll->portal->collidingFixtures[coll->side].find(fix1) !=
+                coll->portal->collidingFixtures[coll->side].end()))
+            {
+                reverse = true;
+            }        
+        }
+        if ((   found1 && iter1->second > 1 &&
+                coll->portal->collidingFixtures[coll->side].find(fix2) !=
+                coll->portal->collidingFixtures[coll->side].end()) ||
+            (   found2 && iter2->second > 1 &&
+                coll->portal->collidingFixtures[coll->side].find(fix1) !=
+                coll->portal->collidingFixtures[coll->side].end()) ||
+                (found1 && found2 && abs(iter1->second - iter2->second) > 1))
+        {
+            return false;
+        }
+
         bool shouldCollide = coll->portal->shouldCollide(contact, fix1, fix2, coll);
-        if (!shouldCollide) return false;
+        if (!shouldCollide) return reverse;
+        else if (reverse) return false;
     }
 
     if (fix2->GetBody()->GetType() == b2_staticBody && !fix2->IsSensor() && prepareMaps.find(fix1) != prepareMaps.end()){
@@ -217,6 +269,7 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
             return;
         }
     }
+
     portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
     portCol->portal = portal;
     portCol->status = status;
@@ -325,15 +378,10 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType o
 
     case COLLIDING_NONE_0:
     case COLLIDING_NONE_1:
-        std::set<portalCollision*>* coll = fixtureCollisions[fix];
-        for (auto& a : *coll){
-            if (a->portal == portal && a->status == 1){
-                coll->erase(a);
-                free(a);
-                break;
-            }
-        }
         destroyCheck(fix, portal, out);
+        break;
+
+    default:
         break;
     }
 }
@@ -341,6 +389,15 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType o
 void PortalBody::destroyCheck(b2Fixture* f, Portal* portal, PortalCollisionType out){
     int side = (uint32_t)out & ODD_MASK ? 1 : 0;
     outFixtures[side][portal]++;
+
+    std::set<portalCollision*>* coll = fixtureCollisions[f];
+    for (auto& a : *coll){
+        if (a->portal == portal && a->status == 1){
+            coll->erase(a);
+            free(a);
+            break;
+        }
+    }
 
 // Experimental
 // Disable it if it is causing problems

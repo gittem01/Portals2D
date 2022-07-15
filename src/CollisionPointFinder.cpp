@@ -18,7 +18,7 @@ std::vector<b2Vec2> Portal::getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2)
 	else if (type1 == b2Shape::e_polygon && type2 == b2Shape::e_polygon) {
 		return collidePolygonOther(fix1, fix2, fix2, fix1);
 	}
-	if (type1 == b2Shape::e_circle && type2 == b2Shape::e_circle) {
+	else if (type1 == b2Shape::e_circle && type2 == b2Shape::e_circle) {
 		return collideCircleCircle(fix1, fix2);
 	}
 	else {

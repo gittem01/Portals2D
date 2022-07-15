@@ -459,7 +459,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 
     std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
 
-    if (fix1->GetType() == b2Shape::Type::e_circle){
+    if (fix1->GetType() == b2Shape::Type::e_circle && fix2->GetBody()->GetType() == b2_staticBody){
         b2CircleShape* cShape = (b2CircleShape*)fix1->GetShape();
         b2Vec2 wCenter = fix1->GetBody()->GetWorldPoint(cShape->m_p);
         bool res;
