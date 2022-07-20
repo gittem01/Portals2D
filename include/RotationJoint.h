@@ -58,6 +58,9 @@ private:
             float angle2 = pb2->body->GetAngle() + pb2->offsetAngle;
             m_referenceAngle = angle2 + angle1;
         }
+        else{
+            m_referenceAngle = def->referenceAngle;
+        }
     }
 
     void InitVelocityConstraints(const b2SolverData& data) override
