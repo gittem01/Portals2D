@@ -172,6 +172,8 @@ protected:
 	friend class b2Body;
 	friend class b2Fixture;
 
+	friend class PortalWorld;
+
 	// Flags stored in m_flags
 	enum
 	{

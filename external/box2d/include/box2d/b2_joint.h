@@ -162,6 +162,8 @@ protected:
 	friend class b2Island;
 	friend class b2GearJoint;
 
+	friend class PortalWorld;
+
 	static b2Joint* Create(const b2JointDef* def, b2BlockAllocator* allocator);
 	static void Destroy(b2Joint* joint, b2BlockAllocator* allocator);
 

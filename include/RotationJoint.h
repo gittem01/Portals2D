@@ -2,19 +2,52 @@
 #include <stdio.h>
 
 
-// for now inheriting from b2Joint class is not possible
-// because of the way joints are destroyed
-class RotationJoint : b2PrismaticJoint{
+struct RotationJointDef : public b2JointDef
+{
+    float referenceAngle;
+
+    RotationJointDef()
+	{
+		type = e_unknownJoint;
+		referenceAngle = 0.0f;
+	}
+
+	void Initialize(b2Body* bA, b2Body* bB){
+        bodyA = bA;
+        bodyB = bB;
+	    referenceAngle = bodyB->GetAngle() - bodyA->GetAngle();
+    }
+};
+
+class RotationJoint : b2Joint
+{
 
 friend class PortalWorld;
 
+public:
+    b2Vec2 GetAnchorA() const override { return b2Vec2(); };
+	b2Vec2 GetAnchorB() const override { return b2Vec2(); };
+
+	b2Vec2 GetReactionForce(float inv_dt) const override { return b2Vec2(); };
+	float GetReactionTorque(float inv_dt) const override { return inv_dt * m_impulse.y; };
+
 private:
 
-    bool isReversed;
     PortalBody* pBodyA;
     PortalBody* pBodyB;
+    float m_referenceAngle;
+    bool isReversed;
 
-    RotationJoint(const b2PrismaticJointDef* def, const bool rev, PortalBody* pb1, PortalBody* pb2, float pAngle) : b2PrismaticJoint(def)
+    int32 m_indexA;
+	int32 m_indexB;
+	float m_invMassA;
+	float m_invMassB;
+	float m_invIA;
+	float m_invIB;
+	b2Mat22 m_K;
+    b2Vec2 m_impulse;
+
+    RotationJoint(const RotationJointDef* def, const bool rev, PortalBody* pb1, PortalBody* pb2, float pAngle) : b2Joint(def)
     {
         isReversed = rev;
         pBodyA = pb1;

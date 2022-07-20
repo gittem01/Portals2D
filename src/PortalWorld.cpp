@@ -464,11 +464,11 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
 }
 
 void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot) {
-    b2PrismaticJointDef prismDef;
-    prismDef.Initialize(body1->body, body2->body, b2Vec2(0.0f, 0.0f), b2Vec2(0.0f, 0.0f));
-    prismDef.collideConnected = true;
+    RotationJointDef rotDef;
+    rotDef.Initialize(body1->body, body2->body);
+    rotDef.collideConnected = true;
 
-    CreateRotationJoint(&prismDef, connection->isReversed, body1, body2, angleRot);
+    CreateRotationJoint(&rotDef, connection->isReversed, body1, body2, angleRot);
 
     b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
     b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
@@ -500,13 +500,13 @@ void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConn
 
     anchor1 = center1;
     anchor2 = center2;
-    groundAnchor1 = b2Vec2(dirClone1.x * mult, dirClone1.y * mult);
-    groundAnchor2 = b2Vec2(dirClone2.x * mult, dirClone2.y * mult);
+    groundAnchor1 = mult * dirClone1;
+    groundAnchor2 = mult * dirClone2;
     pulleyDef.Initialize(body1->body, body2->body, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
     CreateJoint(&pulleyDef);
 }
 
-void PortalWorld::CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot){
+void PortalWorld::CreateRotationJoint(RotationJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot){
     b2Assert(IsLocked() == false);
 	if (IsLocked())
 	{
@@ -538,6 +538,92 @@ void PortalWorld::CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed,
 	j->m_edgeB.next = j->m_bodyB->m_jointList;
 	if (j->m_bodyB->m_jointList) j->m_bodyB->m_jointList->prev = &j->m_edgeB;
 	j->m_bodyB->m_jointList = &j->m_edgeB;
+}
+
+void PortalWorld::DestroyRotationJoint(RotationJoint* rj){
+	b2Assert(IsLocked() == false);
+	if (IsLocked())
+	{
+		return;
+	}
+
+	bool collideConnected = rj->m_collideConnected;
+
+	if (rj->m_prev)
+	{
+		rj->m_prev->m_next = rj->m_next;
+	}
+
+	if (rj->m_next)
+	{
+		rj->m_next->m_prev = rj->m_prev;
+	}
+
+	if (rj == m_jointList)
+	{
+		m_jointList = rj->m_next;
+	}
+
+	b2Body* bodyA = rj->m_bodyA;
+	b2Body* bodyB = rj->m_bodyB;
+
+	bodyA->SetAwake(true);
+	bodyB->SetAwake(true);
+
+	if (rj->m_edgeA.prev)
+	{
+		rj->m_edgeA.prev->next = rj->m_edgeA.next;
+	}
+
+	if (rj->m_edgeA.next)
+	{
+		rj->m_edgeA.next->prev = rj->m_edgeA.prev;
+	}
+
+	if (&rj->m_edgeA == bodyA->m_jointList)
+	{
+		bodyA->m_jointList = rj->m_edgeA.next;
+	}
+
+	rj->m_edgeA.prev = nullptr;
+	rj->m_edgeA.next = nullptr;
+
+	if (rj->m_edgeB.prev)
+	{
+		rj->m_edgeB.prev->next = rj->m_edgeB.next;
+	}
+
+	if (rj->m_edgeB.next)
+	{
+		rj->m_edgeB.next->prev = rj->m_edgeB.prev;
+	}
+
+	if (&rj->m_edgeB == bodyB->m_jointList)
+	{
+		bodyB->m_jointList = rj->m_edgeB.next;
+	}
+
+	rj->m_edgeB.prev = nullptr;
+	rj->m_edgeB.next = nullptr;
+
+    m_blockAllocator.Free(rj, sizeof(RotationJoint));
+
+	b2Assert(m_jointCount > 0);
+	--m_jointCount;
+
+	if (collideConnected == false)
+	{
+		b2ContactEdge* edge = bodyB->GetContactList();
+		while (edge)
+		{
+			if (edge->other == bodyA)
+			{
+				edge->contact->FlagForFiltering();
+			}
+
+			edge = edge->next;
+		}
+	}
 }
 
 bool PortalWorld::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){

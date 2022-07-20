@@ -385,13 +385,6 @@ public:
 	/// Dump this body to a file
 	void Dump();
 
-	// CHANGED
-	b2JointEdge* m_jointList;
-	int32 m_islandIndex;
-	b2Sweep m_sweep;		// the swept motion for CCD
-	float m_invMass;
-	float m_invI;
-	// CHANGED
 private:
 
 	friend class b2World;
@@ -411,6 +404,9 @@ private:
 	friend class b2RopeJoint;
 	friend class b2WeldJoint;
 	friend class b2WheelJoint;
+
+	friend class PortalWorld;
+	friend class RotationJoint;
 
 	// m_flags
 	enum
@@ -440,7 +436,10 @@ private:
 
 	uint16 m_flags;
 
+	int32 m_islandIndex;
+
 	b2Transform m_xf;		// the body origin transform
+	b2Sweep m_sweep;		// the swept motion for CCD
 
 	b2Vec2 m_linearVelocity;
 	float m_angularVelocity;
@@ -455,12 +454,13 @@ private:
 	b2Fixture* m_fixtureList;
 	int32 m_fixtureCount;
 
+	b2JointEdge* m_jointList;
 	b2ContactEdge* m_contactList;
 
-	float m_mass;
+	float m_mass, m_invMass;
 
 	// Rotational inertia about the center of mass.
-	float m_I;
+	float m_I, m_invI;
 
 	float m_linearDamping;
 	float m_angularDamping;

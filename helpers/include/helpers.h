@@ -462,7 +462,8 @@ void testCase2(PortalWorld* portalWorld){
     for (int i = 0; i < 300; i++){
         b2Body* body = createBox(b2Vec2(0, 0), b2Vec2(0.3f, 0.3f), portalWorld, b2_dynamicBody);
 
-        (portalWorld->createPortalBody(body))->bodyColor = b2Color(0.0f, 1.0f, 1.0f, 0.5f);
+        (portalWorld->createPortalBody(body))->bodyColor = 
+        b2Color(getRand() / 0.5f + 0.5f, getRand() / 0.5f + 0.5f, getRand() / 0.5f + 0.5f, 0.5f);
     }
 }
 

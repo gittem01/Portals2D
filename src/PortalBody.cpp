@@ -86,6 +86,13 @@ PortalBody::~PortalBody(){
     body->GetUserData().pointer = 0;
     free((void*)bData);
 
+    for (b2Joint* joint = body->GetJointList()->joint; joint; joint = joint->GetNext()){
+        if (joint->GetType() == e_unknownJoint){
+            pWorld->DestroyRotationJoint((RotationJoint*)joint);
+            break;
+        }
+    }
+
     pWorld->DestroyBody(body);
 }
 
@@ -300,19 +307,27 @@ bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, PortalCollisionType
     int side = (uint32_t)out & ODD_MASK ? 1 : 0;
     if (portal->isVoid[side]) return false;
 
-    bodyData* bd = (bodyData*)bBody->GetUserData().pointer;
     for (bodyCollisionStatus* s : *bodyMaps){
-        const auto iter = pWorld->destroyBodies.find(s->body);
-        if (iter != pWorld->destroyBodies.end() && s->connection->portal1 == portal){
-            pWorld->destroyBodies.erase(iter);
-            break;
+        if (s->connection->portal1 == portal){
+            const auto iter = pWorld->destroyBodies.find(s->body);
+            if (iter != pWorld->destroyBodies.end()){
+                pWorld->destroyBodies.erase(iter);
+            }
         }
     }
-    
+    // Experimental
+#if 1
+    const auto iter = outFixtures[side].find(portal);
+    if (iter != outFixtures[side].end() &&
+        iter->second != numFixtures){
+        return false;
+    }
+#else
     for (bodyCollisionStatus* s : *bodyMaps){
         if (s->connection->portal1 == portal && s->connection->side1 == side)
             return false;
     }
+#endif
 
     for (bodyStruct* bs : createBodies){
         if (bs->collPortal == portal && bs->side == side)

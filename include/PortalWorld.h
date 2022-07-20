@@ -9,11 +9,13 @@
 #include <set>
 
 struct portalConnection;
+struct RotationJointDef;
 
 class PortalBody;
 class Portal;
 class DebugDrawer;
 class PortalWorld;
+class RotationJoint;
 
 typedef enum
 {
@@ -157,5 +159,6 @@ private:
     // baseBody should not be NULL if isNew is false
     void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
 
-    void CreateRotationJoint(b2PrismaticJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
+    void CreateRotationJoint(RotationJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
+    void DestroyRotationJoint(RotationJoint* rj);
 };
