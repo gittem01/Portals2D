@@ -53,6 +53,8 @@ private:
         isReversed = rev;
         pBodyA = pb1;
         pBodyB = pb2;
+        m_impulse.SetZero();
+
         if (isReversed)
         {
             float angle1 = pb1->body->GetAngle() + pb1->offsetAngle;
