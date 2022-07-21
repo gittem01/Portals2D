@@ -17,7 +17,15 @@ int main(void)
     
     mouseJointHandler mjh(pWorld, wh, drawer);
 
-    multiReleaseTest(pWorld);
+    Renderer* renderer = new Renderer(pWorld);
+
+    testCase1(pWorld, renderer);
+
+    // manual random coloring for now
+    for (Portal* p : pWorld->portals){
+        b2Color c = b2Color(1, getRand() + 0.5f, getRand() + 0.5f, 1.0f);
+        renderer->addPortal(p, c);
+    }
 
     bool done = false;
     int frame = 0;
@@ -44,8 +52,8 @@ int main(void)
 
             //pWorld->DebugDraw();
             drawer->drawWorld(pWorld);
-            pWorld->drawUpdate();
-            
+            renderer->render();
+
             mjh.drawMouseBody();
 
             glfwSwapInterval(1);

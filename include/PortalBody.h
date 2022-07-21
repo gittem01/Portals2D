@@ -8,6 +8,8 @@
 #include <map>
 #include <GLFW/glfw3.h>
 
+#define CIRCLE_POINTS 50
+
 struct bodyData;
 struct portalConnection;
 
@@ -64,28 +66,26 @@ friend class PortalWorld;
 friend class ContactListener;
 
 public:
-    b2Color bodyColor;
-
     std::vector<PortalBody*>* worldIndex;
     std::vector<bodyCollisionStatus*>* bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
+
+    // index 0 is the outer part of the fixture
+    // remaining vertices are release parts of the fixture
+    std::map<b2Fixture*, std::vector<std::vector<b2Vec2>*>*> allParts;
 
     b2Body* body;
     int numFixtures;
     float offsetAngle;
 
 private:
-    PortalBody(b2Body* body, PortalWorld* pWorld, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
+    PortalBody(b2Body* body, PortalWorld* pWorld);
 
     ~PortalBody();
 
     std::map<b2Fixture*, std::set<Portal*>> prepareMaps;
     std::vector<bodyStruct*> createBodies;
     std::map<Portal*, int> outFixtures[2];
-
-    // index 0 reserved for drawVertices
-    // remaining vertices are release vertices
-    std::map<b2Fixture*, std::vector<std::vector<b2Vec2>*>*> allParts;
 
     PortalWorld* pWorld;
 
@@ -108,12 +108,6 @@ private:
 
     void adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
                         std::vector<b2Vec2>* retVertices2, Portal* portal, int side);
-    void drawBodies();
-    void portalRender(b2Fixture* fix, std::vector<b2Vec2>& vertices);
-    // draw fixtures according to the portal collision status
-    void drawPolygonFix(b2Fixture* fixture);
-    void drawCircleFix(b2Fixture* fixture);
-    void drawVertices(b2Body* body, std::vector<b2Vec2>& vertices);
 
     std::vector<PortalBody*> postHandle();
 

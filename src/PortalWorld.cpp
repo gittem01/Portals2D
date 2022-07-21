@@ -3,7 +3,7 @@
 #include "Portal.h"
 #include <RotationJoint.h>
 
-PortalWorld::PortalWorld(DebugDrawer* drawer) : b2World(b2Vec2(0, -10)){
+PortalWorld::PortalWorld(DebugDrawer* drawer) : b2World(b2Vec2(0, -11.15f)){
     this->drawer = drawer;
 
     this->drawReleases = false;
@@ -20,8 +20,8 @@ Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size){
     return portal;
 }
 
-PortalBody* PortalWorld::createPortalBody(b2Body* body, b2Color bodyColor){
-    PortalBody* pBody = new PortalBody(body, this, bodyColor);
+PortalBody* PortalWorld::createPortalBody(b2Body* body){
+    PortalBody* pBody = new PortalBody(body, this);
     portalBodies.push_back(pBody);
 
     createPortalBody_i(pBody, NULL, true);
@@ -185,15 +185,6 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
     globalPostHandle();
 }
 
-void PortalWorld::drawUpdate(){
-    for (PortalBody* body : portalBodies){
-        body->drawBodies();
-    }
-    for (Portal* p : portals) {
-        p->draw();
-    }
-}
-
 void PortalWorld::globalPostHandle(){
     for (PortalBody* b : destroyBodies){
         for (int i = 0 ; i < portalBodies.size(); i++){
@@ -241,7 +232,7 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         def.gravityScale = 0.0f;
 
         b2Body* body2 = CreateBody(&def);
-        PortalBody* npb = new PortalBody(body2, this, pBody->bodyColor);
+        PortalBody* npb = new PortalBody(body2, this);
 
         if (c->isReversed){
             b2Vec2 v = rotateVec(b2Vec2(1, 0), angleRot + body2->GetAngle());

@@ -1,4 +1,4 @@
-#include <Portal.h>
+#include <Renderer.h>
 
 class TestPlayer
 {
@@ -83,7 +83,6 @@ public:
         body->CreateFixture(&fDef);
 
         PortalBody* pb = pWorld->createPortalBody(body);
-        pb->bodyColor = b2Color(1.0f, 0.0f, 0.0f, 0.5f);
 
         bodyData* bData = (bodyData*)body->GetUserData().pointer;
         bData->extraData = this;

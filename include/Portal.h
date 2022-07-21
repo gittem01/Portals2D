@@ -21,13 +21,14 @@ friend class PortalBody;
 friend class PortalRay;
 
 public:
-    void draw();
-    b2Color color;
-    
+
     void connect(Portal* portal2, bool isReversed=false, int side1=0, int side2=0);
     void setVoid(int side);
 
     std::vector<portalConnection*> connections[2];
+
+    // will be a private variable later
+    std::map<b2Fixture*, int> releaseFixtures[2];
 
     b2Vec2 points[2];
     b2Vec2 pos;
@@ -37,6 +38,7 @@ public:
     void evaluateWorld();
 
 private:
+
     Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
     std::set<b2Fixture*> extraFixtures;
 
@@ -53,7 +55,6 @@ private:
 
     std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
-    std::map<b2Fixture*, int> releaseFixtures[2];
 
     bool isVoid[2];
 

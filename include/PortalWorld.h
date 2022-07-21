@@ -125,15 +125,15 @@ friend class ContactListener;
 public:
     bool drawReleases;
     b2Color releaseColor;
-    void drawUpdate();
 
     std::vector<std::vector<PortalBody*>*> bodyIndices;
+    std::vector<Portal*> portals;
 
     PortalWorld(DebugDrawer* drawer);
     void PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations);
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
-    PortalBody* createPortalBody(b2Body* body, b2Color bodyColor=b2Color(1.0f, 1.0f, 1.0f, 0.5f));
+    PortalBody* createPortalBody(b2Body* body);
 
 private:
     DebugDrawer* drawer;
@@ -141,7 +141,6 @@ private:
     EvaluationRay* evalRayHandler;
 
     std::vector<PortalBody*> portalBodies;
-    std::vector<Portal*> portals;
     std::set<PortalBody*> destroyBodies;
 
     static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);

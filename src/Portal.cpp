@@ -27,8 +27,6 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     this->rcInp2.p1 = points[1];
     this->rcInp2.p2 = points[0];
     this->rcInp2.maxFraction = 1.0f - inMargin;
-
-    this->color = b2Color(0.0f, 0.3f, 1.0f, 1.0f);
 }
 
 void Portal::evaluateWorld(){
@@ -609,19 +607,6 @@ bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixtur
     return true;
 }
 
-void Portal::draw(){
-    glLineWidth(2.0f);
-	glColor4f(color.r, color.g, color.b, color.a);
-	glBegin(GL_LINES);
-	glVertex2d(points[0].x, points[0].y);
-	glVertex2d(points[1].x, points[1].y);
-	glEnd();
-
-    // draw dir
-    // pWorld->drawer->DrawArrow(pos, pos + 1.0f * dir, b2Color(1, 1, 1, 1));
-}
-
-
 // concave shapes create lots of problems with reversed option enabled
 void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
     if (this->isVoid[side1] || portal2->isVoid[side2]) return;
@@ -646,9 +631,6 @@ void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
 
         portal2->connections[c2->side1].push_back(c2);
     }
-
-    this->color = b2Color(1.0f, (float)rand() / RAND_MAX, ((float)rand()) / RAND_MAX, 1.0f);
-    portal2->color = b2Color(1.0f - this->color.r, this->color.g, 1.0f - this->color.b, 1.0f);
 }
 
 void Portal::setVoid(int side){
