@@ -86,11 +86,13 @@ PortalBody::~PortalBody(){
     body->GetUserData().pointer = 0;
     free((void*)bData);
 
-    for (b2Joint* joint = body->GetJointList()->joint; joint; joint = joint->GetNext()){
-        if (joint->GetType() == e_unknownJoint){
-            pWorld->DestroyRotationJoint((RotationJoint*)joint);
-            break;
+    b2JointEdge* jointEdge = body->GetJointList();
+    for ( ; jointEdge ; ){
+        b2JointEdge* nextEdge = jointEdge->next;
+        if (jointEdge->joint->GetType() == e_unknownJoint){
+            pWorld->DestroyRotationJoint((RotationJoint*)jointEdge->joint);
         }
+        jointEdge = nextEdge;
     }
 
     pWorld->DestroyBody(body);
