@@ -25,6 +25,7 @@ class RotationJoint : b2Joint
 friend class PortalWorld;
 
 public:
+
     b2Vec2 GetAnchorA() const override { return b2Vec2(); };
 	b2Vec2 GetAnchorB() const override { return b2Vec2(); };
 
@@ -84,7 +85,6 @@ private:
             float k22 = iA + iB;
             if (k22 == 0.0f)
             {
-                // For bodies with fixed rotation.
                 k22 = 1.0f;
             }
 

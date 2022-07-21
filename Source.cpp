@@ -17,7 +17,7 @@ int main(void)
     
     mouseJointHandler mjh(pWorld, wh, drawer);
 
-    testCase1(pWorld);
+    multiReleaseTest(pWorld);
 
     bool done = false;
     int frame = 0;

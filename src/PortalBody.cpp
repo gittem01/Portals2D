@@ -318,7 +318,7 @@ bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, PortalCollisionType
         }
     }
     // Experimental
-#if 1
+#if 0
     const auto iter = outFixtures[side].find(portal);
     if (iter != outFixtures[side].end() &&
         iter->second != numFixtures){
