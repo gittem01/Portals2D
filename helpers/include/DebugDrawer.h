@@ -4,10 +4,16 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <Renderer.h>
 
 class DebugDrawer : public b2Draw
 {
 public:
+
+    Renderer* renderer;
+
+    DebugDrawer(Renderer* renderer);
+
     void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
     void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
     void DrawCircle(const b2Vec2& center, float radius, const b2Color& color) { printf("circle\n"); }

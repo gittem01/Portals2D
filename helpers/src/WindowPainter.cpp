@@ -1,5 +1,6 @@
 #include "WindowPainter.h"
 #include <box2d/box2d.h>
+#include <Renderer.h>
 
 WindowPainter::WindowPainter(Camera* cam) {
     this->cam = cam;
@@ -54,12 +55,18 @@ void WindowPainter::massInit() {
         std::exit(-1);
     }
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+
+    // for macOS
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
     window = glfwCreateWindow(windowSizes.x, windowSizes.y, "2D physics playground", 0, 0);
     if (!window)
     {
-        glfwTerminate();
         printf("Window creation error\n");
-        std::exit(-1);
+        glfwTerminate();
     }
 
     int x1, y1, x2, y2;
@@ -68,23 +75,26 @@ void WindowPainter::massInit() {
 
     dpiScaling = x2 / x1;
 
-    glfwMakeContextCurrent(window);
-    glfwSetCursorPosCallback(this->window, WindowPainter::mouseEventCallback);
-    glfwSetMouseButtonCallback(this->window, WindowPainter::buttonEventCallback);
-    glfwSetScrollCallback(this->window, WindowPainter::scrollEventCallback);
-    glfwSetWindowFocusCallback(this->window, WindowPainter::glfwWindowFocusCallback);
-    glfwSetKeyCallback(this->window, WindowPainter::glfwKeyEventCallback);
-    glfwSetWindowSizeCallback(this->window, WindowPainter::windowSizeEventCallback);
     glfwSetWindowUserPointer(window, this);
+    glfwSetCursorPosCallback(window, WindowPainter::mouseEventCallback);
+    glfwSetMouseButtonCallback(window, WindowPainter::buttonEventCallback);
+    glfwSetScrollCallback(window, WindowPainter::scrollEventCallback);
+    glfwSetWindowFocusCallback(window, WindowPainter::glfwWindowFocusCallback);
+    glfwSetKeyCallback(window, WindowPainter::glfwKeyEventCallback);
+    glfwSetWindowSizeCallback(window, WindowPainter::windowSizeEventCallback);
+
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+        printf("Failed to initialize GLAD\n");
+        std::exit(-1);
+    }
 
     glViewport(0, 0, (int)(windowSizes.x * dpiScaling), (int)(windowSizes.y * dpiScaling));
-    glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-    glLoadIdentity();
-    glfwWindowHint(GLFW_SAMPLES, 8);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    glfwWindowHint(GLFW_SAMPLES, 4);
     
-    glEnable(GL_POLYGON_SMOOTH);
-    glEnable(GL_LINE_SMOOTH);
-    glEnable(GL_POINT_SMOOTH);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

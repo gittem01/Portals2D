@@ -11,8 +11,8 @@ Camera::Camera(glm::vec2 pos, void* wh) {
 void Camera::updateOrtho() {
 	glm::vec2 xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
 	glm::vec2 ySides = this->defaultYSides / (this->zoom * this->zoom) + this->pos.y;
-	glLoadIdentity();
-	glOrtho(xSides.x, xSides.y, ySides.x, ySides.y, -999.0, 999.0);
+
+	this->ortho = glm::ortho(xSides.x, xSides.y, ySides.x, ySides.y, -100.0f, +100.0f);
 }
 
 void Camera::changeZoom(float inc) {
@@ -49,9 +49,6 @@ float Camera::limitZoom(float inZoom) {
 }
 
 void Camera::update() {
-	glLoadIdentity();
-	updateOrtho();
-
 	WindowPainter* windowHandler = (WindowPainter*)wh;
 
 	int width, height;
@@ -71,6 +68,8 @@ void Camera::update() {
 		this->changeZoom(this->zoomInc * this->neededZoom);
 		this->neededZoom -= zoomInc*this->neededZoom;
 	}
+
+	updateOrtho();
 }
 
 void Camera::dragFunc(int width, int height) {

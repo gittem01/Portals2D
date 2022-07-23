@@ -1,4 +1,4 @@
-#include <Renderer.h>
+#include <Camera.h>
 
 #define RENDER_COLOURFUL 0
 
@@ -12,9 +12,45 @@
     };
 #endif
 
-Renderer::Renderer(PortalWorld* pWorld)
+b2Vec2 rotateVector(b2Vec2 vec, float angle){
+    float x = cos(angle) * vec.x - sin(angle) * vec.y;
+    float y = sin(angle) * vec.x + cos(angle) * vec.y;
+
+    return {x, y};
+}
+
+Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
 {
     this->pWorld = pWorld;
+    this->camera = camera;
+    
+    this->polyShader = new Shader("../assets/shaders/PolygonShaders/");
+    this->circShader = new Shader("../assets/shaders/CircleShaders/");
+    this->lineShader = new Shader("../assets/shaders/LineShaders/");
+
+    this->drawReleases = false;
+    this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
+
+    float vertices[] = {
+        -0.5f, +0.5f,
+        -0.5f, -0.5f,
+        +0.5f, -0.5f,
+        +0.5f, -0.5f,
+        +0.5f, +0.5f,
+        -0.5f, +0.5f,
+    };
+
+    // just to make driver happy for now
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, 48, vertices, GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
 }
 
 void Renderer::addPortal(Portal* portal, b2Color color){
@@ -43,16 +79,21 @@ void Renderer::render(){
     }
 }
 
+void Renderer::drawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color){
+	b2Vec2 dir = 0.25f * (p2 - p1);
+	b2Vec2 vec1 = rotateVector(dir, b2_pi * (5 / 6.0f));
+	b2Vec2 vec2 = rotateVector(dir, b2_pi * (7 / 6.0f));
+
+	debug_Line(p1, p2, 0.02f, color);
+	debug_Line(p2, p2 + vec1, 0.02f, color);
+	debug_Line(p2, p2 + vec2, 0.02f, color);
+}
+
 void Renderer::portalRender(portalRenderData* prd){
-    glLineWidth(2.0f);
-	glColor4f(prd->color.r, prd->color.g, prd->color.b, prd->color.a);
-	glBegin(GL_LINES);
-	glVertex2d(prd->portal->points[0].x, prd->portal->points[0].y);
-	glVertex2d(prd->portal->points[1].x, prd->portal->points[1].y);
-	glEnd();
+    debug_Line(prd->portal->points[0], prd->portal->points[1], 0.02f, prd->color);
 
     // draw dir
-    // pWorld->drawer->DrawArrow(pos, pos + 1.0f * dir, b2Color(1, 1, 1, 1));
+    // drawArrow(prd->portal->pos, prd->portal->pos + 1.0f * prd->portal->dir, prd->color);
 }
 
 void Renderer::bodyRender(bodyRenderData* brd){
@@ -73,122 +114,187 @@ void Renderer::bodyRender(bodyRenderData* brd){
     }
 }
 
-
-void Renderer::portalRender(PortalBody* pBody, b2Fixture* fix, std::vector<b2Vec2>& vertices, b2Color color){
-    b2Body* bBody = fix->GetBody();
-
-    int side;
-    int renderStatus = 2;
-
-    std::map<b2Fixture*, std::set<portalCollision*>*>::iterator fixIter = pBody->fixtureCollisions.find(fix);
-    std::set<portalCollision*>::iterator iter = (*fixIter).second->begin();
-    
-    void* portal = NULL;
-    int s = -1;
-    if (iter != (*fixIter).second->end()){
-        portal = (*iter)->portal;
-        s = (*iter)->side;
-        renderStatus = (*iter)->status;
-    }
-    for (portalCollision* coll : *(*fixIter).second){
-        if (coll->status == 0){
-            renderStatus = 0;
-            break;
-        }
-        else{
-            renderStatus = 1;
-        }
-    }
-
-    if (renderStatus == 1){
-        if (pBody->allParts[fix]->at(0)->size() > 0){
-#if RENDER_COLOURFUL
-            color = b2Color(1, 0, 1, 0.5f);
-#endif
-            drawVertices(pBody, *pBody->allParts[fix]->at(0), color);
-        }
-        if (pWorld->drawReleases){
-            for (int i = 1; i < pBody->allParts[fix]->size(); i++){
-                auto& vecs = pBody->allParts[fix]->at(i);                
-#if RENDER_COLOURFUL
-                b2Color c = b2Color(1, 0, 0, 0.5f);
-#else
-                b2Color c = pWorld->releaseColor;
-#endif
-                drawVertices(pBody, *vecs, c);
-            }
-        }
-    }
-    else if (pWorld->drawReleases && renderStatus == 0){
-            b2Color c;
-
-#if RENDER_COLOURFUL
-            auto iter = pBody->fixtureCollisions[fix]->begin();
-            int val = (*iter)->portal->releaseFixtures[(*iter)->side][fix];
-            if (val <= sizeof(colors) / sizeof(colors[0])){
-                c = colors[val - 1];
-            }
-
-#else
-            c = pWorld->releaseColor;
-#endif
-            drawVertices(pBody, vertices, c);
-    }
-
-    else if (renderStatus == 2) drawVertices(pBody, *pBody->allParts[fix]->at(0), color);
-}
-
 void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
-    b2PolygonShape* shape = (b2PolygonShape*)fix->GetShape();
+    polyShader->use();
 
-    int vertexCount = shape->m_count;
-    std::vector<b2Vec2> vertices;
+    b2PolygonShape* pShape = (b2PolygonShape*)fix->GetShape();
 
-	for (int i = 0; i < vertexCount; i++) {
-        b2Vec2 p = b2Vec2((shape->m_vertices + i)->x, (shape->m_vertices + i)->y);
-        p = pBody->body->GetWorldPoint(p);
-        vertices.push_back(p);
-	}
-
-    portalRender(pBody, fix, vertices, color);
-}
-
-void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
-    b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
-    float r = shape->m_radius;
-
-    std::vector<b2Vec2> vertices;
-
-    float angle = 0;
-	for (int i = 0; i < CIRCLE_POINTS; i++) {
-        float angle0 = ((float)i / CIRCLE_POINTS) * b2_pi * 2;
-        b2Vec2 p = b2Vec2(sin(angle0) * r, cos(angle0) * r) + shape->m_p;
-        p = pBody->body->GetWorldPoint(p);
-        vertices.push_back(p);
-	}
-
-    portalRender(pBody, fix, vertices, color);
-}
-
-void Renderer::drawVertices(PortalBody* pBody, std::vector<b2Vec2>& vertices, b2Color color){
     float transparency = 1.0f;
     if (!pBody->body->IsAwake()){
         transparency /= 1.5f;
     }
-    
-    glColor4f(color.r, color.g, color.b, color.a * transparency);
-	glBegin(GL_POLYGON);
-	for (int i = 0; i < vertices.size(); i++) {
-		glVertex2d(vertices.at(i).x, vertices.at(i).y);
-	}
-	glEnd();
 
-	glLineWidth(1.0f);
-	glColor4f(color.r, color.g, color.b, color.a * 2.0f);
-	glBegin(GL_LINES);
-	for (int i = 0; i < vertices.size(); i++) {
-		glVertex2d(vertices.at(i).x, vertices.at(i).y);
-		glVertex2d(vertices.at((i + 1) % vertices.size()).x, vertices.at((i + 1) % vertices.size()).y);
-	}
-	glEnd();
+    polyShader->setMat4("ortho", camera->ortho);
+
+    b2Vec2 pos = pBody->body->GetPosition();
+    float angle = pBody->body->GetAngle();
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
+    model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
+
+    polyShader->setMat4("model", model);
+
+    polyShader->setVec4("colour", color.r, color.g, color.b, transparency);
+    polyShader->setVec4("outerColour", color.r, color.g, color.b, 1.0f);
+    
+    polyShader->setVec4("releaseColour", releaseColor.r, releaseColor.g, releaseColor.b, releaseColor.a);
+    polyShader->setBool("drawReleases", drawReleases);
+
+    polyShader->setInt("numPoints", pShape->m_count);
+
+    polyShader->setFloat("lineDist", 0.015f);
+    polyShader->setFloat("zoom", camera->zoom);
+
+    auto colls = pBody->fixtureCollisions[fix];
+
+    int numPortals = colls->size();
+    float* portalPositions = (float*)malloc(numPortals * 4 * sizeof(float));
+    int* sideMults = (int*)malloc(sizeof(int) * numPortals);
+
+    bool fRelease = false;
+    int i = 0;
+    for (portalCollision* coll : *colls){
+        if (coll->status == 0){
+            if (!drawReleases){
+                return;
+            }
+            else{
+                fRelease = true;
+                break;
+            }
+        }
+
+        portalPositions[i] = coll->portal->points[0].x;
+        portalPositions[i + 1] = coll->portal->points[0].y;
+        portalPositions[i + 2] = coll->portal->points[1].x;
+        portalPositions[i + 3] = coll->portal->points[1].y;
+
+        sideMults[i / 4] = coll->side ? -1 : 1;
+        
+        i += 4;
+    }
+
+    polyShader->setBool("isFullRelease", fRelease);
+    polyShader->setInt("numPortals", numPortals);
+
+    unsigned int loc = glGetUniformLocation(polyShader->ID, "vertices");
+	glUniform2fv(loc, pShape->m_count, (GLfloat*)pShape->m_vertices);
+
+    loc = glGetUniformLocation(polyShader->ID, "portals");
+	glUniform4fv(loc, numPortals, (GLfloat*)portalPositions);
+
+    loc = glGetUniformLocation(polyShader->ID, "sideMults");
+	glUniform1iv(loc, numPortals, (GLint*)sideMults);
+
+    glDrawArrays(GL_TRIANGLES, 0, (pShape->m_count - 2) * 3);
+
+    free(portalPositions);
+    free(sideMults);
+}
+
+void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
+    circShader->use();
+
+    float transparency = 1.0f;
+    if (!pBody->body->IsAwake()){
+        transparency /= 1.5f;
+    }
+
+    b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
+    float r = shape->m_radius;
+
+    circShader->setMat4("ortho", camera->ortho);
+
+    b2Vec2 pos = pBody->body->GetWorldPoint(shape->m_p);
+
+    circShader->setVec2("pos", pos.x, pos.y);
+    circShader->setFloat("size", r * 2);
+
+    circShader->setVec4("colour", color.r, color.g, color.b, transparency);
+    circShader->setVec4("outerColour", color.r, color.g, color.b, 1);
+
+    circShader->setVec4("releaseColour", releaseColor.r, releaseColor.g, releaseColor.b, releaseColor.a);
+    circShader->setBool("drawReleases", drawReleases);
+
+    circShader->setFloat("lineDist", 0.015f);
+    circShader->setFloat("zoom", camera->zoom);
+    circShader->setBool("isPoint", false);
+
+    auto colls = pBody->fixtureCollisions[fix];
+
+    int numPortals = colls->size();
+    float* portalPositions = (float*)malloc(numPortals * 4 * sizeof(float));
+    int* sideMults = (int*)malloc(sizeof(int) * numPortals);
+
+    bool fRelease = false;
+    int i = 0;
+    for (portalCollision* coll : *colls){
+        if (coll->status == 0){
+            if (!drawReleases){
+                return;
+            }
+            else{
+                fRelease = true;
+                break;
+            }
+        }
+
+        portalPositions[i] = coll->portal->points[0].x;
+        portalPositions[i + 1] = coll->portal->points[0].y;
+        portalPositions[i + 2] = coll->portal->points[1].x;
+        portalPositions[i + 3] = coll->portal->points[1].y;
+
+        sideMults[i / 4] = coll->side ? -1 : 1;
+        
+        i += 4;
+    }
+
+    circShader->setBool("isFullRelease", fRelease);
+    circShader->setInt("numPortals", numPortals);
+
+    unsigned int loc = glGetUniformLocation(circShader->ID, "portals");
+	glUniform4fv(loc, numPortals, (GLfloat*)portalPositions);
+
+    loc = glGetUniformLocation(circShader->ID, "sideMults");
+	glUniform1iv(loc, numPortals, (GLint*)sideMults);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    free(portalPositions);
+    free(sideMults);
+}
+
+void Renderer::debug_Line(b2Vec2 p1, b2Vec2 p2, float thickness, b2Color color){
+    lineShader->use();
+
+    lineShader->setMat4("ortho", camera->ortho);
+
+    lineShader->setVec4("colour", color.r, color.g, color.b, color.a);
+    lineShader->setFloat("zoom", camera->zoom);
+
+    lineShader->setFloat("thickness", thickness);
+    lineShader->setVec2("p1", p1.x, p1.y);
+    lineShader->setVec2("p2", p2.x, p2.y);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Renderer::debug_Circle(b2Vec2 p, float r, float outThickness, b2Color color, bool isPoint, b2Color outerColour){
+    circShader->use();
+
+    circShader->setMat4("ortho", camera->ortho);
+
+    circShader->setVec2("pos", p.x, p.y);
+    circShader->setFloat("size", r);
+    circShader->setVec4("colour", color.r, color.g, color.b, color.a);
+    circShader->setVec4("outerColour", outerColour.r, outerColour.g, outerColour.b, outerColour.a);
+
+    circShader->setFloat("lineDist", outThickness);
+    circShader->setFloat("zoom", camera->zoom);
+    circShader->setBool("isPoint", isPoint);
+
+    circShader->setInt("numPortals", 0);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }

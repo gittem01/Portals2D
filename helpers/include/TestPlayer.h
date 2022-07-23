@@ -1,4 +1,6 @@
-#include <Renderer.h>
+#pragma once
+
+#include <WindowPainter.h>
 
 class TestPlayer
 {

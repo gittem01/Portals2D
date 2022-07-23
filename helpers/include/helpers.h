@@ -1,7 +1,5 @@
-#include "DebugDrawer.h"
 #include "mouseJointHandler.h"
 #include "ContactListener.h"
-#include "TestPlayer.h"
 
 #include <thread>
 #include <chrono>
@@ -15,6 +13,7 @@ bool isPaused = false;
 bool tick = false;
 int totalIter = 10;
 PortalWorld* pWorld;
+Renderer* renderer;
 
 // O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f) {
@@ -254,7 +253,7 @@ void keyHandler(WindowPainter* wh) {
         tick = true;
     }
     if (wh->keyData[GLFW_KEY_S] == 2)
-        pWorld->drawReleases ^= 1;
+        renderer->drawReleases ^= 1;
 }
 
 float getRand(){
@@ -430,13 +429,13 @@ void testCase1(PortalWorld* portalWorld, Renderer* renderer){
     //b2Body* body21 = createPortalCube(p + b2Vec2(2, 0), s, pWorld, b2_dynamicBody);
     b2Body* body21 = createBox(p + b2Vec2(2, 0), s, portalWorld, b2_dynamicBody);
 
-   PortalBody* pb1 = portalWorld->createPortalBody(body2);
-   PortalBody* pb2 = portalWorld->createPortalBody(body20);
-   PortalBody* pb3 = portalWorld->createPortalBody(body21);
+    PortalBody* pb1 = portalWorld->createPortalBody(body2);
+    PortalBody* pb2 = portalWorld->createPortalBody(body20);
+    PortalBody* pb3 = portalWorld->createPortalBody(body21);
 
-   renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f));
-   renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f));
-   renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
+    renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f));
+    renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f));
+    renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
 
 #if 0
     artificial kinematic body
@@ -460,7 +459,7 @@ void testCase1(PortalWorld* portalWorld, Renderer* renderer){
 
     b2Vec2 bPos(10.0f, 5.0f);
     s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
-    b2Body* statBody = createBox(bPos, s, portalWorld, b2_staticBody);
+    //b2Body* statBody = createBox(bPos, s, portalWorld, b2_staticBody);
 }
 
 void testCase2(PortalWorld* portalWorld, Renderer* renderer){

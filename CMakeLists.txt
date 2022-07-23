@@ -14,6 +14,7 @@ include_directories(${CMAKE_SOURCE_DIR}/helpers/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glm/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/box2d/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glfw/include)
+include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
 
 link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 
@@ -24,7 +25,9 @@ add_executable(physicsTeleport Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS})
 
 file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 file(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
+
 add_library(PORTAL2D ${SOURCE_FILES} ${HEADER_FILES})
+add_library(glad ${CMAKE_SOURCE_DIR}/external/glad/src/glad.c)
 
 find_package(OpenGL REQUIRED)
 target_link_libraries(physicsTeleport OpenGL::GL)
@@ -32,3 +35,4 @@ target_link_libraries(physicsTeleport OpenGL::GL)
 target_link_libraries(physicsTeleport PORTAL2D)
 target_link_libraries(physicsTeleport box2d)
 target_link_libraries(physicsTeleport glfw)
+target_link_libraries(physicsTeleport glad)

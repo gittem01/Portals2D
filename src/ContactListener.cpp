@@ -1,6 +1,5 @@
 #include "ContactListener.h"
 #include "mouseJointHandler.h"
-#include "TestPlayer.h"
 
 // for mouse
 void ContactListener::endBeginHandle(contactType type, b2Contact* contact) {

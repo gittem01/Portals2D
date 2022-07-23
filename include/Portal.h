@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PortalBody.h"
-#include "PortalWorld.h"
 
 class Portal;
 

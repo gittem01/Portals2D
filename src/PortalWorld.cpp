@@ -1,14 +1,10 @@
-#include "PortalWorld.h"
+#include <DebugDrawer.h>
 #include "PortalBody.h"
 #include "Portal.h"
 #include <RotationJoint.h>
 
-PortalWorld::PortalWorld(DebugDrawer* drawer) : b2World(b2Vec2(0, -11.15f)){
-    this->drawer = drawer;
 
-    this->drawReleases = false;
-    this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
-
+PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f)){
     this->rayHandler = new PortalRay(this);
     this->evalRayHandler = new EvaluationRay(this);
 }
@@ -129,7 +125,7 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
     diff = minFrac * diff;
     b2Vec2 collPoint = rayStart + diff;
 
-    pWorld->drawer->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
+    pWorld->getDebugDraw()->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
 
     if (closestFixture != NULL){
         if (closestFixture == closestPortalFixture){
@@ -176,11 +172,10 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
     
     rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
 
-    glLineWidth(3.0f);
     for (rayData* rd : rayHandler->rayResult){
-        drawer->DrawArrow(rd->endPos - rd->dir, rd->endPos, b2Color(1, 1, 0));
+        DebugDrawer* drawer = (DebugDrawer*)m_debugDraw;
+        drawer->renderer->drawArrow(rd->endPos - rd->dir, rd->endPos, b2Color(1, 1, 0));
     }
-    glLineWidth(1.0f);
 
     globalPostHandle();
 }

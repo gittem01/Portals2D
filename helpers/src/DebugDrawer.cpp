@@ -1,120 +1,40 @@
 #include "DebugDrawer.h"
-#include "Portal.h"
-#include <GLFW/glfw3.h>
+#include <Camera.h>
 
-b2Vec2 rotateVector(b2Vec2 vec, float angle){
-    float x = cos(angle) * vec.x - sin(angle) * vec.y;
-    float y = sin(angle) * vec.x + cos(angle) * vec.y;
-
-    return {x, y};
+DebugDrawer::DebugDrawer(Renderer* renderer) : b2Draw(){
+	this->renderer = renderer;
 }
+
 void DebugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color){
-	glLineWidth(1.0f);
-	glColor4f(color.r, color.g, color.b, color.a);
-	glBegin(GL_LINES);
-	for (int i = 0; i < vertexCount; i++) {
-		glVertex2d((vertices + i)->x, (vertices + i)->y);
-		glVertex2d((vertices + (i + 1) % vertexCount)->x, (vertices + (i + 1) % vertexCount)->y);
-	}
-	glEnd();
+	
 }
 
 void DebugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
-	glColor4f(color.r, color.g, color.b, 0.4f);
-	glBegin(GL_POLYGON);
-	for (int i = 0; i < vertexCount; i+=1) {
-		glVertex2d((vertices + i)->x, (vertices + i)->y);
-	}
-	glEnd();
-
-	glLineWidth(1.0f);
-	glColor4f(color.r, color.g, color.b, 1.0f);
-	glBegin(GL_LINES);
-	for (int i = 0; i < vertexCount; i++) {
-		glVertex2d((vertices + i)->x, (vertices + i)->y);
-		glVertex2d((vertices + (i + 1) % vertexCount)->x, (vertices + (i + 1) % vertexCount)->y);
-	}
-	glEnd();
+	
 }
 
-void DebugDrawer::DrawSolidCircle(const b2Vec2& center, float radius, 
-									const b2Vec2& axis, const b2Color& color){
-
-	int n = 100;
-	b2Vec2* positions = (b2Vec2*)malloc((n + 1) * sizeof(b2Vec2));
-	glColor4f(color.r, color.g, color.b, 0.4f);
-	glBegin(GL_POLYGON);
-	float angle = 0;
-	for (int i=0; i<=n; i++){
-		b2Vec2 pos = b2Vec2(sin(angle) * radius + center.x, cos(angle) * radius + center.y);
-		positions[i] = pos;
-		glVertex2d(pos.x, pos.y);
-		angle = (b2_pi * i * 2) / n;
-	}
-	glEnd();
-
-	glColor4f(color.r, color.g, color.b, 1.0f);
-	glBegin(GL_LINES);
-	for (int i=0; i<=n; i++){
-		glVertex2d(positions[i].x, positions[i].y);
-		glVertex2d(positions[(i+1)%n].x, positions[(i+1)%n].y);
-	}
-	glVertex2d(center.x, center.y);
-	glVertex2d(center.x + axis.x * radius, center.y + axis.y * radius);
-	glEnd();
-
-	free(positions);
+void DebugDrawer::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color){
+	renderer->debug_Circle(center, radius, 0.1f, color);
 }
 
 void DebugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
-	glColor4f(color.r, color.g, color.b, color.a);
-	glBegin(GL_LINES);
-	glVertex2d(p1.x, p1.y);
-	glVertex2d(p2.x, p2.y);
-	glEnd();
-}
-
-void DebugDrawer::DrawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color){
-	b2Vec2 dir = 0.25f * (p2 - p1);
-	b2Vec2 vec1 = rotateVector(dir, b2_pi * (5 / 6.0f));
-	b2Vec2 vec2 = rotateVector(dir, b2_pi * (7 / 6.0f));
-
-	DrawSegment(p1, p2, color);
-	DrawSegment(p2, p2 + vec1, color);
-	DrawSegment(p2, p2 + vec2, color);
+	renderer->debug_Line(p1, p2, 0.01f, color);
 }
 
 void DebugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
-	glPointSize(size);
-	glColor4f(color.r, color.g, color.b, 1.0f);
-	glBegin(GL_POINTS);
-	glVertex2d(p.x, p.y);
-	glEnd();
+	renderer->debug_Circle(p, size * 0.01f, 0.0f, color, true);
 }
 
 void DebugDrawer::DrawTransform(const b2Transform& xf){
-	const float k_axisScale = 0.4f;
+	const float k_axisScale = 0.3f / (renderer->camera->zoom * renderer->camera->zoom);
 	
 	b2Vec2 p1 = xf.p, p2;
 
-	glLineWidth(1.0f);
-	glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-	glBegin(GL_LINES);
-
-	glVertex2d(p1.x, p1.y);
 	p2 = p1 + k_axisScale * xf.q.GetXAxis();
-	glVertex2d(p2.x, p2.y);
+	renderer->debug_Line(p1, p2, 0.01f, b2Color(1, 0, 0, 1));
 
-	glEnd();
-
-	glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
-	glBegin(GL_LINES);
-
-	glVertex2d(p1.x, p1.y);
 	p2 = p1 + k_axisScale * xf.q.GetYAxis();
-	glVertex2d(p2.x, p2.y);
-
-	glEnd();
+	renderer->debug_Line(p1, p2, 0.01f, b2Color(0, 0, 1, 1));
 }
 
 void DebugDrawer::drawWorld(b2World* world){

@@ -7,17 +7,17 @@ int main(void)
     cam->zoom = 0.55f;
     wh->cam = cam;
 
-    DebugDrawer* drawer = new DebugDrawer();
     ContactListener cl;
-    pWorld = new PortalWorld(drawer);
+    pWorld = new PortalWorld();
     pWorld->SetContactListener(&cl);
+
+    renderer = new Renderer(pWorld, cam);
+    DebugDrawer* drawer = new DebugDrawer(renderer);
 
     pWorld->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_centerOfMassBit);
     
-    mouseJointHandler mjh(pWorld, wh, drawer);
-
-    Renderer* renderer = new Renderer(pWorld);
+    mouseJointHandler mjh(pWorld, wh, renderer);
 
     testCase1(pWorld, renderer);
 
@@ -51,8 +51,9 @@ int main(void)
             }
 
             //pWorld->DebugDraw();
-            drawer->drawWorld(pWorld);
+
             renderer->render();
+            drawer->drawWorld(pWorld);
 
             mjh.drawMouseBody();
 

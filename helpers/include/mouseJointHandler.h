@@ -37,7 +37,7 @@ public:
 
     QueryCallback* queryCallback;
 
-    DebugDrawer* drawer;
+    Renderer* renderer;
 
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
@@ -54,11 +54,11 @@ public:
 	glm::vec2* clicks[2] = { NULL, NULL };
     WindowPainter* wh;
 
-    mouseJointHandler(b2World* world, WindowPainter* wh, DebugDrawer* drawer) {
+    mouseJointHandler(b2World* world, WindowPainter* wh, Renderer* renderer) {
         this->world = world;
         this->groundBody = world->CreateBody(&bodyDef);
         this->wh = wh;
-        this->drawer = drawer;
+        this->renderer = renderer;
         mouseBody = NULL;
         createMouseBody();
         queryCallback = new QueryCallback(this);
@@ -278,7 +278,6 @@ public:
     }
 
     void drawMouseBody() {
-        drawer->DrawSolidCircle(mouseBody->GetPosition(), bodyRadius,
-            b2Vec2(0.0f, 0.0f), b2Color(1.0f, 1.0f, 1.0f, 0.2f));
+        renderer->debug_Circle(mouseBody->GetPosition(), bodyRadius * 2, 0.02f, b2Color(1.0f, 1.0f, 1.0f, 0.4f));
     }
 };

@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <chrono>
 #include <thread>
-#include <GLFW/glfw3.h>
 
 std::map<b2Fixture*, b2Vec2> Portal::noCollData;
 
@@ -36,7 +35,7 @@ void Portal::evaluateWorld(){
     pWorld->evalRayHandler->rayCast(points[0] + 0.005f * dir, points[0] - 0.005f * dir);
     if (pWorld->evalRayHandler->closestFixture){
         b2Fixture* fix = pWorld->evalRayHandler->closestFixture;
-        pWorld->drawer->DrawPoint(points[0] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+        pWorld->getDebugDraw()->DrawPoint(points[0] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
         for (auto& d : pWorld->evalRayHandler->hitFixtures){
             Portal::noCollData[d.first] = d.second;
         }
@@ -45,12 +44,12 @@ void Portal::evaluateWorld(){
             b2EdgeShape shape = *(b2EdgeShape*)fix->GetShape();
             b2Vec2 plus = points[0] + dir;
             if (pWorld->isLeft(points[0], plus, shape.m_vertex1, 0.0001f)){
-                pWorld->drawer->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
                 extraShape.SetTwoSided(points[0], shape.m_vertex1);
                 extraFixtures.insert(body->CreateFixture(&fDef));
             }
             else if (pWorld->isLeft(points[0], plus, shape.m_vertex2, 0.0001f)){
-                pWorld->drawer->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
                 extraShape.SetTwoSided(points[0], shape.m_vertex2);
                 extraFixtures.insert(body->CreateFixture(&fDef));
             }
@@ -60,7 +59,7 @@ void Portal::evaluateWorld(){
     pWorld->evalRayHandler->rayCast(points[1] + 0.005f * dir, points[1] - 0.005f * dir);
     if (pWorld->evalRayHandler->closestFixture){
         b2Fixture* fix = pWorld->evalRayHandler->closestFixture;
-        pWorld->drawer->DrawPoint(points[1] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+        pWorld->getDebugDraw()->DrawPoint(points[1] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
         for (auto& d : pWorld->evalRayHandler->hitFixtures){
             Portal::noCollData[d.first] = d.second;
         }
@@ -69,12 +68,12 @@ void Portal::evaluateWorld(){
             b2EdgeShape shape = *(b2EdgeShape*)fix->GetShape();
             b2Vec2 plus = points[1] - dir;
             if (pWorld->isLeft(points[1], plus, shape.m_vertex1, 0.0001f)){
-                pWorld->drawer->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
                 extraShape.SetTwoSided(points[1], shape.m_vertex1);
                 extraFixtures.insert(body->CreateFixture(&fDef));
             }
             else if (pWorld->isLeft(points[1], plus, shape.m_vertex2, 0.0001f)){
-                pWorld->drawer->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
+                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
                 extraShape.SetTwoSided(points[1], shape.m_vertex2);
                 extraFixtures.insert(body->CreateFixture(&fDef));
             }

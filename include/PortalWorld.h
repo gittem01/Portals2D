@@ -13,7 +13,6 @@ struct RotationJointDef;
 
 class PortalBody;
 class Portal;
-class DebugDrawer;
 class PortalWorld;
 class RotationJoint;
 
@@ -123,20 +122,16 @@ friend class b2World;
 friend class ContactListener;
 
 public:
-    bool drawReleases;
-    b2Color releaseColor;
-
     std::vector<std::vector<PortalBody*>*> bodyIndices;
     std::vector<Portal*> portals;
 
-    PortalWorld(DebugDrawer* drawer);
+    PortalWorld();
     void PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations);
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body);
 
 private:
-    DebugDrawer* drawer;
     PortalRay* rayHandler;
     EvaluationRay* evalRayHandler;
 
@@ -160,4 +155,6 @@ private:
 
     void CreateRotationJoint(RotationJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
     void DestroyRotationJoint(RotationJoint* rj);
+
+    b2Draw* getDebugDraw() { return m_debugDraw; }
 };

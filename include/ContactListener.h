@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TestPlayer.h"
 #include <box2d/box2d.h>
 #include <stdio.h>
 #include "Portal.h"

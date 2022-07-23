@@ -1,6 +1,7 @@
+#pragma once
+
 #include <PortalBody.h>
 #include <stdio.h>
-
 
 struct RotationJointDef : public b2JointDef
 {
