@@ -4,7 +4,7 @@ int main(void)
 {
     WindowPainter* wh = new WindowPainter(nullptr);
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
-    cam->zoom = 0.55f;
+    cam->zoom = 0.75f;
     wh->cam = cam;
 
     ContactListener cl;

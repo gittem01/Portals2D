@@ -215,6 +215,7 @@ protected:
 	friend class b2World;
 	friend class b2Contact;
 	friend class b2ContactManager;
+	friend class PortalWorld;
 
 	b2Fixture();
 

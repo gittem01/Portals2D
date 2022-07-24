@@ -1,5 +1,8 @@
 #include <Camera.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #define RENDER_COLOURFUL 0
 
 #if RENDER_COLOURFUL
@@ -61,11 +64,98 @@ void Renderer::addPortal(Portal* portal, b2Color color){
     portals.push_back(portalData);
 }
 
-void Renderer::addPortalBody(PortalBody* pBody, b2Color color){
+void Renderer::addPortalBody(PortalBody* pBody, b2Color color, char* texture){
+    unsigned int texObject = 0;
+    glm::vec2 horz = glm::vec2(+9999999.0f, -9999999.0f);
+    glm::vec2 vert = glm::vec2(+9999999.0f, -9999999.0f);
+    if (texture){
+        glGenTextures(1, &texObject);
+        glBindTexture(GL_TEXTURE_2D, texObject);
+        // set the texture wrapping/filtering options (on the currently bound texture object)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // load and generate the texture
+        int width, height, nrChannels;
+        unsigned char *data = stbi_load(texture, &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            if (nrChannels == 3)
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            else if (nrChannels == 4)
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            std::cout << "Failed to load texture" << std::endl;
+            std::exit(-1);
+        }
+        stbi_image_free(data);
+
+
+        for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
+            if (fix->GetType() == b2Shape::e_polygon){
+                b2PolygonShape* poly = (b2PolygonShape*)fix->GetShape();
+
+                for (int i = 0; i < poly->m_count; i++){
+                    b2Vec2 vertex = poly->m_vertices[i];
+
+                    horz.x = std::min(horz.x, vertex.x);
+                    horz.y = std::max(horz.y, vertex.x);
+                    vert.x = std::min(vert.x, vertex.y);
+                    vert.y = std::max(vert.y, vertex.y);
+                }
+            }
+            else if (fix->GetType() == b2Shape::e_circle){
+                b2CircleShape* circ = (b2CircleShape*)fix->GetShape();
+                
+                b2Vec2 center = circ->m_p;
+                float radius = circ->m_radius;
+
+                horz.x = std::min(horz.x, center.x - radius);
+                horz.y = std::max(horz.y, center.x + radius);
+                vert.x = std::min(vert.x, center.y - radius);
+                vert.y = std::max(vert.y, center.y + radius);
+            }
+        }
+    }
+
     bodyRenderData* bodyData = new bodyRenderData;
     bodyData->worldIndex = pBody->worldIndex;
     bodyData->color = color;
-    
+    bodyData->texture = texObject;
+
+    bodyData->xSides = horz;
+    bodyData->ySides = vert;
+
+    bodyData->mirroredXSides = glm::vec2(-horz.y, -horz.x);
+
+    for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
+        fixData* fData = new fixData;
+        if (fix->GetType() == b2Shape::e_polygon){
+            b2PolygonShape* poly = (b2PolygonShape*)fix->GetShape();
+            fData->type = POLYGON;
+            fData->vertexCount = poly->m_count;
+
+            for (int i = 0; i < poly->m_count; i++){
+                b2Vec2 vertex = poly->m_vertices[i];
+                fData->vertices[i] = vertex;
+                fData->mirroredVertices[i] = pWorld->mirror(b2Vec2(0, 1), vertex);
+            }
+            bodyData->fixtureDatas.push_back(fData);
+        }
+        else if (fix->GetType() == b2Shape::e_circle){
+            b2CircleShape* circ = (b2CircleShape*)fix->GetShape();
+            fData->type = CIRCLE;
+            fData->cPos = circ->m_p;
+            fData->mirroredCPos = pWorld->mirror(b2Vec2(0, 1), circ->m_p);
+            fData->radius = circ->m_radius;
+            bodyData->fixtureDatas.push_back(fData);
+        }
+    }
+
     portalBodies.push_back(bodyData);
 }
 
@@ -98,61 +188,58 @@ void Renderer::portalRender(portalRenderData* prd){
 
 void Renderer::bodyRender(bodyRenderData* brd){
     for (PortalBody* pBody : *brd->worldIndex){
-        for (b2Fixture* fix = pBody->body->GetFixtureList(); fix != nullptr; fix = fix->GetNext()){
-            if (fix->GetType() == b2Shape::Type::e_polygon){
-                drawPolygonFix(pBody, fix, brd->color);
+        int i = 0;
+        for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
+            if (fix->GetType() == b2Shape::Type::e_polygon){                
+                drawPolygonFix(pBody, fix, brd, i++);
             }
             else if (fix->GetType() == b2Shape::Type::e_circle){
-                drawCircleFix(pBody, fix, brd->color);
+                drawCircleFix(pBody, fix, brd, i++);
             }
         }
 #if 0
-        b2Transform t = body->GetTransform();
-        t.q.Set(offsetAngle + body->GetAngle());
-        pWorld->drawer->DrawTransform(t);
+        b2Transform t = pBody->body->GetTransform();
+        t.q.Set(pBody->offsetAngle + pBody->body->GetAngle());
+        
+        const float axisScale = 0.3f / (camera->zoom * camera->zoom);
+	
+        b2Vec2 p1 = t.p, p2;
+
+        p2 = p1 + axisScale * t.q.GetXAxis();
+        debug_Line(p1, p2, 0.01f, b2Color(1, 0, 0, 1));
+
+        p2 = p1 + axisScale * t.q.GetYAxis();
+        debug_Line(p1, p2, 0.01f, b2Color(0, 0, 1, 1));
 #endif
     }
 }
 
-void Renderer::debug_Polygon(const b2Vec2* vertices, int vertexCount, float outThickness, b2Color color, b2Color outerColor){
+void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* brd, int renderIndex){
     polyShader->use();
 
-    polyShader->setMat4("ortho", camera->ortho);
-
-    glm::mat4 model = glm::mat4(1.0f);
-
-    polyShader->setMat4("model", model);
-
-    polyShader->setVec4("colour", color.r, color.g, color.b, 0.5f);
-    polyShader->setVec4("outerColour", color.r, color.g, color.b, 1.0f);
-
-    polyShader->setInt("numPoints", vertexCount);
-
-    polyShader->setFloat("lineDist", outThickness);
-    polyShader->setFloat("zoom", camera->zoom);
-
-    polyShader->setInt("numPortals", 0);
-
-    unsigned int loc = glGetUniformLocation(polyShader->ID, "vertices");
-    glUniform2fv(loc, vertexCount, (GLfloat*)vertices);
-
-    glDrawArrays(GL_TRIANGLES, 0, (vertexCount - 2) * 3);
-}
-
-void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
-    polyShader->use();
-
-    b2PolygonShape* pShape = (b2PolygonShape*)fix->GetShape();
+    b2Color color = brd->color;
 
     float transparency = 1.0f;
     if (!pBody->body->IsAwake()){
         transparency /= 1.5f;
     }
 
+    if (brd->texture){
+        polyShader->setBool("hasTexture", true);
+        if (pBody->isMirrored){
+            polyShader->setVec2("xSides", brd->mirroredXSides.x, brd->mirroredXSides.y);
+        }
+        else{
+            polyShader->setVec2("xSides", brd->xSides.x, brd->xSides.y);
+        }
+        polyShader->setVec2("ySides", brd->ySides.x, brd->ySides.y);
+        glBindTexture(GL_TEXTURE_2D, brd->texture);
+    }
+
     polyShader->setMat4("ortho", camera->ortho);
 
     b2Vec2 pos = pBody->body->GetPosition();
-    float angle = pBody->body->GetAngle();
+    float angle = pBody->body->GetAngle() + pBody->offsetAngle;
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
@@ -166,7 +253,9 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
     polyShader->setVec4("releaseColour", releaseColor.r, releaseColor.g, releaseColor.b, releaseColor.a);
     polyShader->setBool("drawReleases", drawReleases);
 
-    polyShader->setInt("numPoints", pShape->m_count);
+    fixData* fData = brd->fixtureDatas.at(renderIndex);
+
+    polyShader->setInt("numPoints", fData->vertexCount);
 
     polyShader->setFloat("lineDist", 0.015f);
     polyShader->setFloat("zoom", camera->zoom);
@@ -204,7 +293,14 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
     polyShader->setInt("numPortals", numPortals);
 
     unsigned int loc = glGetUniformLocation(polyShader->ID, "vertices");
-	glUniform2fv(loc, pShape->m_count, (GLfloat*)pShape->m_vertices);
+    if (pBody->isMirrored){
+        glUniform2fv(loc, fData->vertexCount, (GLfloat*)fData->mirroredVertices);
+        polyShader->setBool("isMirrored", true);
+    }
+    else{
+	    glUniform2fv(loc, fData->vertexCount, (GLfloat*)fData->vertices);
+        polyShader->setBool("isMirrored", false);
+    }
 
     loc = glGetUniformLocation(polyShader->ID, "portals");
 	glUniform4fv(loc, numPortals, (GLfloat*)portalPositions);
@@ -212,18 +308,33 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
     loc = glGetUniformLocation(polyShader->ID, "sideMults");
 	glUniform1iv(loc, numPortals, (GLint*)sideMults);
 
-    glDrawArrays(GL_TRIANGLES, 0, (pShape->m_count - 2) * 3);
+    glDrawArrays(GL_TRIANGLES, 0, (fData->vertexCount - 2) * 3);
 
     free(portalPositions);
     free(sideMults);
 }
 
-void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
+void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* brd, int renderIndex){
     circShader->use();
+
+    b2Color color = brd->color;
 
     float transparency = 1.0f;
     if (!pBody->body->IsAwake()){
         transparency /= 1.5f;
+    }
+
+    if (brd->texture){
+        circShader->setBool("hasTexture", true);
+        if (pBody->isMirrored){
+            circShader->setVec2("xSides", brd->mirroredXSides.x, brd->mirroredXSides.y);
+        }
+        else{
+            circShader->setVec2("xSides", brd->xSides.x, brd->xSides.y);
+        }
+        circShader->setVec2("ySides", brd->ySides.x, brd->ySides.y);
+        
+        glBindTexture(GL_TEXTURE_2D, brd->texture);
     }
 
     b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
@@ -231,10 +342,25 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
 
     circShader->setMat4("ortho", camera->ortho);
 
-    b2Vec2 pos = pBody->body->GetWorldPoint(shape->m_p);
+    b2Vec2 pos = pBody->body->GetPosition();
+    float angle = pBody->body->GetAngle() + pBody->offsetAngle;
 
-    circShader->setVec2("pos", pos.x, pos.y);
-    circShader->setFloat("size", r * 2);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
+    model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
+    circShader->setMat4("model", model);
+
+    fixData* fData = brd->fixtureDatas.at(renderIndex);
+
+    if (pBody->isMirrored){
+        circShader->setVec2("pos", fData->mirroredCPos.x, fData->mirroredCPos.y);
+        circShader->setBool("isMirrored", true);
+    }
+    else{
+        circShader->setVec2("pos", fData->cPos.x, fData->cPos.y);
+        circShader->setBool("isMirrored", false);
+    }
+    circShader->setFloat("size", fData->radius * 2);
 
     circShader->setVec4("colour", color.r, color.g, color.b, transparency);
     circShader->setVec4("outerColour", color.r, color.g, color.b, 1);
@@ -305,12 +431,43 @@ void Renderer::debug_Line(b2Vec2 p1, b2Vec2 p2, float thickness, b2Color color){
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
+void Renderer::debug_Polygon(const b2Vec2* vertices, int vertexCount, float outThickness, b2Color color, b2Color outerColor){
+    polyShader->use();
+
+    polyShader->setBool("hasTexture", false);
+    polyShader->setMat4("ortho", camera->ortho);
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    polyShader->setMat4("model", model);
+
+    polyShader->setVec4("colour", color.r, color.g, color.b, 0.5f);
+    polyShader->setVec4("outerColour", color.r, color.g, color.b, 1.0f);
+
+    polyShader->setInt("numPoints", vertexCount);
+
+    polyShader->setFloat("lineDist", outThickness);
+    polyShader->setFloat("zoom", camera->zoom);
+
+    polyShader->setInt("numPortals", 0);
+
+    unsigned int loc = glGetUniformLocation(polyShader->ID, "vertices");
+    glUniform2fv(loc, vertexCount, (GLfloat*)vertices);
+
+    glDrawArrays(GL_TRIANGLES, 0, (vertexCount - 2) * 3);
+}
+
 void Renderer::debug_Circle(b2Vec2 p, float r, float outThickness, b2Color color, bool isPoint, b2Color outerColor){
     circShader->use();
 
+    circShader->setBool("hasTexture", false);
     circShader->setMat4("ortho", camera->ortho);
 
-    circShader->setVec2("pos", p.x, p.y);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(p.x, p.y, 0.0f));
+    circShader->setMat4("model", model);
+
+    circShader->setVec2("pos", 0, 0);
     circShader->setFloat("size", r);
     circShader->setVec4("colour", color.r, color.g, color.b, color.a);
     circShader->setVec4("outerColour", outerColor.r, outerColor.g, outerColor.b, outerColor.a);

@@ -76,6 +76,7 @@ public:
     b2Body* body;
     int numFixtures;
     float offsetAngle;
+    bool isMirrored;
 
 private:
     PortalBody(b2Body* body, PortalWorld* pWorld);

@@ -19,6 +19,7 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
     bd->extraData = nullptr;
     body->GetUserData().pointer = (uintptr_t)bd;
 
+    isMirrored = false;
 
     this->numFixtures = 0;
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
@@ -207,6 +208,8 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     if (fix2->GetBody()->GetType() == b2_staticBody && !fix2->IsSensor() && prepareMaps.find(fix1) != prepareMaps.end()){
         auto mapsFix = prepareMaps[fix1];
         for (auto iter = mapsFix.begin(); iter != mapsFix.end(); iter++){
+            // introduces some bugs now
+            // it will be replaced with a much better solution later
             (*iter)->prepareCollisionCheck(contact, fix1, fix2);
         }
     }

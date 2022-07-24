@@ -4,10 +4,12 @@ out vec4 color;
 
 in vec2 localPos;
 in vec4 worldPos;
+in vec2 texturePosition;
 
 uniform vec4 colour;
 uniform vec4 outerColour;
 
+uniform bool hasTexture;
 uniform bool isFullRelease;
 uniform bool drawReleases;
 uniform vec4 releaseColour;
@@ -20,6 +22,8 @@ uniform float zoom;
 uniform vec4[256] portals;
 uniform int[256] sideMults;
 uniform int numPortals;
+
+uniform sampler2D tex;
 
 // line goes from a to b
 // c is the point
@@ -93,7 +97,12 @@ void main()
             color = releaseColour;
         }
         else{
-            color = vec4(colour.xyz, colour.w * 0.5f);
+            if (hasTexture){
+                color = texture(tex, texturePosition);
+            }
+            else{
+                color = vec4(colour.xyz, colour.w * 0.5f);
+            }
         }
     }
 }

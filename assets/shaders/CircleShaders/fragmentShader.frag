@@ -7,7 +7,9 @@ in vec4 worldPos;
 
 uniform vec4 colour;
 uniform vec4 outerColour;
+in vec2 texturePosition;
 
+uniform bool hasTexture;
 uniform bool isFullRelease;
 uniform bool drawReleases;
 uniform vec4 releaseColour;
@@ -21,6 +23,8 @@ uniform bool isPoint;
 uniform vec4[256] portals;
 uniform int[256] sideMults;
 uniform int numPortals;
+
+uniform sampler2D tex;
 
 float lineRel(vec2 a, vec2 b, vec2 c){
      return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
@@ -73,7 +77,12 @@ void main()
                 color = releaseColour;
             }
             else{
-                color = vec4(colour.xyz, colour.w * 0.5f);
+                if (hasTexture){
+                    color = texture(tex, texturePosition);
+                }
+                else{
+                    color = vec4(colour.xyz, colour.w * 0.5f);
+                }
             }
         }
     }

@@ -229,6 +229,8 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         b2Body* body2 = CreateBody(&def);
         PortalBody* npb = new PortalBody(body2, this);
 
+        npb->isMirrored = pBody->isMirrored ^ c->isReversed;
+
         if (c->isReversed){
             b2Vec2 v = rotateVec(b2Vec2(1, 0), angleRot + body2->GetAngle());
             float ang1 = calcAngle2(v);
@@ -275,6 +277,17 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             body2->SetAngularVelocity(body1->GetAngularVelocity());
         }
         body2->SetLinearVelocity(lvToSet);
+
+        b2Fixture* prev = NULL;
+        b2Fixture* current = body1->GetFixtureList();
+        b2Fixture* next = NULL;
+        while (current != NULL) {
+            next = current->m_next;
+            current->m_next = prev;
+            prev = current;
+            current = next;
+        }
+        body1->m_fixtureList = prev;
 
         bool allOut = true;
         int fixMargin = 0;
@@ -437,6 +450,17 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
                 allOut = false;
             }
         }
+
+        prev = NULL;
+        current = body1->GetFixtureList();
+        next = NULL;
+        while (current != NULL) {
+            next = current->m_next;
+            current->m_next = prev;
+            prev = current;
+            current = next;
+        }
+        body1->m_fixtureList = prev;
 
         createPortalBody_i(npb, pBody, false);
         if (allOut) destroyBodies.insert(pBody);

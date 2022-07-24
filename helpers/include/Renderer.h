@@ -7,9 +7,32 @@
 class Camera;
 class DebugDrawer;
 
+typedef enum shapeType{
+    POLYGON,
+    CIRCLE,
+} shapeType;
+
+typedef struct fixData{
+    shapeType type;
+    b2Vec2 vertices[8];
+    b2Vec2 cPos;
+
+    b2Vec2 mirroredVertices[8];
+    b2Vec2 mirroredCPos;
+
+    int vertexCount;
+    float radius;
+} fixData;
+
 typedef struct bodyRenderData{
     b2Color color;
     std::vector<PortalBody*>* worldIndex;
+    std::vector<fixData*> fixtureDatas;
+    unsigned int texture;
+    glm::vec2 xSides;
+    glm::vec2 ySides;
+
+    glm::vec2 mirroredXSides;
 } bodyRenderData;
 
 typedef struct portalRenderData{
@@ -28,7 +51,7 @@ public:
     
     Renderer(PortalWorld* pWorld, Camera* camera);
 
-    void addPortalBody(PortalBody* pBody, b2Color color=b2Color(1, 1, 1, 0.5));
+    void addPortalBody(PortalBody* pBody, b2Color color=b2Color(1, 1, 1, 0.5), char* texture=NULL);
     void addPortal(Portal* portal, b2Color color=b2Color(1, 1, 1, 0.5));
 
     void drawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
@@ -58,6 +81,6 @@ private:
     void portalRender(portalRenderData* portalData);
     void bodyRender(bodyRenderData* bodyData);
 
-    void drawPolygonFix(PortalBody* pBody, b2Fixture* fix, b2Color color);
-    void drawCircleFix(PortalBody* pBody, b2Fixture* fix, b2Color color);
+    void drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* brd, int renderIndex);
+    void drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* brd, int renderIndex);
 };

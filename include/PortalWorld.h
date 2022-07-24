@@ -131,6 +131,8 @@ public:
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
     PortalBody* createPortalBody(b2Body* body);
 
+    static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
+
 private:
     PortalRay* rayHandler;
     EvaluationRay* evalRayHandler;
@@ -143,7 +145,6 @@ private:
     static float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c);
     static float calcAngle2(b2Vec2 vec);
     static void normalize(b2Vec2* vec);
-    static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
 
     void globalPostHandle();
 

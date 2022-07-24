@@ -11,7 +11,7 @@ std::uniform_real_distribution<double> randF(-0.5f, 0.5f);
 
 bool isPaused = false;
 bool tick = false;
-int totalIter = 10;
+int totalIter = 1;
 PortalWorld* pWorld;
 Renderer* renderer;
 
@@ -85,7 +85,7 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
             currD = nextD;
         }
         f -= fd;
-        //dec++;
+        dec++;
     }
 
     free(vertices);
@@ -455,7 +455,7 @@ void testCase1(PortalWorld* portalWorld, Renderer* renderer){
     float r = 0.7f;
     b2Body* body3 = createCircle(p, r, portalWorld, b2_dynamicBody);
     PortalBody* pb = portalWorld->createPortalBody(body3);
-    renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f));
+    renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f), "../assets/textures/pattern.png");
 
     b2Vec2 bPos(10.0f, 5.0f);
     s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
