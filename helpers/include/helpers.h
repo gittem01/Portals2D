@@ -459,7 +459,7 @@ void testCase1(PortalWorld* portalWorld, Renderer* renderer){
 
     b2Vec2 bPos(10.0f, 5.0f);
     s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
-    //b2Body* statBody = createBox(bPos, s, portalWorld, b2_staticBody);
+    b2Body* statBody = createBox(bPos, s, portalWorld, b2_staticBody);
 }
 
 void testCase2(PortalWorld* portalWorld, Renderer* renderer){

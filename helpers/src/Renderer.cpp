@@ -114,6 +114,31 @@ void Renderer::bodyRender(bodyRenderData* brd){
     }
 }
 
+void Renderer::debug_Polygon(const b2Vec2* vertices, int vertexCount, float outThickness, b2Color color, b2Color outerColor){
+    polyShader->use();
+
+    polyShader->setMat4("ortho", camera->ortho);
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    polyShader->setMat4("model", model);
+
+    polyShader->setVec4("colour", color.r, color.g, color.b, 0.5f);
+    polyShader->setVec4("outerColour", color.r, color.g, color.b, 1.0f);
+
+    polyShader->setInt("numPoints", vertexCount);
+
+    polyShader->setFloat("lineDist", outThickness);
+    polyShader->setFloat("zoom", camera->zoom);
+
+    polyShader->setInt("numPortals", 0);
+
+    unsigned int loc = glGetUniformLocation(polyShader->ID, "vertices");
+    glUniform2fv(loc, vertexCount, (GLfloat*)vertices);
+
+    glDrawArrays(GL_TRIANGLES, 0, (vertexCount - 2) * 3);
+}
+
 void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, b2Color color){
     polyShader->use();
 
@@ -280,7 +305,7 @@ void Renderer::debug_Line(b2Vec2 p1, b2Vec2 p2, float thickness, b2Color color){
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void Renderer::debug_Circle(b2Vec2 p, float r, float outThickness, b2Color color, bool isPoint, b2Color outerColour){
+void Renderer::debug_Circle(b2Vec2 p, float r, float outThickness, b2Color color, bool isPoint, b2Color outerColor){
     circShader->use();
 
     circShader->setMat4("ortho", camera->ortho);
@@ -288,7 +313,7 @@ void Renderer::debug_Circle(b2Vec2 p, float r, float outThickness, b2Color color
     circShader->setVec2("pos", p.x, p.y);
     circShader->setFloat("size", r);
     circShader->setVec4("colour", color.r, color.g, color.b, color.a);
-    circShader->setVec4("outerColour", outerColour.r, outerColour.g, outerColour.b, outerColour.a);
+    circShader->setVec4("outerColour", outerColor.r, outerColor.g, outerColor.b, outerColor.a);
 
     circShader->setFloat("lineDist", outThickness);
     circShader->setFloat("zoom", camera->zoom);

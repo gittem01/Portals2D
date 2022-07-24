@@ -35,7 +35,9 @@ public:
 
     void debug_Line(b2Vec2 p1, b2Vec2 p2, float thickness=0.01f, b2Color color=b2Color(1, 1, 1, 1));
     void debug_Circle(  b2Vec2 p, float r, float outThickness = 0.01f, b2Color color=b2Color(1, 1, 1, 1),
-                        bool isPoint=false, b2Color outerColour=b2Color(1, 1, 1, 1));
+                         bool isPoint=false, b2Color outerColor=b2Color(1, 1, 1, 1));
+    void debug_Polygon( const b2Vec2* vertices, int vertexCount, float outThickness = 0.01f, b2Color color = b2Color(1, 1, 1, 1),
+                        b2Color outerColor = b2Color(1, 1, 1, 1));
 
     void render();
 

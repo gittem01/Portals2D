@@ -3,7 +3,7 @@
 std::vector<std::string> Shader::precompiledShaders;
 std::vector<unsigned int> Shader::precompiledShaderIDs;
 
-std::string Shader::readFile(const char* path)
+std::string Shader::readFile(const char* path, int tryCount)
 {
 	if (!path) {
 		return std::string("");
@@ -22,8 +22,17 @@ std::string Shader::readFile(const char* path)
 	}
 	catch (std::ifstream::failure e)
 	{
-		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-		std::exit(-1);
+		if (tryCount > 3) {
+			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+			std::exit(-1);
+		}
+
+		std::string s1 = std::string("../");
+		std::string s2 = std::string(path);
+		printf("Trying next path : %s\n", (s1 + s2).c_str());
+		std::string retVal = Shader::readFile((s1 + s2).c_str(), tryCount + 1);
+
+		return retVal;
 	}
 }
 

@@ -5,3 +5,4 @@
 .ds_store
 CMakeSettings.json
 .cache
+/out

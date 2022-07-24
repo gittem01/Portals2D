@@ -52,8 +52,8 @@ int main(void)
 
             //pWorld->DebugDraw();
 
-            renderer->render();
             drawer->drawWorld(pWorld);
+            renderer->render();
 
             mjh.drawMouseBody();
 
