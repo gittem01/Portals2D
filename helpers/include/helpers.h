@@ -11,12 +11,12 @@ std::uniform_real_distribution<double> randF(-0.5f, 0.5f);
 
 bool isPaused = false;
 bool tick = false;
-int totalIter = 1;
+int totalIter = 10;
 PortalWorld* pWorld;
 Renderer* renderer;
 
 // O shaped body
-b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f) {
+b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f, float isMixed=false) {
     b2BodyDef bodyDef;
     bodyDef.position = bodyPos;
     bodyDef.type = b2_dynamicBody;
@@ -85,7 +85,9 @@ b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
             currD = nextD;
         }
         f -= fd;
-        dec++;
+        if (isMixed){
+            dec++;
+        }
     }
 
     free(vertices);
@@ -433,8 +435,8 @@ void testCase1(PortalWorld* portalWorld, Renderer* renderer){
     PortalBody* pb2 = portalWorld->createPortalBody(body20);
     PortalBody* pb3 = portalWorld->createPortalBody(body21);
 
-    renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f));
-    renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f));
+    renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f), "assets/textures/cube.png");
+    renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f), "assets/textures/cube.png");
     renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
 
 #if 0
@@ -576,7 +578,7 @@ void multiReleaseTest(PortalWorld* portalWorld, Renderer* renderer){
     b2Body* body1 = createWbody(portalWorld, b2Vec2(+6.0f, -7.5f), 540.0f, 100, 0.16f, 3.0f, 0.008f);
     PortalBody* b1 = portalWorld->createPortalBody(body1);
 
-    b2Body* body2 = createObody(portalWorld, b2Vec2(-15.0f, -5.0f), 1080.0f, 50, 0.3f, 3.0f, 0.01f);
+    b2Body* body2 = createObody(portalWorld, b2Vec2(-15.0f, -5.0f), 1080.0f, 50, 0.3f, 3.0f, 0.01f, false);
     PortalBody* b2 = portalWorld->createPortalBody(body2);
 
     b2Body* body3 = createBox(b2Vec2(0, 0), b2Vec2(30, 0.5), portalWorld, b2_dynamicBody);
@@ -584,5 +586,5 @@ void multiReleaseTest(PortalWorld* portalWorld, Renderer* renderer){
 
     renderer->addPortalBody(b1);
     renderer->addPortalBody(b2);
-    renderer->addPortalBody(b3);
+    renderer->addPortalBody(b3, b2Color(1, 1, 1, 0.5f), "assets/textures/long.png");
 }

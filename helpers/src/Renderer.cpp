@@ -235,6 +235,7 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData*
     }
 
     if (brd->texture){
+        polyShader->setFloat("lineDist", 0.0f);
         polyShader->setBool("hasTexture", true);
         if (pBody->isMirrored){
             polyShader->setVec2("xSides", brd->mirroredXSides.x, brd->mirroredXSides.y);
@@ -244,6 +245,10 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData*
         }
         polyShader->setVec2("ySides", brd->ySides.x, brd->ySides.y);
         glBindTexture(GL_TEXTURE_2D, brd->texture);
+    }
+    else{
+        polyShader->setFloat("lineDist", 0.015f);
+        polyShader->setBool("hasTexture", false);
     }
 
     polyShader->setMat4("ortho", camera->ortho);
@@ -267,7 +272,6 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData*
 
     polyShader->setInt("numPoints", fData->vertexCount);
 
-    polyShader->setFloat("lineDist", 0.015f);
     polyShader->setFloat("zoom", camera->zoom);
 
     auto colls = pBody->fixtureCollisions[fix];
@@ -337,6 +341,7 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
     }
 
     if (brd->texture){
+        circShader->setFloat("lineDist", 0.0f);
         circShader->setBool("hasTexture", true);
         if (pBody->isMirrored){
             circShader->setVec2("xSides", brd->mirroredXSides.x, brd->mirroredXSides.y);
@@ -347,6 +352,10 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
         circShader->setVec2("ySides", brd->ySides.x, brd->ySides.y);
         
         glBindTexture(GL_TEXTURE_2D, brd->texture);
+    }
+    else{
+        circShader->setFloat("lineDist", 0.015f);
+        circShader->setBool("hasTexture", false);
     }
 
     b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
@@ -379,7 +388,7 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
     circShader->setVec4("releaseColour", releaseColor.r, releaseColor.g, releaseColor.b, releaseColor.a);
     circShader->setBool("drawReleases", drawReleases);
 
-    circShader->setFloat("lineDist", 0.015f);
+    circShader->setFloat("lineDist", 0.0f);
     circShader->setFloat("zoom", camera->zoom);
     circShader->setBool("isPoint", false);
 

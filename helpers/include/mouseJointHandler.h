@@ -101,6 +101,7 @@ public:
                 jd.target = target + diff;
             else
                 jd.target = target;
+
             jd.maxForce = 1000.0f * clickedBody->GetMass();
             jd.collideConnected = true;
             
