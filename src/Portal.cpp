@@ -168,8 +168,6 @@ PortalCollisionType Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2
 
     PortalCollisionType ret = DEFAULT_COLLISION;
 
-    PortalBody* pBody = (PortalBody*)bData->data;
-
     if (fix1 == collisionSensor){
         prepareFixtures.erase(fix2);
         ret = PREPARE_OUT;

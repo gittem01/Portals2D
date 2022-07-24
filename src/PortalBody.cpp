@@ -452,7 +452,6 @@ void PortalBody::adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec
 
     for (int i = 0; i < vertices->size() + 1; i++){
         int vertexIndex = i % vertices->size();
-        int vertexBefore = i ? i - 1 : 0;
         pSide = p->getPointSide(vertices->at(vertexIndex));
 
         if (pSide == side && lastSide == 1 - side){
@@ -482,7 +481,6 @@ float PortalBody::getArea(b2Fixture* fix, int status){
 
     float baseArea = 0.0f;
     float finalArea = 0.0f;
-    float baseDensity = fix->GetDensity();
     if (fix->GetType() == b2Shape::Type::e_polygon){
         b2PolygonShape* pShape = (b2PolygonShape*)fix->GetShape();
         for (int i = 0; i < pShape->m_count; i++){
@@ -629,7 +627,7 @@ void PortalBody::calculateParts(b2Fixture* fix){
             if (releaseVecs->size() != 0)
                 apf->push_back(releaseVecs);
             else
-                free(releaseVecs);
+                delete(releaseVecs);
 
             setIter++;
             if (setIter == (*fixIter).second->end()) break;

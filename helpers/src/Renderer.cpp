@@ -281,6 +281,8 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData*
     for (portalCollision* coll : *colls){
         if (coll->status == 0){
             if (!drawReleases){
+                free(portalPositions);
+                free(sideMults);
                 return;
             }
             else{
@@ -348,7 +350,6 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
     }
 
     b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
-    float r = shape->m_radius;
 
     circShader->setMat4("ortho", camera->ortho);
 
@@ -393,6 +394,8 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
     for (portalCollision* coll : *colls){
         if (coll->status == 0){
             if (!drawReleases){
+                free(portalPositions);
+                free(sideMults);
                 return;
             }
             else{
