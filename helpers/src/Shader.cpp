@@ -29,7 +29,7 @@ std::string Shader::readFile(const char* path, int tryCount)
 
 		std::string s1 = std::string("../");
 		std::string s2 = std::string(path);
-		printf("Trying next path : %s\n", (s1 + s2).c_str());
+
 		std::string retVal = Shader::readFile((s1 + s2).c_str(), tryCount + 1);
 
 		return retVal;

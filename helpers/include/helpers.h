@@ -455,7 +455,7 @@ void testCase1(PortalWorld* portalWorld, Renderer* renderer){
     float r = 0.7f;
     b2Body* body3 = createCircle(p, r, portalWorld, b2_dynamicBody);
     PortalBody* pb = portalWorld->createPortalBody(body3);
-    renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f), "../assets/textures/pattern.png");
+    renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f), "assets/textures/pattern.png");
 
     b2Vec2 bPos(10.0f, 5.0f);
     s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);

@@ -51,7 +51,7 @@ public:
     
     Renderer(PortalWorld* pWorld, Camera* camera);
 
-    void addPortalBody(PortalBody* pBody, b2Color color=b2Color(1, 1, 1, 0.5), char* texture=NULL);
+    void addPortalBody(PortalBody* pBody, b2Color color=b2Color(1, 1, 1, 0.5), const char* texture=NULL);
     void addPortal(Portal* portal, b2Color color=b2Color(1, 1, 1, 0.5));
 
     void drawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);

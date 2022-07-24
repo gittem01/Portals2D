@@ -27,9 +27,9 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
     this->pWorld = pWorld;
     this->camera = camera;
     
-    this->polyShader = new Shader("../assets/shaders/PolygonShaders/");
-    this->circShader = new Shader("../assets/shaders/CircleShaders/");
-    this->lineShader = new Shader("../assets/shaders/LineShaders/");
+    this->polyShader = new Shader("assets/shaders/PolygonShaders/");
+    this->circShader = new Shader("assets/shaders/CircleShaders/");
+    this->lineShader = new Shader("assets/shaders/LineShaders/");
 
     this->drawReleases = false;
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
@@ -64,37 +64,47 @@ void Renderer::addPortal(Portal* portal, b2Color color){
     portals.push_back(portalData);
 }
 
-void Renderer::addPortalBody(PortalBody* pBody, b2Color color, char* texture){
+void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* texture){
     unsigned int texObject = 0;
-    glm::vec2 horz = glm::vec2(+9999999.0f, -9999999.0f);
-    glm::vec2 vert = glm::vec2(+9999999.0f, -9999999.0f);
     if (texture){
-        glGenTextures(1, &texObject);
-        glBindTexture(GL_TEXTURE_2D, texObject);
-        // set the texture wrapping/filtering options (on the currently bound texture object)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // load and generate the texture
+        unsigned char *data;
         int width, height, nrChannels;
-        unsigned char *data = stbi_load(texture, &width, &height, &nrChannels, 0);
-        if (data)
-        {
+        std::string newTexPath = std::string(texture).c_str();
+        for (int i = 0; i < 4; i++){
+            data = stbi_load(newTexPath.c_str(), &width, &height, &nrChannels, 0);
+            if (!data){
+                newTexPath = "../" + newTexPath;
+            }
+            else{
+                break;
+            }
+        }
+        if (data){
+            glGenTextures(1, &texObject);
+            glBindTexture(GL_TEXTURE_2D, texObject);
+            // set the texture wrapping/filtering options (on the currently bound texture object)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
             if (nrChannels == 3)
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             else if (nrChannels == 4)
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
+
+            stbi_image_free(data);
         }
-        else
-        {
+        else{
             std::cout << "Failed to load texture" << std::endl;
             std::exit(-1);
         }
-        stbi_image_free(data);
-
-
+    }
+    
+    glm::vec2 horz = glm::vec2(+9999999.0f, -9999999.0f);
+    glm::vec2 vert = glm::vec2(+9999999.0f, -9999999.0f);
+    if (texture){
         for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
             if (fix->GetType() == b2Shape::e_polygon){
                 b2PolygonShape* poly = (b2PolygonShape*)fix->GetShape();
