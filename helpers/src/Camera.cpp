@@ -3,15 +3,21 @@
 
 Camera::Camera(glm::vec2 pos, void* wh) {
 	WindowPainter* windowHandler = (WindowPainter*)wh;
+
 	this->pos = pos;
 	this->wh = wh;
 	this->window = windowHandler->window;
+
+	xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
+	ySides = this->defaultYSides / (this->zoom * this->zoom) + this->pos.y;
+
+	updateOrtho();
 }
 
 void Camera::updateOrtho() {
-	glm::vec2 xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
-	glm::vec2 ySides = this->defaultYSides / (this->zoom * this->zoom) + this->pos.y;
-
+	xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
+	ySides = this->defaultYSides / (this->zoom * this->zoom) + this->pos.y;
+	
 	this->ortho = glm::ortho(xSides.x, xSides.y, ySides.x, ySides.y, -100.0f, +100.0f);
 }
 
@@ -20,17 +26,14 @@ void Camera::changeZoom(float inc) {
 
 	float zoomAfter = this->limitZoom(zoom + inc);
 
-	glm::vec2 xSidesBefore = this->defaultXSides / ((float)pow(this->zoom, 2)) + this->pos.x;
-	glm::vec2 xSidesAfter = this->defaultXSides / ((float)pow(zoomAfter, 2)) + this->pos.x;
+	glm::vec2 xSidesAfter = this->defaultXSides / (zoomAfter * zoomAfter) + this->pos.x;
+	glm::vec2 ySidesAfter = this->defaultYSides / (zoomAfter * zoomAfter) + this->pos.y;
 
-	glm::vec2 ySidesBefore = this->defaultYSides / ((float)pow(this->zoom, 2)) + this->pos.y;
-	glm::vec2 ySidesAfter = this->defaultYSides / ((float)pow(zoomAfter, 2)) + this->pos.y;
+	float xPerctBefore = (mp.x - this->pos.x) / (xSides.y - xSides.x);
+	float xPerctAfter = (mp.x - this->pos.x) / (xSidesAfter.y - xSidesAfter.x);
 
-	float xPerctBefore = (mp.x - this->pos.x) / ((float)xSidesBefore.y - xSidesBefore.x);
-	float xPerctAfter = (mp.x - this->pos.x) / ((float)xSidesAfter.y - xSidesAfter.x);
-
-	float yPerctBefore = (mp.y - this->pos.y) / ((float)ySidesBefore.y - ySidesBefore.x);
-	float yPerctAfter = (mp.y - this->pos.y) / ((float)ySidesAfter.y - ySidesAfter.x);
+	float yPerctBefore = (mp.y - this->pos.y) / (ySides.y - ySides.x);
+	float yPerctAfter = (mp.y - this->pos.y) / (ySidesAfter.y - ySidesAfter.x);
 
 	this->pos.x += (xPerctAfter - xPerctBefore) * (xSidesAfter.y - xSidesAfter.x);
 	this->pos.y += (yPerctAfter - yPerctBefore) * (ySidesAfter.y - ySidesAfter.x);
@@ -66,7 +69,8 @@ void Camera::update() {
 
 	if (this->neededZoom != 0) {
 		this->changeZoom(this->zoomInc * this->neededZoom);
-		this->neededZoom -= zoomInc*this->neededZoom;
+		this->neededZoom -= zoomInc * this->neededZoom;
+
 	}
 
 	updateOrtho();

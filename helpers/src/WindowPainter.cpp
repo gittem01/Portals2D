@@ -186,4 +186,8 @@ void WindowPainter::windowSizeEventCallback(GLFWwindow* window, int width, int h
     float ratio = (float)height / width;
 
     thisClass->cam->defaultYSides = glm::vec2(-thisClass->cam->baseX * ratio * 0.5f, thisClass->cam->baseX * ratio * 0.5f);
+
+    thisClass->cam->xSides = thisClass->cam->defaultXSides / (thisClass->cam->zoom * thisClass->cam->zoom) + thisClass->cam->pos.x;
+	thisClass->cam->ySides = thisClass->cam->defaultYSides / (thisClass->cam->zoom * thisClass->cam->zoom) + thisClass->cam->pos.y;
+    thisClass->cam->updateOrtho();
 }

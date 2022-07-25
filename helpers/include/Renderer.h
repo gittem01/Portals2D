@@ -75,6 +75,9 @@ private:
 
     PortalWorld* pWorld;
 
+    int win_width, win_height;
+    float minLineThck = 0.0f;
+
     std::vector<bodyRenderData*> portalBodies;
     std::vector<portalRenderData*> portals;
 

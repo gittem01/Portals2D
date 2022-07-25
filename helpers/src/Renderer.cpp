@@ -170,6 +170,8 @@ void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* textu
 }
 
 void Renderer::render(){
+    glfwGetFramebufferSize(camera->window, &win_width, &win_height);
+    minLineThck = ((float)win_height / win_width) * 0.015f;
     for (portalRenderData* prd : portals){
         portalRender(prd);
     }
@@ -247,7 +249,7 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData*
         glBindTexture(GL_TEXTURE_2D, brd->texture);
     }
     else{
-        polyShader->setFloat("lineDist", 0.015f);
+        polyShader->setFloat("lineDist", glm::max(minLineThck, 0.015f));
         polyShader->setBool("hasTexture", false);
     }
 
@@ -354,7 +356,7 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
         glBindTexture(GL_TEXTURE_2D, brd->texture);
     }
     else{
-        circShader->setFloat("lineDist", 0.015f);
+        circShader->setFloat("lineDist", glm::max(minLineThck, 0.015f));
         circShader->setBool("hasTexture", false);
     }
 
@@ -388,7 +390,6 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
     circShader->setVec4("releaseColour", releaseColor.r, releaseColor.g, releaseColor.b, releaseColor.a);
     circShader->setBool("drawReleases", drawReleases);
 
-    circShader->setFloat("lineDist", 0.0f);
     circShader->setFloat("zoom", camera->zoom);
     circShader->setBool("isPoint", false);
 
@@ -446,6 +447,8 @@ void Renderer::debug_Line(b2Vec2 p1, b2Vec2 p2, float thickness, b2Color color){
     lineShader->setVec4("colour", color.r, color.g, color.b, color.a);
     lineShader->setFloat("zoom", camera->zoom);
 
+    thickness = glm::max(minLineThck, thickness);
+
     lineShader->setFloat("thickness", thickness);
     lineShader->setVec2("p1", p1.x, p1.y);
     lineShader->setVec2("p2", p2.x, p2.y);
@@ -468,7 +471,7 @@ void Renderer::debug_Polygon(const b2Vec2* vertices, int vertexCount, float outT
 
     polyShader->setInt("numPoints", vertexCount);
 
-    polyShader->setFloat("lineDist", outThickness);
+    polyShader->setFloat("lineDist", glm::max(minLineThck, outThickness));
     polyShader->setFloat("zoom", camera->zoom);
 
     polyShader->setInt("numPortals", 0);
@@ -494,7 +497,7 @@ void Renderer::debug_Circle(b2Vec2 p, float r, float outThickness, b2Color color
     circShader->setVec4("colour", color.r, color.g, color.b, color.a);
     circShader->setVec4("outerColour", outerColor.r, outerColor.g, outerColor.b, outerColor.a);
 
-    circShader->setFloat("lineDist", outThickness);
+    circShader->setFloat("lineDist", glm::max(minLineThck, outThickness));
     circShader->setFloat("zoom", camera->zoom);
     circShader->setBool("isPoint", isPoint);
 
