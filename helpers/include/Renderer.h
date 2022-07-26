@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <Portal.h>
 #include <Shader.h>
+#include <random>
 
 class Camera;
 class DebugDrawer;
@@ -64,22 +65,41 @@ public:
 
     void render();
 
+    void dotRender();
+
 private:
 
-    // -0.5f 0.5f box VAO
+    // -0.5f +0.5f box VAO
     unsigned int VAO;
+    
+    unsigned int pos_SBO;
+    unsigned int size_SBO;
+    unsigned int color_SBO;
+    unsigned int mult_SBO;
+
     Shader* polyShader;
     Shader* circShader;
     Shader* lineShader;
+    Shader* dotShader;
+
     Camera* camera;
 
     PortalWorld* pWorld;
+
+    int numDots = 40000;
+    std::vector<glm::vec4> colors;
+    std::vector<glm::vec2> positions;
+    std::vector<glm::vec2> sizes;
+    std::vector<glm::vec3> mults;
 
     int win_width, win_height;
     float minLineThck = 0.0f;
 
     std::vector<bodyRenderData*> portalBodies;
     std::vector<portalRenderData*> portals;
+
+    void prepareDots();
+    void createVAO();
 
     void portalRender(portalRenderData* portalData);
     void bodyRender(bodyRenderData* bodyData);

@@ -15,11 +15,20 @@
     };
 #endif
 
+std::random_device rd05;
+std::mt19937 mt05(rd05());
+std::uniform_real_distribution<double> rand05(-0.5f, 0.5f);
+
 b2Vec2 rotateVector(b2Vec2 vec, float angle){
     float x = cos(angle) * vec.x - sin(angle) * vec.y;
     float y = sin(angle) * vec.x + cos(angle) * vec.y;
 
     return {x, y};
+}
+
+float r05(){
+    rand05(mt05);
+    return rand05(mt05);
 }
 
 Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
@@ -30,10 +39,65 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
     this->polyShader = new Shader("assets/shaders/PolygonShaders/");
     this->circShader = new Shader("assets/shaders/CircleShaders/");
     this->lineShader = new Shader("assets/shaders/LineShaders/");
+    this->dotShader = new Shader("assets/shaders/DotShaders/");
 
     this->drawReleases = false;
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
 
+    createVAO();
+
+    float sMult = 0.25f;
+    for (int i = 0; i < numDots; i++){
+        colors.push_back(glm::vec4(r05() + 0.5f, r05() + 0.5f, 1, 1));
+        positions.push_back(glm::vec2(r05() * 160, r05() * 90));
+        float rSize = r05() + 0.3f;
+        sizes.push_back(glm::vec2(rSize, rSize));
+
+        // prlx multi inperct, outCurve
+        mults.push_back(glm::vec3(sMult, r05() * 0.15f, (r05() + 1.5f) * 2));
+        sMult += 0.5 / numDots;
+    }
+    prepareDots();
+}
+
+void Renderer::prepareDots(){
+    glGenBuffers(1, &pos_SBO);
+    glBindBuffer(GL_ARRAY_BUFFER, pos_SBO);
+    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions.at(0)), positions.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &size_SBO);
+    glBindBuffer(GL_ARRAY_BUFFER, size_SBO);
+    glBufferData(GL_ARRAY_BUFFER, sizes.size() * sizeof(sizes.at(0)), sizes.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &mult_SBO);
+    glBindBuffer(GL_ARRAY_BUFFER, mult_SBO);
+    glBufferData(GL_ARRAY_BUFFER, mults.size() * sizeof(mults.at(0)), mults.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &color_SBO);
+    glBindBuffer(GL_ARRAY_BUFFER, color_SBO);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors.at(0)), colors.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
+
+    glVertexAttribDivisor(0, 0);
+    glVertexAttribDivisor(1, 1);
+    glVertexAttribDivisor(2, 1);
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+}
+
+void Renderer::createVAO(){
     float vertices[] = {
         -0.5f, +0.5f,
         -0.5f, -0.5f,
@@ -43,7 +107,6 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
         -0.5f, +0.5f,
     };
 
-    // just to make driver happy for now
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
@@ -179,6 +242,30 @@ void Renderer::render(){
     for (bodyRenderData* brd : portalBodies){
         bodyRender(brd);
     }
+}
+
+void Renderer::dotRender(){
+    dotShader->use();
+    
+    dotShader->setMat4("ortho", camera->ortho);
+    dotShader->setFloat("zoom", camera->zoom);
+
+    // for (int i = 0; i < numDots; i++){
+    //     colors.at(i).g += ((float)rand() / RAND_MAX) * 0.02f;
+    //     if (colors.at(i).g > 1.0f) colors.at(i).g = 0.0f;
+    // }
+
+    // glBindBuffer(color_SBO, GL_ARRAY_BUFFER);
+    // void *ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    // memcpy(ptr, colors.data(), colors.size() * sizeof(colors.at(0)));
+    // glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    glBindBuffer(pos_SBO, GL_ARRAY_BUFFER);
+    glBindBuffer(size_SBO, GL_ARRAY_BUFFER);
+    glBindBuffer(mult_SBO, GL_ARRAY_BUFFER);
+
+    glBindVertexArray(VAO);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, numDots);
 }
 
 void Renderer::drawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color){
@@ -432,6 +519,8 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
 
     loc = glGetUniformLocation(circShader->ID, "sideMults");
 	glUniform1iv(loc, numPortals, (GLint*)sideMults);
+
+    glBindVertexArray(VAO);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 

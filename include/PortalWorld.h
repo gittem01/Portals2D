@@ -139,6 +139,7 @@ private:
 
     std::vector<PortalBody*> portalBodies;
     std::set<PortalBody*> destroyBodies;
+    std::set<std::vector<PortalBody*>*> handledBodies;
 
     static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
     static float vecAngle(b2Vec2 v1, b2Vec2 v2);

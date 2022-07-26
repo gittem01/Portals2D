@@ -3,17 +3,21 @@
 
 #include <thread>
 #include <chrono>
-#include <random>
-
-std::random_device rd;
-std::mt19937 mt(rd());
-std::uniform_real_distribution<double> randF(-0.5f, 0.5f);
 
 bool isPaused = false;
 bool tick = false;
 int totalIter = 10;
 PortalWorld* pWorld;
 Renderer* renderer;
+
+std::random_device rd;
+std::mt19937 mt(rd());
+std::uniform_real_distribution<double> randF(-0.5f, 0.5f);
+
+float getRand(){
+    randF(mt);
+    return randF(mt);
+}
 
 // O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f, float isMixed=false) {
@@ -258,11 +262,6 @@ void keyHandler(WindowPainter* wh) {
         renderer->drawReleases ^= 1;
 }
 
-float getRand(){
-    randF(mt);
-    return randF(mt);
-}
-
 void classicTest(PortalWorld* portalWorld, Renderer* renderer){
     b2Vec2 gravity(0.0f, -20.00f);
     portalWorld->SetGravity(gravity);
@@ -406,7 +405,6 @@ void testCase1(PortalWorld* portalWorld, Renderer* renderer){
     destroyer->setVoid(1);
 
     portal3->connect(portal2, false);
-    portal3->connect(diagonalPortal2, false, 0, 1);
     portal41->connect(portal1, true, 0, 0);
     portal42->connect(portal1, false, 0, 1);
     portal5->connect(portal6, true, 0, 0);
@@ -537,21 +535,26 @@ void testCase4(PortalWorld* portalWorld, Renderer* renderer){
     createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), portalWorld, b2_staticBody);
 
     b2Body* body2 = createCircle(b2Vec2(-n * d - 7.0f + bias, yPos), 1, portalWorld, b2_dynamicBody);
+    b2Body* body3 = createCircle(b2Vec2(d + 2.5f + bias, yPos), 1, portalWorld, b2_dynamicBody);
 
-    b2Vec2 vel(8, 0);
+    b2Body* body4 = createCircle(b2Vec2((-n * d - 7.0f + bias) * 0.5f + 1.48f, yPos + 6.0f), 1, portalWorld, b2_dynamicBody);
+    b2Body* body5 = createCircle(b2Vec2(d + 2.5f + bias, yPos + 6.0f), 1, portalWorld, b2_dynamicBody);
+
+    body2->SetBullet(true);
+    body4->SetBullet(true);
+
+    b2Vec2 vel(4, 0);
     body2->SetLinearVelocity(vel);
+    body4->SetLinearVelocity(vel);
 
     PortalBody* pb = portalWorld->createPortalBody(body2);
     renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f));
 
-    PortalBody* b1 = portalWorld->createPortalBody(createObody(portalWorld, b2Vec2(-n * d - 10.0f + bias, yPos)));
-    PortalBody* b2 = portalWorld->createPortalBody(createWbody(portalWorld, b2Vec2(-n * d - 13.0f + bias, yPos)));
+    pb = portalWorld->createPortalBody(body3);
+    renderer->addPortalBody(pb, b2Color(1.0f, 0.0f, 1.0f, 0.5f));
 
-    b1->body->SetLinearVelocity(vel);
-    b2->body->SetLinearVelocity(vel);
-
-    renderer->addPortalBody(b1, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
-    renderer->addPortalBody(b2, b2Color(1.0f, 0.0f, 1.0f, 0.5f));
+    body3->SetLinearVelocity(-vel);
+    body5->SetLinearVelocity(-vel);
 
     float p = -n * d + bias;
     for (int i = 0; i < n; i++){
@@ -567,7 +570,6 @@ void testCase4(PortalWorld* portalWorld, Renderer* renderer){
 
 void multiReleaseTest(PortalWorld* portalWorld, Renderer* renderer){
     createEdge(b2Vec2(-100.0f, -10.0f), b2Vec2(+100.0f, -10.0f), portalWorld, b2_staticBody);
-    //createEdge(b2Vec2(7, -1), b2Vec2(3, -5), portalWorld, b2_staticBody);
 
     Portal* portal1 = portalWorld->createPortal(b2Vec2(0.0f, -3.0f), b2Vec2(0.0f, +1.0f), 5.0f);
     Portal* portal2 = portalWorld->createPortal(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -1.0f), 5.0f);

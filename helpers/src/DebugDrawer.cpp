@@ -14,7 +14,7 @@ void DebugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, co
 }
 
 void DebugDrawer::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color){
-	renderer->debug_Circle(center, radius, 0.1f, color);
+	renderer->debug_Circle(center, radius * 2.0f, 0.01f, color);
 }
 
 void DebugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {

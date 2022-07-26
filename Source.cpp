@@ -52,6 +52,8 @@ int main(void)
 
             //pWorld->DebugDraw();
 
+            renderer->dotRender();
+
             drawer->drawWorld(pWorld);
             renderer->render();
 

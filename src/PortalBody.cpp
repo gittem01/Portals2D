@@ -39,6 +39,7 @@ PortalBody::~PortalBody(){
         }
     }
 
+    pWorld->handledBodies.insert(worldIndex);
     for (int i = 0; i < worldIndex->size(); i++){
         if (worldIndex->at(i) == this){
             worldIndex->erase(worldIndex->begin() + i);

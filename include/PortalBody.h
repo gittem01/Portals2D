@@ -87,6 +87,8 @@ private:
     std::vector<bodyStruct*> createBodies;
     std::map<Portal*, int> outFixtures[2];
 
+    std::vector<float>* baseDensities;
+
     PortalWorld* pWorld;
 
     // fix1 is always a fixture of this class
