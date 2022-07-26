@@ -19,8 +19,8 @@ uniform int numPoints;
 uniform float lineDist;
 uniform float zoom;
 
-uniform vec4[256] portals;
-uniform int[256] sideMults;
+uniform vec4[32] portals;
+uniform int[32] sideMults;
 uniform int numPortals;
 
 uniform sampler2D tex;
