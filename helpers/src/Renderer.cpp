@@ -4,6 +4,7 @@
 #include <stb_image.h>
 
 #define RENDER_COLOURFUL 0
+#define FULLY_RANDOM 0
 
 #if RENDER_COLOURFUL
     b2Color colors[] = {
@@ -15,8 +16,13 @@
     };
 #endif
 
-std::random_device rd05;
-std::mt19937 mt05(rd05());
+#if FULLY_RANDOM
+    std::random_device rd05;
+    std::mt19937 mt05(rd05());
+#else
+    std::mt19937 mt05(109050);
+#endif
+
 std::uniform_real_distribution<double> rand05(-0.5f, 0.5f);
 
 b2Vec2 rotateVector(b2Vec2 vec, float angle){
@@ -40,6 +46,7 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
     this->circShader = new Shader("assets/shaders/CircleShaders/");
     this->lineShader = new Shader("assets/shaders/LineShaders/");
     this->dotShader = new Shader("assets/shaders/DotShaders/");
+    this->portalShader = new Shader("assets/shaders/PortalShaders/");
 
     this->drawReleases = false;
     this->releaseColor = b2Color(1.0f, 1.0f, 1.0f, 0.2f);
@@ -49,12 +56,12 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
     float sMult = 0.25f;
     for (int i = 0; i < numDots; i++){
         colors.push_back(glm::vec4(r05() + 0.5f, r05() + 0.5f, 1, 1));
-        positions.push_back(glm::vec2(r05() * 160, r05() * 90));
-        float rSize = r05() + 0.3f;
+        float rSize = r05() * 0.5f + 0.3f;
         sizes.push_back(glm::vec2(rSize, rSize));
 
-        // prlx multi inperct, outCurve
-        mults.push_back(glm::vec3(sMult, r05() * 0.15f, (r05() + 1.5f) * 2));
+        // prlx multi, inperct, outCurve
+        mults.push_back(glm::vec3(sMult, r05() * 0.5 - 0.05f, (r05() + 1.5f) * 2));
+        positions.push_back(glm::vec2(r05() * 320 * sMult, r05() * 180 * sMult));
         sMult += 0.5 / numDots;
     }
     prepareDots();
@@ -90,7 +97,6 @@ void Renderer::prepareDots(){
     glEnableVertexAttribArray(3);
     glEnableVertexAttribArray(4);
 
-    glVertexAttribDivisor(0, 0);
     glVertexAttribDivisor(1, 1);
     glVertexAttribDivisor(2, 1);
     glVertexAttribDivisor(3, 1);
@@ -123,8 +129,105 @@ void Renderer::addPortal(Portal* portal, b2Color color){
     portalRenderData* portalData = new portalRenderData;
     portalData->portal = portal;
     portalData->color = color;
-
     portals.push_back(portalData);
+
+    for (int side = 0; side < 2; side++){
+        for (int i = 0; i < portal->connections[side].size(); i++){
+            Portal* portal2 = portal->connections[side].at(i)->portal2;
+            int side2 = portal->connections[side].at(i)->side2;
+
+            if (addedPortals.find({{ portal, side }, { portal2, side2 }}) != addedPortals.end() ||
+                addedPortals.find({{ portal2, side2 }, { portal, side }}) != addedPortals.end())
+            {
+                continue;
+            }
+            addedPortals.insert({{ portal, side }, {portal2, side2 }});
+
+            glm::vec4 baseColor = glm::vec4(r05() + 0.5f, r05() + 0.5f, 0, 1);
+            baseColor.z = 1 - baseColor.x;
+            float portalLen = b2Distance(portal->points[0], portal->points[1]);
+            for (int j = 0; j < numPortalPs * portalLen; j++){
+                pSizes.push_back(r05() * 0.2f + 0.2f);
+                pSides.push_back(side);
+                pSpeeds.push_back(r05() + 1.0f);
+                pPortals.push_back(glm::vec4(   portal->points[side].x, portal->points[side].y, 
+                                                portal->points[side ^ 1].x, portal->points[side ^ 1].y));
+                if (portal->isVoid[side]){
+                    pColors.push_back(glm::vec4(0.3, 0.3, 0.3, 1));
+                }
+                else{
+                    pColors.push_back(baseColor + glm::vec4(r05() * 0.5f, r05() * 0.5f, r05() * 0.5f, 1));
+                }
+                pMults.push_back(glm::vec4(r05(), 0.1, 5.0f, 1));
+            }
+
+            for (int j = 0; j < numPortalPs * portalLen; j++){
+                pSizes.push_back(pSizes.at(pSizes.size() - numPortalPs * portalLen));
+                pSides.push_back(side2);
+                pSpeeds.push_back(pSpeeds.at(pSpeeds.size() - numPortalPs * portalLen));
+                pPortals.push_back(glm::vec4(   portal2->points[side2].x, portal2->points[side2].y, 
+                                                portal2->points[side2 ^ 1].x, portal2->points[side2 ^ 1].y));
+                pColors.push_back(pColors.at(pColors.size() - numPortalPs * portalLen));
+                glm::vec4 lastPmult = pMults.at(pMults.size() - numPortalPs * portalLen);
+                if (!portal->connections[side].at(i)->isReversed){
+                    lastPmult.x *= -1;
+                }
+                pMults.push_back(lastPmult);
+            }
+        }
+    }
+}
+
+void Renderer::portalAddEnd(){
+    glGenBuffers(1, &pBufferObjects[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, pBufferObjects[0]);
+    glBufferData(GL_ARRAY_BUFFER, pSizes.size() * sizeof(pSizes.at(0)), pSizes.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &pBufferObjects[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, pBufferObjects[1]);
+    glBufferData(GL_ARRAY_BUFFER, pSides.size() * sizeof(pSides.at(0)), pSides.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &pBufferObjects[2]);
+    glBindBuffer(GL_ARRAY_BUFFER, pBufferObjects[2]);
+    glBufferData(GL_ARRAY_BUFFER, pSpeeds.size() * sizeof(pSpeeds.at(0)), pSpeeds.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &pBufferObjects[3]);
+    glBindBuffer(GL_ARRAY_BUFFER, pBufferObjects[3]);
+    glBufferData(GL_ARRAY_BUFFER, pMults.size() * sizeof(pMults.at(0)), pMults.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &pBufferObjects[4]);
+    glBindBuffer(GL_ARRAY_BUFFER, pBufferObjects[4]);
+    glBufferData(GL_ARRAY_BUFFER, pColors.size() * sizeof(pColors.at(0)), pColors.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glGenBuffers(1, &pBufferObjects[5]);
+    glBindBuffer(GL_ARRAY_BUFFER, pBufferObjects[5]);
+    glBufferData(GL_ARRAY_BUFFER, pPortals.size() * sizeof(pPortals.at(0)), pPortals.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glEnableVertexAttribArray(5);
+    glEnableVertexAttribArray(6);
+    glEnableVertexAttribArray(7);
+    glEnableVertexAttribArray(8);
+    glEnableVertexAttribArray(9);
+    glEnableVertexAttribArray(10);
+
+    glVertexAttribDivisor(5, 1);
+    glVertexAttribDivisor(6, 1);
+    glVertexAttribDivisor(7, 1);
+    glVertexAttribDivisor(8, 1);
+    glVertexAttribDivisor(9, 1);
+    glVertexAttribDivisor(10, 1);
 }
 
 void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* texture){
@@ -235,6 +338,9 @@ void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* textu
 void Renderer::render(){
     glfwGetFramebufferSize(camera->window, &win_width, &win_height);
     minLineThck = 20.0f / win_width;
+
+    portalRender();
+
     for (portalRenderData* prd : portals){
         portalRender(prd);
     }
@@ -250,19 +356,10 @@ void Renderer::dotRender(){
     dotShader->setMat4("ortho", camera->ortho);
     dotShader->setFloat("zoom", camera->zoom);
 
-    // for (int i = 0; i < numDots; i++){
-    //     colors.at(i).g += ((float)rand() / RAND_MAX) * 0.02f;
-    //     if (colors.at(i).g > 1.0f) colors.at(i).g = 0.0f;
-    // }
-
-    // glBindBuffer(color_SBO, GL_ARRAY_BUFFER);
-    // void *ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    // memcpy(ptr, colors.data(), colors.size() * sizeof(colors.at(0)));
-    // glUnmapBuffer(GL_ARRAY_BUFFER);
-
     glBindBuffer(pos_SBO, GL_ARRAY_BUFFER);
     glBindBuffer(size_SBO, GL_ARRAY_BUFFER);
     glBindBuffer(mult_SBO, GL_ARRAY_BUFFER);
+    glBindBuffer(color_SBO, GL_ARRAY_BUFFER);
 
     glBindVertexArray(VAO);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, numDots);
@@ -279,10 +376,29 @@ void Renderer::drawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& colo
 }
 
 void Renderer::portalRender(portalRenderData* prd){
-    debug_Line(prd->portal->points[0], prd->portal->points[1], 0.02f, prd->color);
+    debug_Line(prd->portal->points[0], prd->portal->points[1], 0.01f, prd->color);
 
     // draw dir
     // drawArrow(prd->portal->pos, prd->portal->pos + 1.0f * prd->portal->dir, prd->color);
+}
+
+void Renderer::portalRender(){
+    gameTime += 1.0f / 60.0f;
+
+    portalShader->use();
+    
+    portalShader->setMat4("ortho", camera->ortho);
+    portalShader->setFloat("zoom", camera->zoom);
+    portalShader->setFloat("gameTime", gameTime);
+    portalShader->setInt("numParticles", numPortalPs);
+
+    for (int i = 0; i < 6; i++){
+        glBindBuffer(pBufferObjects[i], GL_ARRAY_BUFFER);
+    }
+
+    glBindVertexArray(VAO);
+
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, pPortals.size());
 }
 
 void Renderer::bodyRender(bodyRenderData* brd){

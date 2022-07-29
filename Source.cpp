@@ -1,5 +1,7 @@
 #include "helpers.h"
 
+#define ENABLE_TEST_PLAYER 0
+
 int main(void)
 {
     WindowPainter* wh = new WindowPainter(nullptr);
@@ -27,6 +29,12 @@ int main(void)
         renderer->addPortal(p, c);
     }
 
+    renderer->portalAddEnd();
+
+#if ENABLE_TEST_PLAYER
+    TestPlayer* tp = new TestPlayer(pWorld, wh);
+    renderer->addPortalBody(tp->pBody->at(0), b2Color(), "assets/textures/playerTest.png");
+#endif
     bool done = false;
     int frame = 0;
     long sleepTime = 20; // millisecond
@@ -41,6 +49,9 @@ int main(void)
         cam->update();
         keyHandler(wh);
 
+#if ENABLE_TEST_PLAYER
+        tp->camHandle();
+#endif
         if (!isPaused || tick) {
             glClear(GL_COLOR_BUFFER_BIT);
 
@@ -48,6 +59,9 @@ int main(void)
                 mjh.mouseHandler(frame, totalIter);
 
                 pWorld->PortalStep(1.0f / (vsyncFps * totalIter), 8, 3);
+#if ENABLE_TEST_PLAYER
+                tp->update(1.0f / (vsyncFps * totalIter), totalIter);
+#endif
             }
 
             //pWorld->DebugDraw();
@@ -60,6 +74,7 @@ int main(void)
             mjh.drawMouseBody();
 
             glfwSwapInterval(1);
+            
             glfwSwapBuffers(wh->window);
         }
         else {

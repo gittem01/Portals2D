@@ -55,6 +55,8 @@ public:
     void addPortalBody(PortalBody* pBody, b2Color color=b2Color(1, 1, 1, 0.5), const char* texture=NULL);
     void addPortal(Portal* portal, b2Color color=b2Color(1, 1, 1, 0.5));
 
+    void portalAddEnd();
+
     void drawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
 
     void debug_Line(b2Vec2 p1, b2Vec2 p2, float thickness=0.01f, b2Color color=b2Color(1, 1, 1, 1));
@@ -77,10 +79,13 @@ private:
     unsigned int color_SBO;
     unsigned int mult_SBO;
 
+    float gameTime = 0;
+
     Shader* polyShader;
     Shader* circShader;
     Shader* lineShader;
     Shader* dotShader;
+    Shader* portalShader;
 
     Camera* camera;
 
@@ -92,6 +97,16 @@ private:
     std::vector<glm::vec2> sizes;
     std::vector<glm::vec3> mults;
 
+    int numPortalPs = 50;
+    std::set<std::pair<std::pair<Portal*, int>, std::pair<Portal*, int>>> addedPortals;
+    std::vector<float> pSizes;
+    std::vector<float> pSides;
+    std::vector<float> pSpeeds;
+    std::vector<glm::vec4> pMults;
+    std::vector<glm::vec4> pColors;
+    std::vector<glm::vec4> pPortals;
+    unsigned int pBufferObjects[6];
+
     int win_width, win_height;
     float minLineThck = 0.0f;
 
@@ -102,6 +117,7 @@ private:
     void createVAO();
 
     void portalRender(portalRenderData* portalData);
+    void portalRender();
     void bodyRender(bodyRenderData* bodyData);
 
     void drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* brd, int renderIndex);

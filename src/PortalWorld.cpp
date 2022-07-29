@@ -133,7 +133,7 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
     diff = minFrac * diff;
     b2Vec2 collPoint = rayStart + diff;
 
-    pWorld->getDebugDraw()->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
+    //pWorld->getDebugDraw()->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
 
     if (closestFixture != NULL){
         if (closestFixture == closestPortalFixture){
@@ -182,7 +182,7 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
 
     for (rayData* rd : rayHandler->rayResult){
         DebugDrawer* drawer = (DebugDrawer*)m_debugDraw;
-        drawer->renderer->drawArrow(rd->endPos - rd->dir, rd->endPos, b2Color(1, 1, 0));
+        //drawer->renderer->drawArrow(rd->endPos - rd->dir, rd->endPos, b2Color(1, 1, 0));
     }
 
     globalPostHandle();
@@ -504,7 +504,7 @@ void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConn
     b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
     b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
 
-    float mult = 100000.0f;
+    float mult = 10000.0f;
 
     b2PulleyJointDef pulleyDef;
 

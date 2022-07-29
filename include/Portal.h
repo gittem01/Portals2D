@@ -30,6 +30,7 @@ public:
     std::map<b2Fixture*, int> releaseFixtures[2];
 
     b2Vec2 points[2];
+    bool isVoid[2];
     b2Vec2 pos;
     b2Vec2 dir;
     float size;
@@ -54,8 +55,6 @@ private:
 
     std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
-
-    bool isVoid[2];
 
     ~Portal();
 

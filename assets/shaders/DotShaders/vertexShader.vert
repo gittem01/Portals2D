@@ -18,7 +18,6 @@ uniform float zoom;
 void main()
 {
     colour = colourL;
-    vec2 v = vec2(vertex.x * size.x * pow(mults.x, 0), vertex.y * size.y * pow(mults.x, 0));
     localPositions = vertex;
     
     inPerct = min(mults.y / (zoom * zoom), 0.1f);
@@ -30,5 +29,6 @@ void main()
     mOrtho[0][0] *= 1 / mults.x;
     mOrtho[1][1] *= 1 / mults.x;
 
+    vec2 v = vec2(vertex.x * size.x, vertex.y * size.y);
     gl_Position = mOrtho * vec4(v + position, 0.0, 1.0);
 }

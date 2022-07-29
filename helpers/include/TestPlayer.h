@@ -165,7 +165,7 @@ public:
     }
 
     void update(float dt, int totalIter){
-        const float maxSpeed = 10.0f;
+        const float maxSpeed = 5.0f;
         float speedOffset = 0.0f;
         PortalBody* pb = pBody->at(0);
 
@@ -173,7 +173,7 @@ public:
             bodySwitch = true;
             switchTimer = glfwGetTime();
             float diff = abs(lastDirs[0].x + lastDirs[1].x);
-            if (lastKey != -1 && diff > 1.99f){
+            if (lastKey != -1 && diff > 1.0f){
                 keyBeforeSwitch = lastKey;
             }
         }
@@ -283,7 +283,7 @@ public:
             }
         }
         else if (!haveContact){
-            lv.x = (1 - 0.01f / totalIter) * lv.x;
+            lv.x = (1 - 0.1f / totalIter) * lv.x;
         }
         else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == -1){
             lv.x = (1 - 0.95f / totalIter) * lv.x;
@@ -306,7 +306,7 @@ public:
 
         if (wp->keyData[GLFW_KEY_W] && ((contactBody && lv.y <= 0.01f) || 
             (lv.y < 0.0f && onAirFor < 5 * totalIter && onAirFor != -1))){
-            lv.y = 20.0f * pBody->size();
+            lv.y = 10.0f * pBody->size();
         }
 
         if (lv.y < -40.0f){
@@ -339,28 +339,31 @@ public:
             }
         }
 
-#if 0
         if (pBody->size() == 1){
             PortalBody* pb = pBody->at(0);
-            printf("%f - %f\n", pb->body->GetAngle(), pb->offsetAngle);
+            //printf("%f - %f\n", pb->body->GetAngle(), pb->offsetAngle);
             float ang1 = fmod(pb->offsetAngle, 2 * b2_pi);
             float ang2 = fmod(pb->body->GetAngle(), 2 * b2_pi);
             if (ang1 > b2_pi) ang1 = ang1 - 2 * b2_pi;
             if (ang2 > b2_pi) ang2 = ang2 - 2 * b2_pi;
 
             float ang = ang1 + ang2;
-
-            if (ang > 0.01f){
-                pb->body->SetAngularVelocity(-20.0f * (abs(ang) / b2_pi));
+            //printf("LAL : %f\n", ang);
+            if (ang > 0.03f){
+                pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
             }
-            else if (ang < -0.01f){
-                pb->body->SetAngularVelocity(+20.0f * (abs(ang) / b2_pi));
+            else if (ang < -0.03f){
+                pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
             }
             else{
+                pb->body->SetTransform(pb->body->GetPosition(), pb->body->GetAngle() - ang);
                 pb->body->SetAngularVelocity(0.0f);
             }
         }
-#endif
+        else{
+            
+        }
+
         haveContact = false;
         onPlatform = false;
         lastVelocity = lv;
