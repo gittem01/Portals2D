@@ -504,7 +504,9 @@ void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConn
     b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
     b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
 
-    float mult = 10000.0f;
+    // will be removed in the future
+    // if value is too big it results in shaking
+    float mult = 50000.0f;
 
     b2PulleyJointDef pulleyDef;
 
