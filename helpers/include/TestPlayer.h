@@ -191,7 +191,6 @@ public:
             }  
         }
 
-        float cnst = pb->body->GetMass() * (pBody->size() / dt);
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
         //printf("Speed : %f\n", lv.x);

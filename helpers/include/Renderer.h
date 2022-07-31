@@ -91,13 +91,13 @@ private:
 
     PortalWorld* pWorld;
 
-    int numDots = 40000;
+    int numDots = 50000;
     std::vector<glm::vec4> colors;
     std::vector<glm::vec2> positions;
     std::vector<glm::vec2> sizes;
     std::vector<glm::vec3> mults;
 
-    int numPortalPs = 50;
+    int numPortalPs = 150;
     std::set<std::pair<std::pair<Portal*, int>, std::pair<Portal*, int>>> addedPortals;
     std::vector<float> pSizes;
     std::vector<float> pSides;

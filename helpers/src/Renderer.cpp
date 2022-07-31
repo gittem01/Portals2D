@@ -56,12 +56,12 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
     float sMult = 0.25f;
     for (int i = 0; i < numDots; i++){
         colors.push_back(glm::vec4(r05() + 0.5f, r05() + 0.5f, 1, 1));
-        float rSize = r05() * 0.5f + 0.3f;
+        float rSize = r05() * 0.5f + 0.5f;
         sizes.push_back(glm::vec2(rSize, rSize));
 
         // prlx multi, inperct, outCurve
         mults.push_back(glm::vec3(sMult, r05() * 0.5 - 0.05f, (r05() + 1.5f) * 2));
-        positions.push_back(glm::vec2(r05() * 320 * sMult, r05() * 180 * sMult));
+        positions.push_back(glm::vec2(r05() * 480, r05() * 270));
         sMult += 0.5 / numDots;
     }
     prepareDots();
@@ -149,7 +149,7 @@ void Renderer::addPortal(Portal* portal, b2Color color){
             for (int j = 0; j < numPortalPs * portalLen; j++){
                 pSizes.push_back(r05() * 0.2f + 0.2f);
                 pSides.push_back(side);
-                pSpeeds.push_back(r05() + 1.0f);
+                pSpeeds.push_back(r05() * 0.5f + 0.5f);
                 pPortals.push_back(glm::vec4(   portal->points[side].x, portal->points[side].y, 
                                                 portal->points[side ^ 1].x, portal->points[side ^ 1].y));
                 if (portal->isVoid[side]){
@@ -353,8 +353,10 @@ void Renderer::render(){
 void Renderer::dotRender(){
     dotShader->use();
     
-    dotShader->setMat4("ortho", camera->ortho);
     dotShader->setFloat("zoom", camera->zoom);
+    dotShader->setVec2("camPos", camera->pos.x, camera->pos.y);
+    dotShader->setVec2("camXSides", camera->xSides.x, camera->xSides.y);
+    dotShader->setVec2("camYSides", camera->ySides.x, camera->ySides.y);
 
     glBindBuffer(pos_SBO, GL_ARRAY_BUFFER);
     glBindBuffer(size_SBO, GL_ARRAY_BUFFER);
@@ -389,7 +391,7 @@ void Renderer::portalRender(){
     
     portalShader->setMat4("ortho", camera->ortho);
     portalShader->setFloat("zoom", camera->zoom);
-    portalShader->setFloat("gameTime", gameTime);
+    portalShader->setFloat("gameTime", gameTime + 2.0f);
     portalShader->setInt("numParticles", numPortalPs);
 
     for (int i = 0; i < 6; i++){

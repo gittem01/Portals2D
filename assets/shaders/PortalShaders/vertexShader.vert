@@ -50,16 +50,15 @@ void main()
     float gt = fmod(gameTime * speed, mults.w);
     frac = 1 - gt / mults.w;
 
-    int div = int((gameTime * speed) / mults.w);
-
     vec2 dir = portal.zw - portal.xy;
     float pSpaceDist = length(dir);
     float pMargin = size / pSpaceDist;
     vec2 dir90 = normalize(rotateVec(dir, PI / 2.0));
-    vec2 pos = (portal.zw + portal.xy) * 0.5f + dir * (fmod((mults.x + (div * 0.05f * mults.x)), (1 - pMargin) * 0.5f));
+    int div = int((gameTime * speed) / (mults.w));
+    vec2 pos = (portal.zw + portal.xy) * 0.5f + dir * (fmod(mults.x + (div * 0.05f * mults.x), (1 - pMargin) * 0.5f));
 
     vec2 v = vertex * size;
-    pos = pos + dir90 * gt;
+    pos = pos + dir90 * (gt - 0.2f) - dir90 * 0.2f;
     worldPos = v + pos;
     center = pos;
     sSide = side;
