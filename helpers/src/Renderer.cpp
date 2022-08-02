@@ -3,18 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#define RENDER_COLOURFUL 0
 #define FULLY_RANDOM 0
-
-#if RENDER_COLOURFUL
-    b2Color colors[] = {
-        b2Color(0, 1, 0, 0.5f),
-        b2Color(0, 0, 1, 0.5f),
-        b2Color(0, 1, 1, 0.5f),
-        b2Color(1, 1, 0, 0.5f),
-        b2Color(1, 1, 1, 0.2f)
-    };
-#endif
 
 #if FULLY_RANDOM
     std::random_device rd05;
@@ -56,11 +45,11 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
     float sMult = 0.25f;
     for (int i = 0; i < numDots; i++){
         colors.push_back(glm::vec4(r05() + 0.5f, r05() + 0.5f, 1, 1));
-        float rSize = r05() * 0.5f + 0.5f;
+        float rSize = r05() * 2.0f + 1.25f;
         sizes.push_back(glm::vec2(rSize, rSize));
 
         // prlx multi, inperct, outCurve
-        mults.push_back(glm::vec3(sMult, r05() * 0.5 - 0.05f, (r05() + 1.5f) * 2));
+        mults.push_back(glm::vec3(sMult, r05() * 0.5f - 0.15f, (r05() + 1.5f) * 2));
         positions.push_back(glm::vec2(r05() * 480, r05() * 270));
         sMult += 0.5 / numDots;
     }
@@ -149,7 +138,7 @@ void Renderer::addPortal(Portal* portal, b2Color color){
             for (int j = 0; j < numPortalPs * portalLen; j++){
                 pSizes.push_back(r05() * 0.2f + 0.2f);
                 pSides.push_back(side);
-                pSpeeds.push_back(r05() * 0.5f + 0.5f);
+                pSpeeds.push_back(r05() * 0.6f + 0.5f);
                 pPortals.push_back(glm::vec4(   portal->points[side].x, portal->points[side].y, 
                                                 portal->points[side ^ 1].x, portal->points[side ^ 1].y));
                 if (portal->isVoid[side]){
@@ -158,7 +147,7 @@ void Renderer::addPortal(Portal* portal, b2Color color){
                 else{
                     pColors.push_back(baseColor + glm::vec4(r05() * 0.5f, r05() * 0.5f, r05() * 0.5f, 1));
                 }
-                pMults.push_back(glm::vec4(r05(), 0.1, 5.0f, 1));
+                pMults.push_back(glm::vec4(r05(), 0.1f, 5.0f, 1.0f));
             }
 
             for (int j = 0; j < numPortalPs * portalLen; j++){
@@ -391,7 +380,7 @@ void Renderer::portalRender(){
     
     portalShader->setMat4("ortho", camera->ortho);
     portalShader->setFloat("zoom", camera->zoom);
-    portalShader->setFloat("gameTime", gameTime + 2.0f);
+    portalShader->setFloat("gameTime", gameTime + 100.0f);
     portalShader->setInt("numParticles", numPortalPs);
 
     for (int i = 0; i < 6; i++){

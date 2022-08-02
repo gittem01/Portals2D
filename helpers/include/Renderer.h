@@ -91,7 +91,7 @@ private:
 
     PortalWorld* pWorld;
 
-    int numDots = 50000;
+    int numDots = 20000;
     std::vector<glm::vec4> colors;
     std::vector<glm::vec2> positions;
     std::vector<glm::vec2> sizes;
