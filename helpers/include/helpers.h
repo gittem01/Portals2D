@@ -527,7 +527,7 @@ void testCase4(PortalWorld* portalWorld, Renderer* renderer){
     float bias = 10.0f;
     float yPos = -4.0f;
     float portalSize = 3.0f;
-    float d = 0.5f;
+    float d = 0.65f;
     const int n = 50;
 
     auto** linePortals = (Portal**)malloc(n * sizeof(Portal*));

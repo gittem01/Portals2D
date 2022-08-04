@@ -81,22 +81,27 @@ std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2
 std::vector<b2Vec2> Portal::collideEdgeOther(b2Fixture* fix1, b2Fixture* fix2) {
 	std::vector<b2Vec2> returnVector;
 
+	b2Body* fBody = fix1->GetBody();
+
 	b2RayCastOutput rcOutput;
 	b2RayCastInput rcInput;
 	rcInput.maxFraction = 1.0f;
 
 	bool res;
 
-	rcInput.p1 = ((b2EdgeShape*)fix1->GetShape())->m_vertex1;
-	rcInput.p2 = ((b2EdgeShape*)fix1->GetShape())->m_vertex2;
+	b2Vec2 v1 = fBody->GetWorldPoint(((b2EdgeShape*)fix1->GetShape())->m_vertex1);
+	b2Vec2 v2 = fBody->GetWorldPoint(((b2EdgeShape*)fix1->GetShape())->m_vertex2);
+
+	rcInput.p1 = v1;
+	rcInput.p2 = v2;
 	res = fix2->RayCast(&rcOutput, rcInput, fix2->GetBody()->GetType());
 	if (res) {
 		b2Vec2 result = getRayPoint(rcInput, rcOutput);
 		returnVector.push_back(result);
 	}
 
-	rcInput.p1 = ((b2EdgeShape*)fix1->GetShape())->m_vertex2;
-	rcInput.p2 = ((b2EdgeShape*)fix1->GetShape())->m_vertex1;
+	rcInput.p1 = v2;
+	rcInput.p2 = v1;
 	res = fix2->RayCast(&rcOutput, rcInput, fix2->GetBody()->GetType());
 	if (res) {
 		b2Vec2 result = getRayPoint(rcInput, rcOutput);

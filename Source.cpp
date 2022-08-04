@@ -21,7 +21,7 @@ int main(void)
     
     mouseJointHandler mjh(pWorld, wh, renderer);
 
-    testCase1(pWorld, renderer);
+    multiReleaseTest(pWorld, renderer);
 
     // manual random coloring for now
     for (Portal* p : pWorld->portals){
@@ -30,6 +30,13 @@ int main(void)
     }
 
     renderer->portalAddEnd();
+
+    for (int i = 0; i < 2; i++){
+        for (Portal* p : pWorld->portals){
+            p->evaluateWorld();
+            p->queryClass->mode++;
+        }
+    }
 
 #if ENABLE_TEST_PLAYER
     TestPlayer* tp = new TestPlayer(pWorld, wh);

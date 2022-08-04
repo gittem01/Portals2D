@@ -4,8 +4,6 @@
 #include <chrono>
 #include <thread>
 
-std::map<b2Fixture*, b2Vec2> Portal::noCollData;
-
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     dir.Normalize();
 
@@ -26,59 +24,16 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     this->rcInp2.p1 = points[1];
     this->rcInp2.p2 = points[0];
     this->rcInp2.maxFraction = 1.0f - inMargin;
+
+    this->queryClass = new PortalWorldQuery(this);
 }
 
 void Portal::evaluateWorld(){
-    b2FixtureDef fDef;
-    b2EdgeShape extraShape;
-    fDef.shape = &extraShape;
-    pWorld->evalRayHandler->rayCast(points[0] + 0.005f * dir, points[0] - 0.005f * dir);
-    if (pWorld->evalRayHandler->closestFixture){
-        b2Fixture* fix = pWorld->evalRayHandler->closestFixture;
-        pWorld->getDebugDraw()->DrawPoint(points[0] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
-        for (auto& d : pWorld->evalRayHandler->hitFixtures){
-            Portal::noCollData[d.first] = d.second;
-        }
-        //Portal::noCollData[fix] = pWorld->evalRayHandler->rayNormal;
-        if (fix->GetType() == b2Shape::e_edge){
-            b2EdgeShape shape = *(b2EdgeShape*)fix->GetShape();
-            b2Vec2 plus = points[0] + dir;
-            if (pWorld->isLeft(points[0], plus, shape.m_vertex1, 0.0001f)){
-                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
-                extraShape.SetTwoSided(points[0], shape.m_vertex1);
-                extraFixtures.insert(body->CreateFixture(&fDef));
-            }
-            else if (pWorld->isLeft(points[0], plus, shape.m_vertex2, 0.0001f)){
-                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
-                extraShape.SetTwoSided(points[0], shape.m_vertex2);
-                extraFixtures.insert(body->CreateFixture(&fDef));
-            }
-        }
-    }
-
-    pWorld->evalRayHandler->rayCast(points[1] + 0.005f * dir, points[1] - 0.005f * dir);
-    if (pWorld->evalRayHandler->closestFixture){
-        b2Fixture* fix = pWorld->evalRayHandler->closestFixture;
-        pWorld->getDebugDraw()->DrawPoint(points[1] + 0.01f * dir - pWorld->evalRayHandler->minFraction * 0.02f * dir, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
-        for (auto& d : pWorld->evalRayHandler->hitFixtures){
-            Portal::noCollData[d.first] = d.second;
-        }
-        //Portal::noCollData[fix] = pWorld->evalRayHandler->rayNormal;
-        if (fix->GetType() == b2Shape::e_edge){
-            b2EdgeShape shape = *(b2EdgeShape*)fix->GetShape();
-            b2Vec2 plus = points[1] - dir;
-            if (pWorld->isLeft(points[1], plus, shape.m_vertex1, 0.0001f)){
-                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex1, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
-                extraShape.SetTwoSided(points[1], shape.m_vertex1);
-                extraFixtures.insert(body->CreateFixture(&fDef));
-            }
-            else if (pWorld->isLeft(points[1], plus, shape.m_vertex2, 0.0001f)){
-                pWorld->getDebugDraw()->DrawPoint(shape.m_vertex2, 10.0f, b2Color(1.0f, 1.0f, 1.0f, 1.0f));
-                extraShape.SetTwoSided(points[1], shape.m_vertex2);
-                extraFixtures.insert(body->CreateFixture(&fDef));
-            }
-        }
-    }    
+    boxMin = b2Vec2(fmin(points[0].x, points[1].x) - 0.01f, fmin(points[0].y, points[1].y) - 0.01f);
+    boxMax = b2Vec2(fmax(points[0].x, points[1].x) + 0.01f, fmax(points[0].y, points[1].y) + 0.01f);
+    
+    b2AABB queryAABB = { boxMin, boxMax };
+    pWorld->QueryAABB(queryClass, queryAABB);
 }
 
 Portal::~Portal() {
@@ -121,24 +76,6 @@ void Portal::createPortalBody(){
 
     shape.SetTwoSided(points[1], points[1]);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
-
-    pVec = b2Vec2(pVec.x * 0.1f, pVec.y * 0.1f);
-
-    float widthMul = 10.0f;
-    float dirMult = 2.0f;
-    b2Vec2 p1 = points[0] - b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
-    b2Vec2 p2 = points[1] + b2Vec2(pVec.x * widthMul, pVec.y * widthMul);
-    b2Vec2 p3 = p1 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
-    b2Vec2 p4 = p2 + b2Vec2(dir.x * dirMult, dir.y * dirMult);
-    p1 -= b2Vec2(dir.x * dirMult, dir.y * dirMult);
-    p2 -= b2Vec2(dir.x * dirMult, dir.y * dirMult);
-    
-    b2Vec2 polyPoints[4] = { p1, p2, p3, p4 };
-
-    b2PolygonShape polyShape;
-    polyShape.Set(polyPoints, 4);
-    collisionSensor = body->CreateFixture(&polyShape, 0.0f);
-    collisionSensor->SetSensor(true);
 }
 
 int Portal::getPointSide(b2Vec2 point){
@@ -150,12 +87,8 @@ PortalCollisionType Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, 
     if (!bData || bData->type != PORTAL_BODY) return DEFAULT_COLLISION;
     
     PortalCollisionType ret = DEFAULT_COLLISION;
-
-    if (fix1 == collisionSensor){
-        prepareFixtures.insert(fix2);
-        ret = PREPARE_IN;
-    }
-    else if (fix1 == midFixture){
+    
+    if (fix1 == midFixture){
         ret = handleCollidingFixtures(contact, fix1, fix2);
     }
 
@@ -168,11 +101,7 @@ PortalCollisionType Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2
 
     PortalCollisionType ret = DEFAULT_COLLISION;
 
-    if (fix1 == collisionSensor){
-        prepareFixtures.erase(fix2);
-        ret = PREPARE_OUT;
-    }
-    else if (fix1 == midFixture){
+    if (fix1 == midFixture){
         int side = getFixtureSide(fix2);
 
         if (collidingFixtures[1 ^ side].find(fix2) != collidingFixtures[1 ^ side].end()){
@@ -537,74 +466,6 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     return true;
 }
 
-bool Portal::prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
-    bodyData* data = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-    if (data && data->data == this) return false;
-
-    int side = getFixtureSide(fix1);
-
-    if (collidingFixtures[0].find(fix1) != collidingFixtures[0].end() ||
-        collidingFixtures[1].find(fix1) != collidingFixtures[1].end() ||
-        connections[side].size() == 0 || fix2 == yFix[0] || fix2 == yFix[1])
-    {
-        return true;
-    }
-
-    b2WorldManifold wManifold;
-    contact->GetWorldManifold(&wManifold);
-
-    std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
-
-    if (fix1->GetType() == b2Shape::Type::e_circle){
-        b2CircleShape* cShape = (b2CircleShape*)fix1->GetShape();
-        b2Vec2 wCenter = fix1->GetBody()->GetWorldPoint(cShape->m_p);
-        bool res;
-        b2RayCastOutput rcOutput;
-        b2RayCastInput rcInput;
-        rcInput.maxFraction = 1.0f;
-        rcInput.p1 = wCenter + cShape->m_radius * wManifold.normal;
-        rcInput.p2 = wCenter - cShape->m_radius * wManifold.normal;
-        res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
-        if (res) {
-            b2Vec2 result = getRayPoint(rcInput, rcOutput);
-            collPoints.clear();
-            collPoints.push_back(result);
-        }
-    }
-
-    if (collPoints.size() == 0 && fix2->GetBody()->GetType() == b2_staticBody){
-        b2RayCastOutput rcOutput;
-        b2RayCastInput rcInput;
-        rcInput.maxFraction = 1.0f;
-        for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-            bool res;
-            rcInput.p1 = wManifold.points[i] + 100.0f * wManifold.normal;
-            rcInput.p2 = wManifold.points[i] - 100.0f * wManifold.normal;
-            res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
-            if (res) {
-                b2Vec2 result = getRayPoint(rcInput, rcOutput);
-                collPoints.push_back(result);
-            }
-        }
-    }
-
-    std::vector<b2Vec2> usablePoints = getUsableRayPoints(fix1, side);
-    if (usablePoints.size() != 0){
-        b2Vec2* maxRays = getMaxRayPoints(usablePoints, side);
-        for (int i = 0; i < collPoints.size(); i++){
-            if (isPointIn(maxRays[0], maxRays[1], collPoints.at(i), side, +0.001f)){
-                contact->SetEnabled(false);
-                free(maxRays);
-                return false;
-            }
-        }
-        free(maxRays);
-    }
-
-    return true;
-}
-
-// concave shapes create lots of problems with reversed option enabled
 void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
     if (this->isVoid[side1] || portal2->isVoid[side2]) return;
 
@@ -688,4 +549,200 @@ float EvaluationRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, cons
     }
 
     return 1.0f;
+}
+
+bool Portal::isParallel(b2Vec2 p1, b2Vec2 p2){
+    float d1 = abs(PortalWorld::getRealDist(points[0], points[1], p1));
+    float d2 = abs(PortalWorld::getRealDist(points[0], points[1], p2));
+
+    if (d1 + d2 < 0.001f){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+PortalWorldQuery::PortalWorldQuery(Portal* portal) {
+    this->portal = portal;
+    this->mode = 0;
+}
+
+void PortalWorldQuery::polygonTransform(b2Fixture* fixture){
+    if (fixture->GetShape()->GetType() == b2Shape::e_polygon){
+        bool parallelFound = false;
+
+        b2PolygonShape* pShape = (b2PolygonShape*)fixture->GetShape();
+        for (int i = 0; i < pShape->m_count; i++){
+            b2Vec2 v1 = fixture->GetBody()->GetWorldPoint(pShape->m_vertices[i]);
+            b2Vec2 v2 = fixture->GetBody()->GetWorldPoint(pShape->m_vertices[(i + 1) % pShape->m_count]);
+            if (portal->isParallel(v1, v2)){
+                parallelFound = true;
+                break;
+            }
+        }
+        if (parallelFound){
+            PortalWorld* pWorld = portal->pWorld;
+            b2Body* fBody = fixture->GetBody();
+            for (int i = 0; i < pShape->m_count; i++){
+                b2FixtureDef edgeDef;
+                
+                b2EdgeShape edgeShape;
+                edgeShape.SetTwoSided(pShape->m_vertices[i], pShape->m_vertices[(i + 1) % pShape->m_count]);
+
+                edgeDef.shape = &edgeShape;
+
+                fBody->CreateFixture(&edgeDef);
+            }
+            fBody->DestroyFixture(fixture);
+        }
+    }
+}
+
+bool PortalWorldQuery::edgeSplitHorizontal(b2Fixture* fixture){
+    b2EdgeShape* eShape = (b2EdgeShape*)fixture->GetShape();
+    b2Body* fBody = fixture->GetBody();
+
+    b2Vec2 p1 = fBody->GetWorldPoint(eShape->m_vertex1);
+    b2Vec2 p2 = fBody->GetWorldPoint(eShape->m_vertex2);
+
+    PortalWorld* pWorld = portal->pWorld;
+    if (portal->isParallel(p1, p2)){
+        bool leftFound = false;
+        bool rightFound = false;
+
+        b2Vec2 rightPoint;
+        b2Vec2 leftPoint;
+
+        float v1 = PortalWorld::getDist(portal->points[0], portal->points[0] + portal->dir, p1);
+        float v2 = PortalWorld::getDist(portal->points[1], portal->points[1] + portal->dir, p1);
+        if (v1 < 0.0f){
+            leftFound = true;
+            leftPoint = p1;
+        }
+        else if (v2 > 0.0f){
+            rightFound = true;
+            rightPoint = p1;
+        }
+
+        v1 = PortalWorld::getDist(portal->points[0], portal->points[0] + portal->dir, p2);
+        v2 = PortalWorld::getDist(portal->points[1], portal->points[1] + portal->dir, p2);
+        if (v1 < 0.0f){
+            leftFound = true;
+            leftPoint = p2;
+        }
+        else if (v2 > 0.0f){
+            rightFound = true;
+            rightPoint = p2;
+        }
+
+        b2BodyDef bDef;
+        b2Body* dummyBody = pWorld->CreateBody(&bDef);
+
+        if (rightFound){
+            b2FixtureDef edgeDef;
+            b2EdgeShape edgeShape;
+            edgeShape.SetTwoSided(rightPoint, portal->points[0]);
+            edgeDef.shape = &edgeShape;
+
+            dummyBody->CreateFixture(&edgeDef);
+        }
+        if (leftFound){
+            b2FixtureDef edgeDef;
+            b2EdgeShape edgeShape;
+            edgeShape.SetTwoSided(leftPoint, portal->points[1]);
+            edgeDef.shape = &edgeShape;
+
+            dummyBody->CreateFixture(&edgeDef);
+        }
+        fBody->DestroyFixture(fixture);
+
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture){
+    b2EdgeShape* eShape = (b2EdgeShape*)fixture->GetShape();
+    b2Body* fBody = fixture->GetBody();
+
+    b2Vec2 p1 = fBody->GetWorldPoint(eShape->m_vertex1);
+    b2Vec2 p2 = fBody->GetWorldPoint(eShape->m_vertex2);
+
+    float s1 = PortalWorld::getDist(portal->points[0], portal->points[1], p1);
+    float s2 = PortalWorld::getDist(portal->points[0], portal->points[1], p2);
+
+    if (s1 < 0 && s2 < 0 || s1 > 0 && s2 > 0){
+        return;
+    }
+    if (abs(s1) < 0.001f || abs(s2) < 0.001f){
+        return;
+    }
+
+    float dist1 = abs(PortalWorld::getRealDist(p1, p2, portal->points[0]));
+    float dist2 = abs(PortalWorld::getRealDist(p1, p2, portal->points[1]));
+    
+    bool willSplit = false;
+    b2Vec2 splitPoint;
+
+    if (dist1 < 0.001f){
+        willSplit = true;
+        splitPoint = portal->points[0];
+    }
+    else if (dist2 < 0.001f){
+        willSplit = true;
+        splitPoint = portal->points[1];
+    }
+
+    if (willSplit){
+        b2FixtureDef edgeDef;
+        b2EdgeShape edgeShape;
+        edgeShape.SetTwoSided(eShape->m_vertex1, splitPoint);
+        edgeDef.shape = &edgeShape;
+
+        fBody->CreateFixture(&edgeDef);
+
+        edgeShape.SetTwoSided(eShape->m_vertex2, splitPoint);
+        fBody->CreateFixture(&edgeDef);
+
+        fBody->DestroyFixture(fixture);
+    }
+}
+
+bool PortalWorldQuery::ReportFixture(b2Fixture* fixture){
+    if (fixture->IsSensor() || fixture->GetBody()->GetType() != b2_staticBody || 
+        fixture == portal->midFixture || fixture == portal->yFix[0] || fixture == portal->yFix[1]){
+        return true;
+    }
+
+    bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
+    if (bData && bData->type == PORTAL){
+        return true;
+    }
+
+    // TODO : store all creation and destructions
+    // So, after the portal is destroyed world can be restored to its original state
+    switch (mode)
+    {
+    case 0:
+        {
+            polygonTransform(fixture);
+        }
+        break;
+    
+    case 1:
+        {
+            if (!edgeSplitHorizontal(fixture)){
+                edgeSplitVertical(fixture);
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return true;
 }

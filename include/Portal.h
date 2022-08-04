@@ -13,11 +13,27 @@ typedef struct portalConnection {
     bool isReversed;
 } portalConnection;
 
+class PortalWorldQuery : public b2QueryCallback
+{
+public:
+    Portal* portal;
+    int mode = 0;
+
+    PortalWorldQuery(Portal* portal);
+
+    void polygonTransform(b2Fixture* fix);
+    bool edgeSplitHorizontal(b2Fixture* fix);
+    void edgeSplitVertical(b2Fixture* fix);
+
+	virtual bool ReportFixture(b2Fixture* fixture);
+};
+
 class Portal{
 
 friend class PortalWorld;
 friend class PortalBody;
 friend class PortalRay;
+friend class PortalWorldQuery;
 
 public:
 
@@ -35,25 +51,26 @@ public:
     b2Vec2 dir;
     float size;
 
+    PortalWorldQuery* queryClass;
+    b2Vec2 boxMin;
+    b2Vec2 boxMax;
     void evaluateWorld();
+
+    bool isParallel(b2Vec2 p1, b2Vec2 p2);
 
 private:
 
     Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
     std::set<b2Fixture*> extraFixtures;
 
-    static std::map<b2Fixture*, b2Vec2> noCollData;
-
     PortalWorld* pWorld;
     b2Body* body;
     b2Fixture* midFixture;
-    b2Fixture* collisionSensor;
     b2Fixture* yFix[2];
 
     b2RayCastInput rcInp1;
     b2RayCastInput rcInp2;
 
-    std::set<b2Fixture*> prepareFixtures;
     std::set<b2Fixture*> collidingFixtures[2];
 
     ~Portal();
@@ -73,7 +90,6 @@ private:
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
-    bool prepareCollisionCheck(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
     std::vector<b2Vec2> getUsableRayPoints(b2Fixture* fix, int side);
 

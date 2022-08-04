@@ -370,11 +370,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             npb->fixtureCollisions[f] = new std::set<portalCollision*>();
             npb->allParts[f] = new std::vector<std::vector<b2Vec2>*>();
 
-            for (Portal* portal : portals){
-                std::vector<b2Vec2> ps = portal->getCollisionPoints(portal->collisionSensor, f);
-                if (ps.size() > 0) npb->prepareMaps[f].insert(portal);
-            }
-
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
 
             if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
@@ -667,8 +662,20 @@ float PortalWorld::vecAngle(b2Vec2 v1, b2Vec2 v2){
     return abs(calcAngle2(v1) - calcAngle2(v2));
 }
 
-float PortalWorld::getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c){
+float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
      return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x));
+}
+
+float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
+    float v1 = (b.x - a.x) * (a.y - c.y);
+    float v2 = (a.x - c.x) * (b.y - a.y);
+    float top = abs(v1 - v2);
+
+    v1 = pow(b.x - a.x, 2);
+    v2 = pow(b.y - a.y, 2);
+    float bot = sqrt(v1 + v2);
+
+    return top / bot;
 }
 
 float PortalWorld::calcAngle2(b2Vec2 vec) {
@@ -690,6 +697,14 @@ b2Vec2 PortalWorld::mirror(b2Vec2 mirror, b2Vec2 vec){
     float angle1 = calcAngle2(mirror);
     float angle2 = calcAngle2(vec);
     return rotateVec(vec, 2 * (angle1 - angle2));
+}
+
+b2Vec2 PortalWorld::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4){
+    float d = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+    float up1 = (p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x);
+    float up2 = (p1.x * p2.y - p1.y * p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x * p4.y - p3.y * p4.x);
+
+    return b2Vec2(up1 / d, up2 / d);
 }
 
 PortalRay::PortalRay(PortalWorld* pWorld){

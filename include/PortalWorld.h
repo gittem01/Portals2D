@@ -117,6 +117,7 @@ class PortalWorld : public b2World
 friend class TestPlayer;
 friend class PortalBody;
 friend class Portal;
+friend class PortalWorldQuery;
 friend class PortalRay;
 friend class b2World;
 friend class ContactListener;
@@ -143,9 +144,12 @@ private:
 
     static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
     static float vecAngle(b2Vec2 v1, b2Vec2 v2);
-    static float getDist(b2Vec2& a, b2Vec2& b, b2Vec2& c);
+    static float getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
+    static float getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
+    
     static float calcAngle2(b2Vec2 vec);
     static void normalize(b2Vec2* vec);
+    static b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 
     void globalPostHandle();
 

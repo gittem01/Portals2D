@@ -55,7 +55,7 @@ void main()
     float pMargin = size / pSpaceDist;
     vec2 dir90 = normalize(rotateVec(dir, PI / 2.0));
     int div = int((gameTime * speed) / (mults.w));
-    vec2 pos = (portal.zw + portal.xy) * 0.5f + dir * (fmod(mults.x + (div * 0.05f * mults.x), (1 - pMargin) * 0.5f));
+    vec2 pos = (portal.zw + portal.xy) * 0.5f + dir * (fmod(mults.x + (div * 0.18562f * mults.x), (1 - pMargin) * 0.5f));
 
     vec2 v = vertex * size;
     pos = pos + dir90 * (gt - 0.2f) - dir90 * 0.2f;

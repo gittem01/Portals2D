@@ -38,9 +38,6 @@ enum PortalCollisionType
     E_COLLIDING_RELEASE_0 = 1 << 10,
     E_COLLIDING_RELEASE_1 = 1 << 11,
 
-    PREPARE_IN = 1 << 12,
-    PREPARE_OUT = 1 << 13,
-
     DEFAULT_COLLISION = 1 << 31,
 };
 
@@ -83,7 +80,6 @@ private:
 
     ~PortalBody();
 
-    std::map<b2Fixture*, std::set<Portal*>> prepareMaps;
     std::vector<bodyStruct*> createBodies;
     std::map<Portal*, int> outFixtures[2];
 
@@ -112,6 +108,4 @@ private:
                         std::vector<b2Vec2>* retVertices2, Portal* portal, int side);
 
     std::vector<PortalBody*> postHandle();
-
-    b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 };

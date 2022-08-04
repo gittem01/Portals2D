@@ -206,15 +206,6 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         else if (reverse) return false;
     }
 
-    if (fix2->GetBody()->GetType() == b2_staticBody && !fix2->IsSensor() && prepareMaps.find(fix1) != prepareMaps.end()){
-        auto mapsFix = prepareMaps[fix1];
-        for (auto iter = mapsFix.begin(); iter != mapsFix.end(); iter++){
-            // introduces some bugs now
-            // it will be replaced with a much better solution later
-            (*iter)->prepareCollisionCheck(contact, fix1, fix2);
-        }
-    }
-
     return true;
 }
 
@@ -372,13 +363,6 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType o
         outHelper(fix, portal, 0, out);
         break;
 
-    case PREPARE_IN:
-        prepareMaps[fix].insert(portal);
-        break;
-    case PREPARE_OUT:
-        prepareMaps[fix].erase(portal);
-        break;
-
     case E_COLLIDING_RELEASE_0:
     case E_COLLIDING_RELEASE_1:
         releaseOut2(fix, portal);
@@ -456,12 +440,12 @@ void PortalBody::adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec
         pSide = p->getPointSide(vertices->at(vertexIndex));
 
         if (pSide == side && lastSide == 1 - side){
-            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
+            b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
             retVertices1->push_back(intersectionPoint);
             retVertices2->push_back(intersectionPoint);
         }
         else if (pSide == 1 - side && lastSide == side){
-            b2Vec2 intersectionPoint = getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
+            b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
             retVertices1->push_back(intersectionPoint);
             retVertices2->push_back(intersectionPoint);
         }
@@ -639,12 +623,4 @@ void PortalBody::calculateParts(b2Fixture* fix){
     delete(vertices);
 
     applyGravity(fix, status);
-}
-
-b2Vec2 PortalBody::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4){
-    float d = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
-    float up1 = (p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x);
-    float up2 = (p1.x * p2.y - p1.y * p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x * p4.y - p3.y * p4.x);
-
-    return b2Vec2(up1 / d, up2 / d);
 }
