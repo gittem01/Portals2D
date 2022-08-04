@@ -5,7 +5,7 @@
  - Multiple portal connection (a portal can be connected to more than one portal)
  - Global ray which can go through portals, including multi-connected portals
  
-<img width="1320" alt="Screen Shot 2022-06-19 at 23 05 48" src="https://user-images.githubusercontent.com/29559574/174498555-47fa286f-2503-4338-9232-5c98d25991d7.png">
+<img width="1440" alt="Screenshot 2022-08-01 at 21 03 44" src="https://user-images.githubusercontent.com/29559574/182213026-71d62466-5203-465f-93ae-358832e951a2.png">
 
 ## Compile Requirements
  - CMake
