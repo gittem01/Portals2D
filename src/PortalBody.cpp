@@ -24,7 +24,6 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
     this->numFixtures = 0;
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         fixtureCollisions[fix] = new std::set<portalCollision*>();
-        allParts[fix] = new std::vector<std::vector<b2Vec2>*>();
         numFixtures++;
     }
 }
@@ -59,12 +58,7 @@ PortalBody::~PortalBody(){
     }
     delete bodyMaps;
 
-    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
-        for (std::vector<b2Vec2>* vec : *allParts[fix]){
-            delete vec;
-        }
-        delete allParts[fix];
-        
+    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){        
         for (portalCollision* coll : *fixtureCollisions[fix]){
             free(coll);
         }
@@ -268,23 +262,16 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
     fixtureCollisions[fix]->insert(portCol);
 }
 
-std::vector<PortalBody*> PortalBody::postHandle(){
+void PortalBody::postHandle(){
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
-        calculateParts(fix);
+        applyPartialGravity(fix);
     }
 
-    std::vector<PortalBody*> retBodies;
-
     for (bodyStruct* s : createBodies){
-        std::vector<PortalBody*> bodies = pWorld->createCloneBody(s);
-        for (int i = 0; i < bodies.size(); i++){
-            retBodies.push_back(bodies.at(i));
-        }
+        pWorld->createCloneBody(s);
         free(s);
     }
     createBodies.clear();
-
-    return retBodies;
 }
 
 bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, PortalCollisionType out){
@@ -422,89 +409,27 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal, PortalCollisionType 
 #endif
 }
 
-void rotateVec(b2Vec2* vec, float angle){
-    float x = cos(angle) * vec->x - sin(angle) * vec->y;
-    float y = sin(angle) * vec->x + cos(angle) * vec->y;
-    vec->x = x;
-    vec->y = y;
-}
-
-void PortalBody::adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
-                                std::vector<b2Vec2>* retVertices2, Portal* p, int side)
-{
-    int pSide;
-    int lastSide = p->getPointSide(vertices->at(0));
-
-    for (int i = 0; i < vertices->size() + 1; i++){
-        int vertexIndex = i % vertices->size();
-        pSide = p->getPointSide(vertices->at(vertexIndex));
-
-        if (pSide == side && lastSide == 1 - side){
-            b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
-            retVertices1->push_back(intersectionPoint);
-            retVertices2->push_back(intersectionPoint);
-        }
-        else if (pSide == 1 - side && lastSide == side){
-            b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(p->points[0], p->points[1], vertices->at(i - 1), vertices->at(vertexIndex));
-            retVertices1->push_back(intersectionPoint);
-            retVertices2->push_back(intersectionPoint);
-        }
-
-        if (pSide == side && i != vertices->size()){
-            retVertices1->push_back(vertices->at(vertexIndex));
-        }
-        else if (i != vertices->size()){
-            retVertices2->push_back(vertices->at(vertexIndex));
-        }
-
-        lastSide = pSide;
-    }
-}
-
-float PortalBody::getArea(b2Fixture* fix, int status){
-    auto apf = allParts[fix];
-
+float PortalBody::findPolygonArea(b2Vec2* vertices, int numVertices){
     float baseArea = 0.0f;
-    float finalArea = 0.0f;
-    if (fix->GetType() == b2Shape::Type::e_polygon){
-        b2PolygonShape* pShape = (b2PolygonShape*)fix->GetShape();
-        for (int i = 0; i < pShape->m_count; i++){
-            baseArea += pShape->m_vertices[i].x * pShape->m_vertices[(i + 1) % pShape->m_count].y;
-            baseArea -= pShape->m_vertices[(i + 1) % pShape->m_count].x * pShape->m_vertices[i].y;
-        }
-        baseArea *= 0.5f;
+    for (int i = 0; i < numVertices; i++){
+        baseArea += vertices[i].x * vertices[(i + 1) % numVertices].y;
+        baseArea -= vertices[(i + 1) % numVertices].x * vertices[i].y;
     }
-    else{
-        b2CircleShape* cShape = (b2CircleShape*)fix->GetShape();
-        baseArea = pow(cShape->m_radius, 2) * b2_pi;
-    }
+    baseArea *= 0.5f;
 
-    if (status == 2) return baseArea;
-
-    std::vector<b2Vec2>* vecs = apf->at(0);
-
-    for (int i = 0; i < vecs->size(); i++){
-        b2Vec2 v0 = vecs->at(i);
-        b2Vec2 v1 = vecs->at((i + 1) % vecs->size());
-
-        finalArea += v0.x * v1.y;
-        finalArea -= v1.x * v0.y;
-    }
-    finalArea /= 2.0f;
-    
-    return finalArea;
+    return baseArea;
 }
 
-b2Vec2 findCentroid(std::vector<b2Vec2>* vecs){
-    b2Vec2 off = vecs->at(0);
+b2Vec2 PortalBody::findPolygonCentroid(b2Vec2* vertices, int numVertices){
+    b2Vec2 off = vertices[0];
     float twicearea = 0;
     float x = 0;
     float y = 0;
     b2Vec2 p1, p2;
     float f;
-    for (int i = 0, j = vecs->size() - 1; i < vecs->size(); j = i++) {
-        p1 = vecs->at(i);
-        p2 = vecs->at(j);
+    for (int i = 0, j = numVertices - 1; i < numVertices; j = i++) {
+        p1 = vertices[i];
+        p2 = vertices[j];
         f = (p1.x - off.x) * (p2.y - off.y) - (p2.x - off.x) * (p1.y - off.y);
         twicearea += f;
         x += (p1.x + p2.x - 2 * off.x) * f;
@@ -516,111 +441,183 @@ b2Vec2 findCentroid(std::vector<b2Vec2>* vecs){
     float rv1 = x / f + off.x;
     float rv2 = y / f + off.y;
 
-    // Validity check
-    if (!b2IsValid(rv1) || !b2IsValid(rv2)){
-        return b2Vec2(0, 0);
-    }
-
     return b2Vec2(rv1, rv2);
 }
 
-void PortalBody::applyGravity(b2Fixture* fix, int status){
-    auto apf = allParts[fix];
-    if (apf->size() == 0 || status == 0) return;
-
-    std::vector<b2Vec2>* vecs = apf->at(0);
-    if (vecs->size() == 0) return;
-
-    float area = getArea(fix, status);
-
-    if (area == 0) return;
-
-    b2Vec2 center = findCentroid(vecs);
-
-    b2Vec2 force = area * fix->GetDensity() * pWorld->GetGravity();
-
-    fix->GetBody()->ApplyForce(((float)bodyMaps->size() + 1) * force, center, false);
-}
-
-void PortalBody::calculateParts(b2Fixture* fix){
-    std::map<b2Fixture*, std::set<portalCollision*>*>::iterator fixIter = fixtureCollisions.find(fix);
-    std::set<portalCollision*>::iterator setIter = (*fixIter).second->begin();
-
-    std::vector<b2Vec2>* vertices = new std::vector<b2Vec2>;
-
-    int status = 2;
-    for (portalCollision* coll : *(*fixIter).second){
-        if (coll->status == 0){
-            status = 0;
-            break;
+void PortalBody::applyPartialGravity(b2Fixture* fixture){
+    auto fixColls = fixtureCollisions[fixture];
+    if (fixColls->size() == 0){
+        b2Vec2 center;
+        float area;
+        if (fixture->GetType() == b2Shape::Type::e_circle){
+            b2CircleShape* cShape = (b2CircleShape*)fixture->GetShape();
+            center = body->GetWorldPoint(cShape->m_p);
+            area = b2_pi * cShape->m_radius * cShape->m_radius;
         }
         else{
-            status = 1;
+            b2PolygonShape* pShape = (b2PolygonShape*)fixture->GetShape();
+            center = body->GetWorldPoint(findPolygonCentroid(pShape->m_vertices, pShape->m_count));
+            area = findPolygonArea(pShape->m_vertices, pShape->m_count);
         }
-    }
 
-    if (fix->GetType() == b2Shape::Type::e_polygon){
-        b2PolygonShape* shape = (b2PolygonShape*)fix->GetShape();
-        for (int i = 0; i < shape->m_count; i++) {
-            b2Vec2 p = b2Vec2((shape->m_vertices + i)->x, (shape->m_vertices + i)->y);
-            p = fix->GetBody()->GetWorldPoint(p);
-            vertices->push_back(p);
-        }
-    }
-    else{
-        b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
-        float r = shape->m_radius;
+        b2Vec2 force = area * fixture->GetDensity() * pWorld->GetGravity();
+        body->ApplyForce(force, center, false);
 
-        float angle = 0;
-        for (int i = 0; i < CIRCLE_POINTS; i++) {
-            float angle0 = -((float)i / CIRCLE_POINTS) * b2_pi * 2;
-            b2Vec2 p = b2Vec2(sin(angle0) * r, cos(angle0) * r) + shape->m_p;
-            p = fix->GetBody()->GetWorldPoint(p);
-            vertices->push_back(p);
-        }
-    }
-
-    std::vector<std::vector<b2Vec2>*>* apf = allParts[fix];
-
-    for (std::vector<b2Vec2>* vec : *apf){
-        delete vec;
-    }
-
-    apf->clear();
-
-    if (status == 2){
-        apf->push_back(vertices);
-        applyGravity(fix, status);
         return;
     }
 
-    std::vector<b2Vec2>* drawVecs = new std::vector<b2Vec2>;
-    apf->push_back(drawVecs);
+    b2RayCastInput rayInp;
+    rayInp.maxFraction = 1.0f;
+
+    b2RayCastOutput rayOut;
+
+    b2Vec2 hitPoint1;
+    b2Vec2 hitPoint2;
+
+    bool hit;
+
+    float baseArea;
+    float loopArea;
+    b2Vec2 center;
+    b2Vec2 loopCenterOfMass;
     
-    if (setIter != (*fixIter).second->end()){
-        for(;;){
-            if (vertices->size() == 0) break;
+    if (fixture->GetType() == b2Shape::Type::e_circle){
+        b2CircleShape* cShape = (b2CircleShape*)fixture->GetShape();
+        baseArea = b2_pi * cShape->m_radius * cShape->m_radius;
+        loopArea = baseArea;
+        center = fixture->GetBody()->GetWorldPoint(cShape->m_p);
+        loopCenterOfMass = center;
 
-            std::vector<b2Vec2>* releaseVecs = new std::vector<b2Vec2>;
+        for (portalCollision* pColl : *fixColls){
+            int side = pColl->portal->getFixtureSide(fixture);
+            bool mostlyOut = side != pColl->side;
 
-            adjustVertices(vertices, drawVecs, releaseVecs, (*setIter)->portal, (*setIter)->side);
-
-            vertices->clear();
-            for (b2Vec2 v : *drawVecs){
-                vertices->push_back(v);
+            rayInp.p1 = pColl->portal->points[0];
+            rayInp.p2 = pColl->portal->points[1];
+            hit = fixture->RayCast(&rayOut, rayInp, b2_dynamicBody);
+            if (!hit){
+                if (mostlyOut){
+                    loopArea = 0.0f;
+                    break;
+                }
+                else{
+                    continue;
+                }
             }
-            if (releaseVecs->size() != 0)
-                apf->push_back(releaseVecs);
-            else
-                delete(releaseVecs);
+            hitPoint1 = Portal::getRayPoint(rayInp, rayOut);
 
-            setIter++;
-            if (setIter == (*fixIter).second->end()) break;
+            rayInp.p1 = pColl->portal->points[1];
+            rayInp.p2 = pColl->portal->points[0];
+            hit = fixture->RayCast(&rayOut, rayInp, b2_dynamicBody);
+            if (!hit){
+                if (mostlyOut){
+                    loopArea = 0.0f;
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
+            hitPoint2 = Portal::getRayPoint(rayInp, rayOut);
 
-            drawVecs->clear();
+            b2Vec2 cMid = 0.5f * (hitPoint1 + hitPoint2);
+            b2Vec2 centerToMid = cMid - center;
+            centerToMid.Normalize();
+
+            float cDist = (hitPoint2 - hitPoint1).Length();
+
+            float angle = acos((cDist * cDist - (cShape->m_radius * cShape->m_radius * 2)) / -(cShape->m_radius * cShape->m_radius * 2));
+            float outerArea = cShape->m_radius * cShape->m_radius * 0.5f * (angle - sin(angle));
+            float x = (4 * cShape->m_radius * pow(sin(angle * 0.5f), 3)) / (3 * (angle - sin(angle)));
+            float x2;
+            b2Vec2 centerOfMass = center + x * centerToMid;
+            b2Vec2 loopCenterOfMassTocenterOfMass;
+            if (mostlyOut){
+                x = (x * outerArea) / (loopArea - outerArea);
+                centerOfMass = center - x * centerToMid;
+                outerArea = baseArea - outerArea;
+                x2 = -(x * outerArea) / (loopArea - outerArea);
+                loopCenterOfMassTocenterOfMass = loopCenterOfMass - centerOfMass;
+            }
+            else{
+                x2 = (x * outerArea) / (loopArea - outerArea);
+                loopCenterOfMassTocenterOfMass = centerOfMass - loopCenterOfMass;
+            }
+            loopCenterOfMassTocenterOfMass.Normalize();
+
+            loopArea -= outerArea;
+
+            loopCenterOfMass -= x2 * loopCenterOfMassTocenterOfMass;
+        }
+
+        b2Vec2 force = loopArea * fixture->GetDensity() * pWorld->GetGravity();
+
+        // validity check for loopCenterOfMass is probably extra
+        // just to be sure program does not crash
+        if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
+            body->ApplyForce(force, loopCenterOfMass, false);
         }
     }
-    delete(vertices);
+    else{
+        b2PolygonShape* pShape = (b2PolygonShape*)fixture->GetShape();
+        b2Vec2 latestVertices[41];
+        for (int i = 0; i < pShape->m_count; i++){
+            latestVertices[i] = body->GetWorldPoint(pShape->m_vertices[i]);
+        }
+        b2Vec2 innerVertices[41];
+        int numLatestVertices = pShape->m_count;
+        int numVertices = 0;
+        baseArea = findPolygonArea(pShape->m_vertices, pShape->m_count);
+        loopArea = baseArea;
+        center = findPolygonCentroid(pShape->m_vertices, pShape->m_count);
+        loopCenterOfMass = center;
+        for (portalCollision* pColl : *fixColls){
+            b2Vec2 lastVertex = latestVertices[0];
+            int lastSide = pColl->portal->getPointSide(lastVertex);
+            bool isInside = lastSide == pColl->side;
+            for (int i = 1; i < numLatestVertices + 1; i++){
+                int j = i % numLatestVertices;
 
-    applyGravity(fix, status);
+                b2Vec2 vertex = latestVertices[j];
+                int side = pColl->portal->getPointSide(vertex);
+
+                // inside to outside transition
+                if (side != lastSide){
+                    b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(lastVertex, vertex, pColl->portal->points[0], pColl->portal->points[1]);
+                    if (isInside){
+                        innerVertices[numVertices++] = lastVertex;
+                        innerVertices[numVertices++] = intersectionPoint;
+                        isInside = false;
+                    }
+                    else{
+                        innerVertices[numVertices++] = intersectionPoint;
+                    }
+                }
+                else if (isInside){
+                    innerVertices[numVertices++] = lastVertex;
+                }
+                
+                isInside = side == pColl->side;
+                lastVertex = vertex;
+                lastSide = side;
+            }
+
+            memcpy(latestVertices, innerVertices, sizeof(b2Vec2) * numVertices);
+
+            numLatestVertices = numVertices;
+            numVertices = 0;
+        }
+
+        if (numLatestVertices > 2){
+            loopArea = findPolygonArea(latestVertices, numLatestVertices);
+            if (loopArea > 0.0f){
+                loopCenterOfMass = findPolygonCentroid(latestVertices, numLatestVertices);
+
+                b2Vec2 force = loopArea * fixture->GetDensity() * pWorld->GetGravity();
+                if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
+                    body->ApplyForce(force, loopCenterOfMass, false);
+                }
+            }
+        }
+    }
 }

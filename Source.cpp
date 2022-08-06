@@ -21,7 +21,7 @@ int main(void)
     
     mouseJointHandler mjh(pWorld, wh, renderer);
 
-    multiReleaseTest(pWorld, renderer);
+    testCase1(pWorld, renderer);
 
     // manual random coloring for now
     for (Portal* p : pWorld->portals){
@@ -61,7 +61,7 @@ int main(void)
 #endif
         if (!isPaused || tick) {
             glClear(GL_COLOR_BUFFER_BIT);
-
+            renderer->render();
             for (int i = 0; i < totalIter; i++) {
                 mjh.mouseHandler(frame, totalIter);
 
@@ -76,12 +76,12 @@ int main(void)
             renderer->dotRender();
 
             drawer->drawWorld(pWorld);
-            renderer->render();
+            //renderer->render();
 
             mjh.drawMouseBody();
 
             glfwSwapInterval(1);
-            
+
             glfwSwapBuffers(wh->window);
         }
         else {

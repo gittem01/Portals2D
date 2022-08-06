@@ -133,7 +133,7 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
     diff = minFrac * diff;
     b2Vec2 collPoint = rayStart + diff;
 
-    //pWorld->getDebugDraw()->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
+    pWorld->getDebugDraw()->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
 
     if (closestFixture != NULL){
         if (closestFixture == closestPortalFixture){
@@ -178,12 +178,12 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
         body->postHandle();
     }
     
-    rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
+    // rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
 
-    for (rayData* rd : rayHandler->rayResult){
-        DebugDrawer* drawer = (DebugDrawer*)m_debugDraw;
-        //drawer->renderer->drawArrow(rd->endPos - rd->dir, rd->endPos, b2Color(1, 1, 0));
-    }
+    // for (rayData* rd : rayHandler->rayResult){
+    //     DebugDrawer* drawer = (DebugDrawer*)m_debugDraw;
+    //     drawer->renderer->drawArrow(rd->endPos - rd->dir, rd->endPos, b2Color(1, 1, 0));
+    // }
 
     globalPostHandle();
 }
@@ -214,7 +214,7 @@ void PortalWorld::globalPostHandle(){
     destroyBodies.clear();
 }
 
-std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
+void PortalWorld::createCloneBody(bodyStruct* s){
     PortalBody* pBody = s->pBody;
     int side = s->side;
     Portal* collPortal = s->collPortal;
@@ -222,8 +222,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
     b2Vec2 dir1 = side ? -collPortal->dir : collPortal->dir;
     b2Vec2 posDiff = collPortal->pos - body1->GetPosition();
     b2Vec2 speed = body1->GetLinearVelocity();
-
-    std::vector<PortalBody*> retBodies;
 
     for (portalConnection* c : collPortal->connections[side]){
         Portal* portal2 = c->portal2;
@@ -271,8 +269,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         }
 
         portalBodies.push_back(npb);
-
-        retBodies.push_back(npb);
 
         bodyCollisionStatus* bcs = new bodyCollisionStatus;
         bcs->body = pBody;
@@ -368,7 +364,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
             }
 
             npb->fixtureCollisions[f] = new std::set<portalCollision*>();
-            npb->allParts[f] = new std::vector<std::vector<b2Vec2>*>();
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
 
@@ -485,8 +480,6 @@ std::vector<PortalBody*> PortalWorld::createCloneBody(bodyStruct* s){
         npb->numFixtures = pBody->numFixtures;
         npb->outFixtures[c->side2][portal2] = npb->numFixtures + fixMargin;
     }
-
-    return retBodies;
 }
 
 void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot) {

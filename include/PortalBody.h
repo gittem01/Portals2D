@@ -7,8 +7,6 @@
 #include <map>
 #include <GLFW/glfw3.h>
 
-#define CIRCLE_POINTS 50
-
 struct bodyData;
 struct portalConnection;
 
@@ -66,10 +64,6 @@ public:
     std::vector<bodyCollisionStatus*>* bodyMaps;
     std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
 
-    // index 0 is the outer part of the fixture
-    // remaining vertices are release parts of the fixture
-    std::map<b2Fixture*, std::vector<std::vector<b2Vec2>*>*> allParts;
-
     b2Body* body;
     int numFixtures;
     float offsetAngle;
@@ -99,13 +93,9 @@ private:
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     void releaseOut2(b2Fixture* fix, Portal* portal);
 
-    float getArea(b2Fixture* fix, int status);
-
-    void applyGravity(b2Fixture* fix, int status);
-    void calculateParts(b2Fixture* fix);
-
-    void adjustVertices(std::vector<b2Vec2>* vertices, std::vector<b2Vec2>* retVertices1,
-                        std::vector<b2Vec2>* retVertices2, Portal* portal, int side);
-
-    std::vector<PortalBody*> postHandle();
+    void postHandle();
+    void applyPartialGravity(b2Fixture* fixture);
+    
+    static b2Vec2 findPolygonCentroid(b2Vec2* vertices, int numVertices);
+    static float findPolygonArea(b2Vec2* vertices, int numVertices);
 };

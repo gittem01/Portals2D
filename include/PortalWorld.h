@@ -153,7 +153,7 @@ private:
 
     void globalPostHandle();
 
-    std::vector<PortalBody*> createCloneBody(bodyStruct* s);
+    void createCloneBody(bodyStruct* s);
     void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot);
 
     // baseBody should not be NULL if isNew is false
