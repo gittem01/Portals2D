@@ -270,12 +270,11 @@ void classicTest(PortalWorld* portalWorld, Renderer* renderer){
     float xSize = 7.98f;
     float ySize = 4.48f;
     float width = 0.5f;
-    float m = 1.0f;
 
-    Portal* portal1 = portalWorld->createPortal(b2Vec2(0.0f, -ySize), b2Vec2(+0.0f, +1.0f), ySize * m);
-    Portal* portal2 = portalWorld->createPortal(b2Vec2(0.0f, +ySize), b2Vec2(+0.0f, -1.0f), ySize * m);
-    Portal* portal3 = portalWorld->createPortal(b2Vec2(-xSize, 0.0f), b2Vec2(+1.0f, +0.0f), ySize * m);
-    Portal* portal4 = portalWorld->createPortal(b2Vec2(+xSize, 0.0f), b2Vec2(-1.0f, +0.0f), ySize * m);
+    Portal* portal1 = portalWorld->createPortal(b2Vec2(0.0f, -ySize), b2Vec2(+0.0f, +1.0f), ySize);
+    Portal* portal2 = portalWorld->createPortal(b2Vec2(0.0f, +ySize), b2Vec2(+0.0f, -1.0f), ySize);
+    Portal* portal3 = portalWorld->createPortal(b2Vec2(-xSize, 0.0f), b2Vec2(+1.0f, +0.0f), ySize);
+    Portal* portal4 = portalWorld->createPortal(b2Vec2(+xSize, 0.0f), b2Vec2(-1.0f, +0.0f), ySize);
 
     portal1->connect(portal2);
     portal3->connect(portal4);
@@ -283,6 +282,8 @@ void classicTest(PortalWorld* portalWorld, Renderer* renderer){
     createEdge(b2Vec2(-xSize, -ySize), b2Vec2(+xSize, -ySize), portalWorld, b2_staticBody);
     createEdge(b2Vec2(-xSize, -ySize), b2Vec2(-xSize, +ySize), portalWorld, b2_staticBody);
     createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), portalWorld, b2_staticBody);
+    // edge in the middle of the portal
+    createEdge(b2Vec2(-xSize * 0.4f, +ySize), b2Vec2(+xSize * 0.5f, +ySize), portalWorld, b2_staticBody);
     createBox(b2Vec2(xSize + width, 0), b2Vec2(width, ySize), portalWorld, b2_staticBody);
 
     b2Vec2 p = b2Vec2(0.0f, 0.0f);

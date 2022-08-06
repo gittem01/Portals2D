@@ -614,8 +614,9 @@ bool PortalWorldQuery::edgeSplitHorizontal(b2Fixture* fixture){
         b2Vec2 rightPoint;
         b2Vec2 leftPoint;
 
-        float v1 = PortalWorld::getDist(portal->points[0], portal->points[0] + portal->dir, p1);
-        float v2 = PortalWorld::getDist(portal->points[1], portal->points[1] + portal->dir, p1);
+        float v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p1);
+        float v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p1);
+
         if (v1 < 0.0f){
             leftFound = true;
             leftPoint = p1;
@@ -625,24 +626,32 @@ bool PortalWorldQuery::edgeSplitHorizontal(b2Fixture* fixture){
             rightPoint = p1;
         }
 
-        v1 = PortalWorld::getDist(portal->points[0], portal->points[0] + portal->dir, p2);
-        v2 = PortalWorld::getDist(portal->points[1], portal->points[1] + portal->dir, p2);
+        v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p2);
+        v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p2);
+
         if (v1 < 0.0f){
+            if (leftFound) return true;
             leftFound = true;
             leftPoint = p2;
         }
         else if (v2 > 0.0f){
+            if (rightFound) return true;
             rightFound = true;
             rightPoint = p2;
         }
+        if (!leftFound && !rightFound){
+            fBody->DestroyFixture(fixture);
+            return true;
+        }
 
+        // needed to conserve position of the edge
         b2BodyDef bDef;
         b2Body* dummyBody = pWorld->CreateBody(&bDef);
 
         if (rightFound){
             b2FixtureDef edgeDef;
             b2EdgeShape edgeShape;
-            edgeShape.SetTwoSided(rightPoint, portal->points[0]);
+            edgeShape.SetTwoSided(rightPoint, portal->points[1]);
             edgeDef.shape = &edgeShape;
 
             dummyBody->CreateFixture(&edgeDef);
@@ -650,7 +659,7 @@ bool PortalWorldQuery::edgeSplitHorizontal(b2Fixture* fixture){
         if (leftFound){
             b2FixtureDef edgeDef;
             b2EdgeShape edgeShape;
-            edgeShape.SetTwoSided(leftPoint, portal->points[1]);
+            edgeShape.SetTwoSided(leftPoint, portal->points[0]);
             edgeDef.shape = &edgeShape;
 
             dummyBody->CreateFixture(&edgeDef);

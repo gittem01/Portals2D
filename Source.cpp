@@ -75,8 +75,8 @@ int main(void)
 
             renderer->dotRender();
 
-            drawer->drawWorld(pWorld);
             renderer->render();
+            drawer->drawWorld(pWorld);
 
             mjh.drawMouseBody();
 

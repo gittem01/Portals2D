@@ -656,7 +656,7 @@ float PortalWorld::vecAngle(b2Vec2 v1, b2Vec2 v2){
 }
 
 float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
-     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x));
+     return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
 }
 
 float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
