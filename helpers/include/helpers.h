@@ -157,17 +157,18 @@ b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
 }
 
 b2Body* createPortalCube(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, float density=1.0f){
+    const float mult = (1.0f / 1.2f);
     std::vector<b2Vec2> vertices = 
         {
-            b2Vec2(-0.1f * size.x, +0.5f * size.y),
-            b2Vec2(-0.2f * size.x, +0.6f * size.y),
-            b2Vec2(-0.5f * size.x, +0.6f * size.y),
-            b2Vec2(-0.6f * size.x, +0.5f * size.y),
-            b2Vec2(-0.6f * size.x, +0.2f * size.y),
-            b2Vec2(-0.5f * size.x, +0.1f * size.y)
+            mult * 2 * b2Vec2(-0.1f * size.x, +0.5f * size.y),
+            mult * 2 * b2Vec2(-0.2f * size.x, +0.6f * size.y),
+            mult * 2 * b2Vec2(-0.5f * size.x, +0.6f * size.y),
+            mult * 2 * b2Vec2(-0.6f * size.x, +0.5f * size.y),
+            mult * 2 * b2Vec2(-0.6f * size.x, +0.2f * size.y),
+            mult * 2 * b2Vec2(-0.5f * size.x, +0.1f * size.y)
         };
     b2PolygonShape boxShape;
-    boxShape.SetAsBox(0.5f * size.x, 0.5f * size.y);
+    boxShape.SetAsBox(size.x * mult, size.y * mult);
 
     b2FixtureDef fDef1;
     fDef1.shape = &boxShape;
