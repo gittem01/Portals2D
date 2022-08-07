@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(Teleporter VERSION 2.0.0)
 
+set (APP_NAME PhysicsTeleport)
 set(CMAKE_CXX_STANDARD 14)
 
 add_definitions(-DGL_SLIENCE_DEPRECATION)
@@ -22,7 +23,16 @@ link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 file(GLOB HELPER_SOURCES ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp)
 file(GLOB HELPER_HEADERS ${CMAKE_SOURCE_DIR}/helpers/include/*.h)
 
-add_executable(physicsTeleport Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS})
+if (APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE portal.icns)
+    set(myApp_ICON ${CMAKE_CURRENT_SOURCE_DIR}/icon/portal.icns)
+    set_source_files_properties(${myApp_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    add_executable(${APP_NAME} MACOSX_BUNDLE Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${myApp_ICON})
+
+    file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${APP_NAME}.app/Contents/Resources)
+else()
+    add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS})
+endif()
 
 file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 file(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
@@ -31,9 +41,9 @@ add_library(PORTAL2D ${SOURCE_FILES} ${HEADER_FILES})
 add_library(glad ${CMAKE_SOURCE_DIR}/external/glad/src/glad.c)
 
 find_package(OpenGL REQUIRED)
-target_link_libraries(physicsTeleport OpenGL::GL)
+target_link_libraries(${APP_NAME} OpenGL::GL)
 
-target_link_libraries(physicsTeleport PORTAL2D)
-target_link_libraries(physicsTeleport box2d)
-target_link_libraries(physicsTeleport glfw)
-target_link_libraries(physicsTeleport glad)
+target_link_libraries(${APP_NAME} PORTAL2D)
+target_link_libraries(${APP_NAME} box2d)
+target_link_libraries(${APP_NAME} glfw)
+target_link_libraries(${APP_NAME} glad)

@@ -18,7 +18,7 @@ int main(void)
 
     pWorld->SetDebugDraw(drawer);
     drawer->SetFlags(b2Draw::e_centerOfMassBit);
-    
+
     mouseJointHandler mjh(pWorld, wh, renderer);
 
     testCase1(pWorld, renderer);
@@ -56,9 +56,9 @@ int main(void)
         cam->update();
         keyHandler(wh);
 
-#if ENABLE_TEST_PLAYER
+    #if ENABLE_TEST_PLAYER
         tp->camHandle();
-#endif
+    #endif
         if (!isPaused || tick) {
             glClear(GL_COLOR_BUFFER_BIT);
 
@@ -66,9 +66,9 @@ int main(void)
                 mjh.mouseHandler(frame, totalIter);
 
                 pWorld->PortalStep(1.0f / (vsyncFps * totalIter), 8, 3);
-#if ENABLE_TEST_PLAYER
+            #if ENABLE_TEST_PLAYER
                 tp->update(1.0f / (vsyncFps * totalIter), totalIter);
-#endif
+            #endif
             }
 
             //pWorld->DebugDraw();
