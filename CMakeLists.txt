@@ -24,9 +24,9 @@ file(GLOB HELPER_SOURCES ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp)
 file(GLOB HELPER_HEADERS ${CMAKE_SOURCE_DIR}/helpers/include/*.h)
 
 if(APPLE)
-    set(MACOSX_BUNDLE_ICON_FILE portal.icns)
+    set(MACOSX_BUNDLE_ICON_FILE portal.ico)
     set(appIcon ${CMAKE_CURRENT_SOURCE_DIR}/icon/${MACOSX_BUNDLE_ICON_FILE})
-    set_source_files_properties(${myApp_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    set_source_files_properties(${appIcon} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     add_executable(${APP_NAME} MACOSX_BUNDLE Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${appIcon})
 
     file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${APP_NAME}.app/Contents/Resources)
