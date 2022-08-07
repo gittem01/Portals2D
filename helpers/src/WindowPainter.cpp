@@ -169,6 +169,7 @@ void WindowPainter::glfwKeyEventCallback(GLFWwindow* window, int key, int scanco
         thisClass->enableCursor();
 }
 
+// TODO FIX : minimizing causes crash sometimes. On Windows platform.
 void WindowPainter::glfwWindowFocusCallback(GLFWwindow* window, int isFocused) {
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
     if (!isFocused) {

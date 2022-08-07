@@ -91,3 +91,11 @@ int main(void)
 
     return 0;
 }
+
+#ifdef ENABLE_WINMAIN
+    #include "windows.h"
+    int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLine, int iCmdShow){
+
+        return main();
+    }
+#endif
