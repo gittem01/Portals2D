@@ -555,7 +555,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         // validity check for loopCenterOfMass is probably extra
         // just to be sure program does not crash
         if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-            body->ApplyForce(force, loopCenterOfMass, false);
+            body->ApplyForce(((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
         }
     }
     else{
@@ -615,7 +615,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
 
                 b2Vec2 force = loopArea * fixture->GetDensity() * pWorld->GetGravity();
                 if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-                    body->ApplyForce(force, loopCenterOfMass, false);
+                    body->ApplyForce(((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
                 }
             }
         }
