@@ -369,19 +369,47 @@ bool Portal::isPointIn(b2Vec2 p1, b2Vec2 p2, b2Vec2 point, int side, float sideT
 }
 
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll){
-    if (collidingFixtures[1 ^ coll->side].find(fix2) != collidingFixtures[1 ^ coll->side].end()){
+    if (collidingFixtures[1 ^ coll->side].find(fix2) != collidingFixtures[1 ^ coll->side].end() || fix2 == midFixture)
+    {
         return false;
     }
 
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
+    if (fix2->GetType() == b2Shape::Type::e_edge){
+        b2Vec2 p1 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex1);
+        b2Vec2 p2 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex2);
+
+        if (isParallel(p1, p2)){
+            const float angleThold = 0.0001f;
+            float angle = pWorld->vecAngle(wManifold.normal, dir);
+            if (coll->side == 0){
+                if (angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold)){
+                    return false;
+                }
+                else{
+                    return true;
+                }
+            }
+            else{
+                if (angle < angleThold || b2_pi * 2 < (angle + angleThold)){
+                    return false;
+                }
+                else{
+                    return true;
+                }
+            }
+        }
+    }
+
     float tHold = 0.0f;
     if (fix2->GetBody()->GetType() == b2_staticBody) tHold = -0.001f;
 
     std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
 
-    if (fix1->GetType() == b2Shape::Type::e_circle && fix2->GetBody()->GetType() == b2_staticBody){
+    // may be removed
+    if (collPoints.size() == 0 && fix1->GetType() == b2Shape::Type::e_circle && fix2->GetBody()->GetType() == b2_staticBody){
         b2CircleShape* cShape = (b2CircleShape*)fix1->GetShape();
         b2Vec2 wCenter = fix1->GetBody()->GetWorldPoint(cShape->m_p);
         bool res;
@@ -393,7 +421,6 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
         res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
         if (res) {
             b2Vec2 result = getRayPoint(rcInput, rcOutput);
-            collPoints.clear();
             collPoints.push_back(result);
         }
     }
@@ -413,16 +440,6 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
             }
         }
     }
-
-#if 0
-    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-        pWorld->drawer->DrawPoint(wManifold.points[i], 10.0f, b2Color(1, 0, 0, 1));
-    }
-
-    for (b2Vec2 p : collPoints){
-        pWorld->drawer->DrawPoint(p, 10.0f, b2Color(0, 1, 1, 1));
-    }
-#endif
 
     if (collPoints.size() > 0){
         if (fix2->GetBody()->GetType() == b2_staticBody && fix1->GetType() != b2Shape::Type::e_circle &&
@@ -690,31 +707,34 @@ void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture){
         return;
     }
 
-    float dist1 = abs(PortalWorld::getRealDist(p1, p2, portal->points[0]));
-    float dist2 = abs(PortalWorld::getRealDist(p1, p2, portal->points[1]));
+    float dist1 = PortalWorld::getRealDist(p1, p2, portal->points[0]);
+    float dist2 = PortalWorld::getRealDist(p1, p2, portal->points[1]);
     
     bool willSplit = false;
     b2Vec2 splitPoint;
 
-    if (dist1 < 0.001f){
+    if (dist1 < 0.0001f){
         willSplit = true;
         splitPoint = portal->points[0];
     }
-    else if (dist2 < 0.001f){
+    else if (dist2 < 0.0001f){
         willSplit = true;
         splitPoint = portal->points[1];
     }
 
     if (willSplit){
+        b2BodyDef bDef;
+        b2Body* dummyBody = portal->pWorld->CreateBody(&bDef);
+
         b2FixtureDef edgeDef;
         b2EdgeShape edgeShape;
-        edgeShape.SetTwoSided(eShape->m_vertex1, splitPoint);
+        edgeShape.SetTwoSided(p1, splitPoint);
         edgeDef.shape = &edgeShape;
 
-        fBody->CreateFixture(&edgeDef);
+        b2Fixture* fix1 = dummyBody->CreateFixture(&edgeDef);
 
-        edgeShape.SetTwoSided(eShape->m_vertex2, splitPoint);
-        fBody->CreateFixture(&edgeDef);
+        edgeShape.SetTwoSided(p2, splitPoint);
+        b2Fixture* fix2 = dummyBody->CreateFixture(&edgeDef);
 
         fBody->DestroyFixture(fixture);
     }
@@ -733,24 +753,11 @@ bool PortalWorldQuery::ReportFixture(b2Fixture* fixture){
 
     // TODO : store all creation and destructions
     // So, after the portal is destroyed world can be restored to its original state
-    switch (mode)
-    {
-    case 0:
-        {
-            polygonTransform(fixture);
-        }
-        break;
-    
-    case 1:
-        {
-            if (!edgeSplitHorizontal(fixture)){
-                edgeSplitVertical(fixture);
-            }
-        }
-        break;
-
-    default:
-        break;
+    if (mode == 0){
+        polygonTransform(fixture);
+    }
+    else if(!edgeSplitHorizontal(fixture)){
+        edgeSplitVertical(fixture);
     }
 
     return true;

@@ -24,10 +24,10 @@ typedef enum
 
 typedef enum
 {
-	OTHER = 0,
-	PORTAL = 1,
-	PORTAL_BODY = 2,
-	MOUSE = 3,
+	OTHER = 0x1,
+	PORTAL = 0x2,
+	PORTAL_BODY = 0x4,
+	MOUSE = 0x8,
 } dataTypes;
 
 typedef struct rayData

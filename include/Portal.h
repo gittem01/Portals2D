@@ -61,7 +61,6 @@ public:
 private:
 
     Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
-    std::set<b2Fixture*> extraFixtures;
 
     PortalWorld* pWorld;
     b2Body* body;

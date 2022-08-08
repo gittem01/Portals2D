@@ -62,16 +62,18 @@ int main(void)
         if (!isPaused || tick) {
             glClear(GL_COLOR_BUFFER_BIT);
 
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
             for (int i = 0; i < totalIter; i++) {
                 mjh.mouseHandler(frame, totalIter);
 
-                pWorld->PortalStep(1.0f / (vsyncFps * totalIter), 8, 3);
+                pWorld->PortalStep(1.0f / (vsyncFps * totalIter), 80, 30);
             #if ENABLE_TEST_PLAYER
                 tp->update(1.0f / (vsyncFps * totalIter), totalIter);
             #endif
             }
-
-            //pWorld->DebugDraw();
 
             renderer->dotRender();
 
@@ -79,6 +81,11 @@ int main(void)
             drawer->drawWorld(pWorld);
 
             mjh.drawMouseBody();
+            
+            //pWorld->DebugDraw();
+
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
             glfwSwapInterval(1);
 

@@ -85,6 +85,12 @@ void WindowPainter::massInit() {
 
     glfwMakeContextCurrent(window);
 
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 410");
+
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
         printf("Failed to initialize GLAD\n");
         std::exit(-1);
