@@ -45,6 +45,9 @@ PortalBody::~PortalBody(){
             break;
         }
     }
+    if (worldIndex->size() == 0){
+        delete baseDensities;
+    }
 
     for (int i = 0; i < bodyMaps->size(); i++){
         bodyCollisionStatus* bodyCollStatus = bodyMaps->at(i);
@@ -256,10 +259,6 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
             col->status = status;
             return;
         }
-    }
-
-    if (!pWorld->IsLocked()){
-
     }
 
     portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));

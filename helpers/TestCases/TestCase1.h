@@ -3,18 +3,15 @@
 class TestCase1 : public BaseTestCase
 {
 public:
-    TestCase1(WindowPainter* wh) : BaseTestCase(){
-        onCreate(wh);
+    TestCase1(WindowPainter* wh) : BaseTestCase(wh){
+        testCaseItem = 0;
+
+        beforeCreate();
+        onCreate();
         afterCreate();
     }
 
-    ~TestCase1(){
-        onDestroy();
-    }
-
-    void onCreate(WindowPainter* wh){
-        beforeCreate(wh);
-
+    void onCreate(){
         float yPos = -4.0f;
         float portalSize = 3.0f;
 
@@ -93,23 +90,5 @@ public:
         b2Vec2 bPos(10.0f, 5.0f);
         s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
         b2Body* statBody = createBox(bPos, s, pWorld, b2_staticBody);
-    }
-
-    void onDestroy(){
-
-    }
-
-    void onUpdate(){
-        if (!pWorld) return;
-        for (int i = 0; i < totalIter; i++) {
-            mjh->mouseHandler(frame, totalIter);
-			// speeded up 2x times
-            pWorld->PortalStep((2.0f / refreshRate) / totalIter, 8, 3);
-        }
-    }
-
-    void onDraw(){
-        if (!pWorld) return;
-        mjh->drawMouseBody();
     }
 };

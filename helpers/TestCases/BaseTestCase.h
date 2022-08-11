@@ -2,39 +2,88 @@
 
 #include <helpers.h>
 
-const char* refreshRates[] = { "60", "90", "120", "144", "240" };
-const int correspondingValues[] = { 60, 90, 120, 144, 240 };
-const int refreshSize = sizeof(refreshRates) / sizeof(refreshRates[0]);
-
 class BaseTestCase
 {
 private:
 	int refreshItem;
 
+    static int namerCount;
+
+    const char* name;
+
+    WindowPainter* wh;
+
 public:
-	void debugDraw() {
-		ImGui::Begin(name);
+    bool shouldGetNewTest;
+    int testCaseItem;
+
+    void debugDraw() {
+		ImGui::Begin(name, NULL, ImGuiWindowFlags_AlwaysAutoResize);
 
 		ImGui::Combo("Refresh Rate", &refreshItem, refreshRates, refreshSize);
 
 		refreshRate = correspondingValues[refreshItem];
 
+        int lastItem = testCaseItem;
+        ImGui::Combo(" ", &testCaseItem, testCases, numTestCases);
+        ImGui::SameLine();
+        if (ImGui::Button("Reset")){
+            destroy();
+            shouldGetNewTest = true;
+        }
+
+        if (lastItem != testCaseItem){
+            destroy();
+            shouldGetNewTest = true;
+        }
+
 		if (ImGui::RadioButton("Draw Releases", renderer->drawReleases)) {
 			renderer->drawReleases = !renderer->drawReleases;
 		}
+        ImGui::SameLine();
+        if (isPaused){
+            if (ImGui::Button("Resume")){
+                isPaused = false;
+            }
+        }
+        else{
+            if (ImGui::Button("Stop")){
+                isPaused = true;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Tick")){
+            isPaused = true;
+            tick = true;
+        }
+
+        float oldVal = mjh->bodyRadius;
+        ImGui::SliderFloat("MouseSelectionArea", &mjh->bodyRadius, mjh->radiusLimits[0], mjh->radiusLimits[1], "%.2f", 1);
+        if (oldVal != mjh->bodyRadius){
+            mjh->createMouseBody();
+        }
 
 		ImGui::End();
 	}
 
-protected:
-    static std::vector<BaseTestCase> testCases;
-    static int namerCount;
+    void destroy(){
+        for (int i = 0; i < pWorld->portals.size(); i++){
+            pWorld->destroyPortal(pWorld->portals.at(i));
+            i--;
+        }
+        
+        delete mjh;
+        delete pWorld;
 
-    const char* name;
+        pWorld = NULL;
+        renderer->reset();
+    }
 
-    BaseTestCase(const char* name="Test Debug Window"){
+    BaseTestCase(WindowPainter* wh, const char* name="Test Debug Window"){
+        this->wh = wh;
         this->name = name;
 		refreshItem = 0;
+        shouldGetNewTest = false;
 		for (int i = 0; i < refreshSize; i++) {
 			if (refreshRate == correspondingValues[i]) {
 				refreshItem = i;
@@ -43,7 +92,11 @@ protected:
 		}
     }
 
-    void beforeCreate(WindowPainter* wh){
+    virtual ~BaseTestCase(){
+
+    }
+
+    void beforeCreate(){
         if (!contactListener){
             contactListener = new ContactListener();
         }
@@ -83,11 +136,22 @@ protected:
         }
     }
 
-    virtual void onCreate(WindowPainter* wh) = 0;
-    virtual void onDestroy() = 0;
-    virtual void onUpdate() = 0;
-    virtual void onDraw() = 0;
+    void onDraw(){
+        if (!pWorld) return;
+        if(!isPaused) mjh->drawMouseBody();
+    }
+
+    void onUpdate(){
+        if (!pWorld) return;
+        for (int i = 0; i < totalIter; i++) {
+            mjh->mouseHandler(frame, totalIter);
+			// speeded up 2x times
+            pWorld->PortalStep((2.0f / refreshRate) / totalIter, 8, 3);
+        }
+    }
+
+    virtual void onCreate() = 0;
 };
 
 int BaseTestCase::namerCount = 0;
-std::vector<BaseTestCase> BaseTestCase::testCases;
+BaseTestCase* testCase = NULL;

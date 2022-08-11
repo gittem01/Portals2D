@@ -7,7 +7,7 @@ int main(void)
     cam->zoom = 0.75f;
     wh->cam = cam;
 
-    TestCase1* testCase = new TestCase1(wh);
+    testCase = newTest(wh, 1);
     bool done = false;
     long sleepTime = 20; // millisecond
 
@@ -18,55 +18,42 @@ int main(void)
         done = wh->looper();
 
         cam->update();
-        keyHandler(wh);
 
         if (!isPaused || tick) {
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
             testCase->onUpdate();
-
-            renderer->dotRender();
-
-            renderer->render();
-            if (pWorld){
-                drawer->drawWorld(pWorld);
-            }
-            
-            testCase->onDraw();
-
-            //pWorld->DebugDraw();
-
-			testCase->debugDraw();
-
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-            glfwSwapInterval(1);
-
-            glfwSwapBuffers(wh->window);
-
-            if (pWorld && wh->keyData[GLFW_KEY_R] == 2){
-                for (int i = 0; i < pWorld->portals.size(); i++){
-                    pWorld->destroyPortal(pWorld->portals.at(i));
-                    i--;
-                }
-                
-                delete mjh;
-                delete pWorld;
-
-                pWorld = NULL;
-                renderer->reset();
-
-                delete testCase;
-                testCase = new TestCase1(wh);
-            }
         }
-        else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        renderer->dotRender();
+
+        renderer->render();
+        if (pWorld){
+            drawer->drawWorld(pWorld);
+        }
+        
+        testCase->onDraw();
+
+        //pWorld->DebugDraw();
+
+        keyHandler(wh);
+        testCase->debugDraw();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapInterval(1);
+
+        glfwSwapBuffers(wh->window);
+
+        if (testCase->shouldGetNewTest){
+            int nextTestCase = testCase->testCaseItem + 1;
+            delete testCase;
+            testCase = newTest(wh, nextTestCase);
         }
     }
 

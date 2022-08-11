@@ -13,9 +13,6 @@ PortalWorld::~PortalWorld(){
     for (Portal* portal : portals){
         delete portal;
     }
-    for (auto& indices : bodyIndices){
-        delete indices->at(0)->baseDensities;
-    }
     for (PortalBody* pb : portalBodies){
         delete pb;
     }
@@ -25,7 +22,6 @@ PortalWorld::~PortalWorld(){
 
     delete rayHandler;
     delete evalRayHandler;
-
 }
 
 Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size){
