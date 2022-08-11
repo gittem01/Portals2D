@@ -62,6 +62,7 @@ private:
     float minFraction_i = 1.0f;
 
 public:
+
     std::vector<std::pair<b2Fixture*, b2Vec2>> hitFixtures;
 
     b2Fixture* closestFixture{};
@@ -127,9 +128,13 @@ public:
     std::vector<Portal*> portals;
 
     PortalWorld();
+    ~PortalWorld();
+
     void PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations);
 
     Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
+    void destroyPortal(Portal* portal);
+
     PortalBody* createPortalBody(b2Body* body);
 
     static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);

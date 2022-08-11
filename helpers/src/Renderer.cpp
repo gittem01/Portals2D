@@ -56,6 +56,34 @@ Renderer::Renderer(PortalWorld* pWorld, Camera* camera)
     prepareDots();
 }
 
+void Renderer::reset(){
+    for (auto& prd : portals){
+        delete prd;
+    }
+    for (auto& pbd : portalBodies){
+        glDeleteTextures(1, &pbd->texture);
+        for (auto& fData : pbd->fixtureDatas){
+            delete fData;
+        }
+        delete pbd;
+    }
+
+    portals.clear();
+    portalBodies.clear();
+
+    addedPortals.clear();
+    pSizes.clear();
+    pSides.clear();
+    pSpeeds.clear();
+    pMults.clear();
+    pColors.clear();
+    pPortals.clear();
+
+    for (int i = 0; i < 6; i++){
+        glDeleteBuffers(1, &pBufferObjects[i]);
+    }
+}
+
 void Renderer::prepareDots(){
     glGenBuffers(1, &pos_SBO);
     glBindBuffer(GL_ARRAY_BUFFER, pos_SBO);
@@ -168,6 +196,8 @@ void Renderer::addPortal(Portal* portal, b2Color color){
 }
 
 void Renderer::portalAddEnd(){
+    if (pPortals.size() == 0) return;
+
     glGenBuffers(1, &pBufferObjects[0]);
     glBindBuffer(GL_ARRAY_BUFFER, pBufferObjects[0]);
     glBufferData(GL_ARRAY_BUFFER, pSizes.size() * sizeof(pSizes.at(0)), pSizes.data(), GL_DYNAMIC_DRAW);
@@ -374,6 +404,8 @@ void Renderer::portalRender(portalRenderData* prd){
 }
 
 void Renderer::portalRender(){
+    if (pPortals.size() == 0) return;
+
     gameTime += 1.0f / 60.0f;
 
     portalShader->use();

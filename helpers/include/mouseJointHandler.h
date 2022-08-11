@@ -64,6 +64,11 @@ public:
         queryCallback = new QueryCallback(this);
     }
 
+    ~mouseJointHandler(){
+        delete queryCallback;
+        free((void*)mouseBody->GetUserData().pointer);
+    }
+
     void removeDuplicates(){
         if (collidingBodies.size() == 0) return;
         for (int i = 0; i < collidingBodies.size() - 1; i++){

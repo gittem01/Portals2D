@@ -97,6 +97,9 @@ void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* 
 }
 
 void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+    if (!pWorld->IsLocked()){
+        return;
+    }
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     
     bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
@@ -253,6 +256,10 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
             col->status = status;
             return;
         }
+    }
+
+    if (!pWorld->IsLocked()){
+
     }
 
     portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));

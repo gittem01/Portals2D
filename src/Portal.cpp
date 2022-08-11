@@ -28,16 +28,74 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     this->queryClass = new PortalWorldQuery(this);
 }
 
+Portal::~Portal(){
+    delete queryClass;
+
+    for (int i = 0; i < 2; i++){
+        if (isVoid[i]){
+            free(connections[i][0]);
+            continue;
+        }
+        for (int j = 0; j < connections[i].size(); j++){
+            portalConnection* otherConnection;
+            Portal* otherPortal = connections[i][j]->portal2;
+            int connectionSide2 = connections[i][j]->side2;
+            for (int k = 0; k < otherPortal->connections[connectionSide2].size(); k++){
+                portalConnection* pc = otherPortal->connections[connectionSide2].at(k);
+                if (pc->portal2 == this){
+                    free(pc);
+                    otherPortal->connections[connectionSide2].erase(otherPortal->connections[connectionSide2].begin() + k);
+                }
+            }
+
+            free(connections[i][j]);
+        }
+    }
+
+    for (int i = 0; i < 2; i++){
+        for (b2Fixture* fix : collidingFixtures[i]){
+            PortalBody* pb = (PortalBody*)((bodyData*)fix->GetBody()->GetUserData().pointer)->data;
+            std::vector<portalCollision*> eraseCollisions;
+            for (portalCollision* pc : *(pb->fixtureCollisions[fix])){
+                if (pc->portal == this){
+                    //pb->fixtureCollisions[fix]->erase(pc);
+                    eraseCollisions.push_back(pc);
+                    //break;
+                }
+            }
+            for (portalCollision* pc : eraseCollisions){
+                pb->fixtureCollisions[fix]->erase(pc);
+                free(pc);
+            }
+        }
+        for (auto& twin : releaseFixtures[i]){
+            b2Fixture* fix = twin.first;
+            PortalBody* pb = (PortalBody*)((bodyData*)fix->GetBody()->GetUserData().pointer)->data;
+            std::vector<portalCollision*> eraseCollisions;
+            for (portalCollision* pc : *(pb->fixtureCollisions[fix])){
+                if (pc->portal == this){
+                    //pb->fixtureCollisions[fix]->erase(pc);
+                    eraseCollisions.push_back(pc);
+                    //break;
+                }
+            }
+            for (portalCollision* pc : eraseCollisions){
+                pb->fixtureCollisions[fix]->erase(pc);
+                free(pc);
+            }
+        }
+    }
+
+    free((void*)body->GetUserData().pointer);
+    pWorld->DestroyBody(body);
+}
+
 void Portal::evaluateWorld(){
     boxMin = b2Vec2(fmin(points[0].x, points[1].x) - 0.01f, fmin(points[0].y, points[1].y) - 0.01f);
     boxMax = b2Vec2(fmax(points[0].x, points[1].x) + 0.01f, fmax(points[0].y, points[1].y) + 0.01f);
     
     b2AABB queryAABB = { boxMin, boxMax };
     pWorld->QueryAABB(queryClass, queryAABB);
-}
-
-Portal::~Portal() {
-    
 }
 
 void Portal::calculatePoints(){

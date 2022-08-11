@@ -26,6 +26,7 @@ public:
 	
 	// constructor reads and builds the shader
 	Shader(std::string folderName);
+	~Shader();
 	static std::string readFile(const char* path, int tryCount = 0);
 	static unsigned int createShader(unsigned int shaderType, std::string str);
 	void createProgram();

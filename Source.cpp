@@ -1,6 +1,4 @@
-#include "helpers.h"
-
-#define ENABLE_TEST_PLAYER 0
+#include "TestCaseIncludes.h"
 
 int main(void)
 {
@@ -9,43 +7,10 @@ int main(void)
     cam->zoom = 0.75f;
     wh->cam = cam;
 
-    ContactListener cl;
-    pWorld = new PortalWorld();
-    pWorld->SetContactListener(&cl);
+    TestCase1* testCase = new TestCase1(wh);
 
-    renderer = new Renderer(pWorld, cam);
-    DebugDrawer* drawer = new DebugDrawer(renderer);
-
-    pWorld->SetDebugDraw(drawer);
-    drawer->SetFlags(b2Draw::e_centerOfMassBit);
-
-    mouseJointHandler mjh(pWorld, wh, renderer);
-
-    testCase1(pWorld, renderer);
-
-    // manual random coloring for now
-    for (Portal* p : pWorld->portals){
-        b2Color c = b2Color(1, getRand() + 0.5f, getRand() + 0.5f, 1.0f);
-        renderer->addPortal(p, c);
-    }
-
-    renderer->portalAddEnd();
-
-    for (int i = 0; i < 2; i++){
-        for (Portal* p : pWorld->portals){
-            p->evaluateWorld();
-            p->queryClass->mode++;
-        }
-    }
-
-#if ENABLE_TEST_PLAYER
-    TestPlayer* tp = new TestPlayer(pWorld, wh);
-    renderer->addPortalBody(tp->pBody->at(0), b2Color(), "assets/textures/playerTest.png");
-#endif
     bool done = false;
-    int frame = 0;
     long sleepTime = 20; // millisecond
-    int vsyncFps = 60;
 
     while (!done)
     {
@@ -56,9 +21,6 @@ int main(void)
         cam->update();
         keyHandler(wh);
 
-    #if ENABLE_TEST_PLAYER
-        tp->camHandle();
-    #endif
         if (!isPaused || tick) {
             glClear(GL_COLOR_BUFFER_BIT);
 
@@ -66,22 +28,17 @@ int main(void)
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            for (int i = 0; i < totalIter; i++) {
-                mjh.mouseHandler(frame, totalIter);
-
-                pWorld->PortalStep(1.0f / (vsyncFps * totalIter), 80, 30);
-            #if ENABLE_TEST_PLAYER
-                tp->update(1.0f / (vsyncFps * totalIter), totalIter);
-            #endif
-            }
+            testCase->onUpdate();
 
             renderer->dotRender();
 
             renderer->render();
-            drawer->drawWorld(pWorld);
-
-            mjh.drawMouseBody();
+            if (pWorld){
+                drawer->drawWorld(pWorld);
+            }
             
+            testCase->onDraw();
+
             //pWorld->DebugDraw();
 
             ImGui::Render();
@@ -90,6 +47,22 @@ int main(void)
             glfwSwapInterval(1);
 
             glfwSwapBuffers(wh->window);
+
+            if (pWorld && wh->keyData[GLFW_KEY_R] == 2){
+                for (int i = 0; i < pWorld->portals.size(); i++){
+                    pWorld->destroyPortal(pWorld->portals.at(i));
+                    i--;
+                }
+                
+                delete mjh;
+                delete pWorld;
+
+                pWorld = NULL;
+                renderer->reset();
+
+                delete testCase;
+                testCase = new TestCase1(wh);
+            }
         }
         else {
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));

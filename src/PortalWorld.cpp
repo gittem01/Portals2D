@@ -9,11 +9,41 @@ PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f)){
     this->evalRayHandler = new EvaluationRay(this);
 }
 
+PortalWorld::~PortalWorld(){
+    for (Portal* portal : portals){
+        delete portal;
+    }
+    for (auto& indices : bodyIndices){
+        delete indices->at(0)->baseDensities;
+    }
+    for (PortalBody* pb : portalBodies){
+        delete pb;
+    }
+    for (auto& indices : bodyIndices){
+        delete indices;
+    }
+
+    delete rayHandler;
+    delete evalRayHandler;
+
+}
+
 Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size){
     Portal* portal = new Portal(pos, dir, size, this);
     portals.push_back(portal);
 
     return portal;
+}
+
+void PortalWorld::destroyPortal(Portal* portal){
+    for (int i = 0; i < portals.size(); i++){
+        Portal* p = portals.at(i);
+        if (p == portal){
+            portals.erase(portals.begin() + i);
+            delete portal;
+            break;
+        }
+    }
 }
 
 PortalBody* PortalWorld::createPortalBody(b2Body* body){

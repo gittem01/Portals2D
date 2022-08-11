@@ -100,6 +100,10 @@ Shader::Shader(std::string folderName)
 	Shader::precompiledShaderIDs.push_back(this->ID);
 }
 
+Shader::~Shader(){
+	glDeleteProgram(this->ID);
+}
+
 void Shader::use()
 {
 	glUseProgram(ID);

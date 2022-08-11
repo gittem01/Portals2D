@@ -12,6 +12,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/external/imgui)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/helpers/include)
+include_directories(${CMAKE_SOURCE_DIR}/helpers/TestCases)
 include_directories(${CMAKE_SOURCE_DIR}/external/glm/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/box2d/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glfw/include)
@@ -22,7 +23,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
 link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 
 file(GLOB HELPER_SOURCES ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp)
-file(GLOB HELPER_HEADERS ${CMAKE_SOURCE_DIR}/helpers/include/*.h)
+file(GLOB HELPER_HEADERS ${CMAKE_SOURCE_DIR}/helpers/include/*.h ${CMAKE_SOURCE_DIR}/helpers/TestCases/*.h)
 
 set(IMGUI_BACKENDS  ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
                     ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.h
