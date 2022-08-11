@@ -8,6 +8,7 @@ bool isPaused = false;
 bool tick = false;
 int frame = 0;
 int totalIter = 10;
+int refreshRate = 60;
 PortalWorld* pWorld = NULL;
 Renderer* renderer = NULL;
 mouseJointHandler* mjh = NULL;

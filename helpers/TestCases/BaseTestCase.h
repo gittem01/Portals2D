@@ -2,16 +2,45 @@
 
 #include <helpers.h>
 
+const char* refreshRates[] = { "60", "90", "120", "144", "240" };
+const int correspondingValues[] = { 60, 90, 120, 144, 240 };
+const int refreshSize = sizeof(refreshRates) / sizeof(refreshRates[0]);
+
 class BaseTestCase
 {
+private:
+	int refreshItem;
+
+public:
+	void debugDraw() {
+		ImGui::Begin(name);
+
+		ImGui::Combo("Refresh Rate", &refreshItem, refreshRates, refreshSize);
+
+		refreshRate = correspondingValues[refreshItem];
+
+		if (ImGui::RadioButton("Draw Releases", renderer->drawReleases)) {
+			renderer->drawReleases = !renderer->drawReleases;
+		}
+
+		ImGui::End();
+	}
+
 protected:
     static std::vector<BaseTestCase> testCases;
     static int namerCount;
 
     const char* name;
 
-    BaseTestCase(const char* name="\0"){
+    BaseTestCase(const char* name="Test Debug Window"){
         this->name = name;
+		refreshItem = 0;
+		for (int i = 0; i < refreshSize; i++) {
+			if (refreshRate == correspondingValues[i]) {
+				refreshItem = i;
+				break;
+			}
+		}
     }
 
     void beforeCreate(WindowPainter* wh){

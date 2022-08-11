@@ -8,7 +8,6 @@ int main(void)
     wh->cam = cam;
 
     TestCase1* testCase = new TestCase1(wh);
-
     bool done = false;
     long sleepTime = 20; // millisecond
 
@@ -40,6 +39,8 @@ int main(void)
             testCase->onDraw();
 
             //pWorld->DebugDraw();
+
+			testCase->debugDraw();
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

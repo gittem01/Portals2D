@@ -103,7 +103,8 @@ public:
         if (!pWorld) return;
         for (int i = 0; i < totalIter; i++) {
             mjh->mouseHandler(frame, totalIter);
-            pWorld->PortalStep((2.0f / 120.0f) / totalIter, 8, 3);
+			// speeded up 2x times
+            pWorld->PortalStep((2.0f / refreshRate) / totalIter, 8, 3);
         }
     }
 
