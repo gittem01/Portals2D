@@ -51,12 +51,14 @@ PortalBody::~PortalBody(){
 
     for (int i = 0; i < bodyMaps->size(); i++){
         bodyCollisionStatus* bodyCollStatus = bodyMaps->at(i);
-        for (auto iter = bodyCollStatus->body->bodyMaps->begin(); iter != bodyCollStatus->body->bodyMaps->end(); iter++){
-            if ((*iter)->body == this){
-                delete *iter;
-                bodyCollStatus->body->bodyMaps->erase(iter--);
-            }
-        }
+		for (int j = 0; j < bodyCollStatus->body->bodyMaps->size(); j++) {
+			bodyCollisionStatus* bcs = bodyCollStatus->body->bodyMaps->at(j);
+			if (bcs->body == this) {
+				bodyCollStatus->body->bodyMaps->erase(bodyCollStatus->body->bodyMaps->begin() + j);
+				j--;
+				delete bcs;
+			}
+		}
         delete bodyCollStatus;
     }
     delete bodyMaps;
@@ -376,7 +378,7 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal, PortalCollisionType 
     outFixtures[side][portal]++;
 
     std::set<portalCollision*>* coll = fixtureCollisions[f];
-    for (auto& a : *coll){
+    for (auto a : *coll){
         if (a->portal == portal && a->status == 1){
             coll->erase(a);
             free(a);

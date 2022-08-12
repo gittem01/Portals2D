@@ -265,9 +265,9 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
         auto iter0 = collidingFixtures[0].find(fix2);
         auto iter1 = collidingFixtures[1].find(fix2);
         if (cond1){
-            int val = f2Stat1->second;
             if (f2Stat1 != releaseFixtures[1].end())
             {
+				int val = f2Stat1->second;
                 if (val % 2 != 0 && val > 1){
                     f2Stat1->second--;
                 }
@@ -289,9 +289,9 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
             }
         }
         else if (cond2){
-            int val = f2Stat0->second;
             if (f2Stat0 != releaseFixtures[0].end())
             {
+				int val = f2Stat0->second;
                 if (val % 2 != 0 && val > 1){
                     f2Stat0->second--;
                 }
