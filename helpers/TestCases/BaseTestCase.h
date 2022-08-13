@@ -5,12 +5,9 @@
 class BaseTestCase
 {
 private:
-	int refreshItem;
-
     static int namerCount;
-
+	int refreshItem;
     const char* name;
-
     WindowPainter* wh;
 
 public:
@@ -22,7 +19,7 @@ public:
 
 		ImGui::Combo("Refresh Rate", &refreshItem, refreshRates, refreshSize);
 
-		refreshRate = correspondingValues[refreshItem];
+		renderer->refreshRate = correspondingValues[refreshItem];
 
         int lastItem = testCaseItem;
         ImGui::Combo(" ", &testCaseItem, testCases, numTestCases);
@@ -84,8 +81,13 @@ public:
         this->name = name;
 		refreshItem = 0;
         shouldGetNewTest = false;
+        
+        if (!renderer){
+            renderer = new Renderer(pWorld, wh->cam);
+        }
+
 		for (int i = 0; i < refreshSize; i++) {
-			if (refreshRate == correspondingValues[i]) {
+			if (renderer->refreshRate == correspondingValues[i]) {
 				refreshItem = i;
 				break;
 			}
@@ -103,9 +105,6 @@ public:
         pWorld = new PortalWorld();
         pWorld->SetContactListener(contactListener);
 
-        if (!renderer){
-            renderer = new Renderer(pWorld, wh->cam);
-        }
         if (!drawer){
             drawer = new DebugDrawer(renderer);
         }
@@ -146,7 +145,7 @@ public:
         for (int i = 0; i < totalIter; i++) {
             mjh->mouseHandler(frame, totalIter);
 			// speeded up 2x times
-            pWorld->PortalStep((2.0f / refreshRate) / totalIter, 8, 3);
+            pWorld->PortalStep((2.0f / renderer->refreshRate) / totalIter, 8, 3);
         }
     }
 

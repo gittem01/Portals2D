@@ -49,6 +49,7 @@ friend class DebugDrawer;
 public:
     bool drawReleases;
     b2Color releaseColor;
+    int refreshRate = 60;
     
     Renderer(PortalWorld* pWorld, Camera* camera);
     ~Renderer();

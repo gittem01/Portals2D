@@ -42,9 +42,6 @@ public:
 
     std::vector<portalConnection*> connections[2];
 
-    // will be a private variable later
-    std::map<b2Fixture*, int> releaseFixtures[2];
-
     b2Vec2 points[2];
     bool isVoid[2];
     b2Vec2 pos;
@@ -71,6 +68,7 @@ private:
     b2RayCastInput rcInp2;
 
     std::set<b2Fixture*> collidingFixtures[2];
+    std::map<b2Fixture*, int> releaseFixtures[2];
 
     ~Portal();
 

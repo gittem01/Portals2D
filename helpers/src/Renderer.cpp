@@ -406,7 +406,7 @@ void Renderer::portalRender(portalRenderData* prd){
 void Renderer::portalRender(){
     if (pPortals.size() == 0) return;
 
-    gameTime += 1.0f / 60.0f;
+    gameTime += 1.0f / refreshRate;
 
     portalShader->use();
     
