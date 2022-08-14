@@ -15,7 +15,6 @@ int main(void)
         frame++;
 
         done = wh->looper();
-
         cam->update();
 
         if (!isPaused || tick) {

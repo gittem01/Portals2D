@@ -123,6 +123,11 @@ private:
 
         float iA = m_invIA, iB = m_invIB;
 
+        if (m_invIA == 0.0f && m_invIB == 0.0f){
+            iA = 1.0f;
+            iB = 1.0f;
+        }
+
         b2Vec2 Cdot;
         Cdot.x = 0.0f;
         if (isReversed){
@@ -156,7 +161,7 @@ private:
         float iA, iB;
 
         // checking only one because this joint should only connect kinematic-kinematic or dynamic-dynamic bodies
-        if (m_invMassA == 0.0f){
+        if (m_invIA == 0.0f && m_invIB == 0.0f){
             mA = 1.0f;
             iA = 1.0f;
             mB = 1.0f;

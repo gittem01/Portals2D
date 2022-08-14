@@ -60,7 +60,7 @@ public:
         renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 1.0f, 0.5f));
         b2Vec2 vel(0.0f, 0.0f);
         body4->SetLinearVelocity(vel);
-        body4->SetAngularVelocity(5.0f);
+        body4->SetAngularVelocity(2.0f);
         body4->SetBullet(true);
         body4->SetLinearDamping(0.0f);
     }

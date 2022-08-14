@@ -67,6 +67,11 @@ public:
     ~mouseJointHandler(){
         delete queryCallback;
         free((void*)mouseBody->GetUserData().pointer);
+        for (int i = 0; i < 2; i++){
+            if (clicks[i]){
+                free(clicks[i]);
+            }
+        }
     }
 
     void removeDuplicates(){
@@ -140,6 +145,7 @@ public:
             shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
             groundBody->CreateFixture(&shape, 0.0f);
 
+            delete(clicks[0]);
             delete(clicks[1]);
             clicks[0] = NULL; clicks[1] = NULL;
         }

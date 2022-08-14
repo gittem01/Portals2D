@@ -2,6 +2,12 @@
 
 #include <helpers.h>
 
+#define ENABLE_TESTPLAYER 1
+
+#if ENABLE_TESTPLAYER
+    TestPlayer* tp;
+#endif
+
 class BaseTestCase
 {
 private:
@@ -71,6 +77,9 @@ public:
         
         delete mjh;
         delete pWorld;
+    #if ENABLE_TESTPLAYER
+        delete tp;
+    #endif
 
         pWorld = NULL;
         renderer->reset();
@@ -94,9 +103,7 @@ public:
 		}
     }
 
-    virtual ~BaseTestCase(){
-
-    }
+    virtual ~BaseTestCase(){ }
 
     void beforeCreate(){
         if (!contactListener){
@@ -116,6 +123,11 @@ public:
 
         b2Vec2 gravity(0.0f, -10.0f);
         pWorld->SetGravity(gravity);
+
+    #if ENABLE_TESTPLAYER
+        tp = new TestPlayer(pWorld, wh);
+        renderer->addPortalBody(tp->pBody->at(0), {}, "assets/textures/playerTest.png");
+    #endif
     }
 
     void afterCreate(){
@@ -141,11 +153,18 @@ public:
     }
 
     void onUpdate(){
+    #if ENABLE_TESTPLAYER
+        tp->camHandle();
+    #endif
         if (!pWorld) return;
         for (int i = 0; i < totalIter; i++) {
+            float dt = (2.0f / renderer->refreshRate) / totalIter;
             mjh->mouseHandler(frame, totalIter);
+        #if ENABLE_TESTPLAYER
+            tp->update(dt, totalIter);
+        #endif
 			// speeded up 2x times
-            pWorld->PortalStep((2.0f / renderer->refreshRate) / totalIter, 8, 3);
+            pWorld->PortalStep(dt, 8, 3);
         }
     }
 
