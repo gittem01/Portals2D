@@ -502,15 +502,16 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData*
 
     polyShader->setFloat("zoom", camera->zoom);
 
-    auto colls = pBody->fixtureCollisions[fix];
+    fixtureData* fixData = (fixtureData*)(fix->GetUserData().pointer);
+    auto colls = fixData->pCollisions;
 
-    int numPortals = colls->size();
+    int numPortals = colls.size();
     float* portalPositions = (float*)malloc(numPortals * 4 * sizeof(float));
     int* sideMults = (int*)malloc(sizeof(int) * numPortals);
 
     bool fRelease = false;
     int i = 0;
-    for (portalCollision* coll : *colls){
+    for (portalCollision* coll : colls){
         if (coll->status == 0){
             if (!drawReleases){
                 free(portalPositions);
@@ -619,15 +620,16 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
     circShader->setFloat("zoom", camera->zoom);
     circShader->setBool("isPoint", false);
 
-    auto colls = pBody->fixtureCollisions[fix];
+    fixtureData* fixData = (fixtureData*)(fix->GetUserData().pointer);
+    auto colls = fixData->pCollisions;
 
-    int numPortals = colls->size();
+    int numPortals = colls.size();
     float* portalPositions = (float*)malloc(numPortals * 4 * sizeof(float));
     int* sideMults = (int*)malloc(sizeof(int) * numPortals);
 
     bool fRelease = false;
     int i = 0;
-    for (portalCollision* coll : *colls){
+    for (portalCollision* coll : colls){
         if (coll->status == 0){
             if (!drawReleases){
                 free(portalPositions);

@@ -9,7 +9,6 @@ int main(void)
 
     testCase = newTest(wh, 1);
     bool done = false;
-    long sleepTime = 20; // millisecond
 
     while (!done)
     {
@@ -62,8 +61,8 @@ int main(void)
 
 #ifdef ENABLE_WINMAIN
     #include "windows.h"
-    int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLine, int iCmdShow){
-
+    int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLine, int iCmdShow)
+    {
         return main();
     }
 #endif

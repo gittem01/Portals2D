@@ -48,6 +48,12 @@ typedef struct
 
 typedef struct
 {
+    std::vector<portalCollision*> pCollisions;
+    void* extraData;
+} fixtureData;
+
+typedef struct
+{
     PortalBody* body;
     portalConnection* connection;
 } bodyCollisionStatus;
@@ -62,7 +68,6 @@ friend class ContactListener;
 public:
     std::vector<PortalBody*>* worldIndex;
     std::vector<bodyCollisionStatus*>* bodyMaps;
-    std::map<b2Fixture*, std::set<portalCollision*>*> fixtureCollisions;
 
     b2Body* body;
     int numFixtures;

@@ -319,8 +319,10 @@ public:
         if (pBody->size() > 1){
             PortalBody* b1 = pBody->at(0);
             PortalBody* b2 = pBody->at(1);
-            portalCollision* pc1 = (*b1->fixtureCollisions[b1->body->GetFixtureList()]->begin());
-            portalCollision* pc2 = (*b2->fixtureCollisions[b2->body->GetFixtureList()]->begin());
+            fixtureData* fixData1 = (fixtureData*)b1->body->GetFixtureList()->GetUserData().pointer;
+            fixtureData* fixData2 = (fixtureData*)b2->body->GetFixtureList()->GetUserData().pointer;
+            portalCollision* pc1 = fixData1->pCollisions.at(0);
+            portalCollision* pc2 = fixData2->pCollisions.at(0);
 
             lastDirs[0] = pc1->side ? -pc1->portal->dir : pc1->portal->dir;
             lastDirs[1] = pc2->side ? -pc2->portal->dir : pc2->portal->dir;

@@ -86,10 +86,10 @@ private:
             float k11 = mA + mB;
             float k12 = 0.0f;
             float k22 = iA + iB;
-            if (k22 == 0.0f)
-            {
-                k22 = 1.0f;
-            }
+            // if (k22 == 0.0f)
+            // {
+            //     k22 = 1.0f;
+            // }
 
             m_K.ex.Set(k11, k12);
             m_K.ey.Set(k12, k22);
@@ -152,8 +152,20 @@ private:
         float aA = data.positions[m_indexA].a;
         float aB = data.positions[m_indexB].a;
 
-        float mA = m_invMassA, mB = m_invMassB;
-        float iA = m_invIA, iB = m_invIB;
+        float mA, mB;
+        float iA, iB;
+
+        // checking only one because this joint should only connect kinematic-kinematic or dynamic-dynamic bodies
+        if (m_invMassA == 0.0f){
+            mA = 1.0f;
+            iA = 1.0f;
+            mB = 1.0f;
+            iB = 1.0f;
+        }
+        else{
+            mA = m_invMassA, mB = m_invMassB;
+            iA = m_invIA, iB = m_invIB;
+        }
 
         float lastAngle;
 
@@ -200,10 +212,10 @@ private:
         float k11 = mA + mB;
         float k12 = 0;
         float k22 = iA + iB;
-        if (k22 == 0.0f)
-        {
-            k22 = 1.0f;
-        }
+        // if (k22 == 0.0f)
+        // {
+        //     k22 = 1.0f;
+        // }
 
         b2Mat22 K;
         K.ex.Set(k11, k12);

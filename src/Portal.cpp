@@ -55,33 +55,27 @@ Portal::~Portal(){
     for (int i = 0; i < 2; i++){
         for (b2Fixture* fix : collidingFixtures[i]){
             PortalBody* pb = (PortalBody*)((bodyData*)fix->GetBody()->GetUserData().pointer)->data;
-            std::vector<portalCollision*> eraseCollisions;
-            for (portalCollision* pc : *(pb->fixtureCollisions[fix])){
+            fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+            for (int i = 0; i < fixData->pCollisions.size(); i++){
+                portalCollision* pc = fixData->pCollisions.at(i);
                 if (pc->portal == this){
-                    //pb->fixtureCollisions[fix]->erase(pc);
-                    eraseCollisions.push_back(pc);
-                    //break;
+                    free(pc);
+                    fixData->pCollisions.erase(fixData->pCollisions.begin() + i);
+                    i--;
                 }
-            }
-            for (portalCollision* pc : eraseCollisions){
-                pb->fixtureCollisions[fix]->erase(pc);
-                free(pc);
             }
         }
         for (auto& twin : releaseFixtures[i]){
             b2Fixture* fix = twin.first;
             PortalBody* pb = (PortalBody*)((bodyData*)fix->GetBody()->GetUserData().pointer)->data;
-            std::vector<portalCollision*> eraseCollisions;
-            for (portalCollision* pc : *(pb->fixtureCollisions[fix])){
+            fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+            for (int i = 0; i < fixData->pCollisions.size(); i++){
+                portalCollision* pc = fixData->pCollisions.at(i);
                 if (pc->portal == this){
-                    //pb->fixtureCollisions[fix]->erase(pc);
-                    eraseCollisions.push_back(pc);
-                    //break;
+                    free(pc);
+                    fixData->pCollisions.erase(fixData->pCollisions.begin() + i);
+                    i--;
                 }
-            }
-            for (portalCollision* pc : eraseCollisions){
-                pb->fixtureCollisions[fix]->erase(pc);
-                free(pc);
             }
         }
     }

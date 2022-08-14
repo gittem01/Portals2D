@@ -389,7 +389,8 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                 f = body2->CreateFixture(&fDef);
             }
 
-            npb->fixtureCollisions[f] = new std::set<portalCollision*>();
+            fixtureData* fixData = (fixtureData*)calloc(1, sizeof(fixtureData));
+            f->GetUserData().pointer = (uintptr_t)fixData;
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
 
@@ -415,7 +416,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 1;
-                    npb->fixtureCollisions[f]->insert(col);
+                    fixData->pCollisions.push_back(col);
                     allOut = false;
                 }
                 else if (release){
@@ -424,7 +425,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 0;
-                    npb->fixtureCollisions[f]->insert(col);
+                    fixData->pCollisions.push_back(col);
                     allOut = false;
                 }
                 else{
@@ -438,7 +439,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 0;
-                    npb->fixtureCollisions[f]->insert(col);
+                    fixData->pCollisions.push_back(col);
 
                     bool rayCheck;
                     int fixSide = collPortal->getFixtureSide(fix);
@@ -455,7 +456,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 0;
-                    npb->fixtureCollisions[f]->insert(col);
+                    fixData->pCollisions.push_back(col);
 
                     if (collPortal->releaseFixtures[side ^ 1][fix] % 2 == 0){
                         bool rayCheck;
@@ -474,7 +475,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 0;
-                    npb->fixtureCollisions[f]->insert(col);
+                    fixData->pCollisions.push_back(col);
                 }
             }
             else{
@@ -745,8 +746,9 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
         }
         else if (bd->type == PORTAL_BODY){
             PortalBody* pb = (PortalBody*)bd->data;
-            std::set<portalCollision*>* collidingPortals = pb->fixtureCollisions[fixture];
-            for (portalCollision* pc : *collidingPortals){
+            fixtureData* fixData = (fixtureData*)(fixture->GetUserData().pointer);
+            std::vector<portalCollision*> collidingPortals = fixData->pCollisions;
+            for (portalCollision* pc : collidingPortals){
                 if (!pc->status || pc->portal->getPointSide(point) == (pc->side ^ 1)){
                     return 1.0f;
                 }
