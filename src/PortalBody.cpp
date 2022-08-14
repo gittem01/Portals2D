@@ -139,79 +139,50 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 }
 
 bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData){
-    fixtureData* fixData = (fixtureData*)fix1->GetUserData().pointer;
-    std::vector<portalCollision*> collidingPortals = fixData->pCollisions;
+    fixtureData* fixData1 = (fixtureData*)fix1->GetUserData().pointer;
+    fixtureData* fixData2 = (fixtureData*)fix2->GetUserData().pointer;
+    std::vector<portalCollision*> collidingPortals1 = fixData1->pCollisions;
     if (bData && bData->type == PORTAL){
         Portal* portal = (Portal*)bData->data;
-        for (portalCollision* coll : collidingPortals){
+        for (portalCollision* coll : collidingPortals1){
             if (portal == coll->portal) return true;
         }
     }
-    
-    for (portalCollision* coll : collidingPortals){
-        if (coll->portal->collidingFixtures[coll->side].find(fix2) != coll->portal->collidingFixtures[coll->side].end() &&
-            coll->portal->collidingFixtures[coll->side].find(fix1) != coll->portal->collidingFixtures[coll->side].end())
-        {
-            return true;
-        }
-        bool reverse = false;
-        auto iter1 = coll->portal->releaseFixtures[coll->side].find(fix1);
-        auto iter2 = coll->portal->releaseFixtures[coll->side].find(fix2);
-        bool found1 = iter1 != coll->portal->releaseFixtures[coll->side].end();
-        bool found2 = iter2 != coll->portal->releaseFixtures[coll->side].end();
-        if (coll->status == 0){
-            if (found2){
-                int diff = iter1->second - iter2->second;
-                if (diff == 0){
-                    return true;
-                }
-                if (abs(diff) > 0){
-                    return false;
-                }
-                else{
-                    if (iter1->second % 2 == 0){
-                        if (iter2->second > iter1->second){
-                            reverse = true;
-                        }
-                    }
-                    else if (iter1->second > iter2->second){
-                        reverse = true;
-                    }   
-                }
-            }
-            else if (coll->portal->collidingFixtures[coll->side].find(fix2) == coll->portal->collidingFixtures[coll->side].end()){
-                return false;
-            }
-        }
 
-        if (!reverse){
-            if ((found1 && iter1->second == 1 &&
-                coll->portal->collidingFixtures[coll->side].find(fix2) !=
-                coll->portal->collidingFixtures[coll->side].end()) ||
-                (found2 && iter2->second == 1 &&
-                coll->portal->collidingFixtures[coll->side].find(fix1) !=
-                coll->portal->collidingFixtures[coll->side].end()))
-            {
-                reverse = true;
-            }        
-        }
-        if ((   found1 && iter1->second > 1 &&
-                coll->portal->collidingFixtures[coll->side].find(fix2) !=
-                coll->portal->collidingFixtures[coll->side].end()) ||
-            (   found2 && iter2->second > 1 &&
-                coll->portal->collidingFixtures[coll->side].find(fix1) !=
-                coll->portal->collidingFixtures[coll->side].end()) ||
-                (found1 && found2 && abs(iter1->second - iter2->second) > 1))
-        {
+    std::vector<portalCollision*> collidingPortals2;
+    if (bData && bData->type == PORTAL_BODY){
+        collidingPortals2 = fixData2->pCollisions;
+    }
+    
+    for (portalCollision* coll1 : collidingPortals1){
+        if (fix2 == coll1->portal->yFix[0] || fix2 == coll1->portal->yFix[1]) return true;
+        if (shouldCollideHelper1(coll1, fix1, fix2)) continue;
+        if (coll1->status == 0){
             return false;
         }
 
-        bool shouldCollide = coll->portal->shouldCollide(contact, fix1, fix2, coll);
-        if (!shouldCollide) return reverse;
-        else if (reverse) return false;
+        if (collidingPortals2.size() > 0){
+            for (portalCollision* coll2 : collidingPortals2){
+                bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, coll2);
+                if (!shouldCollide) return false;
+            }
+        }
+        else{
+            bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, NULL);
+            if (!shouldCollide) return false;
+        }
     }
 
     return true;
+}
+
+bool PortalBody::shouldCollideHelper1(portalCollision* coll, b2Fixture* fix1, b2Fixture* fix2){
+    if (coll->portal->collidingFixtures[coll->side].find(fix2) != coll->portal->collidingFixtures[coll->side].end() &&
+        coll->portal->collidingFixtures[coll->side].find(fix1) != coll->portal->collidingFixtures[coll->side].end())
+    {
+        return true;
+    }
+    return false;
 }
 
 void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out){
@@ -237,8 +208,8 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
     if (portal->isVoid[side] && status == 0){
 #if 1
         if (outFixtures[side][portal] == -numFixtures){
-            pWorld->destroyBodies.insert(this);
-            return;
+            //pWorld->destroyBodies.insert(this);
+            //return;
         }
 #else
         bool found = false;
@@ -502,6 +473,9 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         loopCenterOfMass = center;
 
         for (portalCollision* pColl : fixColls){
+            if (pColl->status == 0){
+                return;
+            }
             int side = pColl->portal->getFixtureSide(fixture);
             bool mostlyOut = side != pColl->side;
 
@@ -585,6 +559,9 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         center = findPolygonCentroid(pShape->m_vertices, pShape->m_count);
         loopCenterOfMass = center;
         for (portalCollision* pColl : fixColls){
+            if (pColl->status == 0){
+                return;
+            }
             b2Vec2 lastVertex = latestVertices[0];
             int lastSide = pColl->portal->getPointSide(lastVertex);
             bool isInside = lastSide == pColl->side;

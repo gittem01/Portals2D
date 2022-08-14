@@ -164,7 +164,7 @@ void Renderer::addPortal(Portal* portal, b2Color color){
             baseColor.z = 1 - baseColor.x;
             float portalLen = b2Distance(portal->points[0], portal->points[1]);
             for (int j = 0; j < numPortalPs * portalLen; j++){
-                pSizes.push_back(r05() * 0.2f + 0.2f);
+                pSizes.push_back(r05() * 0.1f + 0.1f);
                 pSides.push_back(side);
                 pSpeeds.push_back(r05() * 0.6f + 0.5f);
                 pPortals.push_back(glm::vec4(   portal->points[side].x, portal->points[side].y, 
@@ -175,7 +175,7 @@ void Renderer::addPortal(Portal* portal, b2Color color){
                 else{
                     pColors.push_back(baseColor + glm::vec4(r05() * 0.5f, r05() * 0.5f, r05() * 0.5f, 1));
                 }
-                pMults.push_back(glm::vec4(r05(), 0.1f, 5.0f, 1.0f));
+                pMults.push_back(glm::vec4(r05(), 0.05f, 1.0f, 1.0f));
             }
 
             for (int j = 0; j < numPortalPs * portalLen; j++){
@@ -358,11 +358,11 @@ void Renderer::render(){
     glfwGetFramebufferSize(camera->window, &win_width, &win_height);
     minLineThck = 20.0f / win_width;
     
+    portalRender();
     for (bodyRenderData* brd : portalBodies){
         bodyRender(brd);
     }
 
-    portalRender();
 
     for (portalRenderData* prd : portals){
         portalRender(prd);
@@ -414,6 +414,8 @@ void Renderer::portalRender(){
     portalShader->setFloat("zoom", camera->zoom);
     portalShader->setFloat("gameTime", gameTime + 100.0f);
     portalShader->setInt("numParticles", numPortalPs);
+    portalShader->setFloat("sizeMult", sizeMult);
+    portalShader->setFloat("blurriness", blurriness);
 
     for (int i = 0; i < 6; i++){
         glBindBuffer(pBufferObjects[i], GL_ARRAY_BUFFER);

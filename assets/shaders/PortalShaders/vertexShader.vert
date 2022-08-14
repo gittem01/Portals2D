@@ -25,6 +25,8 @@ uniform mat4 ortho;
 uniform float zoom;
 uniform float gameTime;
 uniform int numParticles;
+uniform float sizeMult;
+uniform float blurriness;
 
 float fmod(float x, float y)
 {
@@ -45,19 +47,19 @@ void main()
     localPositions = vertex;
     
     inPerct = mults.y;
-    outCurve = mults.z;
+    outCurve = mults.z / blurriness;
 
     float gt = fmod(gameTime * speed, mults.w);
     frac = 1 - gt / mults.w;
 
     vec2 dir = portal.zw - portal.xy;
     float pSpaceDist = length(dir);
-    float pMargin = size / pSpaceDist;
+    float pMargin = (size * sizeMult) / pSpaceDist;
     vec2 dir90 = normalize(rotateVec(dir, PI / 2.0));
     int div = int((gameTime * speed) / (mults.w));
     vec2 pos = (portal.zw + portal.xy) * 0.5f + dir * (fmod(mults.x + (div * 0.18562f * mults.x), (1 - pMargin) * 0.5f));
 
-    vec2 v = vertex * size;
+    vec2 v = vertex * (size * sizeMult);
     pos = pos + dir90 * (gt - 0.2f) - dir90 * 0.2f;
     worldPos = v + pos;
     center = pos;

@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 1
+#define ENABLE_TESTPLAYER 0
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -65,6 +65,9 @@ public:
         if (oldVal != mjh->bodyRadius){
             mjh->createMouseBody();
         }
+
+        ImGui::SliderFloat("Particle Sizes", &renderer->sizeMult, 0.3f, 2.0f, "%.2f", 1);
+        ImGui::SliderFloat("Particle Blurriness", &renderer->blurriness, 0.0f, 3.0f, "%.2f", 1);
 
 		ImGui::End();
 	}

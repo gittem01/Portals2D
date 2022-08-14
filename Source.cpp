@@ -17,11 +17,11 @@ int main(void)
         done = wh->looper();
         cam->update();
 
+        glClear(GL_COLOR_BUFFER_BIT);
+
         if (!isPaused || tick) {
             testCase->onUpdate();
         }
-
-        glClear(GL_COLOR_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

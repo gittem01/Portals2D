@@ -86,7 +86,7 @@ private:
     PortalCollisionType handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
     bool rayCheck(b2Fixture* fix);
 
-    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll);
+    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2);
 
     std::vector<b2Vec2> getUsableRayPoints(b2Fixture* fix, int side);
 

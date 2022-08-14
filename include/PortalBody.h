@@ -93,6 +93,8 @@ private:
 
     void destroyCheck(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     bool shouldCreate(b2Body* body, Portal* portal, PortalCollisionType out);
+    bool shouldCollideHelper1(portalCollision* coll, b2Fixture* fix1, b2Fixture* fix2);
+    bool shouldCollideHelper2(portalCollision* coll, b2Fixture* fix1, b2Fixture* fix2);
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out);
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);

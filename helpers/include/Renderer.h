@@ -50,7 +50,9 @@ public:
     bool drawReleases;
     b2Color releaseColor;
     int refreshRate = 60;
-    
+    float sizeMult = 1.0f;
+    float blurriness = 1.0f;
+
     Renderer(PortalWorld* pWorld, Camera* camera);
     ~Renderer();
 
