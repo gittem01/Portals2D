@@ -508,36 +508,36 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     if (collPoints.size() > 0){
         for (b2Vec2 p : collPoints){
             if (coll2){
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold) ||
-                    pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], p, tHold))
+                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold) &&
+                    !pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], p, tHold))
                 {
-                    return false;
+                    return true;
                 }
             }
             else{
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold)){
-                    return false;
+                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold)){
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
     else{
         for (int i = 0; i < contact->GetManifold()->pointCount; i++){
             if (coll2){
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold) ||
-                    pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side],
+                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold) &&
+                    !pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side],
                     wManifold.points[i], tHold))
                 {
-                    return false;
+                    return true;
                 }
             }
             else{
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold)){
-                    return false;
+                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold)){
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
     }
 }

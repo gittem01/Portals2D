@@ -28,8 +28,8 @@ int main(void)
         ImGui::NewFrame();
 
         renderer->dotRender();
-
         renderer->render();
+
         if (pWorld){
             drawer->drawWorld(pWorld);
         }

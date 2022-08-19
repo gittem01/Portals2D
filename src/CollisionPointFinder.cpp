@@ -27,9 +27,27 @@ std::vector<b2Vec2> Portal::getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2)
 }
 
 std::vector<b2Vec2> Portal::collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2) {
-	std::vector<b2Vec2> returnVector = {getFixtureCenter(fix2)};
+	b2CircleShape* cShape1 = (b2CircleShape*)fix1->GetShape();
+	b2CircleShape* cShape2 = (b2CircleShape*)fix2->GetShape();
 
-	return returnVector;
+	float r1 = cShape1->m_radius;
+	float r2 = cShape2->m_radius;
+
+	b2Vec2 p1 = fix1->GetBody()->GetWorldPoint(cShape1->m_p);
+	b2Vec2 p2 = fix2->GetBody()->GetWorldPoint(cShape2->m_p);
+
+	b2Vec2 vec = p2 - p1;
+	float dist = vec.Normalize();
+
+	if (dist < 0.00001f){
+		return { p1 };
+	}
+
+	float d = (r1 * r1 - r2 * r2 + dist * dist) / (2 * dist);
+
+	b2Vec2 midColl = p1 + d * vec; 
+
+	return { midColl };
 }
 
 std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2, b2Fixture* cFix, b2Fixture* oFix) {
