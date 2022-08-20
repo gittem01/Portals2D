@@ -109,6 +109,7 @@ public:
     virtual ~BaseTestCase(){ }
 
     void beforeCreate(){
+        renderer->sizeMult = 1.0f;
         if (!contactListener){
             contactListener = new ContactListener();
         }

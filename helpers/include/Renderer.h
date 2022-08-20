@@ -49,7 +49,7 @@ friend class DebugDrawer;
 public:
     bool drawReleases;
     b2Color releaseColor;
-    int refreshRate = 60;
+    int refreshRate = 120;
     float sizeMult = 1.0f;
     float blurriness = 1.0f;
 

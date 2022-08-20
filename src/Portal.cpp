@@ -484,9 +484,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
         }
     }
 
-    float tHold = 0.0f;
-    //if (fix2->GetBody()->GetType() == b2_staticBody) tHold = -0.001f;
-
+    const float tHold = 0.0f;
     std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
 
     if (collPoints.size() == 0 && fix2->GetBody()->GetType() == b2_staticBody){
@@ -539,6 +537,8 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
             }
             return false;
         }
+
+        return true;
     }
 }
 

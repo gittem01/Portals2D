@@ -30,9 +30,9 @@ public:
         Portal* portal5 = pWorld->createPortal(b2Vec2(-12.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
         Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
 
-        Portal* destroyer = pWorld->createPortal(b2Vec2(-30.0f, 7.0f), b2Vec2(1.0f, +0.0f), 14.0f);
-        destroyer->setVoid(0);
-        destroyer->setVoid(1);
+        // Portal* destroyer = pWorld->createPortal(b2Vec2(-30.0f, 7.0f), b2Vec2(1.0f, +0.0f), 14.0f);
+        // destroyer->setVoid(0);
+        // destroyer->setVoid(1);
 
         portal3->connect(portal2, false);
         portal41->connect(portal1, true, 0, 0);
@@ -45,6 +45,7 @@ public:
         createEdge(b2Vec2(-30.0f, yPos - portalSize), b2Vec2(+30.0f, yPos - portalSize), pWorld, b2_staticBody);
         createEdge(b2Vec2(+30.0f, yPos - portalSize), b2Vec2(+30.0f, 21), pWorld, b2_staticBody);
         createEdge(b2Vec2(+30.0f, 21), b2Vec2(-30.0f, 21), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-30.0f, 21), b2Vec2(-30.0f, yPos - portalSize), pWorld, b2_staticBody);
 
         PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld, b2Vec2(0.0f, 3.0f)));
         PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld, b2Vec2(0.0f, 6.0f)));
