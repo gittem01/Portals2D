@@ -163,6 +163,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
 
         if (collidingPortals2.size() > 0){
             for (portalCollision* coll2 : collidingPortals2){
+                if (shouldCollideHelper1(coll2, fix1, fix2)) continue;
                 bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, coll2);
                 if (!shouldCollide) return false;
             }
