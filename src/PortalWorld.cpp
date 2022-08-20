@@ -2,6 +2,7 @@
 #include "PortalBody.h"
 #include "Portal.h"
 #include <RotationJoint.h>
+#include <PositionJoint.h>
 
 
 PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f)){
@@ -70,13 +71,6 @@ void PortalWorld::createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bo
 
         handledBodies.insert(pBody->worldIndex);
     }
-}
-
-b2Vec2 rotateVec(b2Vec2 vec, float angle){
-    float x = cos(angle) * vec.x - sin(angle) * vec.y;
-    float y = sin(angle) * vec.x + cos(angle) * vec.y;
-
-    return {x, y};
 }
 
 bool PortalRay::portalOutCheck(Portal* portal, b2Vec2 rayStart, b2Vec2 dirVec){
@@ -174,14 +168,14 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
                 float angleRot = -pWorld->calcAngle2(p1Dir) + pWorld->calcAngle2(-p2Dir);
 
-                b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
+                b2Vec2 localPos = PortalWorld::rotateVec(posDiff, angleRot + b2_pi);
                 if (conn->isReversed){
                     localPos = pWorld->mirror(p2Dir, localPos);
                 }
 
                 b2Vec2 ray2Pos = conn->portal2->pos + localPos;
 
-                b2Vec2 dir2 = rotateVec(dirVec, angleRot);
+                b2Vec2 dir2 = PortalWorld::rotateVec(dirVec, angleRot);
 
                 sendRay_i(ray2Pos, dir2, rayLength - minFrac * rayLength, rayIndex + 1, conn->portal2);
             }
@@ -516,59 +510,34 @@ void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConn
 
     CreateRotationJoint(&rotDef, connection->isReversed, body1, body2, angleRot);
 
-    b2Vec2 dirClone1 = connection->side1 == 0 ? connection->portal1->dir : -connection->portal1->dir;
-    b2Vec2 dirClone2 = connection->side2 == 0 ? connection->portal2->dir : -connection->portal2->dir;
+    PositionJointDef posJointDef;
+    posJointDef.collideConnected = true;
 
-    // will be removed in the future
-    // if value is too big it results in shaking
-    float mult = 50000.0f;
-
-    b2PulleyJointDef pulleyDef;
-
-    b2MassData data1;
-    b2MassData data2;
-    body1->body->GetMassData(&data1);
-    body2->body->GetMassData(&data2);
+    posJointDef.Initialize(body1->body, body2->body, connection);
+    CreatePositionJoint(&posJointDef);
     
-    b2Vec2 center1 = body1->body->GetWorldPoint(data1.center);
-    b2Vec2 center2 = body2->body->GetWorldPoint(data2.center);
-
-    b2Vec2 anchor1 = center1;
-    b2Vec2 anchor2 = center2;
-    b2Vec2 groundAnchor1(dirClone1.x * mult, dirClone1.y * mult);
-    b2Vec2 groundAnchor2(dirClone2.x * mult, dirClone2.y * mult);
-    pulleyDef.Initialize(body1->body, body2->body, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    CreateJoint(&pulleyDef);
-
-    dirClone1 = rotateVec(dirClone1, b2_pi / 2.0f);
-    if (connection->isReversed)
-        dirClone2 = rotateVec(dirClone2, -b2_pi / 2.0f);
-    else
-        dirClone2 = rotateVec(dirClone2, b2_pi / 2.0f);
-
-    anchor1 = center1;
-    anchor2 = center2;
-    groundAnchor1 = mult * dirClone1;
-    groundAnchor2 = mult * dirClone2;
-    pulleyDef.Initialize(body1->body, body2->body, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.0f);
-    CreateJoint(&pulleyDef);
+    posJointDef.Initialize(body1->body, body2->body, connection, true);
+    CreatePositionJoint(&posJointDef);
 }
 
 void PortalWorld::CreateRotationJoint(RotationJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot){
-    b2Assert(IsLocked() == false);
-	if (IsLocked())
-	{
-		return;
-	}
-
     void* mem = m_blockAllocator.Allocate(sizeof(RotationJoint));
 	RotationJoint* j = new (mem) RotationJoint(def, isReversed, pb1, pb2, angleRot);
+    commonJointCreation(j);
+}
 
-	j->m_prev = nullptr;
+void PortalWorld::CreatePositionJoint(PositionJointDef* def){
+    void* mem = m_blockAllocator.Allocate(sizeof(PositionJoint));
+	PositionJoint* j = new (mem) PositionJoint(def);
+    commonJointCreation(j);
+}
+
+void PortalWorld::commonJointCreation(b2Joint* j){
+    j->m_prev = nullptr;
 	j->m_next = m_jointList;
 	if (m_jointList)
 	{
-		((RotationJoint*)m_jointList)->m_prev = j;
+		((b2Joint*)m_jointList)->m_prev = j;
 	}
 	m_jointList = j;
 	++m_jointCount;
@@ -674,6 +643,13 @@ void PortalWorld::DestroyRotationJoint(RotationJoint* rj){
 	}
 }
 
+b2Vec2 PortalWorld::rotateVec(b2Vec2 vec, float angle){
+    float x = cos(angle) * vec.x - sin(angle) * vec.y;
+    float y = sin(angle) * vec.x + cos(angle) * vec.y;
+
+    return {x, y};
+}
+
 bool PortalWorld::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){
      return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t;
 }
@@ -689,7 +665,7 @@ float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
 float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
     float v1 = (b.x - a.x) * (a.y - c.y);
     float v2 = (a.x - c.x) * (b.y - a.y);
-    float top = abs(v1 - v2);
+    float top = v1 - v2;
 
     v1 = pow(b.x - a.x, 2);
     v2 = pow(b.y - a.y, 2);

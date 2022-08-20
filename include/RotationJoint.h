@@ -1,7 +1,6 @@
 #pragma once
 
 #include <PortalBody.h>
-#include <stdio.h>
 
 struct RotationJointDef : public b2JointDef
 {
@@ -56,8 +55,7 @@ private:
         pBodyB = pb2;
         m_impulse.SetZero();
 
-        if (isReversed)
-        {
+        if (isReversed){
             float angle1 = pb1->body->GetAngle() + pb1->offsetAngle;
             float angle2 = pb2->body->GetAngle() + pb2->offsetAngle;
             m_referenceAngle = angle2 + angle1;
@@ -86,6 +84,7 @@ private:
             float k11 = mA + mB;
             float k12 = 0.0f;
             float k22 = iA + iB;
+            // for artifical kinematic bodies
             // if (k22 == 0.0f)
             // {
             //     k22 = 1.0f;

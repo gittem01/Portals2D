@@ -407,6 +407,7 @@ private:
 
 	friend class PortalWorld;
 	friend class RotationJoint;
+	friend class PositionJoint;
 
 	// m_flags
 	enum

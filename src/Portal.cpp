@@ -484,8 +484,19 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
         }
     }
 
+    std::vector<b2Vec2> collPoints;
     const float tHold = 0.0f;
-    std::vector<b2Vec2> collPoints = getCollisionPoints(fix1, fix2);
+    if (fix2->GetShape()->GetType() == b2Shape::e_circle){
+        if (coll2 == NULL){
+            collPoints.push_back(fix2->GetBody()->GetWorldPoint(((b2CircleShape*)fix2->GetShape())->m_p));
+        }
+        else{
+            collPoints = getCollisionPoints(fix1, fix2);    
+        }
+    }
+    else{
+        collPoints = getCollisionPoints(fix1, fix2);
+    }
 
     if (collPoints.size() == 0 && fix2->GetBody()->GetType() == b2_staticBody){
         b2RayCastOutput rcOutput;
@@ -506,36 +517,36 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     if (collPoints.size() > 0){
         for (b2Vec2 p : collPoints){
             if (coll2){
-                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold) &&
-                    !pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], p, tHold))
+                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold) ||
+                    pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], p, tHold))
                 {
-                    return true;
+                    return false;
                 }
             }
             else{
-                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold)){
-                    return true;
+                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold)){
+                    return false;
                 }
             }
         }
-        return false;
+        return true;
     }
     else{
         for (int i = 0; i < contact->GetManifold()->pointCount; i++){
             if (coll2){
-                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold) &&
-                    !pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side],
+                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold) ||
+                    pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side],
                     wManifold.points[i], tHold))
                 {
-                    return true;
+                    return false;
                 }
             }
             else{
-                if (!pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold)){
-                    return true;
+                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold)){
+                    return false;
                 }
             }
-            return false;
+            return true;
         }
 
         return true;
@@ -766,8 +777,8 @@ void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture){
         return;
     }
 
-    float dist1 = PortalWorld::getRealDist(p1, p2, portal->points[0]);
-    float dist2 = PortalWorld::getRealDist(p1, p2, portal->points[1]);
+    float dist1 = abs(PortalWorld::getRealDist(p1, p2, portal->points[0]));
+    float dist2 = abs(PortalWorld::getRealDist(p1, p2, portal->points[1]));
     
     bool willSplit = false;
     b2Vec2 splitPoint;

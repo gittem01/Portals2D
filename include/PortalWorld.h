@@ -10,11 +10,13 @@
 
 struct portalConnection;
 struct RotationJointDef;
+struct PositionJointDef;
 
 class PortalBody;
 class Portal;
 class PortalWorld;
 class RotationJoint;
+class PositionJoint;
 
 typedef enum
 {
@@ -122,6 +124,8 @@ friend class PortalWorldQuery;
 friend class PortalRay;
 friend class b2World;
 friend class ContactListener;
+friend class PositionJoint;
+friend class PositionJointDef;
 
 public:
     std::vector<std::vector<PortalBody*>*> bodyIndices;
@@ -147,11 +151,12 @@ private:
     std::set<PortalBody*> destroyBodies;
     std::set<std::vector<PortalBody*>*> handledBodies;
 
+    static b2Vec2 rotateVec(b2Vec2 vec, float angle);
     static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t);
     static float vecAngle(b2Vec2 v1, b2Vec2 v2);
     static float getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
     static float getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
-    
+
     static float calcAngle2(b2Vec2 vec);
     static void normalize(b2Vec2* vec);
     static b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
@@ -166,6 +171,11 @@ private:
 
     void CreateRotationJoint(RotationJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
     void DestroyRotationJoint(RotationJoint* rj);
+
+    void CreatePositionJoint(PositionJointDef* def);
+    void DestroyPositionJoint(PositionJoint* rj);
+
+    void commonJointCreation(b2Joint* j);
 
     b2Draw* getDebugDraw() { return m_debugDraw; }
 };
