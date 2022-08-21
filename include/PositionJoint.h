@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Portal.h>
-#include <stdio.h>
+#include <BaseCustomJoint.h>
 
 
 struct PositionJointDef : public b2JointDef
@@ -64,18 +63,10 @@ struct PositionJointDef : public b2JointDef
     }
 };
 
-class PositionJoint : b2Joint
+class PositionJoint : BaseCustomJoint
 {
 
 friend class PortalWorld;
-
-public:
-
-    b2Vec2 GetAnchorA() const override { return b2Vec2(); };
-	b2Vec2 GetAnchorB() const override { return b2Vec2(); };
-
-	b2Vec2 GetReactionForce(float inv_dt) const override { return b2Vec2(); };
-	float GetReactionTorque(float inv_dt) const override { return 0.0f; };
 
 private:
 
@@ -94,7 +85,7 @@ private:
 	float m_mass;
     float m_impulse;
 
-    PositionJoint(const PositionJointDef* def) : b2Joint(def)
+    PositionJoint(const PositionJointDef* def) : BaseCustomJoint(def)
     {
         groundLineA[0] = def->groundLineA[0];
         groundLineA[1] = def->groundLineA[1];

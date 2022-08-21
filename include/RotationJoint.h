@@ -1,10 +1,11 @@
 #pragma once
 
-#include <PortalBody.h>
+#include <BaseCustomJoint.h>
 
 struct RotationJointDef : public b2JointDef
 {
     float referenceAngle;
+    bool reversed;
 
     RotationJointDef()
 	{
@@ -12,25 +13,18 @@ struct RotationJointDef : public b2JointDef
 		referenceAngle = 0.0f;
 	}
 
-	void Initialize(b2Body* bA, b2Body* bB){
+	void Initialize(b2Body* bA, b2Body* bB, const bool rev){
         bodyA = bA;
         bodyB = bB;
+        reversed = rev;
 	    referenceAngle = bodyB->GetAngle() - bodyA->GetAngle();
     }
 };
 
-class RotationJoint : b2Joint
+class RotationJoint : BaseCustomJoint
 {
 
 friend class PortalWorld;
-
-public:
-
-    b2Vec2 GetAnchorA() const override { return b2Vec2(); };
-	b2Vec2 GetAnchorB() const override { return b2Vec2(); };
-
-	b2Vec2 GetReactionForce(float inv_dt) const override { return b2Vec2(); };
-	float GetReactionTorque(float inv_dt) const override { return inv_dt * m_impulse.y; };
 
 private:
 
@@ -48,9 +42,9 @@ private:
 	b2Mat22 m_K;
     b2Vec2 m_impulse;
 
-    RotationJoint(const RotationJointDef* def, const bool rev, PortalBody* pb1, PortalBody* pb2, float pAngle) : b2Joint(def)
+    RotationJoint(const RotationJointDef* def, PortalBody* pb1, PortalBody* pb2) : BaseCustomJoint(def)
     {
-        isReversed = rev;
+        isReversed = def->reversed;
         pBodyA = pb1;
         pBodyB = pb2;
         m_impulse.SetZero();

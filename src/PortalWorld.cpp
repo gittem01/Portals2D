@@ -496,33 +496,34 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
         createPortalBody_i(npb, pBody, false);
         if (allOut) destroyBodies.insert(pBody);
-        else connectBodies(pBody, npb, c, side, calcAngle2(dir1) - calcAngle2(dir2));
+        else connectBodies(pBody, npb, c, side);
 
         npb->numFixtures = pBody->numFixtures;
         npb->outFixtures[c->side2][portal2] = npb->numFixtures + fixMargin;
     }
 }
 
-void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot) {
+void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side) {
     RotationJointDef rotDef;
-    rotDef.Initialize(body1->body, body2->body);
+    rotDef.Initialize(body1->body, body2->body, connection->isReversed);
     rotDef.collideConnected = true;
 
-    CreateRotationJoint(&rotDef, connection->isReversed, body1, body2, angleRot);
+    CreateRotationJoint(&rotDef, body1, body2);
 
     PositionJointDef posJointDef;
+    posJointDef.Initialize(body1->body, body2->body, connection);
     posJointDef.collideConnected = true;
 
-    posJointDef.Initialize(body1->body, body2->body, connection);
     CreatePositionJoint(&posJointDef);
     
     posJointDef.Initialize(body1->body, body2->body, connection, true);
+
     CreatePositionJoint(&posJointDef);
 }
 
-void PortalWorld::CreateRotationJoint(RotationJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot){
+void PortalWorld::CreateRotationJoint(RotationJointDef* def, PortalBody* pb1, PortalBody* pb2){
     void* mem = m_blockAllocator.Allocate(sizeof(RotationJoint));
-	RotationJoint* j = new (mem) RotationJoint(def, isReversed, pb1, pb2, angleRot);
+	RotationJoint* j = new (mem) RotationJoint(def, pb1, pb2);
     commonJointCreation(j);
 }
 
@@ -532,99 +533,97 @@ void PortalWorld::CreatePositionJoint(PositionJointDef* def){
     commonJointCreation(j);
 }
 
-void PortalWorld::commonJointCreation(b2Joint* j){
-    j->m_prev = nullptr;
-	j->m_next = m_jointList;
+void PortalWorld::commonJointCreation(b2Joint* cj){
+    cj->m_prev = nullptr;
+	cj->m_next = m_jointList;
 	if (m_jointList)
 	{
-		((b2Joint*)m_jointList)->m_prev = j;
+		((b2Joint*)m_jointList)->m_prev = cj;
 	}
-	m_jointList = j;
+	m_jointList = cj;
 	++m_jointCount;
 	
-	j->m_edgeA.joint = j;
-	j->m_edgeA.other = j->m_bodyB;
-	j->m_edgeA.prev = nullptr;
-	j->m_edgeA.next = j->m_bodyA->m_jointList;
-	if (j->m_bodyA->m_jointList) j->m_bodyA->m_jointList->prev = &j->m_edgeA;
-	j->m_bodyA->m_jointList = &j->m_edgeA;
+	cj->m_edgeA.joint = cj;
+	cj->m_edgeA.other = cj->m_bodyB;
+	cj->m_edgeA.prev = nullptr;
+	cj->m_edgeA.next = cj->m_bodyA->m_jointList;
+	if (cj->m_bodyA->m_jointList) cj->m_bodyA->m_jointList->prev = &cj->m_edgeA;
+	cj->m_bodyA->m_jointList = &cj->m_edgeA;
 
-	j->m_edgeB.joint = j;
-	j->m_edgeB.other = j->m_bodyA;
-	j->m_edgeB.prev = nullptr;
-	j->m_edgeB.next = j->m_bodyB->m_jointList;
-	if (j->m_bodyB->m_jointList) j->m_bodyB->m_jointList->prev = &j->m_edgeB;
-	j->m_bodyB->m_jointList = &j->m_edgeB;
+	cj->m_edgeB.joint = cj;
+	cj->m_edgeB.other = cj->m_bodyA;
+	cj->m_edgeB.prev = nullptr;
+	cj->m_edgeB.next = cj->m_bodyB->m_jointList;
+	if (cj->m_bodyB->m_jointList) cj->m_bodyB->m_jointList->prev = &cj->m_edgeB;
+	cj->m_bodyB->m_jointList = &cj->m_edgeB;
 }
 
-void PortalWorld::DestroyRotationJoint(RotationJoint* rj){
-	b2Assert(IsLocked() == false);
-	if (IsLocked())
+void PortalWorld::DestroyCustomJoint(b2Joint* cj){
+	bool collideConnected = cj->m_collideConnected;
+
+	if (cj->m_prev)
 	{
-		return;
+		cj->m_prev->m_next = cj->m_next;
 	}
 
-	bool collideConnected = rj->m_collideConnected;
-
-	if (rj->m_prev)
+	if (cj->m_next)
 	{
-		rj->m_prev->m_next = rj->m_next;
+		cj->m_next->m_prev = cj->m_prev;
 	}
 
-	if (rj->m_next)
+	if (cj == m_jointList)
 	{
-		rj->m_next->m_prev = rj->m_prev;
+		m_jointList = cj->m_next;
 	}
 
-	if (rj == m_jointList)
-	{
-		m_jointList = rj->m_next;
-	}
-
-	b2Body* bodyA = rj->m_bodyA;
-	b2Body* bodyB = rj->m_bodyB;
+	b2Body* bodyA = cj->m_bodyA;
+	b2Body* bodyB = cj->m_bodyB;
 
 	bodyA->SetAwake(true);
 	bodyB->SetAwake(true);
 
-	if (rj->m_edgeA.prev)
+	if (cj->m_edgeA.prev)
 	{
-		rj->m_edgeA.prev->next = rj->m_edgeA.next;
+		cj->m_edgeA.prev->next = cj->m_edgeA.next;
 	}
 
-	if (rj->m_edgeA.next)
+	if (cj->m_edgeA.next)
 	{
-		rj->m_edgeA.next->prev = rj->m_edgeA.prev;
+		cj->m_edgeA.next->prev = cj->m_edgeA.prev;
 	}
 
-	if (&rj->m_edgeA == bodyA->m_jointList)
+	if (&cj->m_edgeA == bodyA->m_jointList)
 	{
-		bodyA->m_jointList = rj->m_edgeA.next;
+		bodyA->m_jointList = cj->m_edgeA.next;
 	}
 
-	rj->m_edgeA.prev = nullptr;
-	rj->m_edgeA.next = nullptr;
+	cj->m_edgeA.prev = nullptr;
+	cj->m_edgeA.next = nullptr;
 
-	if (rj->m_edgeB.prev)
+	if (cj->m_edgeB.prev)
 	{
-		rj->m_edgeB.prev->next = rj->m_edgeB.next;
+		cj->m_edgeB.prev->next = cj->m_edgeB.next;
 	}
 
-	if (rj->m_edgeB.next)
+	if (cj->m_edgeB.next)
 	{
-		rj->m_edgeB.next->prev = rj->m_edgeB.prev;
+		cj->m_edgeB.next->prev = cj->m_edgeB.prev;
 	}
 
-	if (&rj->m_edgeB == bodyB->m_jointList)
+	if (&cj->m_edgeB == bodyB->m_jointList)
 	{
-		bodyB->m_jointList = rj->m_edgeB.next;
+		bodyB->m_jointList = cj->m_edgeB.next;
 	}
 
-	rj->m_edgeB.prev = nullptr;
-	rj->m_edgeB.next = nullptr;
+	cj->m_edgeB.prev = nullptr;
+	cj->m_edgeB.next = nullptr;
 
-    m_blockAllocator.Free(rj, sizeof(RotationJoint));
-
+    if (((BaseCustomJoint*)cj)->jointType == ROTATION){
+        m_blockAllocator.Free(cj, sizeof(RotationJoint));
+    }
+    else{
+        m_blockAllocator.Free(cj, sizeof(PositionJoint));
+    }
 	b2Assert(m_jointCount > 0);
 	--m_jointCount;
 

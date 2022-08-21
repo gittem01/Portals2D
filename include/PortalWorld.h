@@ -164,18 +164,17 @@ private:
     void globalPostHandle();
 
     void createCloneBody(bodyStruct* s);
-    void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side, float angleRot);
+    void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side);
 
     // baseBody should not be NULL if isNew is false
     void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
 
-    void CreateRotationJoint(RotationJointDef* def, bool isReversed, PortalBody* pb1, PortalBody* pb2, float angleRot);
-    void DestroyRotationJoint(RotationJoint* rj);
+    void CreateRotationJoint(RotationJointDef* def, PortalBody* pb1, PortalBody* pb2);
+    void DestroyCustomJoint(b2Joint* cj);
 
     void CreatePositionJoint(PositionJointDef* def);
-    void DestroyPositionJoint(PositionJoint* rj);
 
-    void commonJointCreation(b2Joint* j);
+    void commonJointCreation(b2Joint* cj);
 
     b2Draw* getDebugDraw() { return m_debugDraw; }
 };

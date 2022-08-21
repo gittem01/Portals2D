@@ -81,7 +81,7 @@ PortalBody::~PortalBody(){
     for ( ; jointEdge ; ){
         b2JointEdge* nextEdge = jointEdge->next;
         if (jointEdge->joint->GetType() == e_unknownJoint){
-            pWorld->DestroyRotationJoint((RotationJoint*)jointEdge->joint);
+            pWorld->DestroyCustomJoint(jointEdge->joint);
         }
         jointEdge = nextEdge;
     }

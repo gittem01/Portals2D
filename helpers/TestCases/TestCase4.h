@@ -28,6 +28,9 @@ public:
         b2Body* body2 = createCircle(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), 1, pWorld, b2_dynamicBody);
         b2Body* body3 = createCircle(b2Vec2(2.0f + bias, yPos + 1.5f), 1, pWorld, b2_dynamicBody);
 
+        // b2Body* body2 = createPortalCube(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
+        // b2Body* body3 = createPortalCube(b2Vec2(2.0f + bias, yPos + 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
+
         body2->SetLinearDamping(0.0f);
         body3->SetLinearDamping(0.0f);
 
