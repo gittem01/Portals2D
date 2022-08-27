@@ -514,7 +514,7 @@ void Renderer::drawPolygonFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData*
     bool fRelease = false;
     int i = 0;
     for (portalCollision* coll : colls){
-        if (coll->status == 0){
+        if (coll->status < 0){
             if (!drawReleases){
                 free(portalPositions);
                 free(sideMults);
@@ -632,7 +632,7 @@ void Renderer::drawCircleFix(PortalBody* pBody, b2Fixture* fix, bodyRenderData* 
     bool fRelease = false;
     int i = 0;
     for (portalCollision* coll : colls){
-        if (coll->status == 0){
+        if (coll->status < 0){
             if (!drawReleases){
                 free(portalPositions);
                 free(sideMults);

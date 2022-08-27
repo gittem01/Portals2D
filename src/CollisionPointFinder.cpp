@@ -86,7 +86,7 @@ std::vector<b2Vec2> Portal::collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2
 	// inside of the other fixture or just started colliding
 	if (returnVector.size() == 0) {
 		b2Vec2 center = getFixtureCenter(cFix);
-		// if true : inside
+		// if true : overlapping
 		if (oFix->TestPoint(center)){
 			returnVector.push_back(getFixtureCenter(cFix));
 		}

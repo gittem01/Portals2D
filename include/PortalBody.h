@@ -46,10 +46,37 @@ typedef struct
     int side;
 } portalCollision;
 
-typedef struct
+typedef struct fixtureData
 {
     std::vector<portalCollision*> pCollisions;
     void* extraData;
+
+    // return 2 if not found, return 1 for colliding, otherwise return release value
+    int getPortalStatus(Portal* portal, int side){
+        for (auto pCollision : pCollisions){
+            if (pCollision->portal == portal){
+                if (pCollision->side == side){
+                    return pCollision->status;
+                }
+                else{
+                    return 2;
+                }
+            }
+        }
+
+        return 2;
+    }
+
+    portalCollision* getPortalCollision(Portal* portal){
+        for (auto pCollision : pCollisions){
+            if (pCollision->portal == portal){
+                return pCollision;
+            }
+        }
+
+        return NULL;
+    }
+
 } fixtureData;
 
 typedef struct
@@ -93,8 +120,7 @@ private:
 
     void destroyCheck(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     bool shouldCreate(b2Body* body, Portal* portal, PortalCollisionType out);
-    bool shouldCollideHelper1(portalCollision* coll, b2Fixture* fix1, b2Fixture* fix2);
-    bool shouldCollideHelper2(portalCollision* coll, b2Fixture* fix1, b2Fixture* fix2);
+    bool shouldCollideHelper(portalCollision* coll, fixtureData* fixData1, fixtureData* fixData2);
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out);
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);

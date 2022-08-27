@@ -31,15 +31,6 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
 }
 
 PortalBody::~PortalBody(){
-    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
-        for (Portal* p : pWorld->portals){
-            for (int i = 0; i < 2; i++){
-                p->collidingFixtures[i].erase(fix);
-                p->releaseFixtures[i].erase(fix);
-            }
-        }
-    }
-
     pWorld->handledBodies.insert(worldIndex);
     for (int i = 0; i < worldIndex->size(); i++){
         if (worldIndex->at(i) == this){
@@ -156,14 +147,19 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     
     for (portalCollision* coll1 : collidingPortals1){
         if (fix2 == coll1->portal->yFix[0] || fix2 == coll1->portal->yFix[1]) return true;
-        if (shouldCollideHelper1(coll1, fix1, fix2)) continue;
-        if (coll1->status == 0){
+        if (bData && bData->type == PORTAL_BODY && shouldCollideHelper(coll1, fixData1, fixData2)){
+            continue;
+        }
+
+        int status = 2;
+        if (fixData2) status = fixData2->getPortalStatus(coll1->portal, 1 ^ coll1->side);
+        if (coll1->status < 0 || status == 1){
             return false;
         }
 
         if (collidingPortals2.size() > 0){
             for (portalCollision* coll2 : collidingPortals2){
-                if (shouldCollideHelper1(coll2, fix1, fix2)) continue;
+                if (shouldCollideHelper(coll2, fixData1, fixData2)) continue;
                 bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, coll2);
                 if (!shouldCollide) return false;
             }
@@ -177,18 +173,20 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     return true;
 }
 
-bool PortalBody::shouldCollideHelper1(portalCollision* coll, b2Fixture* fix1, b2Fixture* fix2){
-    if (coll->portal->collidingFixtures[coll->side].find(fix2) != coll->portal->collidingFixtures[coll->side].end() &&
-        coll->portal->collidingFixtures[coll->side].find(fix1) != coll->portal->collidingFixtures[coll->side].end())
-    {
+bool PortalBody::shouldCollideHelper(portalCollision* coll, fixtureData* fixData1, fixtureData* fixData2){
+    int status1 = fixData1->getPortalStatus(coll->portal, coll->side);
+    int status2 = fixData2->getPortalStatus(coll->portal, coll->side);
+    if (status1 == 1 && status2 == 1){
         return true;
     }
-    return false;
+    else{
+        return false;
+    }
 }
 
 void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out){
     int side = (uint32_t)out & ODD_MASK ? 1 : 0;
-    if (status == 0){
+    if (status < 0){
         outFixtures[side][portal]--;
     }
     else{
@@ -206,11 +204,11 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
     }
 
     // Extra void portal logic
-    if (portal->isVoid[side] && status == 0){
+    if (portal->isVoid[side] && status < 0){
 #if 1
         if (outFixtures[side][portal] == -numFixtures){
-            //pWorld->destroyBodies.insert(this);
-            //return;
+            // pWorld->destroyBodies.insert(this);
+            // return;
         }
 #else
         bool found = false;
@@ -229,21 +227,6 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
         }
 #endif
     }
-    // -------------------------------------------------
-
-    fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
-    for (auto& col : fixData->pCollisions){
-        if (col->portal == portal){
-            col->status = status;
-            return;
-        }
-    }
-
-    portalCollision* portCol = (portalCollision*)malloc(sizeof(portalCollision));
-    portCol->portal = portal;
-    portCol->status = status;
-    portCol->side = side;
-    fixData->pCollisions.push_back(portCol);
 }
 
 void PortalBody::postHandle(){
@@ -292,22 +275,23 @@ bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, PortalCollisionType
     return true;
 }
 
-void PortalBody::releaseOut2(b2Fixture* fix, Portal* portal){
-    b2Body* body = fix->GetBody();
+void PortalBody::releaseOut2(b2Fixture* fix1, Portal* portal){
+    // TODO : optimize this
+    b2Body* body = fix1->GetBody();
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
-        auto iter0 = portal->releaseFixtures[0].find(fix);
-        auto iter1 = portal->releaseFixtures[1].find(fix);
-        if (iter0 != portal->releaseFixtures[0].end()){
-            if (iter0->second < 3){
-                return;
-            }
-        }
-        if (iter1 != portal->releaseFixtures[1].end()){
-            if (iter1->second < 3){
-                return;
+        fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+        for (auto pCollision : fixData->pCollisions){
+            if (pCollision->portal == portal){
+                if (pCollision->status > -3 && pCollision->status < 0){
+                    return;
+                }
+                else{
+                    break;
+                }
             }
         }
     }
+
     pWorld->destroyBodies.insert(this);
 }
 
@@ -328,10 +312,10 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType o
         break;
     
     case COLLIDING_RELEASE_0:
-        outHelper(fix, portal, 0, out);
+        outHelper(fix, portal, -1, out);
         break;
     case COLLIDING_RELEASE_1:
-        outHelper(fix, portal, 0, out);
+        outHelper(fix, portal, -1, out);
         break;
 
     case E_COLLIDING_RELEASE_0:
@@ -474,7 +458,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         loopCenterOfMass = center;
 
         for (portalCollision* pColl : fixColls){
-            if (pColl->status == 0){
+            if (pColl->status < 0){
                 return;
             }
             int side = pColl->portal->getFixtureSide(fixture);
@@ -560,7 +544,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         center = findPolygonCentroid(pShape->m_vertices, pShape->m_count);
         loopCenterOfMass = center;
         for (portalCollision* pColl : fixColls){
-            if (pColl->status == 0){
+            if (pColl->status < 0){
                 return;
             }
             b2Vec2 lastVertex = latestVertices[0];

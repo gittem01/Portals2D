@@ -1,0 +1,7 @@
+There are known memory leaks and bugs, which are relatively easy to fix
+or at least fixable
+
+
+-Only relatively big commits are written here-
+Last commit note:
+    portals do not hold any data about collisions anymore (almost)

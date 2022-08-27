@@ -68,7 +68,6 @@ private:
     b2RayCastInput rcInp2;
 
     std::set<b2Fixture*> collidingFixtures[2];
-    std::map<b2Fixture*, int> releaseFixtures[2];
 
     ~Portal();
 
@@ -83,7 +82,7 @@ private:
     void calculatePoints();
     void createPortalBody();
 
-    PortalCollisionType handleCollidingFixtures(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
+    PortalCollisionType handleCollidingFixtures(b2Contact* contact, b2Fixture* fix2);
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2);

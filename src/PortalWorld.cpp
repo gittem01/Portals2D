@@ -383,12 +383,16 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                 f = body2->CreateFixture(&fDef);
             }
 
-            fixtureData* fixData = (fixtureData*)calloc(1, sizeof(fixtureData));
-            f->GetUserData().pointer = (uintptr_t)fixData;
+            fixtureData* fixData1 = (fixtureData*)fix->GetUserData().pointer;
+            fixtureData* fixData2 = (fixtureData*)calloc(1, sizeof(fixtureData));
+            f->GetUserData().pointer = (uintptr_t)fixData2;
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
 
-            if (collPortal->collidingFixtures[side].find(fix) != collPortal->collidingFixtures[side].end()){
+            int status = fixData1->getPortalStatus(collPortal, side);
+            // status of other side
+            int status2 = fixData1->getPortalStatus(collPortal, side ^ 1);
+            if (status == 1){
                 int fixSide = collPortal->getFixtureSide(fix);
                 
                 bool rayCheck = false;
@@ -406,34 +410,31 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
                 if (rayCheck){
                     fixMargin -= 1;
-                    portal2->collidingFixtures[c->side2].insert(f);
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 1;
-                    fixData->pCollisions.push_back(col);
+                    fixData2->pCollisions.push_back(col);
                     allOut = false;
                 }
                 else if (release){
                     fixMargin -= 2;
-                    portal2->releaseFixtures[c->side2][f] = 1;
                     col->portal = portal2;
                     col->side = c->side2;
-                    col->status = 0;
-                    fixData->pCollisions.push_back(col);
+                    col->status = -1;
+                    fixData2->pCollisions.push_back(col);
                     allOut = false;
                 }
                 else{
                     free(col);
                 }
             }
-            else if (collPortal->releaseFixtures[side].find(fix) == collPortal->releaseFixtures[side].end()){
-                if (collPortal->collidingFixtures[side ^ 1].find(fix) != collPortal->collidingFixtures[side ^ 1].end()){
+            else if (status > -1){
+                if (status2 == 1){
                     fixMargin -= 2;
-                    portal2->releaseFixtures[c->side2][f] = 2;
                     col->portal = portal2;
                     col->side = c->side2;
-                    col->status = 0;
-                    fixData->pCollisions.push_back(col);
+                    col->status = -2;
+                    fixData2->pCollisions.push_back(col);
 
                     bool rayCheck;
                     int fixSide = collPortal->getFixtureSide(fix);
@@ -441,44 +442,40 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     else rayCheck = 1;
 
                     if (!rayCheck){
-                        portal2->releaseFixtures[c->side2][f]--;
+                        col->status++;
                     }
                 }
-                else if (collPortal->releaseFixtures[side ^ 1].find(fix) != collPortal->releaseFixtures[side ^ 1].end()){
+                else if (status2 < 0){
                     fixMargin -= 2;
-                    portal2->releaseFixtures[c->side2][f] = collPortal->releaseFixtures[side ^ 1][fix] + 2;
                     col->portal = portal2;
                     col->side = c->side2;
-                    col->status = 0;
-                    fixData->pCollisions.push_back(col);
+                    col->status = status2 - 2;
+                    fixData2->pCollisions.push_back(col);
 
-                    if (collPortal->releaseFixtures[side ^ 1][fix] % 2 == 0){
+                    if (status2 % 2 == 0){
                         bool rayCheck;
                         int fixSide = collPortal->getFixtureSide(fix);
                         if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
                         else rayCheck = 1;
 
                         if (!rayCheck){
-                            portal2->releaseFixtures[c->side2][f]--;
+                            col->status++;
                         }
                     }
                 }
                 else{
                     fixMargin -= 2;
-                    portal2->releaseFixtures[c->side2][f] = 1;
                     col->portal = portal2;
                     col->side = c->side2;
-                    col->status = 0;
-                    fixData->pCollisions.push_back(col);
+                    col->status = -1;
+                    fixData2->pCollisions.push_back(col);
                 }
             }
             else{
                 free(col);
             }
 
-            if (collPortal->collidingFixtures[0].find(fix) == collPortal->collidingFixtures[0].end() &&
-                collPortal->collidingFixtures[1].find(fix) == collPortal->collidingFixtures[1].end())
-            {
+            if (status != 1 && status2 != 1){
                 allOut = false;
             }
         }
