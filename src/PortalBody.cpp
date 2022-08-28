@@ -152,7 +152,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         }
 
         int status = 2;
-        if (fixData2) status = fixData2->getPortalStatus(coll1->portal, 1 ^ coll1->side);
+        if (bData && bData->type == PORTAL_BODY) status = fixData2->getPortalStatus(coll1->portal, 1 ^ coll1->side);
         if (coll1->status < 0 || status == 1){
             return false;
         }
@@ -336,15 +336,6 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType o
 void PortalBody::destroyCheck(b2Fixture* f, Portal* portal, PortalCollisionType out){
     int side = (uint32_t)out & ODD_MASK ? 1 : 0;
     outFixtures[side][portal]++;
-
-    fixtureData* fixData = (fixtureData*)f->GetUserData().pointer;
-    for (int i = 0; i < fixData->pCollisions.size(); i++){
-        if (fixData->pCollisions.at(i)->portal == portal && fixData->pCollisions.at(i)->status == 1){
-            free(fixData->pCollisions.at(i));
-            fixData->pCollisions.erase(fixData->pCollisions.begin() + i);
-            break;
-        }
-    }
 
 // Experimental
 // Disable it if it is causing problems

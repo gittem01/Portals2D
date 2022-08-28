@@ -158,6 +158,7 @@ PortalCollisionType Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2
         else if (pColl->side == side && pColl->status == 1){
             for (int i = 0; i < fixData->pCollisions.size(); i++){
                 if (fixData->pCollisions.at(i) == pColl){
+                    free(fixData->pCollisions.at(i));
                     fixData->pCollisions.erase(fixData->pCollisions.begin() + i);
                     break;
                 }
@@ -304,6 +305,7 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
             else if (pColl->side == side){
                 for (int i = 0; i < fixData->pCollisions.size(); i++){
                     if (fixData->pCollisions.at(i) == pColl){
+                        free(fixData->pCollisions.at(i));
                         fixData->pCollisions.erase(fixData->pCollisions.begin() + i);
                         break;
                     }

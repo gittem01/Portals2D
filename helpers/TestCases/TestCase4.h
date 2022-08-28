@@ -17,19 +17,19 @@ public:
 
         float yPos = -4.0f;
         float portalSize = 3.0f;
-        float d = 0.65f;
-        const int n = 30;
+        float d = 0.6f;
+        const int n = 40;
         float bias = n * d * 0.5f;
 
         Portal* linePortals[n];
 
         createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld, b2_staticBody);
 
-        b2Body* body2 = createCircle(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), 1, pWorld, b2_dynamicBody);
-        b2Body* body3 = createCircle(b2Vec2(2.0f + bias, yPos + 1.5f), 1, pWorld, b2_dynamicBody);
+        //b2Body* body2 = createCircle(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), 1, pWorld, b2_dynamicBody);
+        //b2Body* body3 = createCircle(b2Vec2(2.0f + bias, yPos + 1.5f), 1, pWorld, b2_dynamicBody);
 
-        // b2Body* body2 = createPortalCube(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
-        // b2Body* body3 = createPortalCube(b2Vec2(2.0f + bias, yPos + 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
+        b2Body* body2 = createPortalCube(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
+        b2Body* body3 = createPortalCube(b2Vec2(2.0f + bias, yPos + 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
 
         body2->SetLinearDamping(0.0f);
         body3->SetLinearDamping(0.0f);
