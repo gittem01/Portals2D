@@ -303,6 +303,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
         bodyCollisionStatus* t_bcs = new bodyCollisionStatus;
         t_bcs->body = npb;
+        npb->fixtures.resize(pBody->fixtures.size());
         pBody->bodyMaps->push_back(t_bcs);
         t_bcs->connection = c;
         b2Vec2 lvToSet = rotateVec(speed, angleRot);
@@ -315,20 +316,10 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         }
         body2->SetLinearVelocity(lvToSet);
 
-        b2Fixture* prev = NULL;
-        b2Fixture* current = body1->GetFixtureList();
-        b2Fixture* next = NULL;
-        while (current != NULL) {
-            next = current->m_next;
-            current->m_next = prev;
-            prev = current;
-            current = next;
-        }
-        body1->m_fixtureList = prev;
-
         bool allOut = true;
         int fixMargin = 0;
-        for (b2Fixture* fix = body1->GetFixtureList(); fix; fix = fix->GetNext()){
+        for (int i = pBody->fixtures.size() - 1; i > -1; i--){
+            b2Fixture* fix = pBody->fixtures.at(i);
             b2Fixture* f;
             if (fix->GetType() == b2Shape::Type::e_polygon){
                 b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
@@ -383,6 +374,8 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                 f = body2->CreateFixture(&fDef);
             }
 
+            npb->fixtures[i] = f;
+
             fixtureData* fixData1 = (fixtureData*)fix->GetUserData().pointer;
             fixtureData* fixData2 = (fixtureData*)calloc(1, sizeof(fixtureData));
             f->GetUserData().pointer = (uintptr_t)fixData2;
@@ -390,7 +383,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
 
             int status = fixData1->getPortalStatus(collPortal, side);
-            // status of other side
             int status2 = fixData1->getPortalStatus(collPortal, side ^ 1);
             if (status == 1){
                 int fixSide = collPortal->getFixtureSide(fix);
@@ -479,17 +471,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                 allOut = false;
             }
         }
-
-        prev = NULL;
-        current = body1->GetFixtureList();
-        next = NULL;
-        while (current != NULL) {
-            next = current->m_next;
-            current->m_next = prev;
-            prev = current;
-            current = next;
-        }
-        body1->m_fixtureList = prev;
 
         createPortalBody_i(npb, pBody, false);
         if (allOut) destroyBodies.insert(pBody);

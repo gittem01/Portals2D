@@ -4,7 +4,6 @@
 #include "glm/common.hpp"
 
 #define ODD_MASK 0b10101010101010101010101010101010
-#define RELEASE_COLLISION_ENABLED 1
 
 PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
     this->pWorld = pWorld;
@@ -24,6 +23,7 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
 
     this->numFixtures = 0;
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
+        fixtures.push_back(fix);
         fixtureData* fixData = (fixtureData*)calloc(1, sizeof(fixtureData));
         fix->GetUserData().pointer = (uintptr_t)fixData;
         numFixtures++;
@@ -403,6 +403,9 @@ b2Vec2 PortalBody::findPolygonCentroid(b2Vec2* vertices, int numVertices){
     return b2Vec2(rv1, rv2);
 }
 
+// may add an option to enable advanced gravity since it is relatively expensive to calculate it
+// other easy to implement option may check for side of the center of mass and apply gravity to
+// the one that is outside the collision side (same side it entered)
 void PortalBody::applyPartialGravity(b2Fixture* fixture){
     fixtureData* fixData = (fixtureData*)fixture->GetUserData().pointer;
     auto fixColls = fixData->pCollisions;
@@ -522,12 +525,15 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         }
     }
     else{
-        b2PolygonShape* pShape = (b2PolygonShape*)fixture->GetShape();
+        // every polygon cut may create 1 additional vertex and maximum number of vertices
+        // a polygon has is b2_maxPolygonVertices which is 8, so we need a polygon to intersect
+        // with 33 portals, which is impossible with 8 vertices. So, 41 is just an arbitary number
+        b2Vec2 innerVertices[41];
         b2Vec2 latestVertices[41];
+        b2PolygonShape* pShape = (b2PolygonShape*)fixture->GetShape();
         for (int i = 0; i < pShape->m_count; i++){
             latestVertices[i] = body->GetWorldPoint(pShape->m_vertices[i]);
         }
-        b2Vec2 innerVertices[41];
         int numLatestVertices = pShape->m_count;
         int numVertices = 0;
         baseArea = findPolygonArea(pShape->m_vertices, pShape->m_count);
