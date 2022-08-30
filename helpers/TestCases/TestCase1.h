@@ -15,13 +15,13 @@ public:
         float yPos = -4.0f;
         float portalSize = 3.0f;
 
-        Portal* portal1 = pWorld->createPortal(b2Vec2(-6.0f, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
+        Portal* portal1 = pWorld->createPortal(b2Vec2(-12.0f, yPos + 0.01f), b2Vec2(+1.5f, +0.0f), portalSize);
         Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
         Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
         Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos), b2Vec2(+1.0f, 0.0f), portalSize);
         Portal* portal42 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos + portalSize * 2), b2Vec2(+1.0f, 0.0f), portalSize);
         
-        Portal* diagonalPortal1 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize), b2Vec2(+1.0f, 0.0f), portalSize);
+        //Portal* diagonalPortal1 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize), b2Vec2(+1.0f, 0.0f), portalSize);
         Portal* diagonalPortal2 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize * 2 + 5.0f), b2Vec2(+1.0f, -1.0f), portalSize);
 
         Portal* topPortal1 = pWorld->createPortal(b2Vec2(+5.0f, yPos + portalSize + 5.0f), b2Vec2(0.0f, -1.0f), portalSize);
@@ -38,7 +38,7 @@ public:
         portal41->connect(portal1, true, 0, 0);
         portal42->connect(portal1, false, 0, 1);
         portal5->connect(portal6, true, 0, 0);
-        diagonalPortal1->connect(diagonalPortal2, true, 0, 0);
+        //diagonalPortal1->connect(diagonalPortal2, true, 0, 0);
 
         // TODO : do this special case automatically
         diagonalPortal2->connect(topPortal1, true, 1, 0);

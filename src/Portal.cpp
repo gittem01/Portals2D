@@ -143,7 +143,14 @@ PortalCollisionType Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2
     if (fix1 == midFixture){
         int side = getFixtureSide(fix2);
         fixtureData* fixData = (fixtureData*)fix2->GetUserData().pointer;
-        portalCollision* pColl = fixData->getPortalCollision(this);
+        portalCollision* pColl;
+        auto iter = fixData->getPortalCollision(this);
+        if (iter != fixData->pCollisions.end()){
+            pColl = *iter;
+        }
+        else{
+            pColl = NULL;
+        }
 
         if (!pColl) return ret;
 
@@ -199,7 +206,14 @@ PortalCollisionType Portal::preCollision(b2Contact* contact, b2Fixture* fix1, b2
     if (fix1 == midFixture){
         fixtureData* fixData = (fixtureData*)fix2->GetUserData().pointer;
         ret = handleCollidingFixtures(contact, fix2);
-        portalCollision* pColl = fixData->getPortalCollision(this);
+        portalCollision* pColl;
+        auto iter = fixData->getPortalCollision(this);
+        if (iter != fixData->pCollisions.end()){
+            pColl = *iter;
+        }
+        else{
+            pColl = NULL;
+        }
         if (pColl){
             contact->SetEnabled(false);
         }
@@ -227,7 +241,19 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
     PortalCollisionType ret = DEFAULT_COLLISION;
 
     fixtureData* fixData = (fixtureData*)fix2->GetUserData().pointer;
-    portalCollision* pColl = fixData->getPortalCollision(this);
+
+    portalCollision* pColl;
+    auto iter = fixData->getPortalCollision(this);
+    if (iter != fixData->pCollisions.end()){
+        pColl = *iter;
+    }
+    else{
+        iter = fixData->getPortalCollision(this, 0);
+        if (iter != fixData->pCollisions.end()){
+            return ret;
+        }
+        pColl = NULL;
+    }
 
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
@@ -248,7 +274,9 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
                     pColl->status++;
                 }
                 else if (pColl->status % 2 != 0){
-                    if (pColl->status != 1) ret = RELEASE_COLLIDING_1;
+                    if (pColl->status != 1){
+                        ret = RELEASE_COLLIDING_1;
+                    }
                     pColl->status = 1;
                 }
             }
@@ -275,7 +303,9 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
                     pColl->status++;
                 }
                 else if (pColl->status % 2 != 0){
-                    if (pColl->status != 1) ret = RELEASE_COLLIDING_0;
+                    if (pColl->status != 1){
+                        ret = RELEASE_COLLIDING_0;
+                    }
                     pColl->status = 1;
                 }
             }

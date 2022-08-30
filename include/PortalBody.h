@@ -49,6 +49,7 @@ typedef struct
 typedef struct fixtureData
 {
     std::vector<portalCollision*> pCollisions;
+    int index;
     void* extraData;
 
     // return 2 if not found, return 1 for colliding, otherwise return release value
@@ -67,14 +68,21 @@ typedef struct fixtureData
         return 2;
     }
 
-    portalCollision* getPortalCollision(Portal* portal){
-        for (auto pCollision : pCollisions){
-            if (pCollision->portal == portal){
-                return pCollision;
+    std::vector<portalCollision*>::iterator getPortalCollision(Portal* portal, int status=2){
+        for (auto i = pCollisions.begin(); i != pCollisions.end(); i++){
+            if (status == 2){
+                if ((*i)->portal == portal){
+                    return i;
+                }
+            }
+            else{
+                if ((*i)->portal == portal && (*i)->status == status){
+                    return i;
+                }
             }
         }
 
-        return NULL;
+        return pCollisions.end();
     }
 
 } fixtureData;

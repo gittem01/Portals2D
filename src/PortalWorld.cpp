@@ -292,7 +292,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
         bodyCollisionStatus* bcs = new bodyCollisionStatus;
         bcs->body = pBody;
-        npb->bodyMaps->push_back(bcs);
 
         for (portalConnection* conn : portal2->connections[c->side2]){
             if (conn->portal2 == collPortal && conn->side2 == c->side1){
@@ -304,7 +303,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         bodyCollisionStatus* t_bcs = new bodyCollisionStatus;
         t_bcs->body = npb;
         npb->fixtures.resize(pBody->fixtures.size());
-        pBody->bodyMaps->push_back(t_bcs);
         t_bcs->connection = c;
         b2Vec2 lvToSet = rotateVec(speed, angleRot);
         if (c->isReversed){
@@ -378,6 +376,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
             fixtureData* fixData1 = (fixtureData*)fix->GetUserData().pointer;
             fixtureData* fixData2 = (fixtureData*)calloc(1, sizeof(fixtureData));
+            fixData2->index = i;
             f->GetUserData().pointer = (uintptr_t)fixData2;
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
@@ -420,9 +419,9 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     free(col);
                 }
             }
-            else if (status > -1){
+            else if (status == 2){
+                fixMargin -= 2;
                 if (status2 == 1){
-                    fixMargin -= 2;
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = -2;
@@ -438,7 +437,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     }
                 }
                 else if (status2 < 0){
-                    fixMargin -= 2;
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = status2 - 2;
@@ -456,7 +454,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     }
                 }
                 else{
-                    fixMargin -= 2;
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = -1;
@@ -478,6 +475,8 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
         npb->numFixtures = pBody->numFixtures;
         npb->outFixtures[c->side2][portal2] = npb->numFixtures + fixMargin;
+        pBody->bodyMaps->push_back(t_bcs);
+        npb->bodyMaps->push_back(bcs);
     }
 }
 
