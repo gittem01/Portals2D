@@ -234,11 +234,53 @@ void PortalWorld::globalPostHandle(){
     destroyBodies.clear();
 }
 
+b2Vec2 PortalWorld::getRelativePortalPosition(b2Vec2 point, portalConnection* pConnect){
+    Portal* portal1 = pConnect->portal1;
+    Portal* portal2 = pConnect->portal2;
+    int side1 = pConnect->side1;
+    int side2 = pConnect->side2;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    b2Vec2 posDiff = portal1->pos - point;
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(posDiff, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    pos += portal2->pos;
+
+    return pos;
+}
+
+b2Vec2 PortalWorld::getRelativePortalPositionReverse(b2Vec2 point, portalConnection* pConnect){
+    Portal* portal1 = pConnect->portal2;
+    Portal* portal2 = pConnect->portal1;
+    int side1 = pConnect->side2;
+    int side2 = pConnect->side1;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    b2Vec2 posDiff = portal1->pos - point;
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(posDiff, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    pos += portal2->pos;
+
+    return pos;
+}
+
 void PortalWorld::createCloneBody(bodyStruct* s){
     PortalBody* pBody = s->pBody;
     int side = s->side;
     Portal* collPortal = s->collPortal;
-    b2Body* body1 = s->pBody->body;
+    b2Body* body1 = pBody->body;
     b2Vec2 dir1 = side ? -collPortal->dir : collPortal->dir;
     b2Vec2 posDiff = collPortal->pos - body1->GetPosition();
     b2Vec2 speed = body1->GetLinearVelocity();
@@ -251,7 +293,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
         b2Vec2 localPos = rotateVec(posDiff, angleRot + b2_pi);
         if (c->isReversed)
-            localPos = mirror(portal2->dir, localPos);
+            localPos = mirror(dir2, localPos);
 
         b2BodyDef def;
         def.type = b2_dynamicBody;

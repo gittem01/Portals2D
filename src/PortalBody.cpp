@@ -155,7 +155,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
                             b2WorldManifold wManifold;
                             contact->GetWorldManifold(&wManifold);
                             b2Vec2 point;
-                            if (contact->GetManifold()->pointCount == 2){
+                            if (contact->GetManifold()->pointCount == 1){
                                 point = wManifold.points[0];
                             }
                             else{
@@ -164,9 +164,12 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
                             
                             b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(
                                 point - wManifold.normal, point + wManifold.normal,
-                                stat->connection->portal2->points[0], stat->connection->portal2->points[1]);
+                                portal->points[0], portal->points[1]);
+
+                            intersectionPoint = PortalWorld::getRelativePortalPosition(intersectionPoint, stat->connection);
+
                             int intersectSide = pc->portal->getPointSide(intersectionPoint);
-                            
+
                             if (intersectSide != pc->side){
                                 return false;
                             }
