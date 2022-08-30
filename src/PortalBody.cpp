@@ -103,10 +103,11 @@ void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
     }
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
     
-    bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
-    if (!shouldCollide){
-        return;
-    }
+    // may not be needed, so it should stay like this for a while for testing
+    // bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
+    // if (!shouldCollide){
+    //     return;
+    // }
 
     if (bData && bData->type == PORTAL){
         Portal* p = (Portal*)bData->data;
@@ -167,9 +168,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
                                 portal->points[0], portal->points[1]);
 
                             intersectionPoint = PortalWorld::getRelativePortalPosition(intersectionPoint, stat->connection);
-
                             int intersectSide = pc->portal->getPointSide(intersectionPoint);
-
                             if (intersectSide != pc->side){
                                 return false;
                             }

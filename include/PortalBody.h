@@ -42,7 +42,7 @@ enum PortalCollisionType
 typedef struct
 {
     Portal* portal;
-    int status; // 1 for colliding 0 for released
+    int status; // 1 for colliding less than 0 for released (-1 in normal cases)
     int side;
 } portalCollision;
 
