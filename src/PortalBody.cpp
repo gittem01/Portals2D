@@ -182,6 +182,9 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
             if (pColl->portal == portal) return true;
         }
     }
+    else if (fixData1->pCollisions.size() == 0){
+        return true;
+    }
 
     std::vector<portalCollision*> collidingPortals2;
     fixtureData* fixData2 = (fixtureData*)fix2->GetUserData().pointer;
@@ -190,7 +193,6 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     }
     
     for (portalCollision* coll1 : collidingPortals1){
-        //if (fix2 == coll1->portal->yFix[0] || fix2 == coll1->portal->yFix[1]) return true;
         if (bData && bData->type == PORTAL_BODY && shouldCollideHelper(coll1, fixData1, fixData2)){
             continue;
         }

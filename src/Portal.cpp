@@ -55,21 +55,6 @@ Portal::~Portal(){
         }
     }
 
-    for (int i = 0; i < 2; i++){
-        for (b2Fixture* fix : collidingFixtures[i]){
-            PortalBody* pb = (PortalBody*)((bodyData*)fix->GetBody()->GetUserData().pointer)->data;
-            fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
-            for (int i = 0; i < fixData->pCollisions.size(); i++){
-                portalCollision* pc = fixData->pCollisions.at(i);
-                if (pc->portal == this){
-                    free(pc);
-                    fixData->pCollisions.erase(fixData->pCollisions.begin() + i);
-                    i--;
-                }
-            }
-        }
-    }
-
     free((void*)body->GetUserData().pointer);
     pWorld->DestroyBody(body);
 }
@@ -155,10 +140,7 @@ PortalCollisionType Portal::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2
         if (!pColl) return ret;
 
         if (pColl->side == (side ^ 1) && pColl->status == 1){
-            pColl->status = -1;
-            
-            collidingFixtures[pColl->side ^ 1].erase(fix2);
-            
+            pColl->status = -1;            
             ret = (PortalCollisionType)((int)COLLIDING_RELEASE_0 << (1 ^ side));
             return ret;
         }
@@ -390,189 +372,49 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
-std::vector<b2Vec2> Portal::getUsableRayPoints(b2Fixture* fix, int side){
-    std::vector<b2Vec2> usablePoints;
-    if (fix->GetType() == b2Shape::Type::e_polygon){
-        b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
-        for (int i = 0; i < polyShape->m_count; i++){
-            b2Vec2 point = fix->GetBody()->GetWorldPoint(polyShape->m_vertices[i]);
-            float dist = pWorld->getDist(points[side], points[1 - side], point);
-            if (dist > 0.2f) usablePoints.push_back(point);
-        }
-    }
-    else{
-        b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
-        b2Vec2 point = fix->GetBody()->GetWorldPoint(circleShape->m_p);
-        float dist = pWorld->getDist(points[side], points[1 - side], point);
-        if (dist -circleShape->m_radius > 0.2f) usablePoints.push_back(point);
-    }
-
-    return usablePoints;
-}
-
-b2Vec2* Portal::getMaxRayPoints(std::vector<b2Vec2> usableRayPoints, int side){
-    b2Vec2* retPoints = (b2Vec2*)calloc(2, sizeof(b2Vec2));
-
-    b2Vec2 copyDir = side ? -dir : dir;
-    float dirAngle = pWorld->calcAngle2(copyDir);
-
-    for (int i = 0; i < 2; i++){
-        float maxAngle = -999999.0f;
-        int j = 0;
-        for (b2Vec2 p : usableRayPoints){
-            b2Vec2 v = (p - points[i]);
-            float angle = pWorld->calcAngle2(v);
-            angle = (angle - dirAngle) * (i * 2 - 1);
-            if (angle > maxAngle){
-                retPoints[i] = p;
-                maxAngle = angle;
-            }
-        }
-    }
-
-    return retPoints;
-}
-
-bool Portal::isPointIn(b2Vec2 p1, b2Vec2 p2, b2Vec2 point, int side, float sideThold){
-    bool check1, check2;
-    if (side){
-        check1 = pWorld->isLeft(points[0], p1, point, sideThold);
-        check2 = pWorld->isLeft(p2, points[1], point, sideThold);
-    }else{
-        check1 = pWorld->isLeft(p1, points[0], point, sideThold);
-        check2 = pWorld->isLeft(points[1], p2, point, sideThold);
-    }
-    
-    bool check3 = pWorld->isLeft(points[1 ^ side], points[side], point, -0.001f);
-
-    return check1 && check2 && check3;
-}
-
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2){
     if (fix2 == midFixture) return false;
 
-    b2WorldManifold wManifold;
-    contact->GetWorldManifold(&wManifold);
+    b2DistanceOutput out;
+	b2DistanceProxy distanceProxyA;
+	b2DistanceProxy distanceProxyB;
+	distanceProxyA.Set(fix1->GetShape(), b2_dynamicBody);
+	distanceProxyB.Set(fix2->GetShape(), b2_dynamicBody);
+
+	b2DistanceInput input;
+	input.proxyA = distanceProxyA;
+	input.proxyB = distanceProxyB;
+	input.transformA = fix1->GetBody()->GetTransform();
+	input.transformB = fix2->GetBody()->GetTransform();
+	input.useRadii = false;
+
+	b2SimplexCache cache;
+	cache.count = 0;
+
+	b2Distance(&out, &cache, &input);
 
     if (fix2->GetType() == b2Shape::Type::e_edge){
-        b2Vec2 p1 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex1);
-        b2Vec2 p2 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex2);
-
-        float d1 = abs(points[0].x - p1.x) + abs(points[0].y - p1.y);
-        float d2 = abs(points[1].x - p1.x) + abs(points[1].y - p1.y);
-
-        float d3 = abs(points[0].x - p2.x) + abs(points[0].y - p2.y);
-        float d4 = abs(points[1].x - p2.x) + abs(points[1].y - p2.y);
-
-        if (isParallel(p1, p2)){
-            const float angleThold = 0.0001f;
-            float angle = pWorld->vecAngle(wManifold.normal, dir);
-            if (coll1->side == 0){
-                if (angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold)){
-                    return false;
-                }
-                else{
-                    return true;
-                }
-            }
-            else{
-                if (angle < angleThold || b2_pi * 2 < (angle + angleThold)){
-                    return false;
-                }
-                else{
-                    return true;
-                }
-            }
-        }
-        else{
-            if ((d1 < 0.001f || d2 < 0.001f) && d1 + d2 > 0.1f){
-                int p2Side = getPointSide(p2);
-                if (p2Side == coll1->side){
-                    return true;
-                }
-                else{
-                    return false;
-                }
-            }
-            else if ((d3 < 0.001f || d4 < 0.001f) && d3 + d4 > 0.1f){
-                int p1Side = getPointSide(p1);
-                if (p1Side == coll1->side){
-                    return true;
-                }
-                else{
-                    return false;
-                }
-            }
-        }
+        out.pointA = out.pointB;
     }
 
-    std::vector<b2Vec2> collPoints;
-    const float tHold = 0.0f;
-    if (fix2->GetShape()->GetType() == b2Shape::e_circle){
-        if (coll2 == NULL){
-            collPoints.push_back(fix2->GetBody()->GetWorldPoint(((b2CircleShape*)fix2->GetShape())->m_p));
-        }
-        else{
-            collPoints = getCollisionPoints(fix1, fix2);    
+    if (coll2){
+        if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, 0.0f) ||
+            pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointA, 0.0f) ||
+            pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, 0.0f) ||
+            pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointB, 0.0f))
+        {
+            return false;
         }
     }
     else{
-        collPoints = getCollisionPoints(fix1, fix2);
-    }
-
-    if (collPoints.size() == 0 && fix2->GetBody()->GetType() == b2_staticBody){
-        b2RayCastOutput rcOutput;
-        b2RayCastInput rcInput;
-        rcInput.maxFraction = 1.0f;
-        for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-            bool res;
-            rcInput.p1 = wManifold.points[i] + 100.0f * wManifold.normal;
-            rcInput.p2 = wManifold.points[i] - 100.0f * wManifold.normal;
-            res = fix2->RayCast(&rcOutput, rcInput, b2_staticBody);
-            if (res) {
-                b2Vec2 result = getRayPoint(rcInput, rcOutput);
-                collPoints.push_back(result);
-            }
+        if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, 0.0f) ||
+            pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, 0.0f))
+        {
+            return false;
         }
     }
 
-    if (collPoints.size() > 0){
-        for (b2Vec2 p : collPoints){
-            if (coll2){
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold) ||
-                    pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], p, tHold))
-                {
-                    return false;
-                }
-            }
-            else{
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], p, tHold)){
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-    else{
-        for (int i = 0; i < contact->GetManifold()->pointCount; i++){
-            if (coll2){
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold) ||
-                    pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side],
-                    wManifold.points[i], tHold))
-                {
-                    return false;
-                }
-            }
-            else{
-                if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], wManifold.points[i], tHold)){
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        return true;
-    }
+    return true;
 }
 
 void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
@@ -670,6 +512,34 @@ bool Portal::isParallel(b2Vec2 p1, b2Vec2 p2){
     else{
         return false;
     }
+}
+
+
+b2Vec2 Portal::getFixtureCenter(b2Fixture* fix){
+	if (fix->GetType() == b2Shape::Type::e_circle){
+		b2Vec2 point = ((b2CircleShape*)fix->GetShape())->m_p;
+		return fix->GetBody()->GetWorldPoint(point);
+	}
+	else{
+		b2Vec2 avgPoints = b2Vec2(0, 0);
+		b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
+		for (int i = 0; i < polyShape->m_count; i++){
+			avgPoints += polyShape->m_vertices[i];
+		}
+		b2Vec2 avgPoint = (1.0f / polyShape->m_count) * avgPoints;
+		avgPoint = fix->GetBody()->GetWorldPoint(avgPoint);
+		return avgPoint;
+	}
+}
+
+b2Vec2 Portal::getRayPoint(b2RayCastInput& rcInput, b2RayCastOutput& rcOutput) {
+	b2Vec2 result = rcInput.p1 +
+				b2Vec2(
+					(rcInput.p2.x - rcInput.p1.x) * rcOutput.fraction,
+					(rcInput.p2.y - rcInput.p1.y) * rcOutput.fraction
+				);
+
+	return result;
 }
 
 PortalWorldQuery::PortalWorldQuery(Portal* portal) {

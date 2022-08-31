@@ -86,19 +86,7 @@ private:
     bool rayCheck(b2Fixture* fix);
 
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2);
-
-    std::vector<b2Vec2> getUsableRayPoints(b2Fixture* fix, int side);
-
-    // always returns 2 point
-    b2Vec2* getMaxRayPoints(std::vector<b2Vec2> usableRayPoints, int side);
-    bool isPointIn(b2Vec2 p1, b2Vec2 p2, b2Vec2 point, int side, float sideThold=-0.001f);
     
-    std::vector<b2Vec2> getCollisionPoints(b2Fixture* fix1, b2Fixture* fix2);
-
-    static std::vector<b2Vec2> collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2);
-    static std::vector<b2Vec2> collidePolygonOther(b2Fixture* fix1, b2Fixture* fix2, b2Fixture* cFix, b2Fixture* oFix);
-    static std::vector<b2Vec2> collideEdgeOther(b2Fixture* fix1, b2Fixture* fix2);
-
     static b2Vec2 getFixtureCenter(b2Fixture* fix);
     static b2Vec2 getRayPoint(b2RayCastInput& input, b2RayCastOutput& output);
 };

@@ -2,6 +2,7 @@
 
 #include "PortalWorld.h"
 #include <box2d/box2d.h>
+#include "box2d/b2_distance.h"
 #include <vector>
 #include <set>
 #include <map>

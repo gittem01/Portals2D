@@ -668,7 +668,7 @@ b2Vec2 PortalWorld::rotateVec(b2Vec2 vec, float angle){
     return {x, y};
 }
 
-bool PortalWorld::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, float t){
+bool PortalWorld::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, const float t){
      return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t;
 }
 
