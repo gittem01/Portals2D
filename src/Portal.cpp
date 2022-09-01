@@ -379,7 +379,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 	b2DistanceProxy distanceProxyA;
 	b2DistanceProxy distanceProxyB;
 	distanceProxyA.Set(fix1->GetShape(), b2_dynamicBody);
-	distanceProxyB.Set(fix2->GetShape(), b2_dynamicBody);
+	distanceProxyB.Set(fix2->GetShape(), fix2->GetBody()->GetType());
 
 	b2DistanceInput input;
 	input.proxyA = distanceProxyA;
