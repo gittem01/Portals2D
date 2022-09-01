@@ -375,6 +375,61 @@ int Portal::getFixtureSide(b2Fixture* fix){
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2){
     if (fix2 == midFixture) return false;
 
+	if (fix2->GetType() == b2Shape::Type::e_edge) {
+		b2WorldManifold wManifold;
+		contact->GetWorldManifold(&wManifold);
+
+		b2Vec2 p1 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex1);
+		b2Vec2 p2 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex2);
+
+		float d1 = abs(points[0].x - p1.x) + abs(points[0].y - p1.y);
+		float d2 = abs(points[1].x - p1.x) + abs(points[1].y - p1.y);
+
+		float d3 = abs(points[0].x - p2.x) + abs(points[0].y - p2.y);
+		float d4 = abs(points[1].x - p2.x) + abs(points[1].y - p2.y);
+
+		if (isParallel(p1, p2)) {
+			const float angleThold = 0.0001f;
+			float angle = pWorld->vecAngle(wManifold.normal, dir);
+			if (coll1->side == 0) {
+				if (angle < (b2_pi + angleThold) && angle >(b2_pi - angleThold)) {
+					return false;
+				}
+				else {
+					return true;
+				}
+			}
+			else {
+				if (angle < angleThold || b2_pi * 2 < (angle + angleThold)) {
+					return false;
+				}
+				else {
+					return true;
+				}
+			}
+		}
+		else {
+			if ((d1 < 0.001f || d2 < 0.001f) && d1 + d2 > 0.1f) {
+				int p2Side = getPointSide(p2);
+				if (p2Side == coll1->side) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			else if ((d3 < 0.001f || d4 < 0.001f) && d3 + d4 > 0.1f) {
+				int p1Side = getPointSide(p1);
+				if (p1Side == coll1->side) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+	}
+
     b2DistanceOutput out;
 	b2DistanceProxy distanceProxyA;
 	b2DistanceProxy distanceProxyB;
@@ -397,18 +452,19 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
         out.pointA = out.pointB;
     }
 
+	const float tHold = -0.001f;
     if (coll2){
-        if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, 0.0f) ||
-            pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointA, 0.0f) ||
-            pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, 0.0f) ||
-            pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointB, 0.0f))
-        {
-            return false;
-        }
-    }
-    else{
-        if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, 0.0f) ||
-            pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, 0.0f))
+        if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
+			pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointA, tHold) ||
+			pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, tHold) ||
+			pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointB, tHold))
+		{
+			return false;
+		}
+	}
+	else {
+		if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
+			pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, tHold))
         {
             return false;
         }

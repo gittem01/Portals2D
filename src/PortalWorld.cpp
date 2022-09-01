@@ -669,19 +669,19 @@ b2Vec2 PortalWorld::rotateVec(b2Vec2 vec, float angle){
 }
 
 bool PortalWorld::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, const float t){
-     return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t;
+	return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) >= t;
 }
 
 float PortalWorld::vecAngle(b2Vec2 v1, b2Vec2 v2){
-    return abs(calcAngle2(v1) - calcAngle2(v2));
+	return abs(calcAngle2(v1) - calcAngle2(v2));
 }
 
 float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
-     return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+	return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
 }
 
 float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
-    float v1 = (b.x - a.x) * (a.y - c.y);
+	float v1 = (b.x - a.x) * (a.y - c.y);
     float v2 = (a.x - c.x) * (b.y - a.y);
     float top = v1 - v2;
 
