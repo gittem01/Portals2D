@@ -71,13 +71,14 @@ public:
         renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f), "assets/textures/cube.png");
         renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
 
+        PortalBody* pb;
     #if 0
-        artificial kinematic body
+        // artificial kinematic body
         p = b2Vec2(6.0f, -6.0f);
         s = b2Vec2(0.5f, 0.2f);
         b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
-        PortalBody* pb = pWorld->createPortalBody(body4);
-        renderer->addPortalBody(pb, b2Color(0.0f, 0.0f, 1.0f, 0.5f));
+        pb = pWorld->createPortalBody(body4);
+        renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
 
         b2Vec2 vel(0.0f, -10.0f);
         body4->SetLinearVelocity(vel);
@@ -88,7 +89,7 @@ public:
         p = b2Vec2(0.0f, 0.0f);
         float r = 0.7f;
         b2Body* body3 = createCircle(p, r, pWorld, b2_dynamicBody);
-        PortalBody* pb = pWorld->createPortalBody(body3);
+        pb = pWorld->createPortalBody(body3);
         renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f), "assets/textures/pattern.png");
 
         b2Vec2 bPos(10.0f, 5.0f);

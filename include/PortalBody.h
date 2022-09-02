@@ -132,7 +132,7 @@ private:
 
     void destroyCheck(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     bool shouldCreate(b2Body* body, Portal* portal, PortalCollisionType out);
-    bool shouldCollideHelper(portalCollision* coll, fixtureData* fixData1, fixtureData* fixData2);
+    int shouldCollideHelper(portalCollision* coll, fixtureData* fixData1, fixtureData* fixData2, PortalBody* pb);
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out);
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);

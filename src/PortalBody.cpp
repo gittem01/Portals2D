@@ -119,6 +119,10 @@ void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
 
+    if (!contact->IsEnabled()){
+        return;
+    }
+
     bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
     if (!shouldCollide){
         contact->SetEnabled(false);
@@ -144,7 +148,9 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         Portal* portal = (Portal*)bData->data;
         if (fix2 != portal->yFix[0] && fix2 != portal->yFix[1]){
             for (bodyCollisionStatus* stat : *bodyMaps){
-                if (stat->body->bodyMaps->size() < 2) continue;
+                if (stat->body->bodyMaps->size() < 2){
+                    continue;
+                }
                 b2Fixture* loopFix = stat->body->fixtures[fixData1->index];
                 fixtureData* fixDataLoop = (fixtureData*)loopFix->GetUserData().pointer;
                 for (portalCollision* pc : fixDataLoop->pCollisions){
@@ -193,8 +199,14 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     }
     
     for (portalCollision* coll1 : collidingPortals1){
-        if (bData && bData->type == PORTAL_BODY && shouldCollideHelper(coll1, fixData1, fixData2)){
-            continue;
+        if (bData && bData->type == PORTAL_BODY){
+            int val = shouldCollideHelper(coll1, fixData1, fixData2, (PortalBody*)bData->data);
+            if (val == 1){
+                continue;
+            }
+            else if (val == 2){
+                return false;
+            }
         }
 
         int status = 2;
@@ -203,14 +215,30 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
             return false;
         }
 
+        bool didJob = false;
         if (collidingPortals2.size() > 0){
             for (portalCollision* coll2 : collidingPortals2){
-                if (shouldCollideHelper(coll2, fixData1, fixData2)) continue;
+                if (fixData1->getPortalCollision(coll2->portal) != fixData1->pCollisions.end()){
+                    continue;
+                }
+                int val = shouldCollideHelper(coll2, fixData2, fixData1, this);
+                if (val == 1){
+                    continue;
+                }
+                else if (val == 2){
+                    return false;
+                }
                 bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, coll2);
                 if (!shouldCollide) return false;
+
+                didJob = true;
             }
         }
         else{
+            bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, NULL);
+            if (!shouldCollide) return false;
+        }
+        if (!didJob){
             bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, NULL);
             if (!shouldCollide) return false;
         }
@@ -219,15 +247,67 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     return true;
 }
 
-bool PortalBody::shouldCollideHelper(portalCollision* coll, fixtureData* fixData1, fixtureData* fixData2){
+int PortalBody::shouldCollideHelper(portalCollision* coll, fixtureData* fixData1, fixtureData* fixData2, PortalBody* pb){
     int status1 = fixData1->getPortalStatus(coll->portal, coll->side);
     int status2 = fixData2->getPortalStatus(coll->portal, coll->side);
     if (status1 == 1 && status2 == 1){
-        return true;
+
     }
     else{
-        return false;
+        return 0;
     }
+
+    b2Fixture* otherFix2 = NULL;
+    for (bodyCollisionStatus* bcs : *pb->bodyMaps){
+        if (bcs->connection->portal1 == coll->portal){
+            otherFix2 = bcs->body->fixtures[fixData2->index];
+        }
+    }
+
+    if (otherFix2 == NULL){
+        return 1;
+    }
+    
+    for (bodyCollisionStatus* bcs : *bodyMaps){
+        if (bcs->body->bodyMaps->size() < 2){
+            continue;
+        }
+
+        b2Fixture* otherFix1 = bcs->body->fixtures[fixData1->index];
+
+        fixtureData* loopFixData = (fixtureData*)otherFix1->GetUserData().pointer;
+        for (portalCollision* pc : loopFixData->pCollisions){
+            if (pc->portal == bcs->connection->portal2){
+                continue;
+            }
+
+            b2DistanceOutput out;
+            b2DistanceProxy distanceProxyA;
+            b2DistanceProxy distanceProxyB;
+            distanceProxyA.Set(otherFix1->GetShape(), b2_dynamicBody);
+            distanceProxyB.Set(otherFix2->GetShape(), b2_dynamicBody);
+
+            b2DistanceInput input;
+            input.proxyA = distanceProxyA;
+            input.proxyB = distanceProxyB;
+            input.transformA = otherFix1->GetBody()->GetTransform();
+            input.transformB = otherFix2->GetBody()->GetTransform();
+            input.useRadii = false;
+
+            b2SimplexCache cache;
+            cache.count = 0;
+
+            b2Distance(&out, &cache, &input);
+
+            if (PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointA, -0.0001f) ||
+                PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointB, -0.0001f))
+                {
+                    return 2;
+                }
+        }
+    }
+
+    return 1;
 }
 
 void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out){

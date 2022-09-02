@@ -372,8 +372,34 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
+b2Vec2 Portal::collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2) {
+	b2CircleShape* cShape1 = (b2CircleShape*)fix1->GetShape();
+	b2CircleShape* cShape2 = (b2CircleShape*)fix2->GetShape();
+
+	float r1 = cShape1->m_radius;
+	float r2 = cShape2->m_radius;
+
+	b2Vec2 p1 = fix1->GetBody()->GetWorldPoint(cShape1->m_p);
+	b2Vec2 p2 = fix2->GetBody()->GetWorldPoint(cShape2->m_p);
+
+	b2Vec2 vec = p2 - p1;
+	float dist = vec.Normalize();
+
+	if (dist < 0.00001f){
+		return { p1 };
+	}
+
+	float d = (r1 * r1 - r2 * r2 + dist * dist) / (2 * dist);
+
+	b2Vec2 midColl = p1 + d * vec; 
+
+	return { midColl };
+}
+
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2){
     if (fix2 == midFixture) return false;
+
+    const float tHold = -0.001f;
 
 	if (fix2->GetType() == b2Shape::Type::e_edge) {
 		b2WorldManifold wManifold;
@@ -429,44 +455,64 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 			}
 		}
 	}
-
-    b2DistanceOutput out;
-	b2DistanceProxy distanceProxyA;
-	b2DistanceProxy distanceProxyB;
-	distanceProxyA.Set(fix1->GetShape(), b2_dynamicBody);
-	distanceProxyB.Set(fix2->GetShape(), fix2->GetBody()->GetType());
-
-	b2DistanceInput input;
-	input.proxyA = distanceProxyA;
-	input.proxyB = distanceProxyB;
-	input.transformA = fix1->GetBody()->GetTransform();
-	input.transformB = fix2->GetBody()->GetTransform();
-	input.useRadii = false;
-
-	b2SimplexCache cache;
-	cache.count = 0;
-
-	b2Distance(&out, &cache, &input);
-
-    if (fix2->GetType() == b2Shape::Type::e_edge){
-        out.pointA = out.pointB;
+    if (fix1->GetShape()->GetType() == b2Shape::e_circle && fix2->GetShape()->GetType() == b2Shape::e_circle){
+        b2Vec2 collPoint = collideCircleCircle(fix1, fix2);
+        pWorld->getDebugDraw()->DrawPoint(collPoint, 10.0f, b2Color(1, 1, 1, 1));
+        if (coll2){
+            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPoint, tHold) ||
+                pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], collPoint, tHold))
+            {
+                return false;
+            }
+        }
+        else {
+            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPoint, tHold))
+            {
+                return false;
+            }
+        }
     }
+    else{
+        b2DistanceOutput out;
+        b2DistanceProxy distanceProxyA;
+        b2DistanceProxy distanceProxyB;
+        distanceProxyA.Set(fix1->GetShape(), b2_dynamicBody);
+        distanceProxyB.Set(fix2->GetShape(), fix2->GetBody()->GetType());
 
-	const float tHold = -0.001f;
-    if (coll2){
-        if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
-			pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointA, tHold) ||
-			pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, tHold) ||
-			pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointB, tHold))
-		{
-			return false;
-		}
-	}
-	else {
-		if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
-			pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, tHold))
-        {
-            return false;
+        b2DistanceInput input;
+        input.proxyA = distanceProxyA;
+        input.proxyB = distanceProxyB;
+        input.transformA = fix1->GetBody()->GetTransform();
+        input.transformB = fix2->GetBody()->GetTransform();
+        input.useRadii = false;
+
+        b2SimplexCache cache;
+        cache.count = 0;
+
+        b2Distance(&out, &cache, &input);
+
+        if (fix2->GetType() == b2Shape::Type::e_edge){
+            out.pointA = out.pointB;
+        }
+
+        pWorld->getDebugDraw()->DrawPoint(out.pointA, 10.0f, b2Color(1, 0, 0, 1));
+        pWorld->getDebugDraw()->DrawPoint(out.pointB, 10.0f, b2Color(0, 1, 0, 1));
+
+        if (coll2){
+            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
+                pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointA, tHold) ||
+                pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, tHold) ||
+                pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], out.pointB, tHold))
+            {
+                return false;
+            }
+        }
+        else {
+            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
+                pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, tHold))
+            {
+                return false;
+            }
         }
     }
 
