@@ -248,46 +248,6 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         }
     }
 
-    // if (fix2->GetBody()->GetType() == b2_dynamicBody && !bData){
-    //     extern int isPaused;
-    //     b2DistanceOutput out;
-    //     b2DistanceProxy distanceProxyA;
-    //     b2DistanceProxy distanceProxyB;
-    //     distanceProxyA.Set(fix1->GetShape(), b2_dynamicBody);
-    //     distanceProxyB.Set(fix2->GetShape(), fix2->GetType());
-
-    //     b2DistanceInput input;
-    //     input.proxyA = distanceProxyA;
-    //     input.proxyB = distanceProxyB;
-    //     input.transformA = fix1->GetBody()->GetTransform();
-    //     input.transformB = fix2->GetBody()->GetTransform();
-    //     // finds single collision between fixtures
-    //     // not suitable for this problem, we need 2 collision points at the outer edge of the fixtures
-    //     input.useRadii = false;
-
-    //     // may be used in the future
-    //     b2SimplexCache cache;
-    //     cache.count = 0;
-
-    //     b2Distance(&out, &cache, &input);
-
-    //     for (int i = 0; i < ((b2PolygonShape*)fix1->GetShape())->m_count; i++){
-    //         b2Vec2 pos = fix1->GetBody()->GetWorldPoint(((b2PolygonShape*)fix1->GetShape())->m_vertices[i]);
-    //         ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(pos, 5.0f, b2Color(1, 1, 0, 1));
-    //     }
-
-    //     for (int i = 0; i < ((b2PolygonShape*)fix2->GetShape())->m_count; i++){
-    //         b2Vec2 pos = fix2->GetBody()->GetWorldPoint(((b2PolygonShape*)fix2->GetShape())->m_vertices[i]);
-    //         ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(pos, 5.0f, b2Color(1, 0, 1, 1));
-    //     }
-
-    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(out.pointA, 8.0f, b2Color(1, 1, 1, 1));
-    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(out.pointB, 8.0f, b2Color(1, 1, 1, 1));
-
-    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(Portal::getFixtureCenter(fix1), 10.0f, b2Color(1, 0, 0, 1));
-    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(Portal::getFixtureCenter(fix2), 10.0f, b2Color(0, 1, 1, 1));
-    //     isPaused = true;
-    // }
 
     return true;
 }
@@ -370,6 +330,29 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
             }
             else{
                 outFixtures[side][portal]--;
+            }
+            for (b2ContactEdge* contactedge=body->GetContactList(); contactedge; contactedge=contactedge->next){
+                if (!contactedge->contact->IsEnabled()){
+                    continue;
+                }
+                b2Fixture* m_fixture;
+                b2Fixture* o_fixture;
+                bool collide = true;
+                if (contactedge->contact->GetFixtureA()->GetBody() == this->body){
+                    m_fixture = contactedge->contact->GetFixtureA();
+                    o_fixture = contactedge->contact->GetFixtureB();
+                }
+                else{
+                    o_fixture = contactedge->contact->GetFixtureA();
+                    m_fixture = contactedge->contact->GetFixtureB();
+                }
+                bodyData* bData = (bodyData*)o_fixture->GetBody()->GetUserData().pointer;
+                if ((bData && bData->type != PORTAL) || !bData){
+                    collide = this->shouldCollide(contactedge->contact, m_fixture, o_fixture, bData);
+                }
+                if (!collide){
+                    contactedge->contact->SetEnabled(false);
+                }
             }
         }
     }

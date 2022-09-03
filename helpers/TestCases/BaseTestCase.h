@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 0
+#define ENABLE_TESTPLAYER 1
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -162,13 +162,13 @@ public:
     #endif
         if (!pWorld) return;
         for (int i = 0; i < totalIter; i++) {
+			// speeded up 2x times
             float dt = (2.0f / renderer->refreshRate) / totalIter;
             mjh->mouseHandler(frame, totalIter);
         #if ENABLE_TESTPLAYER
             tp->update(dt, totalIter);
         #endif
-			// speeded up 2x times
-            pWorld->PortalStep(dt, 8, 3);
+            pWorld->PortalStep(dt, 5, 2);
         }
     }
 
