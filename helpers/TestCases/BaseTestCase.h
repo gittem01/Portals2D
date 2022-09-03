@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 1
+#define ENABLE_TESTPLAYER 0
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;

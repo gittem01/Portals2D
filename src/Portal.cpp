@@ -241,16 +241,22 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
+    for (int i = 0; i < contact->GetManifold()->pointCount; i++){
+        ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(wManifold.points[i], 10.0f, b2Color(1, 1, 1, 1));
+    }
+
     float angle = pWorld->vecAngle(wManifold.normal, dir);
 
     int side = getFixtureSide(fix2);
     bool rayRes = rayCheck(fix2);
     bool cond1 = angle < angleThold || b2_pi * 2 < (angle + angleThold); // dir
     bool cond2 = angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold); // -dir
-        
-    if (rayRes || cond1 || cond2)
+    // experimental
+    bool cond3 = contact->GetManifold()->pointCount == 2;
+
+    if (rayRes || cond1 || cond2 || cond3)
     {
-        if (cond1){
+        if (cond1 || (cond3 && side == 0)){
             if (pColl && pColl->side == 1 && pColl->status < 0)
             {
                 if (pColl->status % 2 != 0 && pColl->status < -1){
@@ -279,7 +285,7 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
                 }
             }
         }
-        else if (cond2){
+        else if (cond2 || (cond3 && side == 1)){
             if (pColl && pColl->status < 0 && pColl->side == 0)
             {
                 if (pColl->status % 2 != 0 && pColl->status < -1){
