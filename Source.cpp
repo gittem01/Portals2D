@@ -20,6 +20,7 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         if (!isPaused || tick) {
+            drawer->pointDrawQueue.clear();
             testCase->onUpdate();
         }
 
@@ -43,6 +44,10 @@ int main(void)
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        for (circleDrawData cdt : drawer->pointDrawQueue){
+            drawer->DrawPoint(cdt.pos, cdt.size, cdt.color);
+        }
 
         glfwSwapInterval(1);
 

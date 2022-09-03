@@ -2,6 +2,7 @@
 #include "Portal.h"
 #include "PortalWorld.h"
 #include "glm/common.hpp"
+#include <DebugDrawer.h>
 
 #define ODD_MASK 0b10101010101010101010101010101010
 
@@ -140,11 +141,10 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     fixtureData* fixData1 = (fixtureData*)fix1->GetUserData().pointer;
     std::vector<portalCollision*> collidingPortals1 = fixData1->pCollisions;
 
-    for (portalCollision* coll1 : collidingPortals1){
-        if (fix2 == coll1->portal->yFix[0] || fix2 == coll1->portal->yFix[1]) return true;
-    }
-
     if (bData && bData->type == PORTAL){
+        for (portalCollision* coll1 : collidingPortals1){
+            if (fix2 == coll1->portal->yFix[0] || fix2 == coll1->portal->yFix[1]) return true;
+        }
         Portal* portal = (Portal*)bData->data;
         if (fix2 != portal->yFix[0] && fix2 != portal->yFix[1]){
             for (bodyCollisionStatus* stat : *bodyMaps){
@@ -188,7 +188,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
             if (pColl->portal == portal) return true;
         }
     }
-    else if (fixData1->pCollisions.size() == 0){
+    else if (collidingPortals1.size() == 0){
         return true;
     }
 
@@ -236,13 +236,58 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         }
         else{
             bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, NULL);
-            if (!shouldCollide) return false;
+            if (!shouldCollide){
+                return false;
+            }
         }
         if (!didJob){
             bool shouldCollide = coll1->portal->shouldCollide(contact, fix1, fix2, coll1, NULL);
-            if (!shouldCollide) return false;
+            if (!shouldCollide){
+                return false;
+            }
         }
     }
+
+    // if (fix2->GetBody()->GetType() == b2_dynamicBody && !bData){
+    //     extern int isPaused;
+    //     b2DistanceOutput out;
+    //     b2DistanceProxy distanceProxyA;
+    //     b2DistanceProxy distanceProxyB;
+    //     distanceProxyA.Set(fix1->GetShape(), b2_dynamicBody);
+    //     distanceProxyB.Set(fix2->GetShape(), fix2->GetType());
+
+    //     b2DistanceInput input;
+    //     input.proxyA = distanceProxyA;
+    //     input.proxyB = distanceProxyB;
+    //     input.transformA = fix1->GetBody()->GetTransform();
+    //     input.transformB = fix2->GetBody()->GetTransform();
+    //     // finds single collision between fixtures
+    //     // not suitable for this problem, we need 2 collision points at the outer edge of the fixtures
+    //     input.useRadii = false;
+
+    //     // may be used in the future
+    //     b2SimplexCache cache;
+    //     cache.count = 0;
+
+    //     b2Distance(&out, &cache, &input);
+
+    //     for (int i = 0; i < ((b2PolygonShape*)fix1->GetShape())->m_count; i++){
+    //         b2Vec2 pos = fix1->GetBody()->GetWorldPoint(((b2PolygonShape*)fix1->GetShape())->m_vertices[i]);
+    //         ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(pos, 5.0f, b2Color(1, 1, 0, 1));
+    //     }
+
+    //     for (int i = 0; i < ((b2PolygonShape*)fix2->GetShape())->m_count; i++){
+    //         b2Vec2 pos = fix2->GetBody()->GetWorldPoint(((b2PolygonShape*)fix2->GetShape())->m_vertices[i]);
+    //         ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(pos, 5.0f, b2Color(1, 0, 1, 1));
+    //     }
+
+    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(out.pointA, 8.0f, b2Color(1, 1, 1, 1));
+    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(out.pointB, 8.0f, b2Color(1, 1, 1, 1));
+
+    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(Portal::getFixtureCenter(fix1), 10.0f, b2Color(1, 0, 0, 1));
+    //     ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(Portal::getFixtureCenter(fix2), 10.0f, b2Color(0, 1, 1, 1));
+    //     isPaused = true;
+    // }
 
     return true;
 }
@@ -277,7 +322,7 @@ int PortalBody::shouldCollideHelper(portalCollision* coll, fixtureData* fixData1
 
         fixtureData* loopFixData = (fixtureData*)otherFix1->GetUserData().pointer;
         for (portalCollision* pc : loopFixData->pCollisions){
-            if (pc->portal == bcs->connection->portal2){
+            if (pc->portal == bcs->connection->portal1 || pc->portal == bcs->connection->portal2){
                 continue;
             }
 
@@ -299,8 +344,8 @@ int PortalBody::shouldCollideHelper(portalCollision* coll, fixtureData* fixData1
 
             b2Distance(&out, &cache, &input);
 
-            if (PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointA, -0.0001f) ||
-                PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointB, -0.0001f))
+            if (PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointA, -0.001f) ||
+                PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointB, -0.001f))
                 {
                     return 2;
                 }

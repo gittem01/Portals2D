@@ -1,4 +1,5 @@
 #include "DebugDrawer.h"
+#include <Renderer.h>
 #include <Camera.h>
 
 DebugDrawer::DebugDrawer(Renderer* renderer) : b2Draw(){
@@ -23,6 +24,10 @@ void DebugDrawer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color&
 
 void DebugDrawer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
 	renderer->debug_Circle(p, size * 0.01f, 0.0f, color, true);
+}
+
+void DebugDrawer::addPointToQueue(const b2Vec2& p, float size, const b2Color& color){
+	pointDrawQueue.push_back({color, p, size});
 }
 
 void DebugDrawer::DrawTransform(const b2Transform& xf){

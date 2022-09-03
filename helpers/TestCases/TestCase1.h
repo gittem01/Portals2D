@@ -15,7 +15,7 @@ public:
         float yPos = -4.0f;
         float portalSize = 3.0f;
 
-        Portal* portal1 = pWorld->createPortal(b2Vec2(-12.0f, yPos + 0.05f), b2Vec2(+1.5f, +0.0f), portalSize);
+        Portal* portal1 = pWorld->createPortal(b2Vec2(-11.5f, yPos - 0.35f), b2Vec2(+1.5f, -1.0f), portalSize);
         Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
         Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
         Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos), b2Vec2(+1.0f, 0.0f), portalSize);
@@ -90,7 +90,7 @@ public:
         float r = 0.7f;
         b2Body* body3 = createCircle(p, r, pWorld, b2_dynamicBody);
         pb = pWorld->createPortalBody(body3);
-        renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f), "assets/textures/pattern.png");
+        renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f));
 
         b2Vec2 bPos(10.0f, 5.0f);
         s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);

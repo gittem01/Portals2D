@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <chrono>
 #include <thread>
+#include <DebugDrawer.h>
 
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     dir.Normalize();
@@ -372,30 +373,6 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
-b2Vec2 Portal::collideCircleCircle(b2Fixture* fix1, b2Fixture* fix2) {
-	b2CircleShape* cShape1 = (b2CircleShape*)fix1->GetShape();
-	b2CircleShape* cShape2 = (b2CircleShape*)fix2->GetShape();
-
-	float r1 = cShape1->m_radius;
-	float r2 = cShape2->m_radius;
-
-	b2Vec2 p1 = fix1->GetBody()->GetWorldPoint(cShape1->m_p);
-	b2Vec2 p2 = fix2->GetBody()->GetWorldPoint(cShape2->m_p);
-
-	b2Vec2 vec = p2 - p1;
-	float dist = vec.Normalize();
-
-	if (dist < 0.00001f){
-		return { p1 };
-	}
-
-	float d = (r1 * r1 - r2 * r2 + dist * dist) / (2 * dist);
-
-	b2Vec2 midColl = p1 + d * vec; 
-
-	return { midColl };
-}
-
 bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2){
     if (fix2 == midFixture) return false;
 
@@ -455,18 +432,39 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 			}
 		}
 	}
-    if (fix1->GetShape()->GetType() == b2Shape::e_circle && fix2->GetShape()->GetType() == b2Shape::e_circle){
-        b2Vec2 collPoint = collideCircleCircle(fix1, fix2);
-        pWorld->getDebugDraw()->DrawPoint(collPoint, 10.0f, b2Color(1, 1, 1, 1));
+
+    if (fix1->GetShape()->GetType() == b2Shape::e_circle && fix2->GetType() == b2Shape::e_circle){        
+        b2Vec2 collPointA;
+        b2Vec2 collPointB;
+
+        b2Vec2 center1 = fix1->GetBody()->GetWorldPoint(((b2CircleShape*)fix1->GetShape())->m_p);
+        b2Vec2 center2 = fix2->GetBody()->GetWorldPoint(((b2CircleShape*)fix2->GetShape())->m_p);
+
+        b2Vec2 diff = center2 - center1;
+        float len = diff.Normalize();
+        if (len == 0.0f){
+            collPointA = center1;
+            collPointB = center1;
+        }
+        else{
+            collPointA = center1 + ((b2CircleShape*)fix1->GetShape())->m_radius * diff;
+            collPointB = center2 - ((b2CircleShape*)fix2->GetShape())->m_radius * diff;
+        }
+
+        // ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(collPointA, 5.0f, b2Color(0, 1, 1, 1));
+        // ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(collPointB, 5.0f, b2Color(1, 0, 1, 1));
         if (coll2){
-            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPoint, tHold) ||
-                pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], collPoint, tHold))
+            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPointA, tHold) ||
+                pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], collPointA, tHold) ||
+                pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPointB, tHold) ||
+                pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], collPointB, tHold))
             {
                 return false;
             }
         }
         else {
-            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPoint, tHold))
+            if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPointA, tHold) ||
+                pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPointB, tHold))
             {
                 return false;
             }
@@ -484,19 +482,37 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
         input.proxyB = distanceProxyB;
         input.transformA = fix1->GetBody()->GetTransform();
         input.transformB = fix2->GetBody()->GetTransform();
+        // finds single collision between fixtures
+        // not suitable for this problem, we need 2 collision points at the outer edge of the fixtures
         input.useRadii = false;
 
+        // may be used in the future
         b2SimplexCache cache;
         cache.count = 0;
 
         b2Distance(&out, &cache, &input);
 
-        if (fix2->GetType() == b2Shape::Type::e_edge){
-            out.pointA = out.pointB;
+        if (fix1->GetType() == b2Shape::e_circle && fix2->GetType() != b2Shape::e_circle){
+            b2Vec2 circCenter = fix1->GetBody()->GetWorldPoint((((b2CircleShape*)fix1->GetShape())->m_p));
+            b2Vec2 diff = out.pointB - circCenter;
+            float len = diff.Normalize();
+            if (len > 0.0001f){
+                out.pointA = circCenter + ((b2CircleShape*)fix1->GetShape())->m_radius * diff;
+            }
+        }
+        else if (fix2->GetType() == b2Shape::e_circle && fix1->GetType() != b2Shape::e_circle){
+            b2Vec2 circCenter = fix2->GetBody()->GetWorldPoint((((b2CircleShape*)fix2->GetShape())->m_p));
+            b2Vec2 diff = out.pointA - circCenter;
+            float len = diff.Normalize();
+            if (len > 0.0001f){
+                out.pointB = circCenter + ((b2CircleShape*)fix2->GetShape())->m_radius * diff;
+            }
         }
 
-        pWorld->getDebugDraw()->DrawPoint(out.pointA, 10.0f, b2Color(1, 0, 0, 1));
-        pWorld->getDebugDraw()->DrawPoint(out.pointB, 10.0f, b2Color(0, 1, 0, 1));
+        // ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(out.pointA, 25.0f, b2Color(1, 1, 1, 0.2));
+        // ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(out.pointB, 25.0f, b2Color(1, 1, 1, 0.2));
+
+        // ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(getFixtureCenter(fix1), 5.0f, b2Color(0, 1, 1, 1));
 
         if (coll2){
             if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
@@ -507,7 +523,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
                 return false;
             }
         }
-        else {
+        else{
             if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointA, tHold) ||
                 pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], out.pointB, tHold))
             {

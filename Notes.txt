@@ -1,7 +1,11 @@
-There are known memory leaks and bugs, which are relatively easy to fix
-or at least fixable
+Known medium bug : 
+    - PortalBody collides with a fixture that is on the other side of the portal
+    it happens before PortalBody's fixture starts colliding with the portal
+    so, it is related to the box2d. There are workarounds for this problem, will
+    be fixed later.
 
 
 -Only relatively big commits are written here-
 Last commit note:
-    portals do not hold any data about collisions anymore (almost)
+    Collision point finding works much better for circles now and there
+    are some more extra bug fixes

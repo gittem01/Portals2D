@@ -30,6 +30,8 @@ public:
         createEdge(b2Vec2(-xSize, -ySize), b2Vec2(+xSize, -ySize), pWorld, b2_staticBody);
         createEdge(b2Vec2(-xSize, -ySize), b2Vec2(-xSize, +ySize), pWorld, b2_staticBody);
         createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-xSize, +ySize), b2Vec2(-xSize, +ySize + 5.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, +ySize + 5.0f), pWorld, b2_staticBody);
         // edge in the middle of the portal
         createEdge(b2Vec2(-xSize * 0.4f, +ySize), b2Vec2(+xSize * 0.5f, +ySize), pWorld, b2_staticBody);
         createBox(b2Vec2(xSize + width, 0), b2Vec2(width, ySize), pWorld, b2_staticBody);
@@ -61,16 +63,16 @@ public:
             renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
         }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             b2Body* b1 = createCircle(b2Vec2(getRand() * xSize * 1.0f, 10.0f),
                                     (getRand() + sizeM) / div, pWorld, b2_dynamicBody);
-            PortalBody* pb = pWorld->createPortalBody(b1);
-            renderer->addPortalBody(pb, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
+            // PortalBody* pb = pWorld->createPortalBody(b1);
+            // renderer->addPortalBody(pb, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
 
             b2Body* b2 = createBox(b2Vec2(getRand() * xSize * 1.0f, 10.0f),
                                 b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), pWorld, b2_dynamicBody);
-            pb = pWorld->createPortalBody(b2);
-            renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
+            // pb = pWorld->createPortalBody(b2);
+            // renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
         }
     }
 };

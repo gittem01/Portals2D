@@ -4,13 +4,23 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <Renderer.h>
+#include <vector>
+
+class Renderer;
+
+typedef struct circleDrawData{
+    b2Color color;
+    b2Vec2 pos;
+    float size;
+} circleDrawData;
 
 class DebugDrawer : public b2Draw
 {
 public:
 
     Renderer* renderer;
+
+    std::vector<circleDrawData> pointDrawQueue;
 
     DebugDrawer(Renderer* renderer);
 
@@ -21,6 +31,8 @@ public:
     void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
     void DrawTransform(const b2Transform& xf);
     void DrawPoint(const b2Vec2& p, float size, const b2Color& color);
+
+    void addPointToQueue(const b2Vec2& p, float size, const b2Color& color);
 
     void DrawArrow(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
 
