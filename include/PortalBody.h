@@ -51,6 +51,8 @@ typedef struct fixtureData
 {
     std::vector<portalCollision*> pCollisions;
     int index;
+    // will be calculated only for polygon shapes
+    float angleThold;
     void* extraData;
 
     // return 2 if not found, return 1 for colliding, otherwise return release value
@@ -143,4 +145,5 @@ private:
     
     static b2Vec2 findPolygonCentroid(b2Vec2* vertices, int numVertices);
     static float findPolygonArea(b2Vec2* vertices, int numVertices);
+    static float calculateAngleThold(b2Fixture* fix);
 };

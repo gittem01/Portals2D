@@ -27,6 +27,7 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
         fixtures.push_back(fix);
         fixtureData* fixData = (fixtureData*)calloc(1, sizeof(fixtureData));
         fixData->index = numFixtures;
+        fixData->angleThold = calculateAngleThold(fix);
         fix->GetUserData().pointer = (uintptr_t)fixData;
         numFixtures++;
     }
@@ -746,4 +747,23 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
             }
         }
     }
+}
+
+float PortalBody::calculateAngleThold(b2Fixture* fix){
+    const float defaultAngleThold = 0.0001f;
+    if (fix->GetType() == b2Shape::e_circle){
+        return defaultAngleThold;
+    }
+    
+    float maxLength = 0.0f;
+    b2PolygonShape* pShape = (b2PolygonShape*)fix->GetShape();
+    for (int i = 0; i < pShape->m_count; i++){
+        int j = (i + 1) % pShape->m_count;
+        float length = (pShape->m_vertices[i] - pShape->m_vertices[j]).Length();
+        if (length > maxLength){
+            maxLength = length;
+        }
+    }
+
+    return atan2(b2_polygonRadius, maxLength);
 }

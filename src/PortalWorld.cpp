@@ -419,6 +419,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             fixtureData* fixData1 = (fixtureData*)fix->GetUserData().pointer;
             fixtureData* fixData2 = (fixtureData*)calloc(1, sizeof(fixtureData));
             fixData2->index = i;
+            fixData2->angleThold = PortalBody::calculateAngleThold(f);
             f->GetUserData().pointer = (uintptr_t)fixData2;
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
