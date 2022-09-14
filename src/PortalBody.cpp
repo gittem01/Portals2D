@@ -362,8 +362,8 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
     if (portal->isVoid[side] && status < 0){
 #if 1
         if (outFixtures[side][portal] == -numFixtures){
-            // pWorld->destroyBodies.insert(this);
-            // return;
+            pWorld->destroyBodies.insert(this);
+            return;
         }
 #else
         bool found = false;

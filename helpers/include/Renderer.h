@@ -58,7 +58,7 @@ public:
 
     void reset();
 
-    void addPortalBody(PortalBody* pBody, b2Color color=b2Color(1, 1, 1, 0.5), const char* texture=NULL);
+    void addPortalBody(PortalBody* pBody, b2Color color=b2Color(1, 1, 1, 0.5), const char* texture=NULL, const uint32_t interpolation=GL_LINEAR);
     void addPortal(Portal* portal, b2Color color=b2Color(1, 1, 1, 0.5));
 
     void portalAddEnd();

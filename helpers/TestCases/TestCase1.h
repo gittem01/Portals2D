@@ -15,13 +15,13 @@ public:
         float yPos = -4.0f;
         float portalSize = 3.0f;
 
-        Portal* portal1 = pWorld->createPortal(b2Vec2(-11.5f, yPos - 0.35f), b2Vec2(+1.5f, -1.0f), portalSize);
+        Portal* portal1 = pWorld->createPortal(b2Vec2(-12.0f, yPos - 0.35f), b2Vec2(+1.5f, -1.0f), portalSize);
         Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
         Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
         Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos), b2Vec2(+1.0f, 0.0f), portalSize);
         Portal* portal42 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos + portalSize * 2), b2Vec2(+1.0f, 0.0f), portalSize);
-        
-        //Portal* diagonalPortal1 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize), b2Vec2(+1.0f, 0.0f), portalSize);
+
+        Portal* diagonalPortal1 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize), b2Vec2(+1.0f, 0.0f), portalSize);
         Portal* diagonalPortal2 = pWorld->createPortal(b2Vec2(-10.0f + 0.2f, yPos + portalSize * 2 + 5.0f), b2Vec2(+1.0f, -1.0f), portalSize);
 
         Portal* topPortal1 = pWorld->createPortal(b2Vec2(+5.0f, yPos + portalSize + 5.0f), b2Vec2(0.0f, -1.0f), portalSize);
@@ -38,11 +38,11 @@ public:
         portal41->connect(portal1, true, 0, 0);
         portal42->connect(portal1, false, 0, 1);
         portal5->connect(portal6, true, 0, 0);
-        //diagonalPortal1->connect(diagonalPortal2, true, 0, 0);
+        diagonalPortal1->connect(diagonalPortal2, true, 0, 0);
 
         // TODO : do this special case automatically
-        diagonalPortal2->connect(topPortal1, true, 1, 0);
-        diagonalPortal2->connect(topPortal2, false, 1, 0);
+        //diagonalPortal2->connect(topPortal1, true, 1, 0);
+        //diagonalPortal2->connect(topPortal2, false, 1, 0);
         topPortal1->connect(topPortal2);
 
         createEdge(b2Vec2(-30.0f, yPos - portalSize), b2Vec2(+30.0f, yPos - portalSize), pWorld, b2_staticBody);
@@ -95,5 +95,27 @@ public:
         b2Vec2 bPos(10.0f, 5.0f);
         s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
         b2Body* statBody = createBox(bPos, s, pWorld, b2_staticBody);
+
+        b2Vec2 startPos = b2Vec2(29.0f, 20.0f);
+        b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
+
+        pb = pWorld->createPortalBody(lastBody);
+        renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/chain.png", GL_NEAREST);
+        for (int i = 0; i < 15; i++){
+            startPos -= b2Vec2(0.7f, 0.0f);
+            
+            b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
+            pb = pWorld->createPortalBody(jointBody);
+            renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/chain.png", GL_NEAREST);
+
+            b2RevoluteJointDef revDef;
+            revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
+            // revDef.enableLimit = true;
+            // revDef.upperAngle = +b2_pi * 0.2f;
+            // revDef.lowerAngle = -b2_pi * 0.2f;
+            b2RevoluteJoint* revJoint = (b2RevoluteJoint*)pWorld->CreateJoint(&revDef);
+
+            lastBody = jointBody;
+        }
     }
 };

@@ -198,6 +198,12 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
         body->postHandle();
     }
     
+    // for moving portals
+    // for (Portal* p : portals){
+    //     p->pos = p->body->GetPosition();
+    //     p->calculatePoints();
+    // }
+
     // rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
 
     // for (rayData* rd : rayHandler->rayResult){
@@ -328,6 +334,82 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         }
         else{
             npb->offsetAngle += 2 * b2_pi;
+        }
+
+        for (b2JointEdge* edge = body1->GetJointList(); edge != NULL; edge = edge->next){
+            b2Joint* j = edge->joint;
+            if (j->GetType() != e_revoluteJoint){
+                continue;
+            }
+            b2Body* bodyA = j->GetBodyA();
+            b2Body* bodyB = j->GetBodyB();
+
+            // body1 is original body so switch data loss is OK
+            bool switched = false;
+            if (bodyA != body1){
+                bodyB = bodyA;
+                switched = true;
+            }
+
+            if (bodyB->GetType() != b2_dynamicBody){
+                continue;
+            }
+
+            bodyData* bd = (bodyData*)bodyB->GetUserData().pointer;
+            if (!bd){
+                continue;
+            }
+
+            PortalBody* pbB = (PortalBody*)bd->data;
+
+            b2RevoluteJoint* rj = (b2RevoluteJoint*)j;
+            for (bodyCollisionStatus* bcs : *pbB->bodyMaps){
+                if (bcs->connection == c){
+                    b2RevoluteJointDef jDef;
+
+                    float pAngleA;
+                    float pAngleB;
+
+                    if (switched){
+                        jDef.bodyA = body2;
+                        jDef.bodyB = bcs->body->body;
+
+                        pAngleA = npb->offsetAngle;
+                        pAngleB = bcs->body->offsetAngle;
+                    }
+                    else{
+                        jDef.bodyA = bcs->body->body;
+                        jDef.bodyB = body2;
+
+                        pAngleA = bcs->body->offsetAngle;
+                        pAngleB = npb->offsetAngle;
+                    }
+
+                    float diffNow = jDef.bodyA->GetAngle() - jDef.bodyB->GetAngle() - (pAngleA - pAngleB);
+
+                    b2Vec2 p1 = getRelativePortalPosition(rj->GetAnchorA(), c);
+                    jDef.Initialize(jDef.bodyA, jDef.bodyB, p1);
+
+                    int restInt = (int)(diffNow / (b2_pi * 2.0f));
+                    jDef.referenceAngle = pAngleA - pAngleB + b2_pi * 2.0f * restInt;
+
+                    float finalAngle = jDef.bodyA->GetAngle() - jDef.bodyB->GetAngle() - jDef.referenceAngle;
+
+                    if (finalAngle > b2_pi){
+                        jDef.referenceAngle += b2_pi * 2.0f;
+                    }
+                    else if (finalAngle < -b2_pi){
+                        jDef.referenceAngle -= b2_pi * 2.0f;
+                    }
+                    
+                    jDef.enableLimit = rj->IsLimitEnabled();
+                    jDef.lowerAngle = rj->GetLowerLimit();
+                    jDef.upperAngle = rj->GetUpperLimit();
+
+                    CreateJoint(&jDef);
+                    break;
+                }
+            }
         }
 
         portalBodies.push_back(npb);

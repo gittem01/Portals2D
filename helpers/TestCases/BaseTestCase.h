@@ -121,7 +121,7 @@ public:
         }
 
         pWorld->SetDebugDraw(drawer);
-        drawer->SetFlags(b2Draw::e_centerOfMassBit);
+        drawer->SetFlags(b2Draw::e_jointBit);
 
         mjh = new mouseJointHandler(pWorld, wh, renderer);
 

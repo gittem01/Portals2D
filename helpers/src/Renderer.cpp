@@ -249,7 +249,7 @@ void Renderer::portalAddEnd(){
     glVertexAttribDivisor(10, 1);
 }
 
-void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* texture){
+void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* texture, const uint32_t interpolation){
     unsigned int texObject = 0;
     if (texture){
         unsigned char *data;
@@ -267,11 +267,16 @@ void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* textu
         if (data){
             glGenTextures(1, &texObject);
             glBindTexture(GL_TEXTURE_2D, texObject);
-            // set the texture wrapping/filtering options (on the currently bound texture object)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if (interpolation != GL_NEAREST){
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            }
+            else{
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            }
 
             if (nrChannels == 3)
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);

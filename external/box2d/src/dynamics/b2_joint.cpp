@@ -293,9 +293,9 @@ void b2Joint::Draw(b2Draw* draw) const
 	}
 	break;
 
-	default:
-		draw->DrawSegment(x1, p1, color);
-		draw->DrawSegment(p1, p2, color);
-		draw->DrawSegment(x2, p2, color);
+	// default:
+	// 	draw->DrawSegment(x1, p1, color);
+	// 	draw->DrawSegment(p1, p2, color);
+	// 	draw->DrawSegment(x2, p2, color);
 	}
 }

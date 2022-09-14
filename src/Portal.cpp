@@ -13,6 +13,7 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     this->dir = dir;
     this->size = size;
     this->isVoid[0] = false; this->isVoid[1] = false;
+
     calculatePoints();
     createPortalBody();
     
@@ -41,7 +42,7 @@ Portal::~Portal(){
             Portal* otherPortal = connections[i][j]->portal2;
             if (otherPortal == this){
                 free(connections[i][j]);
-                break;    
+                break;
             }
             int connectionSide2 = connections[i][j]->side2;
             for (int k = 0; k < otherPortal->connections[connectionSide2].size(); k++){
@@ -80,6 +81,7 @@ void Portal::calculatePoints(){
 
 void Portal::createPortalBody(){
     b2BodyDef bd;
+    bd.position = pos;
     bodyData* data = (bodyData*)malloc(sizeof(bodyData));
     *data = { PORTAL, this };
     bd.userData.pointer = (uintptr_t)data;
@@ -88,7 +90,7 @@ void Portal::createPortalBody(){
     body = pWorld->CreateBody(&bd);
 
     b2EdgeShape shape;
-    shape.SetTwoSided(points[0], points[1]);
+    shape.SetTwoSided(points[0] - pos, points[1] - pos);
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;
@@ -99,10 +101,10 @@ void Portal::createPortalBody(){
     b2Vec2 pVec = points[1] - points[0];
     pWorld->normalize(&pVec);
 
-    shape.SetTwoSided(points[0], points[0]);
+    shape.SetTwoSided(points[0] - pos, points[0] - pos);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
 
-    shape.SetTwoSided(points[1], points[1]);
+    shape.SetTwoSided(points[1] - pos, points[1] - pos);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
 }
 
@@ -714,11 +716,11 @@ bool PortalWorldQuery::edgeSplitHorizontal(b2Fixture* fixture){
         float v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p1);
         float v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p1);
 
-        if (v1 < 0.0f){
+        if (v1 < 0.0001f){
             leftFound = true;
             leftPoint = p1;
         }
-        else if (v2 > 0.0f){
+        else if (v2 > -0.0001f){
             rightFound = true;
             rightPoint = p1;
         }
@@ -726,12 +728,12 @@ bool PortalWorldQuery::edgeSplitHorizontal(b2Fixture* fixture){
         v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p2);
         v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p2);
 
-        if (v1 < 0.0f){
+        if (v1 < 0.0001f){
             if (leftFound) return true;
             leftFound = true;
             leftPoint = p2;
         }
-        else if (v2 > 0.0f){
+        else if (v2 > -0.0001f){
             if (rightFound) return true;
             rightFound = true;
             rightPoint = p2;

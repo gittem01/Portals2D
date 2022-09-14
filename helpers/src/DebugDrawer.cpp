@@ -10,6 +10,10 @@ void DebugDrawer::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b
 	
 }
 
+void DebugDrawer::DrawCircle(const b2Vec2& center, float radius, const b2Color& color){
+	renderer->debug_Circle(center, radius * 0.1f, 0.01f, color);
+}
+
 void DebugDrawer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
 	renderer->debug_Polygon(vertices, vertexCount, 0.01f, color, color);
 }
@@ -125,10 +129,6 @@ void DebugDrawer::drawShape(b2Fixture* fixture, const b2Transform& xf, const b2C
 
 	case b2Shape::e_polygon:
 		{
-			if (fixture->IsSensor()) {
-				break;
-			}
-
 			b2PolygonShape* poly = (b2PolygonShape*)fixture->GetShape();
 			int32 vertexCount = poly->m_count;
 			b2Assert(vertexCount <= b2_maxPolygonVertices);
