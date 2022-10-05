@@ -25,7 +25,7 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
     this->numFixtures = 0;
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
         fixtures.push_back(fix);
-        fixtureData* fixData = (fixtureData*)calloc(1, sizeof(fixtureData));
+        fixtureData* fixData = new fixtureData();
         fixData->index = numFixtures;
         fixData->angleThold = calculateAngleThold(fix);
         fix->GetUserData().pointer = (uintptr_t)fixData;

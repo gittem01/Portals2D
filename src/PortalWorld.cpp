@@ -499,7 +499,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             npb->fixtures[i] = f;
 
             fixtureData* fixData1 = (fixtureData*)fix->GetUserData().pointer;
-            fixtureData* fixData2 = (fixtureData*)calloc(1, sizeof(fixtureData));
+            fixtureData* fixData2 = new fixtureData();
             fixData2->index = i;
             fixData2->angleThold = PortalBody::calculateAngleThold(f);
             f->GetUserData().pointer = (uintptr_t)fixData2;
