@@ -72,7 +72,7 @@ typedef struct fixtureData
     }
 
     std::vector<portalCollision*>::iterator getPortalCollision(Portal* portal, int status=2){
-        for (auto& i = pCollisions.begin(); i != pCollisions.end(); i++){
+        for (auto i = pCollisions.begin(); i != pCollisions.end(); i++){
             portalCollision* pColl = *i;
             if (status == 2){
                 if (pColl->portal == portal){
