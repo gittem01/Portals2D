@@ -319,21 +319,12 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         npb->isMirrored = pBody->isMirrored ^ c->isReversed;
 
         if (c->isReversed){
-            b2Vec2 v = rotateVec(b2Vec2(1, 0), angleRot + body2->GetAngle());
-            float ang1 = calcAngle2(v);
-            v = mirror(portal2->dir, v);
-            float ang2 = calcAngle2(v);
-            v = rotateVec(v, -body2->GetAngle());
-            npb->offsetAngle = ang2 - ang1 + angleRot - b2_pi - pBody->offsetAngle;
+            float pAngle = vecAngle(b2Vec2(1, 0), portal2->dir);
+            float angleRes = (pAngle - (angleRot + body2->GetAngle())) * 2.0f;
+            npb->offsetAngle = angleRes + angleRot - b2_pi - pBody->offsetAngle;
         }
         else{
             npb->offsetAngle = angleRot + pBody->offsetAngle;
-        }
-        if (npb->offsetAngle > b2_pi){
-            npb->offsetAngle -= 2 * b2_pi;
-        }
-        else{
-            npb->offsetAngle += 2 * b2_pi;
         }
 
         for (b2JointEdge* edge = body1->GetJointList(); edge != NULL; edge = edge->next){
@@ -443,12 +434,13 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         for (int i = pBody->fixtures.size() - 1; i > -1; i--){
             b2Fixture* fix = pBody->fixtures.at(i);
             b2Fixture* f;
+            b2FixtureDef fDef;
+            fDef.density = fix->GetDensity();
+            fDef.restitution = fix->GetRestitution();
+            fDef.friction = fix->GetFriction();
             if (fix->GetType() == b2Shape::Type::e_polygon){
                 b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
-                b2FixtureDef fDef;
-                fDef.density = fix->GetDensity();
-                fDef.restitution = fix->GetRestitution();
-                fDef.friction = fix->GetFriction();
+                
                 b2PolygonShape newShape;
                 fDef.shape = &newShape;
 
@@ -473,10 +465,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             }
             else{
                 b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
-                b2FixtureDef fDef;
-                fDef.density = fix->GetDensity();
-                fDef.restitution = fix->GetRestitution();
-                fDef.friction = fix->GetFriction();
                 b2CircleShape newShape;
                 fDef.shape = &newShape;
 

@@ -97,7 +97,6 @@ typedef struct
     portalConnection* connection;
 } bodyCollisionStatus;
 
-
 class PortalBody
 {
     

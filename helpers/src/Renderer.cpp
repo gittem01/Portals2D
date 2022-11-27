@@ -363,12 +363,11 @@ void Renderer::render(){
     glfwGetFramebufferSize(camera->window, &win_width, &win_height);
     minLineThck = 20.0f / win_width;
     
-    portalRender();
     for (bodyRenderData* brd : portalBodies){
         bodyRender(brd);
     }
 
-
+    portalRender();
     for (portalRenderData* prd : portals){
         portalRender(prd);
     }
