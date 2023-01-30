@@ -8,6 +8,7 @@ class TestPlayer
 public:
 
     std::vector<PortalBody*>* pBody;
+    std::vector<PortalBody*>* gun;
     PortalWorld* pWorld;
     WindowPainter* wp;
     b2Vec2 size;
@@ -33,7 +34,7 @@ public:
     bool left;
     int lastDoubleKey;
 
-    int onAirFor;
+    float onAirFor;
 
     b2Vec2 lastDirs[2];
 
@@ -59,7 +60,7 @@ public:
         left = false;
         lastDoubleKey = -1;
 
-        onAirFor = -1;
+        onAirFor = 0.0f;
     }
 
     void createBody(b2Vec2 pos, b2Vec2 size){
@@ -90,6 +91,39 @@ public:
         bData->extraData = this;
 
         pBody = pb->worldIndex;
+
+        glm::vec2 gunSize(0.3f, 1.1f);
+
+        bodyDef.type = b2_dynamicBody;
+        bodyDef.position = pos;
+        bodyDef.fixedRotation = false;
+        bodyDef.linearDamping = 0.0f;
+        bodyDef.bullet = true;
+        bodyDef.allowSleep = false;
+
+        body = pWorld->CreateBody(&bodyDef);
+
+        boxShape.SetAsBox(gunSize.x / 2.0f, gunSize.y / 2.0f);
+
+        fDef.density = 0.1f;
+        fDef.shape = &boxShape;
+        fDef.friction = 0.5f;
+        fDef.restitution = 0.0f;
+
+        body->CreateFixture(&fDef);
+
+        pb = pWorld->createPortalBody(body);
+
+        gun = pb->worldIndex;
+
+        b2RevoluteJointDef jDef;
+        jDef.bodyA = pBody->at(0)->body;
+        jDef.bodyB = gun->at(0)->body;
+        jDef.collideConnected = false;
+        jDef.localAnchorA = b2Vec2(0.0f, 0.35f);
+        jDef.localAnchorB = b2Vec2(0.0f, -0.35f);
+
+        pWorld->CreateJoint(&jDef);
     }
 
     void handleForces(b2Contact* contact, b2Fixture* fix2){
@@ -100,38 +134,36 @@ public:
         contact->SetRestitution(0.0f);
     }
 
-    void reportContact(b2Contact* contact, b2Fixture* fix2){
+    void reportContact(b2Contact* contact, b2Body* contactingBody, b2Fixture* fix2){
         if (!contact->IsEnabled() || fix2->IsSensor()){
             return;
         }
 
-        haveContact = true;
+        PortalBody* contactingPBody = (PortalBody*)((bodyData*)contactingBody->GetUserData().pointer)->data;
 
-        b2Vec2 lv = pBody->at(0)->body->GetLinearVelocity();
+        haveContact = true;
 
         b2WorldManifold wManifold;
         contact->GetWorldManifold(&wManifold);
         b2Vec2 normal = wManifold.normal;
-        float l = normal.Length();
-        normal.x /= l;
-        normal.y /= l;
 
         b2Vec2 cPos = wManifold.points[0];
+
         float tHold = 0.1f;
-        for (PortalBody* pb : *pBody){
-            b2Vec2 bodyPos = pb->body->GetPosition();
-            float botY = bodyPos.y - size.y / 2.0f;
-            // TODO_01 : check slope manualy
-            if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.6f){
-                contactType = fix2->GetBody()->GetType();
-                contactBody = fix2->GetBody();
-                if (fix2->GetBody()->GetType() == b2_dynamicBody){
-                    if (fix2->GetDensity() == 0.0f &&
-                    (contact->GetFixtureA() == pBody->at(0)->body->GetFixtureList() || contact->GetFixtureB() == pBody->at(0)->body->GetFixtureList()))
-                    {
-                        onPlatform = true;
-                        platformBody = fix2->GetBody();
-                    }
+        b2Vec2 bodyPos = contactingPBody->body->GetPosition();
+        b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
+        botVector = pWorld->rotateVec(botVector, contactingPBody->offsetAngle + contactingBody->GetAngle());
+
+        float botY = bodyPos.y + (size.y / 2.0f) * botVector.y;
+        if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.6f){
+            contactType = fix2->GetBody()->GetType();
+            contactBody = fix2->GetBody();
+            if (fix2->GetBody()->GetType() == b2_dynamicBody){
+                if (fix2->GetDensity() == 0.0f &&
+                (contact->GetFixtureA() == pBody->at(0)->body->GetFixtureList() || contact->GetFixtureB() == pBody->at(0)->body->GetFixtureList()))
+                {
+                    onPlatform = true;
+                    platformBody = fix2->GetBody();
                 }
             }
         }
@@ -193,7 +225,7 @@ public:
 
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
-        //printf("Speed : %f\n", lv.x);
+        printf("Speed : %f\n", lv.x);
 
         if (onPlatform){
             b2Vec2 pVel = platformBody->GetLinearVelocity();
@@ -247,34 +279,37 @@ public:
         
         if (left || right)
         {
+            const float mass = pb->body->GetMass();
+            const float groundMult = 200.0f;
+            const float airMult = 30.0f;
             if (right){
                 if (haveContact){
-                    lv.x += 400.0f * dt * pBody->size() * mult;
+                    lv.x += groundMult * dt * pBody->size() * mult;
                 }
-                else if (mult > 0.0f){
-                    if (lv.x < maxSpeed + speedOffset){
-                        lv.x += 50.0f * dt * pBody->size() * mult;
+                else if (mult > 0.0f) {
+                    if (lv.x < maxSpeed + speedOffset) {
+                        lv.x += airMult * dt * pBody->size() * mult;
                     }
                 }
-                else{
-                    if (lv.x > -maxSpeed + speedOffset){
-                        lv.x += 50.0f * dt * pBody->size() * mult;
+                else {
+                    if (lv.x > -maxSpeed + speedOffset) {
+                        lv.x += airMult * dt * pBody->size() * mult;
                     }
                 }
                 lastKey = GLFW_KEY_D;
             }
-            if (left){
-                if (haveContact){
-                    lv.x -= 400.0f * dt * pBody->size() * mult;
+            if (left) {
+                if (haveContact) {
+                    lv.x -= groundMult * dt * pBody->size() * mult;
                 }
-                else if (mult > 0.0f){
-                    if (lv.x > -maxSpeed + speedOffset){
-                        lv.x -= 50.0f * dt * pBody->size() * mult;
+                else if (mult > 0.0f) {
+                    if (lv.x > -maxSpeed + speedOffset) {
+                        lv.x -= airMult * dt * pBody->size() * mult;
                     }
                 }
-                else{
-                    if (lv.x < maxSpeed + speedOffset){
-                        lv.x -= 50.0f * dt * pBody->size() * mult;
+                else {
+                    if (lv.x < maxSpeed + speedOffset) {
+                        lv.x -= airMult * dt * pBody->size() * mult;
                     }
                 }
                 
@@ -282,13 +317,13 @@ public:
             }
         }
         else if (!haveContact){
-            lv.x = (1 - 0.1f / totalIter) * lv.x;
+            lv.x = (1 - 0.1f / (totalIter * dt * 100.0f)) * lv.x;
         }
-        else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == -1){
-            lv.x = (1 - 0.95f / totalIter) * lv.x;
+        else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f){
+            lv.x = (1 - 0.95f / (totalIter * dt * 100.0f)) * lv.x;
         }
-        else if (contactBody && contactType == b2_staticBody && onAirFor == -1){
-            lv.x = (1 - 0.95f / totalIter) * lv.x;
+        else if (contactBody && contactType == b2_staticBody && onAirFor == 0.0f){
+            lv.x = (1 - 0.95f / (totalIter * dt * 100.0f)) * lv.x;
         }
 
         if (haveContact){
@@ -300,11 +335,11 @@ public:
             }
         }
 
-        if (!contactBody) onAirFor++;
-        else onAirFor = -1;
+        if (!contactBody) onAirFor += dt;
+        else onAirFor = 0.0f;
 
-        if (wp->keyData[GLFW_KEY_W] && ((contactBody && lv.y <= 0.01f) || 
-            (lv.y < 0.0f && onAirFor < 5 * totalIter && onAirFor != -1))){
+        if (wp->keyData[GLFW_KEY_W] && ((contactBody && lv.y <= 5.0f) ||
+            (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f))){
             lv.y = 10.0f * pBody->size();
         }
 
@@ -340,29 +375,46 @@ public:
             }
         }
 
-        if (pBody->size() == 1){
-            PortalBody* pb = pBody->at(0);
-            //printf("%f - %f\n", pb->body->GetAngle(), pb->offsetAngle);
-            float ang1 = fmod(pb->offsetAngle, 2 * b2_pi);
-            float ang2 = fmod(pb->body->GetAngle(), 2 * b2_pi);
-            if (ang1 > b2_pi) ang1 = ang1 - 2 * b2_pi;
-            if (ang2 > b2_pi) ang2 = ang2 - 2 * b2_pi;
-
-            float ang = ang1 + ang2;
-            //printf("LAL : %f\n", ang);
-            if (ang > 0.03f){
-                pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
-            }
-            else if (ang < -0.03f){
-                pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
-            }
-            else{
-                pb->body->SetTransform(pb->body->GetPosition(), pb->body->GetAngle() - ang);
-                pb->body->SetAngularVelocity(0.0f);
-            }
+        // body rotation
+        float ang = fmod(pb->offsetAngle + pb->body->GetAngle(), 2 * b2_pi);
+        if (ang < -b2_pi)
+            ang += 2 * b2_pi;
+        else if (ang > b2_pi)
+            ang -= 2 * b2_pi;
+        if (ang > 0.03f){
+            pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
+        }
+        else if (ang < -0.03f){
+            pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
         }
         else{
-            
+            pb->body->SetTransform(pb->body->GetPosition(), pb->body->GetAngle() - ang);
+            pb->body->SetAngularVelocity(0.0f);
+        }
+
+        // gun rotation
+        b2Vec2 gunCenter = pb->body->GetPosition() + b2Vec2(0.0f, 0.35f);
+        glm::vec2 mousePos = wp->cam->getMouseCoords();
+
+        b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
+        ang = fmod(gun->at(0)->offsetAngle + gun->at(0)->body->GetAngle() - pWorld->calcAngle2(diff) + b2_pi * 0.5f, 2 * b2_pi);
+        if (ang < -b2_pi)
+            ang += 2 * b2_pi;
+        else if (ang > b2_pi)
+            ang -= 2 * b2_pi;
+
+        if (ang > 0.03f)
+        {
+            gun->at(0)->body->SetAngularVelocity(-20.0f);
+        }
+        else if (ang < -0.03f)
+        {
+            gun->at(0)->body->SetAngularVelocity(+20.0f);
+        }
+        else
+        {
+            gun->at(0)->body->SetTransform(gun->at(0)->body->GetPosition(), gun->at(0)->body->GetAngle() - ang);
+            gun->at(0)->body->SetAngularVelocity(0.0f);
         }
 
         haveContact = false;

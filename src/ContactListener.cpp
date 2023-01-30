@@ -105,9 +105,9 @@ void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impu
     bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
     
     if (bDataA && bDataA->extraData){
-        ((TestPlayer*)bDataA->extraData)->reportContact(contact, contact->GetFixtureB());
+        ((TestPlayer*)bDataA->extraData)->reportContact(contact, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
     }
     if (bDataB && bDataB->extraData){
-        ((TestPlayer*)bDataB->extraData)->reportContact(contact, contact->GetFixtureA());
+        ((TestPlayer*)bDataB->extraData)->reportContact(contact, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
     }
 }

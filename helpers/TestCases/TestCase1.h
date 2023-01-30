@@ -2,6 +2,9 @@
 
 class TestCase1 : public BaseTestCase
 {
+private:
+    b2Body* platform;
+
 public:
     TestCase1(WindowPainter* wh) : BaseTestCase(wh){
         testCaseItem = 0;
@@ -30,9 +33,9 @@ public:
         Portal* portal5 = pWorld->createPortal(b2Vec2(-12.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
         Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
 
-        // Portal* destroyer = pWorld->createPortal(b2Vec2(-30.0f, 7.0f), b2Vec2(1.0f, +0.0f), 14.0f);
-        // destroyer->setVoid(0);
-        // destroyer->setVoid(1);
+         Portal* destroyer = pWorld->createPortal(b2Vec2(-30.0f, 7.0f), b2Vec2(1.0f, +0.0f), 14.0f);
+         destroyer->setVoid(0);
+         destroyer->setVoid(1);
 
         portal3->connect(portal2, false);
         portal41->connect(portal1, true, 0, 0);
@@ -72,18 +75,18 @@ public:
         renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
 
         PortalBody* pb;
-    #if 0
+    #if 1
         // artificial kinematic body
         p = b2Vec2(6.0f, -6.0f);
-        s = b2Vec2(0.5f, 0.2f);
-        b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
-        pb = pWorld->createPortalBody(body4);
+        s = b2Vec2(1.5f, 0.2f);
+        platform = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
+        pb = pWorld->createPortalBody(platform);
         renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
 
-        b2Vec2 vel(0.0f, -10.0f);
-        body4->SetLinearVelocity(vel);
-        body4->SetBullet(true); // for mimicing static body continuous collision
-        body4->SetLinearDamping(0.0f);
+        b2Vec2 vel(-10.0f, 0.0f);
+        platform->SetLinearVelocity(vel);
+        platform->SetBullet(true); // for mimicing static body continuous collision
+        platform->SetLinearDamping(0.0f);
     #endif
 
         p = b2Vec2(0.0f, 0.0f);
@@ -116,6 +119,19 @@ public:
             b2RevoluteJoint* revJoint = (b2RevoluteJoint*)pWorld->CreateJoint(&revDef);
 
             lastBody = jointBody;
+        }
+    }
+
+    void onUpdate()
+    {
+        BaseTestCase::onUpdate();
+        if (platform->GetPosition().x < -10.0f)
+        {
+            platform->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
+        }
+        else if (platform->GetPosition().x > 5.0f)
+        {
+            platform->SetLinearVelocity(b2Vec2(-3.0f, 0.0f));
         }
     }
 };

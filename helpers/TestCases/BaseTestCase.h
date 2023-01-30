@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 0
+#define ENABLE_TESTPLAYER 1
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -131,6 +131,7 @@ public:
     #if ENABLE_TESTPLAYER
         tp = new TestPlayer(pWorld, wh);
         renderer->addPortalBody(tp->pBody->at(0), {}, "assets/textures/playerTest.png");
+        renderer->addPortalBody(tp->gun->at(0), {}, "assets/textures/gun.png");
     #endif
     }
 
@@ -156,7 +157,7 @@ public:
         if(!isPaused) mjh->drawMouseBody();
     }
 
-    void onUpdate(){
+    virtual void onUpdate(){
     #if ENABLE_TESTPLAYER
         tp->camHandle();
     #endif
@@ -168,7 +169,7 @@ public:
         #if ENABLE_TESTPLAYER
             tp->update(dt, totalIter);
         #endif
-            pWorld->PortalStep(dt, 5, 2);
+            pWorld->PortalStep(dt, 8, 3);
         }
     }
 
