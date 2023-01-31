@@ -100,16 +100,17 @@ public:
         b2Body* statBody = createBox(bPos, s, pWorld, b2_staticBody);
 
         b2Vec2 startPos = b2Vec2(29.0f, 20.0f);
-        b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
+        b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
 
         pb = pWorld->createPortalBody(lastBody);
-        renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/chain.png", GL_NEAREST);
+        renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/head.png", GL_NEAREST);
         for (int i = 0; i < 20; i++){
             startPos -= b2Vec2(0.7f, 0.0f);
             
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
+            jointBody->GetFixtureList()->SetFriction(0.0f);
             pb = pWorld->createPortalBody(jointBody);
-            renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/chain.png", GL_NEAREST);
+            renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/body.png", GL_NEAREST);
 
             b2RevoluteJointDef revDef;
             revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));

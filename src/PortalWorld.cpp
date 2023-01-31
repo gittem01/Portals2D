@@ -365,14 +365,14 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                 {
                     b2RevoluteJointDef jDef;
 
-                    if (switched)
+                    if (!switched ^ c->isReversed)
                     {
                         jDef.bodyA = body2;
                         jDef.bodyB = bcs->body->body;
 
                         // TODO: make this work more accurately
-                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
-                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
+                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
+                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
 
                         jDef.referenceAngle = npb->offsetAngle - bcs->body->offsetAngle;
                     }
@@ -381,8 +381,8 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                         jDef.bodyA = bcs->body->body;
                         jDef.bodyB = body2;
 
-                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
-                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
+                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
+                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
 
                         jDef.referenceAngle = bcs->body->offsetAngle - npb->offsetAngle;
                     }
