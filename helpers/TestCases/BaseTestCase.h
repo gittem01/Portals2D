@@ -11,7 +11,6 @@
 class BaseTestCase
 {
 private:
-    static int namerCount;
 	int refreshItem;
     const char* name;
     WindowPainter* wh;
@@ -195,5 +194,4 @@ public:
     virtual void onCreate() = 0;
 };
 
-int BaseTestCase::namerCount = 0;
 BaseTestCase* testCase = NULL;

@@ -70,6 +70,17 @@ b2RevoluteJoint::b2RevoluteJoint(const b2RevoluteJointDef* def)
 	m_angle = 0.0f;
 }
 
+float normalizeAngle(float angle)
+{
+    angle = fmod(angle, 2 * b2_pi);
+    if (angle < -b2_pi)
+        angle += 2 * b2_pi;
+    else if (angle > b2_pi)
+        angle -= 2 * b2_pi;
+
+    return angle;
+}
+
 void b2RevoluteJoint::InitVelocityConstraints(const b2SolverData& data)
 {
 	m_indexA = m_bodyA->m_islandIndex;
@@ -121,7 +132,7 @@ void b2RevoluteJoint::InitVelocityConstraints(const b2SolverData& data)
 		fixedRotation = true;
 	}
 
-	m_angle = aB - aA - m_referenceAngle;
+	m_angle = normalizeAngle(aB - aA - m_referenceAngle);
 	if (m_enableLimit == false || fixedRotation)
 	{
 		m_lowerImpulse = 0.0f;
@@ -259,7 +270,7 @@ bool b2RevoluteJoint::SolvePositionConstraints(const b2SolverData& data)
 	// Solve angular limit constraint
 	if (m_enableLimit && fixedRotation == false)
 	{
-		float angle = aB - aA - m_referenceAngle;
+		float angle = normalizeAngle(aB - aA - m_referenceAngle);
 		float C = 0.0f;
 
 		if (b2Abs(m_upperAngle - m_lowerAngle) < 2.0f * b2_angularSlop)

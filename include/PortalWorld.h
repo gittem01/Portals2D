@@ -151,6 +151,7 @@ private:
     std::set<PortalBody*> destroyBodies;
     std::set<std::vector<PortalBody*>*> handledBodies;
 
+    static float normalizeAngle(float angle);
     static b2Vec2 rotateVec(b2Vec2 vec, float angle);
     static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, const float t);
     static float vecAngle(b2Vec2 v1, b2Vec2 v2);

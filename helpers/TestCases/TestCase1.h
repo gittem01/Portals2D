@@ -3,7 +3,7 @@
 class TestCase1 : public BaseTestCase
 {
 private:
-    b2Body* platform;
+    b2Body* platform = nullptr;
 
 public:
     TestCase1(WindowPainter* wh) : BaseTestCase(wh){
@@ -33,9 +33,9 @@ public:
         Portal* portal5 = pWorld->createPortal(b2Vec2(-12.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
         Portal* portal6 = pWorld->createPortal(b2Vec2(-20.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
 
-         Portal* destroyer = pWorld->createPortal(b2Vec2(-30.0f, 7.0f), b2Vec2(1.0f, +0.0f), 14.0f);
-         destroyer->setVoid(0);
-         destroyer->setVoid(1);
+//        Portal* destroyer = pWorld->createPortal(b2Vec2(-30.0f, 7.0f), b2Vec2(1.0f, +0.0f), 14.0f);
+//        destroyer->setVoid(0);
+//        destroyer->setVoid(1);
 
         portal3->connect(portal2, false);
         portal41->connect(portal1, true, 0, 0);
@@ -75,7 +75,7 @@ public:
         renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
 
         PortalBody* pb;
-    #if 1
+    #if 0
         // artificial kinematic body
         p = b2Vec2(6.0f, -6.0f);
         s = b2Vec2(1.5f, 0.2f);
@@ -104,7 +104,7 @@ public:
 
         pb = pWorld->createPortalBody(lastBody);
         renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/chain.png", GL_NEAREST);
-        for (int i = 0; i < 15; i++){
+        for (int i = 0; i < 20; i++){
             startPos -= b2Vec2(0.7f, 0.0f);
             
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
@@ -113,9 +113,9 @@ public:
 
             b2RevoluteJointDef revDef;
             revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
-            // revDef.enableLimit = true;
-            // revDef.upperAngle = +b2_pi * 0.2f;
-            // revDef.lowerAngle = -b2_pi * 0.2f;
+            revDef.enableLimit = true;
+            revDef.upperAngle = +b2_pi * 0.1f;
+            revDef.lowerAngle = -b2_pi * 0.1f;
             b2RevoluteJoint* revJoint = (b2RevoluteJoint*)pWorld->CreateJoint(&revDef);
 
             lastBody = jointBody;
@@ -125,13 +125,16 @@ public:
     void onUpdate()
     {
         BaseTestCase::onUpdate();
-        if (platform->GetPosition().x < -10.0f)
+        if (platform)
         {
-            platform->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
-        }
-        else if (platform->GetPosition().x > 5.0f)
-        {
-            platform->SetLinearVelocity(b2Vec2(-3.0f, 0.0f));
+            if (platform->GetPosition().x < -10.0f)
+            {
+                platform->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
+            }
+            else if (platform->GetPosition().x > 5.0f)
+            {
+                platform->SetLinearVelocity(b2Vec2(-3.0f, 0.0f));
+            }
         }
     }
 };

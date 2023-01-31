@@ -249,7 +249,6 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         }
     }
 
-
     return true;
 }
 
@@ -283,7 +282,8 @@ int PortalBody::shouldCollideHelper(portalCollision* coll, fixtureData* fixData1
 
         fixtureData* loopFixData = (fixtureData*)otherFix1->GetUserData().pointer;
         for (portalCollision* pc : loopFixData->pCollisions){
-            if (pc->portal == bcs->connection->portal1 || pc->portal == bcs->connection->portal2){
+            if (pc->portal == bcs->connection->portal1 || pc->portal == bcs->connection->portal2)
+            {
                 continue;
             }
 
@@ -307,9 +307,9 @@ int PortalBody::shouldCollideHelper(portalCollision* coll, fixtureData* fixData1
 
             if (PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointA, -0.001f) ||
                 PortalWorld::isLeft(pc->portal->points[1 ^ pc->side], pc->portal->points[pc->side], out.pointB, -0.001f))
-                {
-                    return 2;
-                }
+            {
+                return 2;
+            }
         }
     }
 
