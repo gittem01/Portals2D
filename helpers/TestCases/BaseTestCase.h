@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 1
+#define ENABLE_TESTPLAYER 0
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -20,7 +20,8 @@ public:
     bool shouldGetNewTest;
     int testCaseItem;
 
-    void debugDraw() {
+    void debugDraw()
+    {
 		ImGui::Begin(name, NULL, ImGuiWindowFlags_AlwaysAutoResize);
 
 		ImGui::Combo("Refresh Rate", &refreshItem, refreshRates, refreshSize);
@@ -30,39 +31,48 @@ public:
         int lastItem = testCaseItem;
         ImGui::Combo(" ", &testCaseItem, testCases, numTestCases);
         ImGui::SameLine();
-        if (ImGui::Button("Reset")){
+        if (ImGui::Button("Reset"))
+        {
             destroy();
             shouldGetNewTest = true;
         }
 
-        if (lastItem != testCaseItem){
+        if (lastItem != testCaseItem)
+        {
             destroy();
             shouldGetNewTest = true;
         }
 
-		if (ImGui::RadioButton("Draw Releases", renderer->drawReleases)) {
+		if (ImGui::RadioButton("Draw Releases", renderer->drawReleases))
+        {
 			renderer->drawReleases = !renderer->drawReleases;
 		}
         ImGui::SameLine();
-        if (isPaused){
-            if (ImGui::Button("Resume")){
+        if (isPaused)
+        {
+            if (ImGui::Button("Resume"))
+            {
                 isPaused = false;
             }
         }
-        else{
-            if (ImGui::Button("Stop")){
+        else
+        {
+            if (ImGui::Button("Stop"))
+            {
                 isPaused = true;
             }
         }
         ImGui::SameLine();
-        if (ImGui::Button("Tick")){
+        if (ImGui::Button("Tick"))
+        {
             isPaused = true;
             tick = true;
         }
 
         float oldVal = mjh->bodyRadius;
         ImGui::SliderFloat("MouseSelectionArea", &mjh->bodyRadius, mjh->radiusLimits[0], mjh->radiusLimits[1], "%.2f", 1);
-        if (oldVal != mjh->bodyRadius){
+        if (oldVal != mjh->bodyRadius)
+        {
             mjh->createMouseBody();
         }
 
@@ -72,8 +82,10 @@ public:
 		ImGui::End();
 	}
 
-    void destroy(){
-        for (int i = 0; i < pWorld->portals.size(); i++){
+    void destroy()
+    {
+        for (int i = 0; i < pWorld->portals.size(); i++)
+        {
             pWorld->destroyPortal(pWorld->portals.at(i));
             i--;
         }
@@ -88,35 +100,42 @@ public:
         renderer->reset();
     }
 
-    BaseTestCase(WindowPainter* wh, const char* name="Test Debug Window"){
+    BaseTestCase(WindowPainter* wh, const char* name="Test Debug Window")
+    {
         this->wh = wh;
         this->name = name;
 		refreshItem = 0;
         shouldGetNewTest = false;
         
-        if (!renderer){
+        if (!renderer)
+        {
             renderer = new Renderer(pWorld, wh->cam);
         }
 
-		for (int i = 0; i < refreshSize; i++) {
-			if (renderer->refreshRate == correspondingValues[i]) {
+		for (int i = 0; i < refreshSize; i++)
+        {
+			if (renderer->refreshRate == correspondingValues[i])
+            {
 				refreshItem = i;
 				break;
 			}
 		}
     }
 
-    virtual ~BaseTestCase(){ }
+    virtual ~BaseTestCase() { }
 
-    void beforeCreate(){
+    void beforeCreate()
+    {
         renderer->sizeMult = 1.0f;
-        if (!contactListener){
+        if (!contactListener)
+        {
             contactListener = new ContactListener();
         }
         pWorld = new PortalWorld();
         pWorld->SetContactListener(contactListener);
 
-        if (!drawer){
+        if (!drawer)
+        {
             drawer = new DebugDrawer(renderer);
         }
 

@@ -19,6 +19,8 @@ public:
     b2Body* contactBody;
     b2Body* platformBody;
     b2BodyType contactType;
+    b2BodyType rightCollisionType = b2_dynamicBody;
+    b2BodyType leftCollisionType = b2_dynamicBody;
 
     PortalBody* lastBody;
     bool bodySwitch;
@@ -107,7 +109,7 @@ public:
 
         fDef.density = 0.1f;
         fDef.shape = &boxShape;
-        fDef.friction = 0.5f;
+        fDef.friction = 0.0f;
         fDef.restitution = 0.0f;
 
         body->CreateFixture(&fDef);
@@ -149,22 +151,41 @@ public:
 
         b2Vec2 cPos = wManifold.points[0];
 
+        if (contact->GetManifold()->pointCount > 1)
+        {
+            cPos += wManifold.points[1];
+            cPos *= 0.5f;
+        }
+
         float tHold = 0.1f;
         b2Vec2 bodyPos = contactingPBody->body->GetPosition();
         b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
         botVector = pWorld->rotateVec(botVector, contactingPBody->offsetAngle + contactingBody->GetAngle());
 
         float botY = bodyPos.y + (size.y / 2.0f) * botVector.y;
-        if (cPos.y < botY + tHold && cPos.y > botY - tHold && abs(normal.x) <= 0.6f){
-            contactType = fix2->GetBody()->GetType();
-            contactBody = fix2->GetBody();
-            if (fix2->GetBody()->GetType() == b2_dynamicBody){
-                if (fix2->GetDensity() == 0.0f &&
-                (contact->GetFixtureA() == pBody->at(0)->body->GetFixtureList() || contact->GetFixtureB() == pBody->at(0)->body->GetFixtureList()))
+        if (cPos.y < botY + tHold && cPos.y > botY - tHold)
+        {
+            if (abs(normal.x) <= 0.6f)
+            {
+                contactType = fix2->GetBody()->GetType();
+                contactBody = fix2->GetBody();
+                if (fix2->GetBody()->GetType() == b2_dynamicBody)
                 {
-                    onPlatform = true;
-                    platformBody = fix2->GetBody();
+                    if (fix2->GetDensity() == 0.0f &&
+                        (contact->GetFixtureA() == pBody->at(0)->body->GetFixtureList() || contact->GetFixtureB() == pBody->at(0)->body->GetFixtureList()))
+                    {
+                        onPlatform = true;
+                        platformBody = fix2->GetBody();
+                    }
                 }
+            }
+            else if (normal.x > 0.6f)
+            {
+                leftCollisionType = fix2->GetBody()->GetType();
+            }
+            else
+            {
+                rightCollisionType = fix2->GetBody()->GetType();
             }
         }
     }
@@ -225,8 +246,6 @@ public:
 
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
-        printf("Speed : %f\n", lv.x);
-
         if (onPlatform){
             b2Vec2 pVel = platformBody->GetLinearVelocity();
             speedOffset = pVel.x;
@@ -282,55 +301,80 @@ public:
             const float mass = pb->body->GetMass();
             const float groundMult = 200.0f;
             const float airMult = 30.0f;
-            if (right){
-                if (haveContact){
+            if (right)
+            {
+                if (contactBody != nullptr)
+                {
                     lv.x += groundMult * dt * pBody->size() * mult;
                 }
-                else if (mult > 0.0f) {
-                    if (lv.x < maxSpeed + speedOffset) {
-                        lv.x += airMult * dt * pBody->size() * mult;
+                else if (rightCollisionType == b2_dynamicBody)
+                {
+                    if (mult > 0.0f)
+                    {
+                        if (lv.x < maxSpeed + speedOffset)
+                        {
+                            lv.x += airMult * dt * pBody->size() * mult;
+                        }
+                    }
+                    else
+                    {
+                        if (lv.x > -maxSpeed + speedOffset)
+                        {
+                            lv.x += airMult * dt * pBody->size() * mult;
+                        }
                     }
                 }
-                else {
-                    if (lv.x > -maxSpeed + speedOffset) {
-                        lv.x += airMult * dt * pBody->size() * mult;
-                    }
-                }
+                
                 lastKey = GLFW_KEY_D;
             }
-            if (left) {
-                if (haveContact) {
+            if (left)
+            {
+                if (contactBody != nullptr)
+                {
                     lv.x -= groundMult * dt * pBody->size() * mult;
                 }
-                else if (mult > 0.0f) {
-                    if (lv.x > -maxSpeed + speedOffset) {
-                        lv.x -= airMult * dt * pBody->size() * mult;
+                else if (leftCollisionType == b2_dynamicBody)
+                {
+                    if (mult > 0.0f)
+                    {
+                        if (lv.x > -maxSpeed + speedOffset)
+                        {
+                            lv.x -= airMult * dt * pBody->size() * mult;
+                        }
                     }
-                }
-                else {
-                    if (lv.x < maxSpeed + speedOffset) {
-                        lv.x -= airMult * dt * pBody->size() * mult;
+                    else
+                    {
+                        if (lv.x < maxSpeed + speedOffset)
+                        {
+                            lv.x -= airMult * dt * pBody->size() * mult;
+                        }
                     }
                 }
                 
                 lastKey = GLFW_KEY_A;
             }
         }
-        else if (!haveContact){
+        else if (!haveContact)
+        {
             lv.x = (1 - 0.1f / (totalIter * dt * 100.0f)) * lv.x;
         }
-        else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f){
+        else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
+        {
             lv.x = (1 - 0.95f / (totalIter * dt * 100.0f)) * lv.x;
         }
-        else if (contactBody && contactType == b2_staticBody && onAirFor == 0.0f){
+        else if (contactBody && contactType == b2_staticBody && onAirFor == 0.0f)
+        {
             lv.x = (1 - 0.95f / (totalIter * dt * 100.0f)) * lv.x;
         }
 
-        if (haveContact){
-            if (lv.x > +maxSpeed + speedOffset){
+        if (haveContact)
+        {
+            if (lv.x > +maxSpeed + speedOffset)
+            {
                 lv.x = +maxSpeed + speedOffset;
             }
-            if (lv.x < -maxSpeed + speedOffset){
+            if (lv.x < -maxSpeed + speedOffset)
+            {
                 lv.x = -maxSpeed + speedOffset;
             }
         }
@@ -425,5 +469,7 @@ public:
         right = false;
         left = false;
         contactType = (b2BodyType)INT_MAX; // NULL
+        rightCollisionType = b2_dynamicBody;
+        leftCollisionType = b2_dynamicBody;
     }
 };
