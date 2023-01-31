@@ -319,7 +319,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         npb->isMirrored = pBody->isMirrored ^ c->isReversed;
 
         if (c->isReversed){
-            float pAngle = vecAngle(b2Vec2(1, 0), portal2->dir);
+            float pAngle = calcAngle2(portal2->dir);
             float angleRes = (pAngle - (angleRot + body2->GetAngle())) * 2.0f;
             npb->offsetAngle = angleRes + angleRot - b2_pi - pBody->offsetAngle;
         }
@@ -327,9 +327,11 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             npb->offsetAngle = angleRot + pBody->offsetAngle;
         }
 
-        for (b2JointEdge* edge = body1->GetJointList(); edge != NULL; edge = edge->next){
+        for (b2JointEdge* edge = body1->GetJointList(); edge != NULL; edge = edge->next)
+        {
             b2Joint* j = edge->joint;
-            if (j->GetType() != e_revoluteJoint){
+            if (j->GetType() != e_revoluteJoint)
+            {
                 continue;
             }
             b2Body* bodyA = j->GetBodyA();
@@ -337,62 +339,54 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
             // body1 is original body so switch data loss is OK
             bool switched = false;
-            if (bodyA != body1){
+            if (bodyA != body1)
+            {
                 bodyB = bodyA;
                 switched = true;
             }
 
-            if (bodyB->GetType() != b2_dynamicBody){
+            if (bodyB->GetType() != b2_dynamicBody)
+            {
                 continue;
             }
 
             bodyData* bd = (bodyData*)bodyB->GetUserData().pointer;
-            if (!bd){
+            if (!bd)
+            {
                 continue;
             }
 
             PortalBody* pbB = (PortalBody*)bd->data;
 
             b2RevoluteJoint* rj = (b2RevoluteJoint*)j;
-            for (bodyCollisionStatus* bcs : *pbB->bodyMaps){
-                if (bcs->connection == c){
+            for (bodyCollisionStatus* bcs : *pbB->bodyMaps)
+            {
+                if (bcs->connection == c)
+                {
                     b2RevoluteJointDef jDef;
 
-                    float pAngleA;
-                    float pAngleB;
-
-                    if (switched){
+                    if (switched)
+                    {
                         jDef.bodyA = body2;
                         jDef.bodyB = bcs->body->body;
 
-                        pAngleA = npb->offsetAngle;
-                        pAngleB = bcs->body->offsetAngle;
+                        // TODO: make this work more accurately
+                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
+                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
+
+                        jDef.referenceAngle = npb->offsetAngle - bcs->body->offsetAngle;
                     }
-                    else{
+                    else
+                    {
                         jDef.bodyA = bcs->body->body;
                         jDef.bodyB = body2;
 
-                        pAngleA = bcs->body->offsetAngle;
-                        pAngleB = npb->offsetAngle;
+                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
+                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
+
+                        jDef.referenceAngle = bcs->body->offsetAngle - npb->offsetAngle;
                     }
 
-                    float diffNow = jDef.bodyA->GetAngle() - jDef.bodyB->GetAngle() - (pAngleA - pAngleB);
-
-                    b2Vec2 p1 = getRelativePortalPosition(rj->GetAnchorA(), c);
-                    jDef.Initialize(jDef.bodyA, jDef.bodyB, p1);
-
-                    int restInt = (int)(diffNow / (b2_pi * 2.0f));
-                    jDef.referenceAngle = pAngleA - pAngleB + b2_pi * 2.0f * restInt;
-
-                    float finalAngle = jDef.bodyA->GetAngle() - jDef.bodyB->GetAngle() - jDef.referenceAngle;
-
-                    if (finalAngle > b2_pi){
-                        jDef.referenceAngle += b2_pi * 2.0f;
-                    }
-                    else if (finalAngle < -b2_pi){
-                        jDef.referenceAngle -= b2_pi * 2.0f;
-                    }
-                    
                     jDef.enableLimit = rj->IsLimitEnabled();
                     jDef.lowerAngle = rj->GetLowerLimit();
                     jDef.upperAngle = rj->GetUpperLimit();
@@ -447,15 +441,15 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                 newShape.m_count = polyShape->m_count;
                 b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
 
-                for (int i = 0; i < polyShape->m_count; i++){
+                for (int j = 0; j < polyShape->m_count; j++){
                     if (c->isReversed){
-                        b2Vec2 v = rotateVec(polyShape->m_vertices[i], angleRot + body2->GetAngle());
+                        b2Vec2 v = rotateVec(polyShape->m_vertices[j], angleRot + body2->GetAngle());
                         v = mirror(portal2->dir, v);
                         v = rotateVec(v, -body2->GetAngle());
-                        vertices[i] = v;
+                        vertices[j] = v;
                     }
                     else{
-                        vertices[i] = rotateVec(polyShape->m_vertices[i], angleRot);
+                        vertices[j] = rotateVec(polyShape->m_vertices[j], angleRot);
                     }
                 }
                 newShape.Set(vertices, polyShape->m_count);
@@ -782,6 +776,18 @@ b2Vec2 PortalWorld::mirror(b2Vec2 mirror, b2Vec2 vec){
     float angle1 = calcAngle2(mirror);
     float angle2 = calcAngle2(vec);
     return rotateVec(vec, 2 * (angle1 - angle2));
+}
+
+// normalize angle between -pi and pi
+float PortalWorld::normalizeAngle(float angle)
+{
+    angle = fmod(angle, 2 * b2_pi);
+    if (angle < -b2_pi)
+        angle += 2 * b2_pi;
+    else if (angle > b2_pi)
+        angle -= 2 * b2_pi;
+
+    return angle;
 }
 
 b2Vec2 PortalWorld::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4){
