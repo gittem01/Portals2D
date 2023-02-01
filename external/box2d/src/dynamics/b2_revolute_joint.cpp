@@ -47,9 +47,22 @@ void b2RevoluteJointDef::Initialize(b2Body* bA, b2Body* bB, const b2Vec2& anchor
 	referenceAngle = bodyB->GetAngle() - bodyA->GetAngle();
 }
 
+void b2RevoluteJointDef::calculateAnchorHelpers()
+{
+    baseAnchorAngleA = atan2(localAnchorA.y, localAnchorA.x);
+    baseAnchorAngleB = atan2(localAnchorB.y, localAnchorB.x);
+    baseAnchorLengthA = localAnchorA.Length();
+    baseAnchorLengthB = localAnchorB.Length();
+}
+
 b2RevoluteJoint::b2RevoluteJoint(const b2RevoluteJointDef* def)
 : b2Joint(def)
 {
+    baseAnchorAngleA = def->baseAnchorAngleA;
+    baseAnchorAngleB = def->baseAnchorAngleB;
+    baseAnchorLengthA = def->baseAnchorLengthA;
+    baseAnchorLengthB = def->baseAnchorLengthB;
+
 	m_localAnchorA = def->localAnchorA;
 	m_localAnchorB = def->localAnchorB;
 	m_referenceAngle = def->referenceAngle;

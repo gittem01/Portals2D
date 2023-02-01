@@ -107,7 +107,7 @@ public:
     std::vector<PortalBody*>* worldIndex;
     std::vector<bodyCollisionStatus*>* bodyMaps;
 
-    // arangement of the fixtures are fixed always
+    // arrangement of the fixtures are fixed always
     std::vector<b2Fixture*> fixtures;
 
     b2Body* body;

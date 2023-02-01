@@ -10,7 +10,7 @@
 
 class BaseTestCase
 {
-private:
+protected:
 	int refreshItem;
     const char* name;
     WindowPainter* wh;

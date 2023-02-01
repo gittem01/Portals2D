@@ -430,14 +430,19 @@ void Renderer::portalRender(){
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, pPortals.size());
 }
 
-void Renderer::bodyRender(bodyRenderData* brd){
-    for (PortalBody* pBody : *brd->worldIndex){
+void Renderer::bodyRender(bodyRenderData* brd)
+{
+    for (PortalBody* pBody : *brd->worldIndex)
+    {
         int i = 0;
-        for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
-            if (fix->GetType() == b2Shape::Type::e_polygon){                
+        for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext())
+        {
+            if (fix->GetType() == b2Shape::Type::e_polygon)
+            {
                 drawPolygonFix(pBody, fix, brd, i++);
             }
-            else if (fix->GetType() == b2Shape::Type::e_circle){
+            else if (fix->GetType() == b2Shape::Type::e_circle)
+            {
                 drawCircleFix(pBody, fix, brd, i++);
             }
         }

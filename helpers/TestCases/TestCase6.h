@@ -47,10 +47,11 @@ public:
 
             b2RevoluteJointDef revDef;
             revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
-            // revDef.enableLimit = true;
-            // revDef.upperAngle = +b2_pi * 0.2f;
-            // revDef.lowerAngle = -b2_pi * 0.2f;
-            b2RevoluteJoint* revJoint = (b2RevoluteJoint*)pWorld->CreateJoint(&revDef);
+            revDef.calculateAnchorHelpers();
+            revDef.enableLimit = true;
+            revDef.upperAngle = +b2_pi * 0.1f;
+            revDef.lowerAngle = -b2_pi * 0.1f;
+            pWorld->CreateJoint(&revDef);
 
             lastBody = jointBody;
         }

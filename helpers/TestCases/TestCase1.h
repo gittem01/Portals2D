@@ -4,6 +4,9 @@ class TestCase1 : public BaseTestCase
 {
 private:
     b2Body* platform = nullptr;
+    std::vector<PortalBody*>* snakeHead = nullptr;
+    std::vector<PortalBody*>* snakeTail = nullptr;
+    b2RevoluteJoint* snakeJoint = nullptr;
 
 public:
     TestCase1(WindowPainter* wh) : BaseTestCase(wh){
@@ -103,6 +106,7 @@ public:
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
 
         pb = pWorld->createPortalBody(lastBody);
+        snakeHead = pb->worldIndex;
         renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/head.png", GL_NEAREST);
         for (int i = 0; i < 20; i++){
             startPos -= b2Vec2(0.7f, 0.0f);
@@ -113,14 +117,16 @@ public:
             renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/body.png", GL_NEAREST);
 
             b2RevoluteJointDef revDef;
-            revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
+            revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.5f, 0.0f));
+            revDef.calculateAnchorHelpers();
             revDef.enableLimit = true;
             revDef.upperAngle = +b2_pi * 0.1f;
             revDef.lowerAngle = -b2_pi * 0.1f;
-            b2RevoluteJoint* revJoint = (b2RevoluteJoint*)pWorld->CreateJoint(&revDef);
+            pWorld->CreateJoint(&revDef);
 
             lastBody = jointBody;
         }
+        snakeTail = pb->worldIndex;
     }
 
     void onUpdate()
@@ -136,6 +142,20 @@ public:
             {
                 platform->SetLinearVelocity(b2Vec2(-3.0f, 0.0f));
             }
+        }
+
+        if (!snakeJoint && wh->keyData[GLFW_KEY_SPACE] == 2)
+        {
+            b2RevoluteJointDef revDef;
+            revDef.bodyA = snakeHead->at(0)->body;
+            revDef.bodyB = snakeTail->at(0)->body;
+            revDef.localAnchorA = b2Vec2(0.35f, 0.0f);
+            revDef.localAnchorB = b2Vec2(-0.35f, 0.0f);
+            revDef.calculateAnchorHelpers();
+            revDef.enableLimit = true;
+            revDef.upperAngle = +b2_pi * 0.1f;
+            revDef.lowerAngle = -b2_pi * 0.1f;
+            snakeJoint = (b2RevoluteJoint*)pWorld->CreateJoint(&revDef);
         }
     }
 };

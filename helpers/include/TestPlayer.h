@@ -124,6 +124,7 @@ public:
         jDef.collideConnected = false;
         jDef.localAnchorA = b2Vec2(0.0f, 0.35f);
         jDef.localAnchorB = b2Vec2(0.0f, -0.35f);
+        jDef.calculateAnchorHelpers();
 
         pWorld->CreateJoint(&jDef);
     }
@@ -447,11 +448,11 @@ public:
         else if (ang > b2_pi)
             ang -= 2 * b2_pi;
 
-        if (ang > 0.03f)
+        if (ang > 0.1f)
         {
             gun->at(0)->body->SetAngularVelocity(-20.0f);
         }
-        else if (ang < -0.03f)
+        else if (ang < -0.1f)
         {
             gun->at(0)->body->SetAngularVelocity(+20.0f);
         }

@@ -337,17 +337,17 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             b2Body* bodyA = j->GetBodyA();
             b2Body* bodyB = j->GetBodyB();
 
+            if (bodyB->GetType() != b2_dynamicBody)
+            {
+                continue;
+            }
+
             // body1 is original body so switch data loss is OK
             bool switched = false;
             if (bodyA != body1)
             {
                 bodyB = bodyA;
                 switched = true;
-            }
-
-            if (bodyB->GetType() != b2_dynamicBody)
-            {
-                continue;
             }
 
             bodyData* bd = (bodyData*)bodyB->GetUserData().pointer;
@@ -365,14 +365,76 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                 {
                     b2RevoluteJointDef jDef;
 
+                    float angle1 = body2->GetAngle() + npb->offsetAngle;
+                    float angle2 = bcs->body->body->GetAngle() + bcs->body->offsetAngle;
+
+                    float length1;
+                    float length2;
+
+                    if (npb->isMirrored)
+                    {
+                        if (switched)
+                        {
+                            angle1 += b2_pi - rj->baseAnchorAngleB;
+                            length1 = rj->baseAnchorLengthB;
+                        }
+                        else
+                        {
+                            angle1 += b2_pi - rj->baseAnchorAngleA;
+                            length1 = rj->baseAnchorLengthA;
+                        }
+                    }
+                    else
+                    {
+                        if (switched)
+                        {
+                            angle1 += rj->baseAnchorAngleB;
+                            length1 = rj->baseAnchorLengthB;
+                        }
+                        else
+                        {
+                            angle1 += rj->baseAnchorAngleA;
+                            length1 = rj->baseAnchorLengthA;
+                        }
+                    }
+
+                    if (bcs->body->isMirrored)
+                    {
+                        if (switched)
+                        {
+                            angle2 += b2_pi - rj->baseAnchorAngleA;
+                            length2 = rj->baseAnchorLengthA;
+                        }
+                        else
+                        {
+                            angle2 += b2_pi - rj->baseAnchorAngleB;
+                            length2 = rj->baseAnchorLengthB;
+                        }
+                    }
+                    else
+                    {
+                        if (switched)
+                        {
+                            angle2 += rj->baseAnchorAngleA;
+                            length2 = rj->baseAnchorLengthA;
+                        }
+                        else
+                        {
+                            angle2 += rj->baseAnchorAngleB;
+                            length2 = rj->baseAnchorLengthB;
+                        }
+                    }
+
                     if (!switched ^ c->isReversed)
                     {
                         jDef.bodyA = body2;
                         jDef.bodyB = bcs->body->body;
 
-                        // TODO: make this work more accurately
-                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
-                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
+                        jDef.localAnchorA = length1 * b2Vec2(cos(angle1), sin(angle1));
+                        jDef.localAnchorA = body2->GetLocalPoint(body2->GetPosition() + jDef.localAnchorA);
+
+                        jDef.localAnchorB = length2 * b2Vec2(cos(angle2), sin(angle2));
+                        jDef.localAnchorB = bcs->body->body->GetLocalPoint(bcs->body->body->GetPosition() + jDef.localAnchorB);
 
                         jDef.referenceAngle = npb->offsetAngle - bcs->body->offsetAngle;
                     }
@@ -381,8 +443,11 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                         jDef.bodyA = bcs->body->body;
                         jDef.bodyB = body2;
 
-                        jDef.localAnchorA = jDef.bodyA->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorA(), c));
-                        jDef.localAnchorB = jDef.bodyB->GetLocalPoint(getRelativePortalPosition(rj->GetAnchorB(), c));
+                        jDef.localAnchorA = length2 * b2Vec2(cos(angle2), sin(angle2));
+                        jDef.localAnchorA = bcs->body->body->GetLocalPoint(bcs->body->body->GetPosition() + jDef.localAnchorA);
+
+                        jDef.localAnchorB = length1 * b2Vec2(cos(angle1), sin(angle1));
+                        jDef.localAnchorB = npb->body->GetLocalPoint(npb->body->GetPosition() + jDef.localAnchorB);
 
                         jDef.referenceAngle = bcs->body->offsetAngle - npb->offsetAngle;
                     }
@@ -390,6 +455,23 @@ void PortalWorld::createCloneBody(bodyStruct* s){
                     jDef.enableLimit = rj->IsLimitEnabled();
                     jDef.lowerAngle = rj->GetLowerLimit();
                     jDef.upperAngle = rj->GetUpperLimit();
+
+                    if (c->isReversed)
+                    {
+                        jDef.baseAnchorAngleA = rj->baseAnchorAngleB;
+                        jDef.baseAnchorAngleB = rj->baseAnchorAngleA;
+
+                        jDef.baseAnchorLengthA = rj->baseAnchorLengthB;
+                        jDef.baseAnchorLengthB = rj->baseAnchorLengthA;
+                    }
+                    else
+                    {
+                        jDef.baseAnchorAngleA = rj->baseAnchorAngleA;
+                        jDef.baseAnchorAngleB = rj->baseAnchorAngleB;
+
+                        jDef.baseAnchorLengthA = rj->baseAnchorLengthA;
+                        jDef.baseAnchorLengthB = rj->baseAnchorLengthB;
+                    }
 
                     CreateJoint(&jDef);
                     break;

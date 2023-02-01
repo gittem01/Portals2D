@@ -56,6 +56,14 @@ struct B2_API b2RevoluteJointDef : public b2JointDef
 	/// anchor point.
 	void Initialize(b2Body* bodyA, b2Body* bodyB, const b2Vec2& anchor);
 
+    void calculateAnchorHelpers();
+
+    float baseAnchorAngleA;
+    float baseAnchorAngleB;
+
+    float baseAnchorLengthA;
+    float baseAnchorLengthB;
+
 	/// The local anchor point relative to bodyA's origin.
 	b2Vec2 localAnchorA;
 
@@ -94,6 +102,12 @@ struct B2_API b2RevoluteJointDef : public b2JointDef
 class B2_API b2RevoluteJoint : public b2Joint
 {
 public:
+    float baseAnchorAngleA;
+    float baseAnchorAngleB;
+
+    float baseAnchorLengthA;
+    float baseAnchorLengthB;
+
 	b2Vec2 GetAnchorA() const override;
 	b2Vec2 GetAnchorB() const override;
 
