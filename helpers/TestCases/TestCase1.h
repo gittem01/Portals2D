@@ -21,7 +21,7 @@ public:
         float yPos = -4.0f;
         float portalSize = 3.0f;
 
-        Portal* portal1 = pWorld->createPortal(b2Vec2(-12.0f, yPos - 0.35f), b2Vec2(+1.5f, -1.0f), portalSize);
+        Portal* portal1 = pWorld->createPortal(b2Vec2(-12.0f - portalSize, yPos), b2Vec2(+1.5f, -0.0f), portalSize);
         Portal* portal2 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 4.0f), b2Vec2(0.0f, -1.0f), portalSize);
         Portal* portal3 = pWorld->createPortal(b2Vec2(+6.0f, yPos - portalSize + 0.0f), b2Vec2(0.0f, +1.0f), portalSize);
         Portal* portal41 = pWorld->createPortal(b2Vec2(+10.0f + 0.2f, yPos), b2Vec2(+1.0f, 0.0f), portalSize);
@@ -117,7 +117,7 @@ public:
             renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/body.png", GL_NEAREST);
 
             b2RevoluteJointDef revDef;
-            revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.5f, 0.0f));
+            revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
             revDef.calculateAnchorHelpers();
             revDef.enableLimit = true;
             revDef.upperAngle = +b2_pi * 0.1f;

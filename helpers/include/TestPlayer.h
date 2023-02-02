@@ -1,6 +1,7 @@
 #pragma once
 
 #include <WindowPainter.h>
+#include <DebugDrawer.h>
 
 class TestPlayer
 {
@@ -11,6 +12,8 @@ public:
     std::vector<PortalBody*>* gun;
     PortalWorld* pWorld;
     WindowPainter* wp;
+    b2RevoluteJoint* oldJoint;
+    PortalBody* oldPortalBody;
     b2Vec2 size;
 
     b2Vec2 lastVelocity;
@@ -26,8 +29,6 @@ public:
     bool bodySwitch;
     float totalTime = 0.1f;
     float switchTimer;
-    b2Vec2 lastOriantation;
-    b2Vec2 newOriantation;
 
     int lastKey;
     int keyBeforeSwitch;
@@ -44,13 +45,14 @@ public:
         this->pWorld = pWorld;
         this->wp = wp;
         this->size = size;
-        createBody(pos, size);
+        createBody(pos);
 
         lastVelocity = pBody->at(0)->body->GetLinearVelocity();
         haveContact = false;
         onPlatform = false;
         contactBody = nullptr;
         platformBody = nullptr;
+        oldJoint = nullptr;
         contactType = (b2BodyType)10;
 
         bodySwitch = false;
@@ -65,7 +67,7 @@ public:
         onAirFor = 0.0f;
     }
 
-    void createBody(b2Vec2 pos, b2Vec2 size){
+    void createBody(b2Vec2 pos){
         b2BodyDef bodyDef;
         bodyDef.type = b2_dynamicBody;
         bodyDef.position = pos;
@@ -215,6 +217,156 @@ public:
             glm::vec2 diff = glm::vec2(bp.x, bp.y) - wp->cam->pos;
             wp->cam->pos += diff / 50.0f;
             wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
+        }
+    }
+
+    void handleGunRotation()
+    {
+        float ang;
+        float mult = 1.0f;
+        PortalBody* pb = pBody->at(0);
+        PortalBody* gunBody = nullptr;
+        PortalBody* playerBody = nullptr;
+        b2RevoluteJoint* rj = nullptr;
+        bool found = false;
+        for (b2JointEdge* edge = pb->body->GetJointList(); edge != nullptr; edge = edge->next)
+        {
+            if (edge->joint->GetType() != e_revoluteJoint) continue;
+
+            b2Body* otherBody;
+            if (edge->joint->GetBodyA() == pb->body)
+            {
+                otherBody = edge->joint->GetBodyB();
+            }
+            else
+            {
+                otherBody = edge->joint->GetBodyA();
+            }
+            bodyData* data = (bodyData*)otherBody->GetUserData().pointer;
+            if (data->type != PORTAL_BODY) continue;
+
+            PortalBody* possibleGun = (PortalBody*)data->data;
+            if (possibleGun->worldIndex == gun)
+            {
+                found = true;
+                gunBody = possibleGun;
+                rj = (b2RevoluteJoint*)edge->joint;
+
+                b2Vec2 gunCenter = pb->body->GetPosition() + b2Vec2(0.0f, 0.35f);
+                glm::vec2 mousePos = wp->cam->getMouseCoords();
+                b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
+                ang = gunBody->offsetAngle + gunBody->body->GetAngle() - PortalWorld::calcAngle2(diff) + b2_pi * 0.5f;
+                ang = PortalWorld::normalizeAngle(ang);
+
+                playerBody = pb;
+                break;
+            }
+        }
+        if (!found)
+        {
+            b2RevoluteJoint* jointFound;
+            gunBody = gun->at(0);
+            for (b2JointEdge* edge = gunBody->body->GetJointList(); edge != nullptr; edge = edge->next)
+            {
+                if (edge->joint->GetType() != e_revoluteJoint) continue;
+
+                b2Body* otherBody;
+                if (edge->joint->GetBodyA() == gunBody->body)
+                {
+                    otherBody = edge->joint->GetBodyB();
+                }
+                else
+                {
+                    otherBody = edge->joint->GetBodyA();
+                }
+
+                bodyData* data = (bodyData*)otherBody->GetUserData().pointer;
+                if (data->type == PORTAL_BODY && data->extraData != nullptr)
+                {
+                    playerBody = (PortalBody*)data->data;
+                    jointFound = (b2RevoluteJoint*)edge->joint;
+                    break;
+                }
+            }
+
+            if (playerBody)
+            {
+                portalConnection* pConnection = nullptr;
+                for (bodyCollisionStatus* stat : *pb->bodyMaps)
+                {
+                    if (stat->body == playerBody)
+                    {
+                        pConnection = stat->connection;
+                        break;
+                    }
+                }
+
+                if (pConnection)
+                {
+                    b2Vec2 gunCenter = pb->body->GetPosition() + b2Vec2(0.0f, 0.35f);
+                    glm::vec2 mousePos = wp->cam->getMouseCoords();
+
+                    b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
+                    b2Vec2 relPos = PortalWorld::getRelativePortalPosition(diff + pConnection->portal1->pos, pConnection);
+                    relPos -= pConnection->portal2->pos;
+                    ang = gunBody->offsetAngle + gunBody->body->GetAngle() - PortalWorld::calcAngle2(relPos) + b2_pi * 0.5f;
+                    ang = PortalWorld::normalizeAngle(ang);
+
+                    rj = jointFound;
+                }
+            }
+        }
+        if (rj)
+        {
+            rj->EnableMotor(true);
+            rj->SetMaxMotorTorque(10.0f);
+
+            if (playerBody->isMirrored)
+            {
+                mult = -1.0f;
+            }
+
+            if (ang > 0.03f)
+            {
+                rj->SetMotorSpeed(-30.0f * ang * mult);
+            }
+            else if (ang < -0.03f)
+            {
+                rj->SetMotorSpeed(30.0f * -ang * mult);
+            }
+            else
+            {
+                gunBody->body->SetTransform(gunBody->body->GetPosition(), gunBody->body->GetAngle() - ang);
+                gunBody->body->SetAngularVelocity(0.0f);
+                rj->EnableMotor(false);
+                rj->SetMotorSpeed(0.0f);
+            }
+        }
+
+        if (oldJoint != rj && oldJoint != nullptr)
+        {
+            for (PortalBody* l_portalBody : *pBody)
+            {
+                if (l_portalBody == oldPortalBody)
+                {
+                    for (b2JointEdge* edge = oldPortalBody->body->GetJointList(); edge != nullptr; edge = edge->next)
+                    {
+                        if (edge->joint == oldJoint)
+                        {
+                            oldJoint->EnableMotor(false);
+                            break;
+                        }
+                    }
+                    goto for_end;
+                }
+            }
+            for_end:;
+        }
+
+        if (rj)
+        {
+            oldJoint = rj;
+            oldPortalBody = playerBody;
         }
     }
 
@@ -421,46 +573,30 @@ public:
         }
 
         // body rotation
-        float ang = fmod(pb->offsetAngle + pb->body->GetAngle(), 2 * b2_pi);
-        if (ang < -b2_pi)
-            ang += 2 * b2_pi;
-        else if (ang > b2_pi)
-            ang -= 2 * b2_pi;
-        if (ang > 0.03f){
+        float ang = PortalWorld::normalizeAngle(pb->offsetAngle + pb->body->GetAngle());
+        if (ang > 0.03f)
+        {
+            for (PortalBody* l_portalBody : *pBody)
+            {
+                l_portalBody->body->SetAngularVelocity(0.0f);
+            }
             pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
         }
-        else if (ang < -0.03f){
+        else if (ang < -0.03f)
+        {
+            for (PortalBody* l_portalBody : *pBody)
+            {
+                l_portalBody->body->SetAngularVelocity(0.0f);
+            }
             pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
         }
-        else{
+        else
+        {
             pb->body->SetTransform(pb->body->GetPosition(), pb->body->GetAngle() - ang);
             pb->body->SetAngularVelocity(0.0f);
         }
 
-        // gun rotation
-        b2Vec2 gunCenter = pb->body->GetPosition() + b2Vec2(0.0f, 0.35f);
-        glm::vec2 mousePos = wp->cam->getMouseCoords();
-
-        b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
-        ang = fmod(gun->at(0)->offsetAngle + gun->at(0)->body->GetAngle() - pWorld->calcAngle2(diff) + b2_pi * 0.5f, 2 * b2_pi);
-        if (ang < -b2_pi)
-            ang += 2 * b2_pi;
-        else if (ang > b2_pi)
-            ang -= 2 * b2_pi;
-
-        if (ang > 0.1f)
-        {
-            gun->at(0)->body->SetAngularVelocity(-20.0f);
-        }
-        else if (ang < -0.1f)
-        {
-            gun->at(0)->body->SetAngularVelocity(+20.0f);
-        }
-        else
-        {
-            gun->at(0)->body->SetTransform(gun->at(0)->body->GetPosition(), gun->at(0)->body->GetAngle() - ang);
-            gun->at(0)->body->SetAngularVelocity(0.0f);
-        }
+        handleGunRotation();
 
         haveContact = false;
         onPlatform = false;
