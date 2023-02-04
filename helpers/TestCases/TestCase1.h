@@ -78,7 +78,7 @@ public:
         renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
 
         PortalBody* pb;
-    #if 0
+    #if 1
         // artificial kinematic body
         p = b2Vec2(6.0f, -6.0f);
         s = b2Vec2(1.5f, 0.2f);
@@ -88,7 +88,7 @@ public:
 
         b2Vec2 vel(-10.0f, 0.0f);
         platform->SetLinearVelocity(vel);
-        platform->SetBullet(true); // for mimicing static body continuous collision
+        platform->SetBullet(true);
         platform->SetLinearDamping(0.0f);
     #endif
 

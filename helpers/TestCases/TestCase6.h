@@ -12,7 +12,7 @@ public:
     }
 
     void onCreate(){
-        createEdge(b2Vec2(-100.0f, -10.0f), b2Vec2(+100.0f, -10.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-10000.0f, -10.0f), b2Vec2(+10000.0f, -10.0f), pWorld, b2_staticBody);
 
         Portal* portal1 = pWorld->createPortal(b2Vec2(0.0f, -3.0f), b2Vec2(0.0f, +1.0f), 5.0f);
         Portal* portal2 = pWorld->createPortal(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -1.0f), 5.0f);

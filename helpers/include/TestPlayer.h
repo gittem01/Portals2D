@@ -16,7 +16,6 @@ public:
     PortalBody* oldPortalBody;
     b2Vec2 size;
 
-    b2Vec2 lastVelocity;
     bool haveContact;
     bool onPlatform;
     b2Body* contactBody;
@@ -47,13 +46,12 @@ public:
         this->size = size;
         createBody(pos);
 
-        lastVelocity = pBody->at(0)->body->GetLinearVelocity();
         haveContact = false;
         onPlatform = false;
         contactBody = nullptr;
         platformBody = nullptr;
         oldJoint = nullptr;
-        contactType = (b2BodyType)10;
+        contactType = (b2BodyType)INT_MAX;
 
         bodySwitch = false;
         lastBody = nullptr;
@@ -193,8 +191,10 @@ public:
         }
     }
 
-    void camHandle(){
-        if (pBody->size() > 1){
+    void camHandle()
+    {
+        if (pBody->size() > 1)
+        {
             b2Vec2 p1 = pBody->at(0)->body->GetPosition();
             b2Vec2 p2 = pBody->at(1)->body->GetPosition();
 
@@ -203,20 +203,50 @@ public:
             
             glm::vec2 posDiff = mid - wp->cam->pos;
 
-            wp->cam->pos += posDiff / 50.0f;
+            wp->cam->pos += posDiff * 0.03f;
             float reqZoom = sqrt(abs(wp->cam->defaultXSides.x / diff.x));
-            if (reqZoom < 0.65f){
+            if (reqZoom < 0.65f)
+            {
                 wp->cam->zoom += (reqZoom - wp->cam->zoom) / 10.0f;
             }
-            else{
+            else
+            {
                 wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
             }
         }
-        else{
+        else
+        {
             b2Vec2 bp = pBody->at(0)->body->GetPosition();
             glm::vec2 diff = glm::vec2(bp.x, bp.y) - wp->cam->pos;
-            wp->cam->pos += diff / 50.0f;
+            wp->cam->pos += diff * 0.03f;
             wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
+        }
+    }
+
+    void handleBodyRotation()
+    {
+        PortalBody* pb = pBody->at(0);
+        float ang = PortalWorld::normalizeAngle(pb->offsetAngle + pb->body->GetAngle());
+        if (ang > 0.03f)
+        {
+            for (PortalBody* l_portalBody : *pBody)
+            {
+                l_portalBody->body->SetAngularVelocity(0.0f);
+            }
+            pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
+        }
+        else if (ang < -0.03f)
+        {
+            for (PortalBody* l_portalBody : *pBody)
+            {
+                l_portalBody->body->SetAngularVelocity(0.0f);
+            }
+            pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
+        }
+        else
+        {
+            pb->body->SetTransform(pb->body->GetPosition(), pb->body->GetAngle() - ang);
+            pb->body->SetAngularVelocity(0.0f);
         }
     }
 
@@ -262,6 +292,7 @@ public:
                 break;
             }
         }
+
         if (!found)
         {
             b2RevoluteJoint* jointFound;
@@ -316,10 +347,11 @@ public:
                 }
             }
         }
+
         if (rj)
         {
             rj->EnableMotor(true);
-            rj->SetMaxMotorTorque(10.0f);
+            rj->SetMaxMotorTorque(300.0f * gunBody->body->GetMass());
 
             if (playerBody->isMirrored)
             {
@@ -357,10 +389,9 @@ public:
                             break;
                         }
                     }
-                    goto for_end;
+                    break;
                 }
             }
-            for_end:;
         }
 
         if (rj)
@@ -370,12 +401,28 @@ public:
         }
     }
 
-    void update(float dt, int totalIter){
+    void updateReset()
+    {
+        haveContact = false;
+        onPlatform = false;
+        contactBody = nullptr;
+        platformBody = nullptr;
+        right = false;
+        left = false;
+        contactType = (b2BodyType)INT_MAX; // NULL
+        rightCollisionType = b2_dynamicBody;
+        leftCollisionType = b2_dynamicBody;
+        lastBody = pBody->at(0);
+    }
+
+    void update(float dt, int totalIter)
+    {
         const float maxSpeed = 5.0f;
         float speedOffset = 0.0f;
         PortalBody* pb = pBody->at(0);
 
-        if (pb != lastBody && lastBody != nullptr){
+        if (pb != lastBody && lastBody != nullptr)
+        {
             bodySwitch = true;
             switchTimer = glfwGetTime();
             float diff = abs(lastDirs[0].x + lastDirs[1].x);
@@ -394,10 +441,8 @@ public:
             bodyData* bd = (bodyData*)portalBody->body->GetUserData().pointer;
             if (bd && !bd->extraData){
                  bd->extraData = (void*)this;
-            }  
+            }
         }
-
-        b2Vec2 lv = pb->body->GetLinearVelocity();
 
         if (onPlatform){
             b2Vec2 pVel = platformBody->GetLinearVelocity();
@@ -422,133 +467,8 @@ public:
             left = true;
         }
 
-        lastKey = -1;
-        float mult = 1.0f;
-        if (!left && !right && onPlatform){
-            lv.x = platformBody->GetLinearVelocity().x;
-        }
-        if (left || right){
-            if (right){
-                if (keyBeforeSwitch == GLFW_KEY_D){
-                    mult = -1.0f;
-                }
-                else{
-                    keyBeforeSwitch = -1;
-                }
-            }
-            else if (left){
-                if (keyBeforeSwitch == GLFW_KEY_A){
-                    mult = -1.0f;
-                }
-                else{
-                    keyBeforeSwitch = -1;
-                }
-            }
-        }
-        else{
-            keyBeforeSwitch = -1;
-        }
-        
-        if (left || right)
+        if (pBody->size() > 1)
         {
-            const float mass = pb->body->GetMass();
-            const float groundMult = 200.0f;
-            const float airMult = 30.0f;
-            if (right)
-            {
-                if (contactBody != nullptr)
-                {
-                    lv.x += groundMult * dt * pBody->size() * mult;
-                }
-                else if (rightCollisionType == b2_dynamicBody)
-                {
-                    if (mult > 0.0f)
-                    {
-                        if (lv.x < maxSpeed + speedOffset)
-                        {
-                            lv.x += airMult * dt * pBody->size() * mult;
-                        }
-                    }
-                    else
-                    {
-                        if (lv.x > -maxSpeed + speedOffset)
-                        {
-                            lv.x += airMult * dt * pBody->size() * mult;
-                        }
-                    }
-                }
-                
-                lastKey = GLFW_KEY_D;
-            }
-            if (left)
-            {
-                if (contactBody != nullptr)
-                {
-                    lv.x -= groundMult * dt * pBody->size() * mult;
-                }
-                else if (leftCollisionType == b2_dynamicBody)
-                {
-                    if (mult > 0.0f)
-                    {
-                        if (lv.x > -maxSpeed + speedOffset)
-                        {
-                            lv.x -= airMult * dt * pBody->size() * mult;
-                        }
-                    }
-                    else
-                    {
-                        if (lv.x < maxSpeed + speedOffset)
-                        {
-                            lv.x -= airMult * dt * pBody->size() * mult;
-                        }
-                    }
-                }
-                
-                lastKey = GLFW_KEY_A;
-            }
-        }
-        else if (!haveContact)
-        {
-            lv.x = (1 - 0.1f / (totalIter * dt * 100.0f)) * lv.x;
-        }
-        else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
-        {
-            lv.x = (1 - 0.95f / (totalIter * dt * 100.0f)) * lv.x;
-        }
-        else if (contactBody && contactType == b2_staticBody && onAirFor == 0.0f)
-        {
-            lv.x = (1 - 0.95f / (totalIter * dt * 100.0f)) * lv.x;
-        }
-
-        if (haveContact)
-        {
-            if (lv.x > +maxSpeed + speedOffset)
-            {
-                lv.x = +maxSpeed + speedOffset;
-            }
-            if (lv.x < -maxSpeed + speedOffset)
-            {
-                lv.x = -maxSpeed + speedOffset;
-            }
-        }
-
-        if (!contactBody) onAirFor += dt;
-        else onAirFor = 0.0f;
-
-        if (wp->keyData[GLFW_KEY_W] && ((contactBody && lv.y <= 5.0f) ||
-            (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f))){
-            lv.y = 10.0f * pBody->size();
-        }
-
-        if (lv.y < -40.0f){
-            lv.y = -40.0f;
-        }
-
-        pb->body->SetLinearVelocity(lv);
-
-        lastBody = pb;
-
-        if (pBody->size() > 1){
             PortalBody* b1 = pBody->at(0);
             PortalBody* b2 = pBody->at(1);
             fixtureData* fixData1 = (fixtureData*)b1->body->GetFixtureList()->GetUserData().pointer;
@@ -560,7 +480,8 @@ public:
             lastDirs[1] = pc2->side ? -pc2->portal->dir : pc2->portal->dir;
         }
 
-        if (!(wp->keyData[GLFW_KEY_A] && wp->keyData[GLFW_KEY_D])){
+        if (!(wp->keyData[GLFW_KEY_A] && wp->keyData[GLFW_KEY_D]))
+        {
             if (wp->keyData[GLFW_KEY_A]){
                 lastDoubleKey = GLFW_KEY_A;
             }
@@ -572,41 +493,207 @@ public:
             }
         }
 
-        // body rotation
-        float ang = PortalWorld::normalizeAngle(pb->offsetAngle + pb->body->GetAngle());
-        if (ang > 0.03f)
+        float mult = 1.0f;
+        if (left || right)
         {
-            for (PortalBody* l_portalBody : *pBody)
+            if (right)
             {
-                l_portalBody->body->SetAngularVelocity(0.0f);
+                if (keyBeforeSwitch == GLFW_KEY_D)
+                {
+                    mult = -1.0f;
+                }
+                else
+                {
+                    keyBeforeSwitch = -1;
+                }
             }
-            pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
-        }
-        else if (ang < -0.03f)
-        {
-            for (PortalBody* l_portalBody : *pBody)
+            else if (left)
             {
-                l_portalBody->body->SetAngularVelocity(0.0f);
+                if (keyBeforeSwitch == GLFW_KEY_A)
+                {
+                    mult = -1.0f;
+                }
+                else
+                {
+                    keyBeforeSwitch = -1;
+                }
             }
-            pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
         }
         else
         {
-            pb->body->SetTransform(pb->body->GetPosition(), pb->body->GetAngle() - ang);
-            pb->body->SetAngularVelocity(0.0f);
+            keyBeforeSwitch = -1;
         }
+
+        lastKey = -1;
+        b2Vec2 lv = pb->body->GetLinearVelocity();
+        //printf("%f, %f\n", lv.x, lv.y);
+        if (!left && !right && onPlatform)
+        {
+            float diff = platformBody->GetLinearVelocity().x - lv.x;
+            lv.x += diff * dt * 15.0f * pBody->size();
+        }
+        if (left || right)
+        {
+            const float groundMult = 90.0f;
+            const float airMult = 20.0f;
+            const float fwdGrndSlw = 5.0f;
+            if (right)
+            {
+                float addition;
+                if (contactBody != nullptr)
+                {
+                    addition = groundMult * dt * pBody->size() * mult;
+                }
+                else if (rightCollisionType == b2_dynamicBody)
+                {
+                    addition = airMult * dt * pBody->size() * mult;
+                }
+                else
+                {
+                    addition = 0.0f;
+                }
+
+                if (addition != 0.0f)
+                {
+                    lv.x += addition;
+                    if (lv.x > maxSpeed + speedOffset)
+                    {
+                        if (contactBody != nullptr)
+                        {
+                            if (lv.x - addition > maxSpeed + speedOffset)
+                            {
+                                lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                            }
+                            else
+                            {
+                                lv.x = maxSpeed + speedOffset;
+                            }
+                        }
+                        lv.x = fmax(maxSpeed + speedOffset, lv.x - addition);
+                    }
+                    else if (lv.x < -maxSpeed + speedOffset)
+                    {
+                        if (rightCollisionType == b2_dynamicBody && mult > 0.0f)
+                        {
+                            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 5.0f);
+                            lv.x = lv.x - addition;
+                        }
+                        else
+                        {
+                            if (contactBody != nullptr)
+                            {
+                                if (lv.x - addition < -maxSpeed + speedOffset)
+                                {
+                                    lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                                }
+                                else
+                                {
+                                    lv.x = -maxSpeed + speedOffset;
+                                }
+                            }
+                            lv.x = fmin(-maxSpeed + speedOffset, lv.x - addition);
+                        }
+                    }
+                }
+                
+                lastKey = GLFW_KEY_D;
+            }
+            if (left)
+            {
+                float subtraction;
+                if (contactBody != nullptr)
+                {
+                    subtraction = groundMult * dt * pBody->size() * mult;
+                }
+                else if (leftCollisionType == b2_dynamicBody)
+                {
+                    subtraction = airMult * dt * pBody->size() * mult;
+                }
+                else
+                {
+                    subtraction = 0.0f;
+                }
+
+                if (subtraction != 0.0f)
+                {
+                    lv.x -= subtraction;
+                    if (lv.x > maxSpeed + speedOffset)
+                    {
+                        if (rightCollisionType == b2_dynamicBody && mult > 0.0f)
+                        {
+                            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 5.0f);
+                            lv.x = lv.x + subtraction;
+                        }
+                        else
+                        {
+                            if (contactBody != nullptr && mult < 0.0f)
+                            {
+                                if (lv.x + subtraction > maxSpeed + speedOffset)
+                                {
+                                    lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                                }
+                                else
+                                {
+                                    lv.x = maxSpeed + speedOffset;
+                                }
+                            }
+                            lv.x = fmax(maxSpeed + speedOffset, lv.x + subtraction);
+                        }
+                    }
+                    else if (lv.x < -maxSpeed + speedOffset)
+                    {
+                        if (contactBody != nullptr)
+                        {
+                            if (lv.x + subtraction < -maxSpeed + speedOffset)
+                            {
+                                lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                            }
+                            else
+                            {
+                                lv.x = -maxSpeed + speedOffset;
+                            }
+                        }
+
+                        lv.x = fmin(-maxSpeed + speedOffset, lv.x + subtraction);
+                    }
+                }
+
+                lastKey = GLFW_KEY_A;
+            }
+        }
+        else if (!haveContact)
+        {
+            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 5.0f);
+        }
+        else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
+        {
+            // kinematic body
+            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
+        }
+        else if (contactBody && contactType == b2_staticBody && onAirFor == 0.0f)
+        {
+            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
+        }
+
+        if (!contactBody) onAirFor += dt;
+        else onAirFor = 0.0f;
+
+        if (wp->keyData[GLFW_KEY_W] == 2 && ((contactBody && lv.y <= 5.0f) ||
+            (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f)))
+        {
+            lv.y = 10.0f * (float)pBody->size();
+        }
+
+        if (lv.y < -40.0f)
+        {
+            lv.y = -40.0f;
+        }
+        pb->body->SetLinearVelocity(lv);
+
+        handleBodyRotation();
 
         handleGunRotation();
 
-        haveContact = false;
-        onPlatform = false;
-        lastVelocity = lv;
-        contactBody = nullptr;
-        platformBody = nullptr;
-        right = false;
-        left = false;
-        contactType = (b2BodyType)INT_MAX; // NULL
-        rightCollisionType = b2_dynamicBody;
-        leftCollisionType = b2_dynamicBody;
+        updateReset();
     }
 };
