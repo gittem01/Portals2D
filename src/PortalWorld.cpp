@@ -11,13 +11,23 @@ PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f)){
 }
 
 PortalWorld::~PortalWorld(){
-    for (Portal* portal : portals){
-        delete portal;
-    }
-    for (PortalBody* pb : portalBodies){
+    for (PortalBody* pb : portalBodies)
+    {
         delete pb;
     }
-    for (auto& indices : bodyIndices){
+    for (int i = 0; i < portals.size(); i++)
+    {
+        destroyPortal(portals.at(i));
+        i--;
+    }
+
+    for (Portal* portal : portals)
+    {
+        delete portal;
+    }
+
+    for (auto indices : bodyIndices)
+    {
         delete indices;
     }
 
@@ -73,41 +83,6 @@ void PortalWorld::createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bo
     }
 }
 
-bool PortalRay::portalOutCheck(Portal* portal, b2Vec2 rayStart, b2Vec2 dirVec){
-    int raySide = portal->getPointSide(rayStart + dirVec);
-
-    b2RayCastInput input1;
-    b2RayCastInput input2;
-    b2RayCastOutput raycastOutput1;
-    b2RayCastOutput raycastOutput2;
-
-    input1.p1 = rayStart - 100.0f * dirVec;
-    input1.p2 = rayStart + 100.0f * dirVec;
-    input1.maxFraction = 1.0f;
-    input2.p1 = rayStart + 100.0f * dirVec;
-    input2.p2 = rayStart - 100.0f * dirVec;
-    input2.maxFraction = 1.0f;
-
-    for (b2Fixture* fix : portal->collidingFixtures[raySide]){
-        bool res1 = fix->RayCast(&raycastOutput1, input1, b2_dynamicBody);
-        bool res2 = fix->RayCast(&raycastOutput2, input2, b2_dynamicBody);
-
-        if (res1){
-            b2Vec2 collPos1 = raycastOutput1.fraction * (input1.p2 - input1.p1) + input1.p1;
-            b2Vec2 collPos2 = raycastOutput2.fraction * (input2.p2 - input2.p1) + input2.p1;
-
-            float dist1 = pWorld->getDist(portal->points[raySide], portal->points[raySide ^ 1], collPos1);
-            float dist2 = pWorld->getDist(portal->points[raySide], portal->points[raySide ^ 1], collPos2);
-
-            if (dist1 < +0.05f && dist2 > -0.0f){
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 void PortalRay::prepareRaySend(){
     for (rayData* rd : rayResult)
     {
@@ -135,7 +110,8 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
     reset();
 
-    if (rayOutPortal && !portalOutCheck(rayOutPortal, rayStart, dirVec)){
+    // change this
+    if (rayOutPortal && false){
         rayData* rd = new rayData;
         rd->endPos = rayStart;
         rd->dir = dirVec;
@@ -190,38 +166,37 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
     }
 }
 
-void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations){
+void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations)
+{
     Step(timeStep, velocityIterations, positionIterations);
     
-    for (int i = 0; i < portalBodies.size(); i++){
+    for (int i = 0; i < portalBodies.size(); i++)
+    {
         PortalBody* body = portalBodies.at(i);
         body->postHandle();
     }
     
     // for moving portals
-    // for (Portal* p : portals){
-    //     p->pos = p->body->GetPosition();
-    //     p->calculatePoints();
-    // }
+    for (Portal* p : portals)
+    {
+        p->pos = p->body->GetPosition();
+        p->calculatePoints();
+    }
 
-    // rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
-
-    // for (rayData* rd : rayHandler->rayResult){
-    //     DebugDrawer* drawer = (DebugDrawer*)m_debugDraw;
-    //     drawer->renderer->drawArrow(rd->endPos - rd->dir, rd->endPos, b2Color(1, 1, 0));
-    // }
+    rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
 
     globalPostHandle();
 }
 
 void PortalWorld::globalPostHandle(){
     for (PortalBody* b : destroyBodies){
-        for (int i = 0 ; i < portalBodies.size(); i++){
+        for (int i = 0; i < portalBodies.size(); i++){
             if (portalBodies.at(i) == b){
                 portalBodies.erase(portalBodies.begin() + i);
                 break;
             }
         }
+
         delete b;
     }
 
@@ -289,9 +264,16 @@ void PortalWorld::createCloneBody(bodyStruct* s){
     b2Body* body1 = pBody->body;
     b2Vec2 dir1 = side ? -collPortal->dir : collPortal->dir;
     b2Vec2 posDiff = collPortal->pos - body1->GetPosition();
-    b2Vec2 speed = body1->GetLinearVelocity();
+    b2Vec2 baseSpeed = body1->GetLinearVelocity();
 
-    for (portalConnection* c : collPortal->connections[side]){
+    void* extraData0 = ((bodyData*)body1->GetUserData().pointer)->extraData;
+
+    s->collPortal->collidingBodies[s->side].insert(pBody);
+    printf("Added 1\n");
+
+    for (portalConnection* c : collPortal->connections[side])
+    {
+        b2Vec2 speed = baseSpeed - collPortal->body->GetLinearVelocity();
         Portal* portal2 = c->portal2;
         
         b2Vec2 dir2 = c->side2 ? -portal2->dir : portal2->dir;
@@ -314,6 +296,8 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
         b2Body* body2 = CreateBody(&def);
         PortalBody* npb = new PortalBody(body2, this);
+        bodyData* extraDataFiller = (bodyData*)body2->GetUserData().pointer;
+        extraDataFiller->extraData = extraData0;
 
         npb->baseDensities = pBody->baseDensities;
         npb->isMirrored = pBody->isMirrored ^ c->isReversed;
@@ -487,6 +471,8 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         for (portalConnection* conn : portal2->connections[c->side2]){
             if (conn->portal2 == collPortal && conn->side2 == c->side1){
                 bcs->connection = conn;
+                conn->portal1->collidingBodies[conn->side1].insert(npb);
+                printf("Added 2\n");
                 break;
             }
         }
@@ -495,14 +481,18 @@ void PortalWorld::createCloneBody(bodyStruct* s){
         t_bcs->body = npb;
         npb->fixtures.resize(pBody->fixtures.size());
         t_bcs->connection = c;
+
         b2Vec2 lvToSet = rotateVec(speed, angleRot);
         if (c->isReversed){
-            body2->SetAngularVelocity(-body1->GetAngularVelocity());
+            body2->SetAngularVelocity(-body1->GetAngularVelocity() + collPortal->getAngVel() + portal2->getAngVel());
             lvToSet = mirror(dir2, lvToSet);
         }
         else{
-            body2->SetAngularVelocity(body1->GetAngularVelocity());
+            body2->SetAngularVelocity(body1->GetAngularVelocity() - collPortal->getAngVel() + portal2->getAngVel());
         }
+
+        lvToSet += c->portal2->getLinVel();
+
         body2->SetLinearVelocity(lvToSet);
 
         bool allOut = true;
@@ -669,21 +659,20 @@ void PortalWorld::createCloneBody(bodyStruct* s){
     }
 }
 
-void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side) {
+void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side)
+{
     RotationJointDef rotDef;
-    rotDef.Initialize(body1->body, body2->body, connection->isReversed);
+    rotDef.Initialize(body1->body, body2->body, connection);
     rotDef.collideConnected = true;
 
     CreateRotationJoint(&rotDef, body1, body2);
-
+    
     PositionJointDef posJointDef;
     posJointDef.Initialize(body1->body, body2->body, connection);
     posJointDef.collideConnected = true;
-
     CreatePositionJoint(&posJointDef);
     
-    posJointDef.Initialize(body1->body, body2->body, connection, true);
-
+    posJointDef.isRotated = true;
     CreatePositionJoint(&posJointDef);
 }
 
@@ -784,12 +773,15 @@ void PortalWorld::DestroyCustomJoint(b2Joint* cj){
 	cj->m_edgeB.prev = nullptr;
 	cj->m_edgeB.next = nullptr;
 
-    if (((BaseCustomJoint*)cj)->jointType == ROTATION){
+    if (((BaseCustomJoint*)cj)->jointType == ROTATION)
+    {
         m_blockAllocator.Free(cj, sizeof(RotationJoint));
     }
-    else{
+    else
+    {
         m_blockAllocator.Free(cj, sizeof(PositionJoint));
     }
+
 	b2Assert(m_jointCount > 0);
 	--m_jointCount;
 
@@ -815,7 +807,9 @@ b2Vec2 PortalWorld::rotateVec(b2Vec2 vec, float angle){
     return {x, y};
 }
 
-bool PortalWorld::isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, const float t){
+// it checks for left (really)
+bool PortalWorld::isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c, const float t)
+{
 	return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) >= t;
 }
 
@@ -823,7 +817,9 @@ float PortalWorld::vecAngle(b2Vec2 v1, b2Vec2 v2){
 	return abs(calcAngle2(v1) - calcAngle2(v2));
 }
 
-float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
+// left side gives positive values
+float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c)
+{
 	return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
 }
 
@@ -837,6 +833,13 @@ float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c){
     float bot = sqrt(v1 + v2);
 
     return top / bot;
+}
+
+// project a on b
+b2Vec2 PortalWorld::project(b2Vec2 a, b2Vec2 b)
+{
+    if (b.x == 0.0f && b.y == 0.0f) return b2Vec2(0.0f, 0.0f);
+    return (b2Dot(a, b) / b2Dot(b, b)) * b;
 }
 
 float PortalWorld::calcAngle2(b2Vec2 vec) {

@@ -11,55 +11,20 @@ struct PositionJointDef : public b2JointDef
     b2Vec2 dirA;
     b2Vec2 dirB;
 
-    // may change for scaling portals later
-    float ratio = 1.0f;
+    portalConnection* pc;
+    bool isRotated;
 
     PositionJointDef()
 	{
         type = e_unknownJoint;
 	}
 
-	void Initialize(b2Body* bA, b2Body* bB, portalConnection* c, bool isRotated=false){
-        bodyA = bA;
-        bodyB = bB;
-
-        dirA = c->side1 == 0 ? c->portal1->dir : -c->portal1->dir;
-        dirB = c->side2 == 0 ? c->portal2->dir : -c->portal2->dir;
-
-        if (isRotated){
-            if (c->side1 == 0){
-                groundLineA[0] = bA->GetPosition();
-                groundLineA[1] = bA->GetPosition() + c->portal1->dir;
-                dirA = PortalWorld::rotateVec(dirA, -b2_pi * 0.5f);
-            }
-            else{
-                groundLineA[0] = bA->GetPosition();
-                groundLineA[1] = bA->GetPosition() - c->portal1->dir;
-                dirA = PortalWorld::rotateVec(dirA, -b2_pi * 0.5f);
-            }
-            if (c->side2 == 0){
-                groundLineB[0] = bB->GetPosition();
-                groundLineB[1] = bB->GetPosition() + c->portal2->dir;
-                dirB = PortalWorld::rotateVec(dirB, -b2_pi * 0.5f);
-            }
-            else{
-                groundLineB[0] = bB->GetPosition();
-                groundLineB[1] = bB->GetPosition() - c->portal2->dir;
-                dirB = PortalWorld::rotateVec(dirB, -b2_pi * 0.5f);
-            }
-            if (c->isReversed){
-                b2Vec2 tempA = groundLineA[0];
-                groundLineA[0] = groundLineA[1];
-                groundLineA[1] = tempA;
-                dirA = PortalWorld::rotateVec(dirA, b2_pi);
-            }
-        }
-        else{
-            groundLineA[0] = c->portal1->points[c->side1 ^ 1];
-            groundLineA[1] = c->portal1->points[c->side1];
-            groundLineB[0] = c->portal2->points[c->side2 ^ 1];
-            groundLineB[1] = c->portal2->points[c->side2];
-        }
+	void Initialize(b2Body* bA, b2Body* bB, portalConnection* c, bool isRotated=false)
+    {
+        this->bodyA = bA;
+        this->bodyB = bB;
+        this->pc = c;
+        this->isRotated = isRotated;
     }
 };
 
@@ -76,7 +41,8 @@ private:
     b2Vec2 dirA;
     b2Vec2 dirB;
 
-    float ratio;
+    portalConnection* pc;
+    bool isRotated;
 
     int32 m_indexA;
 	int32 m_indexB;
@@ -87,21 +53,65 @@ private:
 
     PositionJoint(const PositionJointDef* def) : BaseCustomJoint(def)
     {
-        groundLineA[0] = def->groundLineA[0];
-        groundLineA[1] = def->groundLineA[1];
-        groundLineB[0] = def->groundLineB[0];
-        groundLineB[1] = def->groundLineB[1];
+        this->dirA = def->dirA;
+        this->dirB = def->dirB;
 
-        dirA = def->dirA;
-        dirB = def->dirB;
+        this->pc = def->pc;
+        this->isRotated = def->isRotated;
 
-        ratio = def->ratio;
+        updateParameters();
 
-        m_impulse = 0.0f;
+        this->m_impulse = 0.0f;
+    }
+
+    void updateParameters()
+    {
+        groundLineA[0] = pc->portal1->pos;
+        groundLineB[0] = pc->portal2->pos;
+
+        if (isRotated)
+        {
+            dirA = pc->side1 == 0 ? -pc->portal1->rotDir : pc->portal1->rotDir;
+            dirB = pc->side2 == 0 ? -pc->portal2->rotDir : pc->portal2->rotDir;
+
+            if (pc->side1 == 0)
+            {
+                groundLineA[1] = pc->portal1->pos + pc->portal1->dir;
+            }
+            else
+            {
+                groundLineA[1] = pc->portal1->pos - pc->portal1->dir;
+            }
+            if (pc->side2 == 0)
+            {
+                groundLineB[1] = pc->portal2->pos + pc->portal2->dir;
+            }
+            else
+            {
+                groundLineB[1] = pc->portal2->pos - pc->portal2->dir;
+            }
+
+            if (pc->isReversed)
+            {
+                groundLineA[0] = groundLineA[1];
+                groundLineA[1] = pc->portal1->pos;
+                dirA = -dirA;
+            }
+        }
+        else
+        {
+            groundLineA[1] = pc->portal1->points[pc->side1];
+            groundLineB[1] = pc->portal2->points[pc->side2];
+
+            dirA = pc->side1 == 0 ? pc->portal1->dir : -pc->portal1->dir;
+            dirB = pc->side2 == 0 ? pc->portal2->dir : -pc->portal2->dir;
+        }
     }
 
     void InitVelocityConstraints(const b2SolverData& data) override
-    {
+    {   
+        updateParameters();
+
         m_indexA = m_bodyA->m_islandIndex;
         m_indexB = m_bodyB->m_islandIndex;
         m_invMassA = m_bodyA->m_invMass;
@@ -113,7 +123,6 @@ private:
         b2Vec2 cB = data.positions[m_indexB].c;
         b2Vec2 vB = data.velocities[m_indexB].v;
 
-        //m_mass = m_invMassA + ratio * ratio * m_invMassB;
         m_mass = m_invMassA + m_invMassB;
 
         if (m_mass > 0.0f)
@@ -125,9 +134,8 @@ private:
         {
             m_impulse *= data.step.dtRatio;
 
-            b2Vec2 PA = -(m_impulse) * dirA;
-            //b2Vec2 PB = (-ratio * m_impulse) * dirB;
-            b2Vec2 PB = (-m_impulse) * dirB;
+            b2Vec2 PA = -m_impulse * dirA;
+            b2Vec2 PB = -m_impulse * dirB;
 
             vA += m_invMassA * PA;
             vB += m_invMassB * PB;
@@ -146,16 +154,23 @@ private:
         b2Vec2 vA = data.velocities[m_indexA].v;
         b2Vec2 vB = data.velocities[m_indexB].v;
 
-        //float Cdot = -b2Dot(dirA, vpA) - m_ratio * b2Dot(dirA, vpB);
-        float Cdot = -b2Dot(dirA, vA) - b2Dot(dirB, vB);
-        float impulse = -m_mass * Cdot;
-        m_impulse += impulse;
+        b2Vec2 velVecA;
+        b2Vec2 centerVecA = m_bodyA->GetPosition() - pc->portal1->pos;
+        velVecA = PortalWorld::rotateVec(centerVecA, b2_pi * 0.5f);
+        velVecA *= pc->portal1->getAngVel();
 
-        b2Vec2 PA = -impulse * dirA;
-        //b2Vec2 PB = -m_ratio * impulse * m_uB;
-        b2Vec2 PB = -impulse * dirB;
-        vA += m_invMassA * PA;
-        vB += m_invMassB * PB;
+        b2Vec2 velVecB;
+        b2Vec2 centerVecB = m_bodyB->GetPosition() - pc->portal2->pos;
+        velVecB = PortalWorld::rotateVec(centerVecB, b2_pi * 0.5f);
+        velVecB *= pc->portal2->getAngVel();
+
+        float Cdot = -b2Dot(dirA, vA - pc->portal1->getLinVel() - velVecA)
+                     -b2Dot(dirB, vB - pc->portal2->getLinVel() - velVecB);
+
+        vA += 0.5f * Cdot * dirA;
+        vB += 0.5f * Cdot * dirB;
+
+        m_impulse += -m_mass * Cdot;
 
         data.velocities[m_indexA].v = vA;
         data.velocities[m_indexB].v = vB;
@@ -169,7 +184,6 @@ private:
         float mA = m_invMassA;
         float mB = m_invMassB;
 
-        //float mass = mA + m_ratio * m_ratio * mB;
         float mass = mA + mB;
 
         if (mass > 0.0f)
@@ -186,7 +200,7 @@ private:
         float impulse = -mass * C;
 
         b2Vec2 PA = -impulse * dirA;
-        b2Vec2 PB = -ratio * impulse * dirB;
+        b2Vec2 PB = -impulse * dirB;
 
         cA -= m_invMassA * PA;
         cB -= m_invMassB * PB;

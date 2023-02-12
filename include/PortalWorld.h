@@ -109,7 +109,6 @@ private:
 
     void reset();
     void endHandle();
-    bool portalOutCheck(Portal* portal, b2Vec2 rayStart, b2Vec2 dirVec);
 
     float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction);
 };
@@ -126,6 +125,8 @@ friend class b2World;
 friend class ContactListener;
 friend class PositionJoint;
 friend class PositionJointDef;
+friend class RotationJoint;
+friend class RotationJointDef;
 
 public:
     std::vector<std::vector<PortalBody*>*> bodyIndices;
@@ -153,10 +154,11 @@ private:
 
     static float normalizeAngle(float angle);
     static b2Vec2 rotateVec(b2Vec2 vec, float angle);
-    static bool isLeft(b2Vec2& a, b2Vec2& b, b2Vec2& c, const float t);
+    static bool isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c, float t);
     static float vecAngle(b2Vec2 v1, b2Vec2 v2);
     static float getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
     static float getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
+    static b2Vec2 project(b2Vec2 a, b2Vec2 b);
 
     static float calcAngle2(b2Vec2 vec);
     static void normalize(b2Vec2* vec);

@@ -17,12 +17,12 @@ class PortalWorldQuery : public b2QueryCallback
 {
 public:
     Portal* portal;
-    int mode = 0;
+    std::vector<b2Fixture*> foundEdges;
 
     PortalWorldQuery(Portal* portal);
 
     void polygonTransform(b2Fixture* fix);
-    bool edgeSplitHorizontal(b2Fixture* fix);
+    void edgeSplitHorizontal();
     void edgeSplitVertical(b2Fixture* fix);
 
 	virtual bool ReportFixture(b2Fixture* fixture);
@@ -34,6 +34,8 @@ friend class PortalWorld;
 friend class PortalBody;
 friend class PortalRay;
 friend class PortalWorldQuery;
+friend class PositionJoint;
+friend class RotationJoint;
 
 public:
 
@@ -46,7 +48,12 @@ public:
     bool isVoid[2];
     b2Vec2 pos;
     b2Vec2 dir;
+    float dirAngle;
+    b2Vec2 rotDir;
     float size;
+
+    // 0: left 1: right
+    b2Fixture* sideEdges[2];
 
     PortalWorldQuery* queryClass;
     b2Vec2 boxMin;
@@ -54,24 +61,30 @@ public:
     void evaluateWorld();
 
     bool isParallel(b2Vec2 p1, b2Vec2 p2);
+    void setLinVel(b2Vec2 speed);
+    b2Vec2 getLinVel();
 
+    void setAngVel(float angVel);
+    float getAngVel();
+    b2Body* body;
 private:
 
     Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
 
     PortalWorld* pWorld;
-    b2Body* body;
+    
     b2Fixture* midFixture;
     b2Fixture* yFix[2];
 
     b2RayCastInput rcInp1;
     b2RayCastInput rcInp2;
 
-    std::set<b2Fixture*> collidingFixtures[2];
+    std::set<PortalBody*> collidingBodies[2];
 
     ~Portal();
 
     int getPointSide(b2Vec2 point);
+    int getPointSideVertical(b2Vec2 point);
     int getFixtureSide(b2Fixture* fix);
 
     // fix1 is always a fixture of the portal

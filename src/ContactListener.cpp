@@ -1,5 +1,6 @@
 #include "ContactListener.h"
 #include "mouseJointHandler.h"
+#include <GameBase.h>
 
 // for mouse
 void ContactListener::endBeginHandle(contactType type, b2Contact* contact) {
@@ -104,10 +105,20 @@ void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impu
     bodyData* bDataA = (bodyData*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
     bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
     
-    if (bDataA && bDataA->extraData){
-        ((TestPlayer*)bDataA->extraData)->reportContact(contact, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
+    if (bDataA && bDataA->extraData)
+    {
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
+        if (physicsData->type == TEST_PLAYER)
+        {
+            ((TestPlayer*)physicsData->data)->reportContact(contact, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
+        }
     }
-    if (bDataB && bDataB->extraData){
-        ((TestPlayer*)bDataB->extraData)->reportContact(contact, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
+    if (bDataB && bDataB->extraData)
+    {
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
+        if (physicsData->type == TEST_PLAYER)
+        {
+            ((TestPlayer*)physicsData->data)->reportContact(contact, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
+        }
     }
 }

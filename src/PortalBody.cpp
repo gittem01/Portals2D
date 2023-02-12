@@ -51,6 +51,9 @@ PortalBody::~PortalBody(){
 			bodyCollisionStatus* bcs = bodyCollStatus->body->bodyMaps->at(j);
 			if (bcs->body == this) {
 				bodyCollStatus->body->bodyMaps->erase(bodyCollStatus->body->bodyMaps->begin() + j);
+                bcs->connection->portal1->collidingBodies[bcs->connection->side1].erase(bodyCollStatus->body);
+                bcs->connection->portal2->collidingBodies[bcs->connection->side2].erase(this);
+                printf("Removed 3\n");
 				j--;
 				delete bcs;
 			}

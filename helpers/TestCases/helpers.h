@@ -14,6 +14,7 @@ const char* testCases[] =   {
                                 "Elevator",
                                 "Squisher and Spirals",
                                 "Mixer",
+                                "ShootShoot Place",
                             };
 
 const int refreshSize = sizeof(refreshRates) / sizeof(refreshRates[0]);
@@ -36,7 +37,7 @@ Renderer* renderer = nullptr;
 mouseJointHandler* mjh = nullptr;
 DebugDrawer* drawer = nullptr;
 ContactListener* contactListener = nullptr;
-int totalIter = 5;
+int totalIter = 10;
 
 // O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f, float isMixed=false) {
@@ -167,8 +168,8 @@ b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
 
     b2FixtureDef fixDef;
     fixDef.shape = &shape;
-    bodyData data = { OTHER, nullptr };
-    fixDef.userData.pointer = (uintptr_t)&data;
+    fixtureData* fData = new fixtureData();
+    fixDef.userData.pointer = (uintptr_t)fData;
 
     edgeBody->CreateFixture(&fixDef);
 

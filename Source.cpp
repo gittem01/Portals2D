@@ -7,7 +7,7 @@ int main(void)
     cam->zoom = 0.75f;
     wh->cam = cam;
 
-    testCase = newTest(wh, 1);
+    testCase = newTest(wh, 8);
     bool done = false;
 
     while (!done)
@@ -50,7 +50,6 @@ int main(void)
         }
 
         glfwSwapInterval(1);
-
         glfwSwapBuffers(wh->window);
 
         if (testCase->shouldGetNewTest){

@@ -45,6 +45,7 @@ class Renderer
 {
 
 friend class DebugDrawer;
+friend class TestPlayer;
 
 public:
     bool drawReleases;

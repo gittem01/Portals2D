@@ -5,6 +5,7 @@
 #include <TestCase5.h>
 #include <TestCase6.h>
 #include <TestCase7.h>
+#include <TestCase8.h>
 
 BaseTestCase* newTest(WindowPainter* wh, int testCaseNum){
     switch (testCaseNum)
@@ -23,7 +24,9 @@ BaseTestCase* newTest(WindowPainter* wh, int testCaseNum){
             return new TestCase6(wh);
         case 7:
             return new TestCase7(wh);
+        case 8:
+            return new TestCase8(wh);
         default:
-            return NULL;
+            return nullptr;
     }
 }

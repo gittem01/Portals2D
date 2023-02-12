@@ -100,7 +100,7 @@ public:
 
         b2Vec2 bPos(10.0f, 5.0f);
         s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
-        b2Body* statBody = createBox(bPos, s, pWorld, b2_staticBody);
+        createEdge(bPos - b2Vec2(-s.x, s.y), bPos + b2Vec2(s.x, s.y), pWorld, b2_staticBody);
 
         b2Vec2 startPos = b2Vec2(29.0f, 20.0f);
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);

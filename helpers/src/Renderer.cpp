@@ -367,7 +367,7 @@ void Renderer::render(){
         bodyRender(brd);
     }
 
-    portalRender();
+    //portalRender();
     for (portalRenderData* prd : portals){
         portalRender(prd);
     }

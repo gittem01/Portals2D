@@ -47,13 +47,19 @@ typedef struct
     int side;
 } portalCollision;
 
-typedef struct fixtureData
+typedef class fixtureData
 {
+public:
     std::vector<portalCollision*> pCollisions;
     int index;
     // will be calculated only for polygon shapes
     float angleThold;
     void* extraData;
+
+    fixtureData()
+    {
+        extraData = nullptr;
+    }
 
     // return 2 if not found, return 1 for colliding, otherwise return release value
     int getPortalStatus(Portal* portal, int side){
@@ -101,6 +107,7 @@ class PortalBody
 {
     
 friend class PortalWorld;
+friend class Portal;
 friend class ContactListener;
 
 public:

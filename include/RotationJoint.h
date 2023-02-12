@@ -4,8 +4,8 @@
 
 struct RotationJointDef : public b2JointDef
 {
+    portalConnection* pc;
     float referenceAngle;
-    bool reversed;
 
     RotationJointDef()
 	{
@@ -13,11 +13,11 @@ struct RotationJointDef : public b2JointDef
 		referenceAngle = 0.0f;
 	}
 
-	void Initialize(b2Body* bA, b2Body* bB, const bool rev){
-        bodyA = bA;
-        bodyB = bB;
-        reversed = rev;
-	    referenceAngle = bodyB->GetAngle() - bodyA->GetAngle();
+	void Initialize(b2Body* bA, b2Body* bB, portalConnection* pc){
+        this->bodyA = bA;
+        this->bodyB = bB;
+        this->pc = pc;
+	    this->referenceAngle = bodyB->GetAngle() - bodyA->GetAngle();
     }
 };
 
@@ -30,8 +30,10 @@ private:
 
     PortalBody* pBodyA;
     PortalBody* pBodyB;
+    portalConnection* pc;
+    float portalAStartAngle;
+    float portalBStartAngle;
     float m_referenceAngle;
-    bool isReversed;
 
     int32 m_indexA;
 	int32 m_indexB;
@@ -44,17 +46,22 @@ private:
 
     RotationJoint(const RotationJointDef* def, PortalBody* pb1, PortalBody* pb2) : BaseCustomJoint(def)
     {
-        isReversed = def->reversed;
+        pc = def->pc;
         pBodyA = pb1;
         pBodyB = pb2;
         m_impulse.SetZero();
 
-        if (isReversed){
-            float angle1 = pb1->body->GetAngle() + pb1->offsetAngle;
-            float angle2 = pb2->body->GetAngle() + pb2->offsetAngle;
+        portalAStartAngle = pc->portal1->body->GetAngle();
+        portalBStartAngle = pc->portal2->body->GetAngle();
+
+        if (pc->isReversed)
+        {
+            float angle1 = pb1->body->GetAngle();
+            float angle2 = pb2->body->GetAngle();
             m_referenceAngle = angle2 + angle1;
         }
-        else{
+        else
+        {
             m_referenceAngle = def->referenceAngle;
         }
     }
@@ -88,14 +95,16 @@ private:
             m_K.ey.Set(k12, k22);
         }
 
-        if (data.step.warmStarting)
+        if (data.step.warmStarting && 0)
         {
             m_impulse *= data.step.dtRatio;
 
-            if (isReversed){
+            if (pc->isReversed)
+            {
                 wA += iA * m_impulse.y;
             }
-            else{
+            else
+            {
                 wA -= iA * m_impulse.y;
             }
             wB += iB * m_impulse.y;
@@ -116,27 +125,32 @@ private:
 
         float iA = m_invIA, iB = m_invIB;
 
-        if (m_invIA == 0.0f && m_invIB == 0.0f){
+        if (m_invIA == 0.0f && m_invIB == 0.0f)
+        {
             iA = 1.0f;
             iB = 1.0f;
         }
 
         b2Vec2 Cdot;
         Cdot.x = 0.0f;
-        if (isReversed){
-            Cdot.y = wB + wA;
+        if (pc->isReversed)
+        {
+            Cdot.y = wB + wA - pc->portal1->getAngVel() - pc->portal2->getAngVel();
         }
-        else{
-            Cdot.y = wB - wA;
+        else
+        {
+            Cdot.y = wB - wA + pc->portal1->getAngVel() - pc->portal2->getAngVel();
         }
 
         b2Vec2 df = m_K.Solve(-Cdot);
         m_impulse += df;
 
-        if (isReversed){
+        if (pc->isReversed)
+        {
             wA += iA * df.y;
         }
-        else{
+        else
+        {
             wA -= iA * df.y;
         }
         wB += iB * df.y;
@@ -154,51 +168,29 @@ private:
         float iA, iB;
 
         // checking only one because this joint should only connect kinematic-kinematic or dynamic-dynamic bodies
-        if (m_invIA == 0.0f && m_invIB == 0.0f){
+        if (m_invIA == 0.0f && m_invIB == 0.0f)
+        {
             mA = 1.0f;
             iA = 1.0f;
             mB = 1.0f;
             iB = 1.0f;
         }
-        else{
+        else
+        {
             mA = m_invMassA, mB = m_invMassB;
             iA = m_invIA, iB = m_invIB;
         }
 
         float lastAngle;
-
-        if (isReversed){
-            float angle1 = aA + pBodyA->offsetAngle;
-            float angle2 = aB + pBodyB->offsetAngle;
-
-            angle1 = fmod(angle1, b2_pi * 2);
-            angle2 = fmod(angle2, b2_pi * 2);
-
-            if (angle1 > b2_pi){
-                angle1 -= b2_pi * 2;
-            }
-            else if (angle1 < -b2_pi){
-                angle1 += b2_pi * 2;
-            }
-
-            if (angle2 > b2_pi){
-                angle2 -= b2_pi * 2;
-            }
-            else if (angle2 < -b2_pi){
-                angle2 += b2_pi * 2;
-            }
-
-            lastAngle = angle1 + angle2 - m_referenceAngle;
-            lastAngle = fmod(lastAngle, b2_pi * 2);
-            if (lastAngle > b2_pi){
-                lastAngle -= b2_pi * 2;
-            }
-            else if (lastAngle < -b2_pi){
-                lastAngle += b2_pi * 2;
-            }
+        if (pc->isReversed)
+        {
+            lastAngle = PortalWorld::normalizeAngle(aA + aB - m_referenceAngle +
+                (portalAStartAngle - pc->portal1->body->GetAngle()) + (portalBStartAngle - pc->portal2->body->GetAngle()));
         }
-        else{
-            lastAngle = aB - aA - m_referenceAngle;
+        else
+        {
+            lastAngle = PortalWorld::normalizeAngle(aB - aA - m_referenceAngle -
+                (portalAStartAngle - pc->portal1->body->GetAngle() - (portalBStartAngle - pc->portal2->body->GetAngle())));
         }
 
         b2Vec2 C1;
@@ -224,10 +216,12 @@ private:
         float LA = impulse1.y;
         float LB = impulse1.y;
 
-        if (isReversed){
+        if (pc->isReversed)
+        {
             aA += iA * LA;
         }
-        else{
+        else
+        {
             aA -= iA * LA;
         }
         aB += iB * LB;

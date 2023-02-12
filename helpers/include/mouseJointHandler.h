@@ -47,19 +47,19 @@ public:
     int lastFrame = INT_MIN;
 
     b2World* world;
-	b2BodyDef bodyDef;
 	b2Body* groundBody;
     b2Body* mouseBody;
 
-	glm::vec2* clicks[2] = { NULL, NULL };
+	glm::vec2* clicks[2] = { nullptr, nullptr };
     WindowPainter* wh;
 
     mouseJointHandler(b2World* world, WindowPainter* wh, Renderer* renderer) {
         this->world = world;
+        b2BodyDef bodyDef;
         this->groundBody = world->CreateBody(&bodyDef);
         this->wh = wh;
         this->renderer = renderer;
-        mouseBody = NULL;
+        mouseBody = nullptr;
         createMouseBody();
         queryCallback = new QueryCallback(this);
     }
@@ -142,12 +142,14 @@ public:
         }
         if (clicks[1]) {
             b2EdgeShape shape;
+            b2BodyDef bDef;
+            b2Body* edgeBody = world->CreateBody(&bDef);
             shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
-            groundBody->CreateFixture(&shape, 0.0f);
+            edgeBody->CreateFixture(&shape, 0.0f);
 
             delete(clicks[0]);
             delete(clicks[1]);
-            clicks[0] = NULL; clicks[1] = NULL;
+            clicks[0] = nullptr; clicks[1] = nullptr;
         }
 
         std::vector<b2MouseJoint*> remJoints;

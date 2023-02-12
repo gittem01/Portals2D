@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 1
+#define ENABLE_TESTPLAYER 0
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -83,12 +83,6 @@ public:
 
     void destroy()
     {
-        for (int i = 0; i < pWorld->portals.size(); i++)
-        {
-            pWorld->destroyPortal(pWorld->portals.at(i));
-            i--;
-        }
-        
         delete mjh;
         delete pWorld;
     #if ENABLE_TESTPLAYER
@@ -165,7 +159,6 @@ public:
         for (int i = 0; i < 2; i++){
             for (Portal* p : pWorld->portals){
                 p->evaluateWorld();
-                p->queryClass->mode++;
             }
         }
     }

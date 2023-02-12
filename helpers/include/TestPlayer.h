@@ -2,11 +2,16 @@
 
 #include <WindowPainter.h>
 #include <DebugDrawer.h>
+#include <PortalGunRayCast.h>
+#include <GameBase.h>
 
 class TestPlayer
 {
 
 public:
+    Portal* portalA;
+    Portal* portalB;
+    float lastPortalCreationTime;
 
     std::vector<PortalBody*>* pBody;
     std::vector<PortalBody*>* gun;
@@ -45,6 +50,10 @@ public:
         this->wp = wp;
         this->size = size;
         createBody(pos);
+
+        portalA = nullptr;
+        portalB = nullptr;
+        lastPortalCreationTime = -1.0f;
 
         haveContact = false;
         onPlatform = false;
@@ -90,7 +99,10 @@ public:
         PortalBody* pb = pWorld->createPortalBody(body);
 
         bodyData* bData = (bodyData*)body->GetUserData().pointer;
-        bData->extraData = this;
+        g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+        physicsData->type = TEST_PLAYER;
+        physicsData->data = this;
+        bData->extraData = physicsData;
 
         pBody = pb->worldIndex;
 
@@ -193,6 +205,7 @@ public:
 
     void camHandle()
     {
+        const float camZoom = 0.5f;
         if (pBody->size() > 1)
         {
             b2Vec2 p1 = pBody->at(0)->body->GetPosition();
@@ -205,13 +218,13 @@ public:
 
             wp->cam->pos += posDiff * 0.03f;
             float reqZoom = sqrt(abs(wp->cam->defaultXSides.x / diff.x));
-            if (reqZoom < 0.65f)
+            if (reqZoom < camZoom)
             {
                 wp->cam->zoom += (reqZoom - wp->cam->zoom) / 10.0f;
             }
             else
             {
-                wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
+                wp->cam->zoom += (camZoom - wp->cam->zoom) / 50.0f;
             }
         }
         else
@@ -219,7 +232,7 @@ public:
             b2Vec2 bp = pBody->at(0)->body->GetPosition();
             glm::vec2 diff = glm::vec2(bp.x, bp.y) - wp->cam->pos;
             wp->cam->pos += diff * 0.03f;
-            wp->cam->zoom += (0.65f - wp->cam->zoom) / 50.0f;
+            wp->cam->zoom += (camZoom - wp->cam->zoom) / 50.0f;
         }
     }
 
@@ -401,6 +414,83 @@ public:
         }
     }
 
+    void handlePortalCD()
+    {
+        const float rayLength = 100.0f;
+        PortalBody* portalGun = gun->at(0);
+        float vecAngle = b2_pi * 0.5f;
+
+        vecAngle += portalGun->body->GetAngle() + portalGun->offsetAngle;
+        b2Vec2 vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
+        b2Vec2 unitVec = b2Vec2(cos(vecAngle), sin(vecAngle));
+
+        DebugDrawer* dDrawer = (DebugDrawer*)pWorld->getDebugDraw();
+        PortalGunRayCast rayCaster = PortalGunRayCast(pWorld);
+
+        rayCaster.cast(portalGun->body->GetPosition(), portalGun->body->GetPosition() + vec);
+
+        if (rayCaster.found)
+        {
+            dDrawer->DrawSegment(rayCaster.rayPoint, rayCaster.rayPoint + rayCaster.rayNormal, b2Color(1, 0, 0, 1));
+
+            if (glfwGetTime() - lastPortalCreationTime > -0.002f)
+            {
+                extern Renderer* renderer;
+                if (wp->keyData[GLFW_KEY_Q] == 1.0f)
+                {
+                    if (portalA)
+                    {
+                        for (auto iter = renderer->portals.begin(); iter != renderer->portals.end(); iter++)
+                        {
+                            if ((*iter)->portal == portalA)
+                            {
+                                renderer->portals.erase(iter);
+                                break;
+                            }
+                        }
+                        pWorld->destroyPortal(portalA);
+                    }
+
+                    portalA = pWorld->createPortal(rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+                    renderer->addPortal(portalA, b2Color(1, 0, 0, 1));
+                    portalA->evaluateWorld();
+                    if (portalB)
+                    {
+                        portalA->connect(portalB);
+                        //portalB->evaluateWorld();
+                    }
+                    lastPortalCreationTime = glfwGetTime();
+                }
+                else if (wp->keyData[GLFW_KEY_E] == 1.0f)
+                {
+                    if (portalB)
+                    {
+                        for (auto iter = renderer->portals.begin(); iter != renderer->portals.end(); iter++)
+                        {
+                            if ((*iter)->portal == portalB)
+                            {
+                                renderer->portals.erase(iter);
+                                break;
+                            }
+                        }
+                        pWorld->destroyPortal(portalB);
+                    }
+
+                    portalB = pWorld->createPortal(rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+                    renderer->addPortal(portalB, b2Color(0, 0, 1, 1));
+                    portalB->evaluateWorld();
+
+                    if (portalA)
+                    {
+                        portalB->connect(portalA);
+                        //portalA->evaluateWorld();
+                    }
+                    lastPortalCreationTime = glfwGetTime();
+                }
+            }
+        }
+    }
+
     void updateReset()
     {
         haveContact = false;
@@ -437,16 +527,9 @@ public:
             }
         }
 
-        for (PortalBody* portalBody : *pBody){
-            bodyData* bd = (bodyData*)portalBody->body->GetUserData().pointer;
-            if (bd && !bd->extraData){
-                 bd->extraData = (void*)this;
-            }
-        }
-
-        if (onPlatform){
-            b2Vec2 pVel = platformBody->GetLinearVelocity();
-            speedOffset = pVel.x;
+        if (onPlatform)
+        {
+            speedOffset = platformBody->GetLinearVelocity().x;
         }
 
         if (wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A]){
@@ -663,7 +746,7 @@ public:
         }
         else if (!haveContact)
         {
-            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 5.0f);
+            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 0.5f);
         }
         else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
         {
@@ -684,15 +767,17 @@ public:
             lv.y = 10.0f * (float)pBody->size();
         }
 
-        if (lv.y < -40.0f)
+        if (lv.y < -20.0f)
         {
-            lv.y = -40.0f;
+            lv.y = -20.0f;
         }
         pb->body->SetLinearVelocity(lv);
 
         handleBodyRotation();
 
         handleGunRotation();
+
+        handlePortalCD();
 
         updateReset();
     }

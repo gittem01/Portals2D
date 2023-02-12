@@ -4,28 +4,22 @@
 #include <chrono>
 #include <thread>
 #include <DebugDrawer.h>
+#include <GameBase.h>
 
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
     dir.Normalize();
 
     this->pWorld = pWorld;
     this->pos = pos;
-    this->dir = dir;
+    this->dirAngle = PortalWorld::calcAngle2(dir);
     this->size = size;
     this->isVoid[0] = false; this->isVoid[1] = false;
 
-    calculatePoints();
+    this->sideEdges[0] = nullptr;
+    this->sideEdges[1] = nullptr;
+
     createPortalBody();
-    
-    float inMargin = 0.01f / b2Distance(points[0], points[1]);
-
-    this->rcInp1.p1 = points[0];
-    this->rcInp1.p2 = points[1];
-    this->rcInp1.maxFraction = 1.0f - inMargin;
-
-    this->rcInp2.p1 = points[1];
-    this->rcInp2.p2 = points[0];
-    this->rcInp2.maxFraction = 1.0f - inMargin;
+    calculatePoints();
 
     this->queryClass = new PortalWorldQuery(this);
 }
@@ -33,7 +27,69 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){
 Portal::~Portal(){
     delete queryClass;
 
-    for (int i = 0; i < 2; i++){
+    for (int i = 0; i < 2; i++)
+    {
+        std::vector<PortalBody*> leftOutBodies;
+        for (PortalBody* pb : collidingBodies[i])
+        {
+            PortalBody* leftOutBody = pb;
+            Portal* outPortal = this;
+            int side = i;
+
+            for (bodyCollisionStatus* bcs : *pb->bodyMaps)
+            {
+                if (bcs->connection->portal2->getPointSide(bcs->body->body->GetPosition()) == bcs->connection->side2)
+                {
+                    leftOutBody = bcs->body;
+                    outPortal = bcs->connection->portal2;
+                    side = bcs->connection->side2;
+                    break;
+                }
+            }
+            leftOutBodies.push_back(leftOutBody);
+
+            b2Vec2 posChangeDir;
+            if (side == 0)
+            {
+                posChangeDir = outPortal->dir;
+            }
+            else
+            {
+                posChangeDir = -outPortal->dir;
+            }
+
+            leftOutBody->body->SetTransform(leftOutBody->body->GetPosition() + 0.5f * posChangeDir, leftOutBody->body->GetAngle());
+        }
+
+        for (PortalBody* leftOutBody : leftOutBodies)
+        {
+            for (b2Fixture* fix : leftOutBody->fixtures)
+            {
+                fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+                fixData->pCollisions.clear();
+            }
+
+            for (int j = leftOutBody->bodyMaps->size() - 1; j >= 0; j--)
+            {
+                bodyCollisionStatus* deleteStat = leftOutBody->bodyMaps->at(j);
+                for (int k = 0; k < pWorld->portalBodies.size(); k++)
+                {
+                    if (pWorld->portalBodies.at(k) == deleteStat->body)
+                    {
+                        pWorld->portalBodies.erase(pWorld->portalBodies.begin() + k);
+                        break;
+                    }
+                }
+
+                delete deleteStat->body;
+            }
+
+            leftOutBody->bodyMaps->clear();
+        }
+    }
+
+    for (int i = 0; i < 2; i++)
+    {
         if (isVoid[i]){
             free(connections[i][0]);
             continue;
@@ -59,6 +115,123 @@ Portal::~Portal(){
 
     free((void*)body->GetUserData().pointer);
     pWorld->DestroyBody(body);
+
+    {
+        int count = 0;
+        if (sideEdges[0]) count++;
+        if (sideEdges[1]) count++;
+        printf("Count: %d\n", count);
+    }
+    b2Vec2 leftPoint = points[0];
+    b2Vec2 rightPoint = points[1];
+    b2Fixture* leftFixture = sideEdges[0];
+    b2Fixture* rightFixture = sideEdges[1];
+    Portal* portals[2];
+    int pCount = 0;
+    if (leftFixture)
+    {
+        fixtureData* fData = (fixtureData*)leftFixture->GetUserData().pointer;
+        if (fData)
+        {
+            g_PhysicsData* pData = (g_PhysicsData*)fData->extraData;
+            g_EdgeData* eData = (g_EdgeData*)pData->data;
+            if (eData->count > 1)
+            {
+                if (eData->portals[0] == this)
+                {
+                    portals[pCount++] = eData->portals[1];
+                }
+                else
+                {
+                    portals[pCount++] = eData->portals[0];
+                }
+            }
+            free(eData);
+            free(pData);
+            free(fData);
+        }
+        b2EdgeShape* edgeShape = (b2EdgeShape*)leftFixture->GetShape();
+        b2Vec2 v1 = (points[0] - leftFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex1));
+        b2Vec2 v2 = (points[0] - leftFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex2));
+        float l1 = v1.x * v1.x + v1.y * v1.y;
+        float l2 = v2.x * v2.x + v2.y * v2.y;
+
+        if (l1 > l2)
+        {
+            leftPoint = leftFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex1);
+        }
+        else
+        {
+            leftPoint = leftFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex2);
+        }
+
+        pWorld->DestroyBody(leftFixture->GetBody());
+    }
+    if (rightFixture)
+    {
+        fixtureData* fData = (fixtureData*)rightFixture->GetUserData().pointer;
+        if (fData)
+        {
+            g_PhysicsData* pData = (g_PhysicsData*)fData->extraData;
+            g_EdgeData* eData = (g_EdgeData*)pData->data;
+            if (eData->count > 1)
+            {
+                if (eData->portals[0] == this)
+                {
+                    portals[pCount++] = eData->portals[1];
+                }
+                else
+                {
+                    portals[pCount++] = eData->portals[0];
+                }
+            }
+            free(eData);
+            free(pData);
+            free(fData);
+        }
+        b2EdgeShape* edgeShape = (b2EdgeShape*)rightFixture->GetShape();
+        b2Vec2 v1 = (points[1] - rightFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex1));
+        b2Vec2 v2 = (points[1] - rightFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex2));
+        float l1 = v1.x * v1.x + v1.y * v1.y;
+        float l2 = v2.x * v2.x + v2.y * v2.y;
+
+        if (l1 > l2)
+        {
+            rightPoint = rightFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex1);
+        }
+        else
+        {
+            rightPoint = rightFixture->GetBody()->GetWorldPoint(edgeShape->m_vertex2);
+        }
+
+        pWorld->DestroyBody(rightFixture->GetBody());
+    }
+
+    b2BodyDef bDef;
+    b2Body* edgeBody = pWorld->CreateBody(&bDef);
+    b2FixtureDef fDef;
+    b2EdgeShape edgeShape;
+    edgeShape.SetTwoSided(rightPoint, leftPoint);
+    fDef.shape = &edgeShape;
+
+    fixtureData* fData = new fixtureData();
+    fDef.userData.pointer = (uintptr_t)fData;
+    b2Fixture* f = edgeBody->CreateFixture(&fDef);
+
+    g_PhysicsData* pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+    pData->type = EDGE;
+    g_EdgeData* eData = (g_EdgeData*)malloc(sizeof(g_EdgeData));
+    eData->count = 0;
+
+    fData->extraData = (void*)pData;
+    pData->data = (void*)eData;
+
+    for (int i = 0; i < pCount; i++)
+    {
+        eData->portals[eData->count++] = portals[i];
+        int side = portals[i]->getPointSideVertical(this->pos);
+        portals[i]->sideEdges[side] = f;
+    }
 }
 
 void Portal::evaluateWorld(){
@@ -67,30 +240,51 @@ void Portal::evaluateWorld(){
     
     b2AABB queryAABB = { boxMin, boxMax };
     pWorld->QueryAABB(queryClass, queryAABB);
+
+    queryClass->edgeSplitHorizontal();
 }
 
-void Portal::calculatePoints(){
-    float angle = pWorld->calcAngle2(this->dir) + b2_pi / 2.0f;
+void Portal::calculatePoints()
+{
+    dirAngle = body->GetAngle();
+    dir = b2Vec2(cos(dirAngle), sin(dirAngle));
 
-    points[0].x = pos.x + cos(angle) * size;
-    points[0].y = pos.y + sin(angle) * size;
+    points[0].x = pos.x + cos(dirAngle + b2_pi * 0.5f) * size;
+    points[0].y = pos.y + sin(dirAngle + b2_pi * 0.5f) * size;
 
-    points[1].x = pos.x - cos(angle) * size;
-    points[1].y = pos.y - sin(angle) * size;
+    points[1].x = pos.x - cos(dirAngle + b2_pi * 0.5f) * size;
+    points[1].y = pos.y - sin(dirAngle + b2_pi * 0.5f) * size;
+
+    rotDir = points[0] - points[1];
+    rotDir.Normalize();
+
+    float inMargin = 0.01f / b2Distance(points[0], points[1]);
+
+    rcInp1.p1 = points[0];
+    rcInp1.p2 = points[1];
+    rcInp1.maxFraction = 1.0f - inMargin;
+
+    rcInp2.p1 = points[1];
+    rcInp2.p2 = points[0];
+    rcInp2.maxFraction = 1.0f - inMargin;
 }
 
 void Portal::createPortalBody(){
     b2BodyDef bd;
+    bd.bullet = true;
+    bd.angularDamping = 0.0f;
+    bd.linearDamping = 0.0f;
     bd.position = pos;
     bodyData* data = (bodyData*)malloc(sizeof(bodyData));
     *data = { PORTAL, this };
     bd.userData.pointer = (uintptr_t)data;
 
-    bd.type = b2_staticBody;
+    bd.type = b2_dynamicBody;
+    bd.angle = dirAngle;
     body = pWorld->CreateBody(&bd);
 
     b2EdgeShape shape;
-    shape.SetTwoSided(points[0] - pos, points[1] - pos);
+    shape.SetTwoSided(b2Vec2(0.0f, -size), b2Vec2(0.0f, +size));
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;
@@ -101,15 +295,41 @@ void Portal::createPortalBody(){
     b2Vec2 pVec = points[1] - points[0];
     pWorld->normalize(&pVec);
 
-    shape.SetTwoSided(points[0] - pos, points[0] - pos);
+    shape.SetTwoSided(b2Vec2(0.0f, -size), b2Vec2(0.0f, -size));
     yFix[0] = body->CreateFixture(&shape, 0.0f);
 
-    shape.SetTwoSided(points[1] - pos, points[1] - pos);
+    shape.SetTwoSided(b2Vec2(0.0f, +size), b2Vec2(0.0f, +size));
     yFix[1] = body->CreateFixture(&shape, 0.0f);
 }
 
-int Portal::getPointSide(b2Vec2 point){
-    return pWorld->isLeft(points[1], points[0], point, 0.0f);
+void Portal::setLinVel(b2Vec2 speed)
+{
+    body->SetLinearVelocity(speed);
+}
+
+b2Vec2 Portal::getLinVel()
+{
+    return body->GetLinearVelocity();
+}
+
+void Portal::setAngVel(float angVel)
+{
+    body->SetAngularVelocity(angVel);
+}
+
+float Portal::getAngVel()
+{
+    return body->GetAngularVelocity();
+}
+
+int Portal::getPointSide(b2Vec2 point)
+{
+    return PortalWorld::isLeft(points[1], points[0], point, 0.0f);
+}
+
+int Portal::getPointSideVertical(b2Vec2 point)
+{
+    return PortalWorld::isLeft(pos + dir, pos, point, 0.0f);
 }
 
 PortalCollisionType Portal::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){    
@@ -359,15 +579,15 @@ int Portal::getFixtureSide(b2Fixture* fix){
 
     if (fix->GetType() == b2Shape::Type::e_circle){
         b2CircleShape* shape = (b2CircleShape*)fix->GetShape();
-        b2Vec2 pos = fix->GetBody()->GetWorldPoint(shape->m_p);
-        if (pWorld->isLeft(points[0], points[1], pos, 0.0f)) side = 0;
+        b2Vec2 l_pos = fix->GetBody()->GetWorldPoint(shape->m_p);
+        if (pWorld->isLeft(points[0], points[1], l_pos, 0.0f)) side = 0;
     }
     else{
         b2PolygonShape* shape = (b2PolygonShape*)fix->GetShape();
         float totalDist = 0.0f;
         for (int i = 0; i < shape->m_count; i++){
-            b2Vec2 pos = fix->GetBody()->GetWorldPoint(shape->m_vertices[i]);
-            totalDist += pWorld->getDist(points[0], points[1], pos);
+            b2Vec2 l_pos = fix->GetBody()->GetWorldPoint(shape->m_vertices[i]);
+            totalDist += pWorld->getDist(points[0], points[1], l_pos);
         }
         if (totalDist >= 0.0f) side = 0;
     }
@@ -599,14 +819,12 @@ void EvaluationRay::rayCast(b2Vec2 p1, b2Vec2 p2){
 float EvaluationRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction){
     if (fixture->IsSensor() || fixture->GetBody()->GetType() != b2_staticBody) return 1.0f;
 
-    bool isPortal = false;
     bodyData* bd = (bodyData*)(fixture->GetBody()->GetUserData().pointer);
     if (bd){
         switch (bd->type)
         {
         case PORTAL:
             return 1.0f;
-            break;
 
         default:
             break;
@@ -664,9 +882,9 @@ b2Vec2 Portal::getRayPoint(b2RayCastInput& rcInput, b2RayCastOutput& rcOutput) {
 
 PortalWorldQuery::PortalWorldQuery(Portal* portal) {
     this->portal = portal;
-    this->mode = 0;
 }
 
+// unused
 void PortalWorldQuery::polygonTransform(b2Fixture* fixture){
     if (fixture->GetShape()->GetType() == b2Shape::e_polygon){
         bool parallelFound = false;
@@ -698,81 +916,171 @@ void PortalWorldQuery::polygonTransform(b2Fixture* fixture){
     }
 }
 
-bool PortalWorldQuery::edgeSplitHorizontal(b2Fixture* fixture){
-    b2EdgeShape* eShape = (b2EdgeShape*)fixture->GetShape();
-    b2Body* fBody = fixture->GetBody();
-
-    b2Vec2 p1 = fBody->GetWorldPoint(eShape->m_vertex1);
-    b2Vec2 p2 = fBody->GetWorldPoint(eShape->m_vertex2);
-
-    PortalWorld* pWorld = portal->pWorld;
-    if (portal->isParallel(p1, p2)){
-        bool leftFound = false;
-        bool rightFound = false;
-
-        b2Vec2 rightPoint;
-        b2Vec2 leftPoint;
-
-        float v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p1);
-        float v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p1);
-
-        if (v1 < 0.0001f){
-            leftFound = true;
-            leftPoint = p1;
+void PortalWorldQuery::edgeSplitHorizontal()
+{
+    for (b2Fixture* fixture : foundEdges)
+    {
+        if (fixture->GetShape() == nullptr)
+        {
+            printf("Stop!!!\n");
         }
-        else if (v2 > -0.0001f){
-            rightFound = true;
-            rightPoint = p1;
+        b2EdgeShape* eShape = (b2EdgeShape*)fixture->GetShape();
+        b2Body* fBody = fixture->GetBody();
+
+        b2Vec2 p1 = fBody->GetWorldPoint(eShape->m_vertex1);
+        b2Vec2 p2 = fBody->GetWorldPoint(eShape->m_vertex2);
+
+        if (portal->isParallel(p1, p2))
+        {
+            bool leftFound = false;
+            bool rightFound = false;
+
+            Portal* leftPortal = nullptr;
+            Portal* rightPortal = nullptr;
+
+            b2Vec2 rightPoint;
+            b2Vec2 leftPoint;
+
+            fixtureData *fixData = (fixtureData *) fixture->GetUserData().pointer;
+            g_EdgeData *edgeData = nullptr;
+            if (fixData && fixData->extraData)
+            {
+                g_PhysicsData *pData = (g_PhysicsData *) fixData->extraData;
+                if (pData->type == EDGE)
+                {
+                    edgeData = (g_EdgeData *) pData->data;
+                }
+            }
+            if (edgeData && edgeData->count > 0)
+            {
+                Portal *portal1 = edgeData->portals[0];
+                int side = PortalWorld::isLeft(portal->pos, portal->pos + portal->dir, portal1->pos, 0.0f);
+                if (side == 1)
+                {
+                    leftPortal = portal1;
+                    if (edgeData->count == 2)
+                    {
+                        rightPortal = edgeData->portals[1];
+                    }
+                }
+                else
+                {
+                    rightPortal = portal1;
+                    if (edgeData->count == 2)
+                    {
+                        leftPortal = edgeData->portals[1];
+                    }
+                }
+            }
+
+            float v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p1);
+            float v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p1);
+
+            if (v1 < 0.0001f)
+            {
+                leftFound = true;
+                leftPoint = p1;
+            }
+            else if (v2 > -0.0001f)
+            {
+                rightFound = true;
+                rightPoint = p1;
+            }
+
+            v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p2);
+            v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p2);
+
+            if (v1 < 0.0001f)
+            {
+                if (leftFound) return;
+                leftFound = true;
+                leftPoint = p2;
+            }
+            else if (v2 > -0.0001f)
+            {
+                if (rightFound) return;
+                rightFound = true;
+                rightPoint = p2;
+            }
+            if (!leftFound && !rightFound)
+            {
+                portal->pWorld->DestroyBody(fBody);
+                return;
+            }
+
+            if (rightFound)
+            {
+                b2BodyDef bodyDef;
+                b2Body *edgeBody = portal->pWorld->CreateBody(&bodyDef);
+                b2FixtureDef edgeDef;
+                b2EdgeShape edgeShape;
+                edgeShape.SetTwoSided(fBody->GetWorldPoint(rightPoint), fBody->GetWorldPoint(portal->points[1]));
+                edgeDef.shape = &edgeShape;
+
+                fixtureData *rFixData = new fixtureData();
+                edgeDef.userData.pointer = (uintptr_t) rFixData;
+                g_EdgeData *rEdgeData = (g_EdgeData *) malloc(sizeof(g_EdgeData));
+                g_PhysicsData *phyData = (g_PhysicsData *) malloc(sizeof(g_PhysicsData));
+                phyData->type = EDGE;
+                phyData->data = (void *) rEdgeData;
+                rEdgeData->count = 0;
+                rFixData->extraData = (void *) phyData;
+
+                b2Fixture *f = edgeBody->CreateFixture(&edgeDef);
+                if (rightPortal)
+                {
+                    rEdgeData->portals[0] = rightPortal;
+                    rEdgeData->count = 1;
+
+                    int side = rightPortal->getPointSideVertical(portal->pos);
+                    rightPortal->sideEdges[side] = f;
+                }
+                rEdgeData->portals[rEdgeData->count++] = portal;
+
+                portal->sideEdges[1] = f;
+            }
+            if (leftFound)
+            {
+                b2BodyDef bodyDef;
+                b2Body *edgeBody = portal->pWorld->CreateBody(&bodyDef);
+                b2FixtureDef edgeDef;
+                b2EdgeShape edgeShape;
+                edgeShape.SetTwoSided(fBody->GetWorldPoint(leftPoint), fBody->GetWorldPoint(portal->points[0]));
+                edgeDef.shape = &edgeShape;
+
+                fixtureData *lFixData = new fixtureData();
+                edgeDef.userData.pointer = (uintptr_t) lFixData;
+                g_EdgeData *lEdgeData = (g_EdgeData *) malloc(sizeof(g_EdgeData));
+                g_PhysicsData *phyData = (g_PhysicsData *) malloc(sizeof(g_PhysicsData));
+                phyData->type = EDGE;
+                phyData->data = (void *) lEdgeData;
+                lEdgeData->count = 0;
+                lFixData->extraData = (void *) phyData;
+
+                b2Fixture *f = edgeBody->CreateFixture(&edgeDef);
+
+                if (leftPortal)
+            {
+                    lEdgeData->portals[0] = leftPortal;
+                    lEdgeData->count = 1;
+
+                    int side = leftPortal->getPointSideVertical(portal->pos);
+                    leftPortal->sideEdges[side] = f;
+                }
+                lEdgeData->portals[lEdgeData->count++] = portal;
+
+                portal->sideEdges[0] = f;
+            }
+
+            portal->pWorld->DestroyBody(fBody);
         }
-
-        v1 = PortalWorld::getDist(portal->points[0] + portal->dir, portal->points[0], p2);
-        v2 = PortalWorld::getDist(portal->points[1] + portal->dir, portal->points[1], p2);
-
-        if (v1 < 0.0001f){
-            if (leftFound) return true;
-            leftFound = true;
-            leftPoint = p2;
-        }
-        else if (v2 > -0.0001f){
-            if (rightFound) return true;
-            rightFound = true;
-            rightPoint = p2;
-        }
-        if (!leftFound && !rightFound){
-            fBody->DestroyFixture(fixture);
-            return true;
-        }
-
-        // needed to conserve position of the edge
-        b2BodyDef bDef;
-        b2Body* dummyBody = pWorld->CreateBody(&bDef);
-
-        if (rightFound){
-            b2FixtureDef edgeDef;
-            b2EdgeShape edgeShape;
-            edgeShape.SetTwoSided(rightPoint, portal->points[1]);
-            edgeDef.shape = &edgeShape;
-
-            dummyBody->CreateFixture(&edgeDef);
-        }
-        if (leftFound){
-            b2FixtureDef edgeDef;
-            b2EdgeShape edgeShape;
-            edgeShape.SetTwoSided(leftPoint, portal->points[0]);
-            edgeDef.shape = &edgeShape;
-
-            dummyBody->CreateFixture(&edgeDef);
-        }
-        fBody->DestroyFixture(fixture);
-
-        return true;
     }
-    else{
-        return false;
-    }
+
+    foundEdges.clear();
 }
 
-void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture){
+void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture)
+{
     b2EdgeShape* eShape = (b2EdgeShape*)fixture->GetShape();
     b2Body* fBody = fixture->GetBody();
 
@@ -782,10 +1090,12 @@ void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture){
     float s1 = PortalWorld::getDist(portal->points[0], portal->points[1], p1);
     float s2 = PortalWorld::getDist(portal->points[0], portal->points[1], p2);
 
-    if (s1 < 0 && s2 < 0 || s1 > 0 && s2 > 0){
+    if (s1 < 0 && s2 < 0 || s1 > 0 && s2 > 0)
+    {
         return;
     }
-    if (abs(s1) < 0.001f || abs(s2) < 0.001f){
+    if (abs(s1) < 0.001f || abs(s2) < 0.001f)
+    {
         return;
     }
 
@@ -795,16 +1105,19 @@ void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture){
     bool willSplit = false;
     b2Vec2 splitPoint;
 
-    if (dist1 < 0.0001f){
+    if (dist1 < 0.0001f)
+    {
         willSplit = true;
         splitPoint = portal->points[0];
     }
-    else if (dist2 < 0.0001f){
+    else if (dist2 < 0.0001f)
+    {
         willSplit = true;
         splitPoint = portal->points[1];
     }
 
-    if (willSplit){
+    if (willSplit)
+    {
         b2BodyDef bDef;
         b2Body* dummyBody = portal->pWorld->CreateBody(&bDef);
 
@@ -822,25 +1135,30 @@ void PortalWorldQuery::edgeSplitVertical(b2Fixture* fixture){
     }
 }
 
-bool PortalWorldQuery::ReportFixture(b2Fixture* fixture){
+bool PortalWorldQuery::ReportFixture(b2Fixture* fixture)
+{
     if (fixture->IsSensor() || fixture->GetBody()->GetType() != b2_staticBody || 
-        fixture == portal->midFixture || fixture == portal->yFix[0] || fixture == portal->yFix[1]){
+        fixture == portal->midFixture || fixture == portal->yFix[0] || fixture == portal->yFix[1])
+    {
+        fixture->GetBody()->SetAwake(true);
         return true;
     }
 
     bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
-    if (bData && bData->type == PORTAL){
+    if (bData && bData->type == PORTAL)
+    {
         return true;
     }
 
-    // TODO : store all creation and destructions
-    // So, after the portal is destroyed world can be restored to its original state
-    if (mode == 0){
-        polygonTransform(fixture);
+    if (fixture->GetShape()->GetType() == b2Shape::e_edge)
+    {
+        foundEdges.push_back(fixture);
     }
-    else if(!edgeSplitHorizontal(fixture)){
-        edgeSplitVertical(fixture);
-    }
+//    if(!edgeSplitHorizontal(fixture))
+//    {
+//        return true;
+//        //edgeSplitVertical(fixture);
+//    }
 
     return true;
 }
