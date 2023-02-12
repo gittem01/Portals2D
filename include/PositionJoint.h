@@ -41,27 +41,32 @@ private:
     b2Vec2 dirA;
     b2Vec2 dirB;
 
+    b2Vec2 lastSpeedA;
+    b2Vec2 speedChangeA;
+
+    b2Vec2 lastSpeedB;
+    b2Vec2 speedChangeB;
+
     portalConnection* pc;
     bool isRotated;
 
     int32 m_indexA;
 	int32 m_indexB;
-	float m_invMassA;
-	float m_invMassB;
-	float m_mass;
-    float m_impulse;
 
     PositionJoint(const PositionJointDef* def) : BaseCustomJoint(def)
     {
+        this->jointType = POSITION;
+
         this->dirA = def->dirA;
         this->dirB = def->dirB;
 
         this->pc = def->pc;
         this->isRotated = def->isRotated;
 
-        updateParameters();
+        this->lastSpeedA = pc->portal1->getLinVel();
+        this->lastSpeedB = pc->portal2->getLinVel();
 
-        this->m_impulse = 0.0f;
+        updateParameters();
     }
 
     void updateParameters()
@@ -109,40 +114,31 @@ private:
     }
 
     void InitVelocityConstraints(const b2SolverData& data) override
-    {   
+    {
         updateParameters();
 
         m_indexA = m_bodyA->m_islandIndex;
         m_indexB = m_bodyB->m_islandIndex;
-        m_invMassA = m_bodyA->m_invMass;
-        m_invMassB = m_bodyB->m_invMass;
 
         b2Vec2 cA = data.positions[m_indexA].c;
         b2Vec2 vA = data.velocities[m_indexA].v;
 
         b2Vec2 cB = data.positions[m_indexB].c;
         b2Vec2 vB = data.velocities[m_indexB].v;
-
-        m_mass = m_invMassA + m_invMassB;
-
-        if (m_mass > 0.0f)
         {
-            m_mass = 1.0f / m_mass;
+            speedChangeA = pc->portal1->getLinVel() - lastSpeedA;
+            lastSpeedA = pc->portal1->getLinVel();
+            speedChangeA = pc->portal2->pos - PortalWorld::getRelativePortalPosition(pc->portal1->pos + speedChangeA, pc);
+            speedChangeA = PortalWorld::project(speedChangeA, dirB);
+            vB += speedChangeA;
         }
 
-        if (data.step.warmStarting)
         {
-            m_impulse *= data.step.dtRatio;
-
-            b2Vec2 PA = -m_impulse * dirA;
-            b2Vec2 PB = -m_impulse * dirB;
-
-            vA += m_invMassA * PA;
-            vB += m_invMassB * PB;
-        }
-        else
-        {
-            m_impulse = 0.0f;
+            speedChangeB = pc->portal2->getLinVel() - lastSpeedB;
+            lastSpeedB = pc->portal2->getLinVel();
+            speedChangeB = pc->portal1->pos - PortalWorld::getRelativePortalPositionReverse(pc->portal2->pos + speedChangeB, pc);
+            speedChangeB = PortalWorld::project(speedChangeB, dirA);
+            vA += speedChangeB;
         }
 
         data.velocities[m_indexA].v = vA;
@@ -164,13 +160,13 @@ private:
         velVecB = PortalWorld::rotateVec(centerVecB, b2_pi * 0.5f);
         velVecB *= pc->portal2->getAngVel();
 
-        float Cdot = -b2Dot(dirA, vA - pc->portal1->getLinVel() - velVecA)
-                     -b2Dot(dirB, vB - pc->portal2->getLinVel() - velVecB);
-
+        b2Vec2 relVel1 = pc->portal2->pos - PortalWorld::getRelativePortalPosition(pc->portal1->pos + pc->portal1->getLinVel(), pc);
+        b2Vec2 relVel2 = pc->portal1->pos - PortalWorld::getRelativePortalPositionReverse(pc->portal2->pos + pc->portal2->getLinVel(), pc);
+        float Cdot =    -b2Dot(dirA, vA - relVel2 - velVecA)
+                        -b2Dot(dirB, vB - relVel1 - velVecB);
+       
         vA += 0.5f * Cdot * dirA;
         vB += 0.5f * Cdot * dirB;
-
-        m_impulse += -m_mass * Cdot;
 
         data.velocities[m_indexA].v = vA;
         data.velocities[m_indexB].v = vB;
@@ -178,18 +174,9 @@ private:
 
     bool SolvePositionConstraints(const b2SolverData& data) override
     {
-        b2Vec2 cA = data.positions[m_indexA].c;
-        b2Vec2 cB = data.positions[m_indexB].c;
-
-        float mA = m_invMassA;
-        float mB = m_invMassB;
-
-        float mass = mA + mB;
-
-        if (mass > 0.0f)
-        {
-            mass = 1.0f / mass;
-        }
+        //return 0;
+        b2Vec2 cA = data.positions[m_indexA].c - data.step.dt * speedChangeB;
+        b2Vec2 cB = data.positions[m_indexB].c - data.step.dt * speedChangeA;
 
         float distA = PortalWorld::getRealDist(groundLineA[0], groundLineA[1], cA);
         float distB = PortalWorld::getRealDist(groundLineB[0], groundLineB[1], cB);
@@ -197,13 +184,11 @@ private:
         float C = distA + distB;
         float linearError = b2Abs(C);
 
-        float impulse = -mass * C;
+        b2Vec2 PA = C * dirA;
+        b2Vec2 PB = C * dirB;
 
-        b2Vec2 PA = -impulse * dirA;
-        b2Vec2 PB = -impulse * dirB;
-
-        cA -= m_invMassA * PA;
-        cB -= m_invMassB * PB;
+        cA -= 0.5f * PA;
+        cB -= 0.5f * PB;
 
         data.positions[m_indexA].c = cA;
         data.positions[m_indexB].c = cB;

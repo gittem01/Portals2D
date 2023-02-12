@@ -46,6 +46,8 @@ private:
 
     RotationJoint(const RotationJointDef* def, PortalBody* pb1, PortalBody* pb2) : BaseCustomJoint(def)
     {
+        this->jointType = ROTATION;
+
         pc = def->pc;
         pBodyA = pb1;
         pBodyB = pb2;

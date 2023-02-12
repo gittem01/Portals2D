@@ -23,8 +23,10 @@ public:
 	b2Vec2 GetReactionForce(float inv_dt) const override { return b2Vec2(); };
 	float GetReactionTorque(float inv_dt) const override { return 0.0f; };
 
-private:
+protected:
     PortalJointType jointType;
+
+private:
 
     BaseCustomJoint(const b2JointDef* def) : b2Joint(def) {}
 };

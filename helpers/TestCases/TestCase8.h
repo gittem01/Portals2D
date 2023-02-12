@@ -39,8 +39,8 @@ public:
         cShape.m_p = b2Vec2(0.0f, -2.5f);
         portal1->body->CreateFixture(&fDef);
 
-        portal1->connect(portal2, false, 0, 1);
-        portal1->connect(portal2, false, 1, 0);
+        portal1->connect(portal2, true, 0, 1);
+        portal1->connect(portal2, true, 1, 0);
 
         portal1->setLinVel(b2Vec2(0, 0));
 
@@ -103,10 +103,12 @@ public:
         if (wh->keyData[GLFW_KEY_LEFT])
         {
             setAngle += angSpeedAddition;
+            //setSpeed += speedAddition * portal2->rotDir;
         }
         if (wh->keyData[GLFW_KEY_RIGHT])
         {
             setAngle -= angSpeedAddition;
+            //setSpeed -= speedAddition * portal2->rotDir;
         }
         if (wh->keyData[GLFW_KEY_DOWN])
         {
