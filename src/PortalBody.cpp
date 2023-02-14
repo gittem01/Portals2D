@@ -53,7 +53,6 @@ PortalBody::~PortalBody(){
 				bodyCollStatus->body->bodyMaps->erase(bodyCollStatus->body->bodyMaps->begin() + j);
                 bcs->connection->portal1->collidingBodies[bcs->connection->side1].erase(bodyCollStatus->body);
                 bcs->connection->portal2->collidingBodies[bcs->connection->side2].erase(this);
-                printf("Removed 3\n");
 				j--;
 				delete bcs;
 			}
@@ -96,25 +95,17 @@ void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* 
     }
 
     if (bData && bData->type == PORTAL){
-        Portal* p = (Portal*)bData->data;
-        PortalCollisionType out = p->collisionBegin(contact, fix2, fix1);
-        handleOut(fix1, p, out);
+        Portal* portal = (Portal*)bData->data;
+        PortalCollisionType out = portal->collisionBegin(contact, fix2, fix1);
+        handleOut(fix1, portal, out);
     }
 }
 
 void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
-    if (!pWorld->IsLocked()){
-        return;
-    }
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-    
-    // may not be needed, so it should stay like this for a while for testing
-    // bool shouldCollide = this->shouldCollide(contact, fix1, fix2, bData);
-    // if (!shouldCollide){
-    //     return;
-    // }
 
-    if (bData && bData->type == PORTAL){
+    if (bData && bData->type == PORTAL)
+    {
         Portal* p = (Portal*)bData->data;
         PortalCollisionType out = p->collisionEnd(contact, fix2, fix1);
         handleOut(fix1, p, out);
@@ -123,7 +114,7 @@ void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
 
 void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-
+    
     if (!contact->IsEnabled()){
         return;
     }
@@ -362,75 +353,106 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
     }
 
     // Extra void portal logic
-    if (portal->isVoid[side] && status < 0){
-#if 1
-        if (outFixtures[side][portal] == -numFixtures){
+    if (portal->isVoid[side] && status < 0)
+    {
+        if (outFixtures[side][portal] == -numFixtures)
+        {
             pWorld->destroyBodies.insert(this);
             return;
         }
-#else
-        bool found = false;
-        for (b2Fixture* f = fix->GetBody()->GetFixtureList(); f; f = f->GetNext()){
-            if (f == fix) continue;
-            if (portal->releaseFixtures[side].find(f) == portal->releaseFixtures[side].end())
+    }
+}
+
+void PortalBody::postHandle()
+{
+    std::vector<Portal*> destroyRequests;
+    int createCount = 0;
+    for (int side = 0; side < 2; side++)
+    {
+        for (auto iter : createDestroyMap[side])
+        {
+            if (iter.second > 0)
             {
-                found = true;
-                f = nullptr;
-                break;
+                /*bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
+                *s = {this, iter.first, side};
+                createBodies.push_back(s);*/
+                createCount++;
+
+                bool shouldDestroyItself = pWorld->createCloneBody(iter.first, side, this);
+                if (shouldDestroyItself)
+                {
+                    destroyRequests.push_back(iter.first);
+                }
+            }
+            else if (iter.second < 0)
+            {
+                for (bodyCollisionStatus* s : *bodyMaps)
+                {
+                    if (s->connection->portal1 == iter.first && s->connection->side1 == side)
+                    {
+                        pWorld->destroyBodies.insert(s->body);
+                    }
+                }
             }
         }
-        if (!found){
-            pWorld->destroyBodies.insert(this);
-            return;
-        }
-#endif
+        createDestroyMap[side].clear();
     }
-}
 
-void PortalBody::postHandle(){
-    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
+    if (destroyRequests.size() == 1)
+    {
+        if (bodyMaps->size() == 1)
+        {
+            pWorld->destroyBodies.insert(this);
+        }
+        else
+        {
+            for (bodyCollisionStatus* bcs : *bodyMaps)
+            {
+                if (bcs->connection->portal1 == destroyRequests.at(0))
+                {
+                    pWorld->destroyBodies.insert(bcs->body);
+                }
+            }
+        }
+    }
+    else if (destroyRequests.size() > 1)
+    {
+        if (destroyRequests.size() != createCount)
+        {
+            for (Portal* portal : destroyRequests)
+            {
+                for (bodyCollisionStatus* bcs : *bodyMaps)
+                {
+                    if (bcs->connection->portal1 == portal)
+                    {
+                        pWorld->destroyBodies.insert(bcs->body);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // How did this happen?
+            // I want to see it happen and then fix it
+        }
+    }
+
+    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
+    {
         applyPartialGravity(fix);
     }
-
-    for (bodyStruct* s : createBodies){
-        pWorld->createCloneBody(s);
-        free(s);
-    }
-    createBodies.clear();
 }
 
-bool PortalBody::shouldCreate(b2Body* bBody, Portal* portal, PortalCollisionType out){
+bool PortalBody::shouldCreate(b2Fixture* fix, Portal* portal, PortalCollisionType out){
     int side = (uint32_t)out & ODD_MASK ? 1 : 0;
     if (portal->isVoid[side]) return false;
 
-    for (bodyCollisionStatus* s : *bodyMaps){
-        if (s->connection->portal1 == portal){
-            const auto iter = pWorld->destroyBodies.find(s->body);
-            if (iter != pWorld->destroyBodies.end()){
-                pWorld->destroyBodies.erase(iter);
-            }
-        }
-    }
-    // Experimental
-#if 0
-    const auto iter = outFixtures[side].find(portal);
-    if (iter != outFixtures[side].end() &&
-        iter->second != numFixtures){
-        return false;
-    }
-#else
-    for (bodyCollisionStatus* s : *bodyMaps){
-        if (s->connection->portal1 == portal && s->connection->side1 == side)
-            return false;
-    }
-#endif
-
-    for (bodyStruct* bs : createBodies){
-        if (bs->collPortal == portal && bs->side == side)
-            return false;
+    if (outFixtures[side].find(portal) == outFixtures[side].end() || outFixtures[side][portal] == numFixtures)
+    {
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 void PortalBody::releaseOut2(b2Fixture* fix1, Portal* portal){
@@ -458,14 +480,13 @@ void PortalBody::handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType o
     {
     case NONE_COLLIDING_0:
     case NONE_COLLIDING_1:
+        if (shouldCreate(fix, portal, out))
+        {
+            int side = (uint32_t)out & ODD_MASK ? 1 : 0;
+            createDestroyMap[side][portal]++;
+        }
     case RELEASE_COLLIDING_0:
     case RELEASE_COLLIDING_1:
-        if (shouldCreate(fix->GetBody(), portal, out)){
-            int side = (uint32_t)out & ODD_MASK ? 1 : 0;
-            bodyStruct* s = (bodyStruct*)malloc(sizeof(bodyStruct));
-            *s = {this, portal, side};
-            createBodies.push_back(s);
-        }
         outHelper(fix, portal, 1, out);
         break;
     
@@ -495,35 +516,10 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal, PortalCollisionType 
     int side = (uint32_t)out & ODD_MASK ? 1 : 0;
     outFixtures[side][portal]++;
 
-// Experimental
-// Disable it if it is causing problems
-#if 1
-    if (outFixtures[side][portal] == numFixtures){
-        for (bodyCollisionStatus* s : *bodyMaps){
-            if (s->connection->portal1 == portal && s->connection->side1 == side){
-                pWorld->destroyBodies.insert(s->body);
-            }
-        }
+    if (outFixtures[side][portal] == numFixtures)
+    {
+        createDestroyMap[side][portal]--;
     }
-#else
-    for (b2Fixture* fix = f->GetBody()->GetFixtureList(); fix; fix = fix->GetNext()){
-        if (fix == f) continue;
-        for (portalCollision* coll : *fixtureCollisions[fix]){
-            if (coll->portal == portal){
-                auto iter = portal->releaseFixtures[coll->side].find(fix);
-                if (iter == portal->releaseFixtures[coll->side].end()){
-                    return;
-                }
-            }
-        }
-    }
-
-    for (bodyCollisionStatus* s : *bodyMaps){
-        if (s->connection->portal1 == portal){
-            pWorld->destroyBodies.insert(s->body);
-        }
-    }
-#endif
 }
 
 float PortalBody::findPolygonArea(b2Vec2* vertices, int numVertices){

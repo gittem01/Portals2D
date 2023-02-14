@@ -21,22 +21,26 @@ public:
     void onCreate()
     {
         pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
+        //pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
         pWorld->SetAllowSleeping(false);
         createEdge(b2Vec2(-10000.0f, -10.0f), b2Vec2(+10000.0f, -10.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(+10.0f, -10.0f), b2Vec2(+10.0f, 10.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+10.0f, 10.0f), pWorld, b2_staticBody);
 
         portal1 = pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
         portal2 = pWorld->createPortal(b2Vec2(-2.0f, -3.0f), portal1->dir, portal1->size);
 
         b2FixtureDef fDef;
-        fDef.density = 1000.0f;
-        fDef.restitution = 0.0f;
-        fDef.friction = 0.0f;
+        fDef.density = 100.0f;
+        fDef.restitution = 0.2f;
+        fDef.friction = 0.5f;
         b2CircleShape cShape;
-        cShape.m_radius = 0.2f;
-        cShape.m_p = b2Vec2(0.0f, 2.5f);
+        cShape.m_radius = 0.1f;
+        cShape.m_p = b2Vec2(0.0f, 2.1f);
         fDef.shape = &cShape;
         portal1->body->CreateFixture(&fDef);
-        cShape.m_p = b2Vec2(0.0f, -2.5f);
+        cShape.m_p = b2Vec2(0.0f, -2.1f);
         portal1->body->CreateFixture(&fDef);
 
         portal1->connect(portal2, true, 0, 1);
@@ -44,10 +48,14 @@ public:
 
         portal1->setLinVel(b2Vec2(0, 0));
 
-        b2Vec2 p = b2Vec2(1.0f, -3.0f);
+        float randVal = getRand();
+        b2Vec2 p = b2Vec2(1.0f, -5.0f + randVal * 0.5f);
         b2Vec2 s = b2Vec2(0.4f, 0.4f);
-        b2Body* body1 = createPortalCube(p, s, pWorld, b2_dynamicBody);
-        //b2Body* body1 = createCircle(p, s.x, pWorld, b2_dynamicBody);
+        //b2Body* body1 = createPortalCube(p, s, pWorld, b2_dynamicBody);
+        b2Body* body1 = createBox(p, s, pWorld, b2_dynamicBody);
+        body1->SetLinearVelocity(b2Vec2(-10000.0f, 0.0f));
+        body1->GetFixtureList()->SetRestitution(0.2f);
+
         p.y = +3.0f;
         b2Body* body2 = createPortalCube(p, s, pWorld, b2_dynamicBody);
 
@@ -60,7 +68,7 @@ public:
         pbi1 = pb1->worldIndex;
         pbi2 = pb2->worldIndex;
 
-        renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f), "assets/textures/cube.png");
+        renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f));
         renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f), "assets/textures/cube.png");
 
         b2Vec2 startPos = b2Vec2(35.0f, 4.0f);
@@ -69,7 +77,8 @@ public:
 
         PortalBody* pb = pWorld->createPortalBody(lastBody);
         renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/head.png", GL_NEAREST);
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 50; i++)
+        {
             startPos -= b2Vec2(0.7f, 0.0f);
 
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
@@ -88,6 +97,7 @@ public:
 
             lastBody = jointBody;
         }
+
     }
 
     void onUpdate()

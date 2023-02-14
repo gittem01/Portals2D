@@ -24,7 +24,10 @@ std::random_device rd;
 std::mt19937 mt(rd());
 std::uniform_real_distribution<double> randF(-0.5f, 0.5f);
 
+std::vector<PortalBody*>* indexToTrack;
+
 float getRand(){
+    //return (rand() / RAND_MAX) - 0.5f;
     randF(mt);
     return randF(mt);
 }

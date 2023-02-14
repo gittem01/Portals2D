@@ -7,7 +7,7 @@ int main(void)
     cam->zoom = 0.75f;
     wh->cam = cam;
 
-    testCase = newTest(wh, 8);
+    testCase = newTest(wh, 3);
     bool done = false;
 
     while (!done)

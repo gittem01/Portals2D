@@ -257,10 +257,10 @@ b2Vec2 PortalWorld::getRelativePortalPositionReverse(b2Vec2 point, portalConnect
     return pos;
 }
 
-void PortalWorld::createCloneBody(bodyStruct* s){
-    PortalBody* pBody = s->pBody;
-    int side = s->side;
-    Portal* collPortal = s->collPortal;
+bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBody)
+{
+    bool retVal = false;
+
     b2Body* body1 = pBody->body;
     b2Vec2 dir1 = side ? -collPortal->dir : collPortal->dir;
     b2Vec2 posDiff = collPortal->pos - body1->GetPosition();
@@ -268,8 +268,7 @@ void PortalWorld::createCloneBody(bodyStruct* s){
 
     void* extraData0 = ((bodyData*)body1->GetUserData().pointer)->extraData;
 
-    s->collPortal->collidingBodies[s->side].insert(pBody);
-    printf("Added 1\n");
+    collPortal->collidingBodies[side].insert(pBody);
 
     for (portalConnection* c : collPortal->connections[side])
     {
@@ -472,7 +471,6 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             if (conn->portal2 == collPortal && conn->side2 == c->side1){
                 bcs->connection = conn;
                 conn->portal1->collidingBodies[conn->side1].insert(npb);
-                printf("Added 2\n");
                 break;
             }
         }
@@ -644,19 +642,27 @@ void PortalWorld::createCloneBody(bodyStruct* s){
             }
 
             if (status != 1 && status2 != 1){
-                allOut = false;
+                //allOut = false;
             }
         }
 
         createPortalBody_i(npb, pBody, false);
-        if (allOut) destroyBodies.insert(pBody);
-        else connectBodies(pBody, npb, c, side);
+            
+        connectBodies(pBody, npb, c, side);
 
         npb->numFixtures = pBody->numFixtures;
         npb->outFixtures[c->side2][portal2] = npb->numFixtures + fixMargin;
         pBody->bodyMaps->push_back(t_bcs);
         npb->bodyMaps->push_back(bcs);
+
+        if (allOut)
+        {
+            retVal = true;
+            //destroyBodies.insert(pBody);
+        }
     }
+
+    return retVal;
 }
 
 void PortalWorld::connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side)

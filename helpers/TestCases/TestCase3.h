@@ -12,8 +12,10 @@ public:
     }
 
     void onCreate(){
+        srand(7);
         b2Vec2 gravity(0.0f, -9.81f);
         pWorld->SetGravity(gravity);
+        //pWorld->SetContinuousPhysics(false);
         float r = 10.0f;
         const int n = 15; // n * 2 portals will be created
         float anglePlus = glm::radians(0.0f);
@@ -41,11 +43,21 @@ public:
 
             b2Body* body1 = createBox(b2Vec2(0, 0), size, pWorld, b2_dynamicBody);
             b2Body* body2 = createCircle(b2Vec2(rand() % 5 + r, rand() % 5), r, pWorld, b2_dynamicBody);
+            body1->SetLinearVelocity(b2Vec2(0.0f, 1000.0f));
 
             PortalBody* pb1 = pWorld->createPortalBody(body1);
             PortalBody* pb2 = pWorld->createPortalBody(body2);
 
-            renderer->addPortalBody(pb1, b2Color(0.25f, 1.0f, 0.9f, 0.5f));
+            /*if (i == 0)
+            {
+                renderer->addPortalBody(pb1, b2Color(0.0f, 0.0f, 1.0f, 1.0f));
+                indexToTrack = pb1->worldIndex;
+            }
+            else*/
+            {
+                renderer->addPortalBody(pb1, b2Color(0.2f, 0.8f, 0.9f, 0.1f));
+            }
+            
             renderer->addPortalBody(pb2, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
         }
     }
