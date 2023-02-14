@@ -169,7 +169,7 @@ private:
 
     void globalPostHandle();
 
-    void createCloneBody(bodyStruct* s);
+    bool createCloneBody(Portal* collPortal, int side, PortalBody* pBody);
     void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side);
 
     // baseBody should not be NULL if isNew is false

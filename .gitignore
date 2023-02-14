@@ -6,3 +6,4 @@
 CMakeSettings.json
 .cache
 /out
+*.py

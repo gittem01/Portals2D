@@ -120,7 +120,6 @@ Portal::~Portal(){
         int count = 0;
         if (sideEdges[0]) count++;
         if (sideEdges[1]) count++;
-        printf("Count: %d\n", count);
     }
     b2Vec2 leftPoint = points[0];
     b2Vec2 rightPoint = points[1];
@@ -920,10 +919,6 @@ void PortalWorldQuery::edgeSplitHorizontal()
 {
     for (b2Fixture* fixture : foundEdges)
     {
-        if (fixture->GetShape() == nullptr)
-        {
-            printf("Stop!!!\n");
-        }
         b2EdgeShape* eShape = (b2EdgeShape*)fixture->GetShape();
         b2Body* fBody = fixture->GetBody();
 

@@ -24,7 +24,10 @@ std::random_device rd;
 std::mt19937 mt(rd());
 std::uniform_real_distribution<double> randF(-0.5f, 0.5f);
 
+std::vector<PortalBody*>* indexToTrack;
+
 float getRand(){
+    //return (rand() / RAND_MAX) - 0.5f;
     randF(mt);
     return randF(mt);
 }
@@ -37,7 +40,7 @@ Renderer* renderer = nullptr;
 mouseJointHandler* mjh = nullptr;
 DebugDrawer* drawer = nullptr;
 ContactListener* contactListener = nullptr;
-int totalIter = 10;
+int totalIter = 1;
 
 // O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f, float isMixed=false) {
