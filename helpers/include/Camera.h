@@ -45,6 +45,5 @@ public:
 	void changeZoom(float inc);
 	float limitZoom(float inZoom);
 	void dragFunc(int width, int height);
-	void cursorOutFunc(int width, int height);
 };
 

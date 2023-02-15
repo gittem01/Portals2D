@@ -359,16 +359,19 @@ void Renderer::addPortalBody(PortalBody* pBody, b2Color color, const char* textu
     portalBodies.push_back(bodyData);
 }
 
-void Renderer::render(){
+void Renderer::render()
+{
     glfwGetFramebufferSize(camera->window, &win_width, &win_height);
     minLineThck = 20.0f / win_width;
     
-    for (bodyRenderData* brd : portalBodies){
+    for (bodyRenderData* brd : portalBodies)
+    {
         bodyRender(brd);
     }
 
     //portalRender();
-    for (portalRenderData* prd : portals){
+    for (portalRenderData* prd : portals)
+    {
         portalRender(prd);
     }
 }

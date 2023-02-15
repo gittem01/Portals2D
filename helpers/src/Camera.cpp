@@ -57,6 +57,8 @@ void Camera::update() {
 	int width, height;
 	glfwGetWindowSize(this->window, &width, &height);
 
+	if (width == 0 || height == 0) return;
+
 	this->dragFunc(width, height);
 	if (windowHandler->mouseData[5] != 0 && 
 		!windowHandler->keyData[GLFW_KEY_LEFT_CONTROL] &&
@@ -118,6 +120,9 @@ glm::vec2 Camera::getMouseCoords() {
 
 	int width, height;
 	glfwGetWindowSize(this->window, &width, &height);
+
+	if (width == 0 || height == 0) return glm::vec2(0.0f, 0.0f);
+
 	float xPerct = windowHandler->mouseData[0] / (float)width;
 	float yPerct = 1 - windowHandler->mouseData[1] / (float)height;
 
@@ -136,6 +141,9 @@ glm::vec2 Camera::getMouseCoords() {
 glm::vec2 Camera::getCameraCoords(glm::vec2 p) {
 	int width, height;
 	glfwGetWindowSize(this->window, &width, &height);
+
+	if (width == 0 || height == 0) return glm::vec2(0.0f, 0.0f);
+
 	float xPerct = p.x / width;
 	float yPerct = p.y / height;
 

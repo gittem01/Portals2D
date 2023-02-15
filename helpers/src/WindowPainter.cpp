@@ -183,7 +183,13 @@ void WindowPainter::glfwWindowFocusCallback(GLFWwindow* window, int isFocused) {
     }
 }
 
-void WindowPainter::windowSizeEventCallback(GLFWwindow* window, int width, int height) {
+void WindowPainter::windowSizeEventCallback(GLFWwindow* window, int width, int height)
+{
+    if (width == 0 || height == 0)
+    {
+        return;
+    }
+
     WindowPainter* thisClass = (WindowPainter*)glfwGetWindowUserPointer(window);
 
     glViewport(0, 0, (int)(width * thisClass->dpiScaling), (int)(height * thisClass->dpiScaling));
