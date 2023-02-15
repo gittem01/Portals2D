@@ -24,9 +24,9 @@ public:
         //pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
         pWorld->SetAllowSleeping(false);
         createEdge(b2Vec2(-10000.0f, -10.0f), b2Vec2(+10000.0f, -10.0f), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld, b2_staticBody);
+        /*createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld, b2_staticBody);
         createEdge(b2Vec2(+10.0f, -10.0f), b2Vec2(+10.0f, 10.0f), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+10.0f, 10.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+10.0f, 10.0f), pWorld, b2_staticBody);*/
 
         portal1 = pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
         portal2 = pWorld->createPortal(b2Vec2(-2.0f, -3.0f), portal1->dir, portal1->size);
@@ -53,8 +53,6 @@ public:
         b2Vec2 s = b2Vec2(0.4f, 0.4f);
         //b2Body* body1 = createPortalCube(p, s, pWorld, b2_dynamicBody);
         b2Body* body1 = createBox(p, s, pWorld, b2_dynamicBody);
-        body1->SetLinearVelocity(b2Vec2(-10000.0f, 0.0f));
-        body1->GetFixtureList()->SetRestitution(0.2f);
 
         p.y = +3.0f;
         b2Body* body2 = createPortalCube(p, s, pWorld, b2_dynamicBody);
