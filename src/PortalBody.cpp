@@ -168,7 +168,7 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
                                 point - wManifold.normal, point + wManifold.normal,
                                 portal->points[0], portal->points[1]);
 
-                            intersectionPoint = PortalWorld::getRelativePortalPosition(intersectionPoint, stat->connection);
+                            intersectionPoint = PortalWorld::getRelativePortalPosition_W(intersectionPoint, stat->connection);
                             int intersectSide = pc->portal->getPointSide(intersectionPoint);
                             if (intersectSide != pc->side){
                                 return false;

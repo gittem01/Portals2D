@@ -351,9 +351,9 @@ public:
                     glm::vec2 mousePos = wp->cam->getMouseCoords();
 
                     b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
-                    b2Vec2 relPos = PortalWorld::getRelativePortalPosition(diff + pConnection->portal1->pos, pConnection);
-                    relPos -= pConnection->portal2->pos;
-                    ang = gunBody->offsetAngle + gunBody->body->GetAngle() - PortalWorld::calcAngle2(relPos) + b2_pi * 0.5f;
+                    b2Vec2 relPos = PortalWorld::getRelativePortalPosition_L(diff, pConnection);
+                    
+                    ang = gunBody->offsetAngle + gunBody->body->GetAngle() - PortalWorld::calcAngle2(relPos) - b2_pi * 0.5f;
                     ang = PortalWorld::normalizeAngle(ang);
 
                     rj = jointFound;

@@ -47,6 +47,12 @@ private:
     b2Vec2 lastSpeedB;
     b2Vec2 speedChangeB;
 
+    b2Vec2 rotLastSpeedA;
+    b2Vec2 rotSpeedChangeA;
+
+    b2Vec2 rotLastSpeedB;
+    b2Vec2 rotSpeedChangeB;
+
     portalConnection* pc;
     bool isRotated;
 
@@ -63,10 +69,20 @@ private:
         this->pc = def->pc;
         this->isRotated = def->isRotated;
 
-        this->lastSpeedA = pc->portal1->getLinVel();
-        this->lastSpeedB = pc->portal2->getLinVel();
-
         updateParameters();
+
+        /*this->rotLastSpeedA = b2Vec2(0.0f, 0.0f);
+        this->rotLastSpeedB = b2Vec2(0.0f, 0.0f);
+
+        b2Vec2 reflectedSpeed;
+
+        reflectedSpeed = pc->portal2->pos - PortalWorld::getRelativePortalPosition(pc->portal1->pos + pc->portal1->getLinVel(), pc);
+        reflectedSpeed = PortalWorld::project(reflectedSpeed, dirB);
+        this->lastSpeedA = reflectedSpeed;
+
+        reflectedSpeed = pc->portal1->pos - PortalWorld::getRelativePortalPositionReverse(pc->portal2->pos + pc->portal2->getLinVel(), pc);
+        reflectedSpeed = PortalWorld::project(reflectedSpeed, dirA);
+        this->lastSpeedB = reflectedSpeed;*/
     }
 
     void updateParameters()
@@ -125,21 +141,6 @@ private:
 
         b2Vec2 cB = data.positions[m_indexB].c;
         b2Vec2 vB = data.velocities[m_indexB].v;
-        {
-            speedChangeA = pc->portal1->getLinVel() - lastSpeedA;
-            lastSpeedA = pc->portal1->getLinVel();
-            speedChangeA = pc->portal2->pos - PortalWorld::getRelativePortalPosition(pc->portal1->pos + speedChangeA, pc);
-            speedChangeA = PortalWorld::project(speedChangeA, dirB);
-            vB += speedChangeA;
-        }
-
-        {
-            speedChangeB = pc->portal2->getLinVel() - lastSpeedB;
-            lastSpeedB = pc->portal2->getLinVel();
-            speedChangeB = pc->portal1->pos - PortalWorld::getRelativePortalPositionReverse(pc->portal2->pos + speedChangeB, pc);
-            speedChangeB = PortalWorld::project(speedChangeB, dirA);
-            vA += speedChangeB;
-        }
 
         data.velocities[m_indexA].v = vA;
         data.velocities[m_indexB].v = vB;
@@ -150,21 +151,24 @@ private:
         b2Vec2 vA = data.velocities[m_indexA].v;
         b2Vec2 vB = data.velocities[m_indexB].v;
 
-        b2Vec2 velVecA;
         b2Vec2 centerVecA = m_bodyA->GetPosition() - pc->portal1->pos;
-        velVecA = PortalWorld::rotateVec(centerVecA, b2_pi * 0.5f);
+        b2Vec2 velVecA = PortalWorld::rotateVec(centerVecA, b2_pi * 0.5f);
         velVecA *= pc->portal1->getAngVel();
+        velVecA = PortalWorld::getRelativePortalPosition_L(velVecA, pc);
+        velVecA = PortalWorld::project(velVecA, dirB);
 
-        b2Vec2 velVecB;
         b2Vec2 centerVecB = m_bodyB->GetPosition() - pc->portal2->pos;
-        velVecB = PortalWorld::rotateVec(centerVecB, b2_pi * 0.5f);
+        b2Vec2 velVecB = PortalWorld::rotateVec(centerVecB, b2_pi * 0.5f);
         velVecB *= pc->portal2->getAngVel();
+        velVecB = PortalWorld::getRelativePortalPositionReverse_L(velVecB, pc);
+        velVecB = PortalWorld::project(velVecB, dirA);
 
-        b2Vec2 relVel1 = pc->portal2->pos - PortalWorld::getRelativePortalPosition(pc->portal1->pos + pc->portal1->getLinVel(), pc);
-        b2Vec2 relVel2 = pc->portal1->pos - PortalWorld::getRelativePortalPositionReverse(pc->portal2->pos + pc->portal2->getLinVel(), pc);
-        float Cdot =    -b2Dot(dirA, vA - relVel2 - velVecA)
-                        -b2Dot(dirB, vB - relVel1 - velVecB);
-       
+        b2Vec2 relVel1 = PortalWorld::getRelativePortalPosition_L(pc->portal1->getLinVel(), pc);
+        b2Vec2 relVel2 = PortalWorld::getRelativePortalPositionReverse_L(pc->portal2->getLinVel(), pc);
+        
+        float Cdot =    -b2Dot(dirA, vA - relVel2 - velVecB)
+                        -b2Dot(dirB, vB - relVel1 - velVecA);
+        
         vA += 0.5f * Cdot * dirA;
         vB += 0.5f * Cdot * dirB;
 
@@ -174,9 +178,8 @@ private:
 
     bool SolvePositionConstraints(const b2SolverData& data) override
     {
-        //return 0;
-        b2Vec2 cA = data.positions[m_indexA].c - data.step.dt * speedChangeB;
-        b2Vec2 cB = data.positions[m_indexB].c - data.step.dt * speedChangeA;
+        b2Vec2 cA = data.positions[m_indexA].c;
+        b2Vec2 cB = data.positions[m_indexB].c;
 
         float distA = PortalWorld::getRealDist(groundLineA[0], groundLineA[1], cA);
         float distB = PortalWorld::getRealDist(groundLineB[0], groundLineB[1], cB);

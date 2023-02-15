@@ -215,7 +215,43 @@ void PortalWorld::globalPostHandle(){
     destroyBodies.clear();
 }
 
-b2Vec2 PortalWorld::getRelativePortalPosition(b2Vec2 point, portalConnection* pConnect){
+b2Vec2 PortalWorld::getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect) {
+    Portal* portal1 = pConnect->portal1;
+    Portal* portal2 = pConnect->portal2;
+    int side1 = pConnect->side1;
+    int side2 = pConnect->side2;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(point, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    return pos;
+}
+
+b2Vec2 PortalWorld::getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect) {
+    Portal* portal1 = pConnect->portal2;
+    Portal* portal2 = pConnect->portal1;
+    int side1 = pConnect->side2;
+    int side2 = pConnect->side1;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(point, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    return pos;
+}
+
+b2Vec2 PortalWorld::getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect){
     Portal* portal1 = pConnect->portal1;
     Portal* portal2 = pConnect->portal2;
     int side1 = pConnect->side1;
@@ -236,7 +272,7 @@ b2Vec2 PortalWorld::getRelativePortalPosition(b2Vec2 point, portalConnection* pC
     return pos;
 }
 
-b2Vec2 PortalWorld::getRelativePortalPositionReverse(b2Vec2 point, portalConnection* pConnect){
+b2Vec2 PortalWorld::getRelativePortalPositionReverse_W(b2Vec2 point, portalConnection* pConnect){
     Portal* portal1 = pConnect->portal2;
     Portal* portal2 = pConnect->portal1;
     int side1 = pConnect->side2;
@@ -482,11 +518,11 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
         b2Vec2 lvToSet = rotateVec(speed, angleRot);
         if (c->isReversed){
-            body2->SetAngularVelocity(-body1->GetAngularVelocity() + collPortal->getAngVel() + portal2->getAngVel());
+            body2->SetAngularVelocity(-body1->GetAngularVelocity() /*+ collPortal->getAngVel() + portal2->getAngVel()*/);
             lvToSet = mirror(dir2, lvToSet);
         }
         else{
-            body2->SetAngularVelocity(body1->GetAngularVelocity() - collPortal->getAngVel() + portal2->getAngVel());
+            body2->SetAngularVelocity(body1->GetAngularVelocity() /*- collPortal->getAngVel() + portal2->getAngVel()*/);
         }
 
         lvToSet += c->portal2->getLinVel();
@@ -658,7 +694,6 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         if (allOut)
         {
             retVal = true;
-            //destroyBodies.insert(pBody);
         }
     }
 

@@ -164,8 +164,10 @@ private:
     static void normalize(b2Vec2* vec);
     static b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 
-    static b2Vec2 getRelativePortalPosition(b2Vec2 point, portalConnection* pConnect);
-    static b2Vec2 getRelativePortalPositionReverse(b2Vec2 point, portalConnection* pConnect);
+    static b2Vec2 getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect);
+    static b2Vec2 getRelativePortalPositionReverse_W(b2Vec2 point, portalConnection* pConnect);
+    static b2Vec2 getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect);
+    static b2Vec2 getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect);
 
     void globalPostHandle();
 
