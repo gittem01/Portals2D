@@ -2,11 +2,11 @@
 #include "Portal.h"
 #include "PortalWorld.h"
 #include "glm/common.hpp"
-#include <DebugDrawer.h>
 
 #define ODD_MASK 0b10101010101010101010101010101010
 
-PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
+PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld)
+{
     this->pWorld = pWorld;
     this->body = bBody;
     this->bodyMaps = new std::vector<bodyCollisionStatus*>();
@@ -23,7 +23,8 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
     isMirrored = false;
 
     this->numFixtures = 0;
-    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext()){
+    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
+    {
         fixtures.push_back(fix);
         fixtureData* fixData = new fixtureData();
         fixData->index = numFixtures;
@@ -35,13 +36,13 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld){
 
 PortalBody::~PortalBody(){
     pWorld->handledBodies.insert(worldIndex);
-    for (int i = 0; i < worldIndex->size(); i++){
-        if (worldIndex->at(i) == this){
-            worldIndex->erase(worldIndex->begin() + i);
+    for (int i = 0; i < worldIndex->pbIndices.size(); i++){
+        if (worldIndex->pbIndices.at(i) == this) {
+            worldIndex->pbIndices.erase(worldIndex->pbIndices.begin() + i);
             break;
         }
     }
-    if (worldIndex->size() == 0){
+    if (worldIndex->pbIndices.size() == 0){
         delete baseDensities;
     }
 

@@ -3,7 +3,7 @@
 class TestCase6 : public BaseTestCase
 {
 public:
-    TestCase6(WindowPainter* wh) : BaseTestCase(wh){
+    TestCase6(WindowHandler* wh) : BaseTestCase(wh){
         testCaseItem = 5;
         
         beforeCreate();
@@ -29,21 +29,16 @@ public:
         b2Body* body3 = createBox(b2Vec2(0, 0), b2Vec2(30, 0.5), pWorld, b2_dynamicBody);
         PortalBody* b3 = pWorld->createPortalBody(body3);
 
-        renderer->addPortalBody(b1);
-        renderer->addPortalBody(b2);
-        renderer->addPortalBody(b3, b2Color(1, 1, 1, 0.5f), "assets/textures/long.png");
 
         b2Vec2 startPos = b2Vec2(29.0f, 20.0f);
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
 
         PortalBody* pb = pWorld->createPortalBody(lastBody);
-        renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/chain.png", GL_NEAREST);
         for (int i = 0; i < 100; i++){
             startPos -= b2Vec2(0.7f, 0.0f);
             
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
             pb = pWorld->createPortalBody(jointBody);
-            renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/chain.png", GL_NEAREST);
 
             b2RevoluteJointDef revDef;
             revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));

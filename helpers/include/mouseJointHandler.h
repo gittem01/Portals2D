@@ -1,12 +1,13 @@
 #pragma once
 
 #include "box2d/box2d.h"
-#include "WindowPainter.h"
 #include <set>
 #include <map>
 #include <vector>
+#include "glm/glm.hpp"
+#include "WindowHandler.h"
+#include "Camera.h"
 #include "Portal.h"
-#include "DebugDrawer.h"
 
 class mouseJointHandler;
 
@@ -37,8 +38,6 @@ public:
 
     QueryCallback* queryCallback;
 
-    Renderer* renderer;
-
 	float frequencyHz = 5.0f;
 	float dampingRatio = 0.5f;
     float bodyRadius = 0.0f;
@@ -51,14 +50,13 @@ public:
     b2Body* mouseBody;
 
 	glm::vec2* clicks[2] = { nullptr, nullptr };
-    WindowPainter* wh;
+    WindowHandler* wh;
 
-    mouseJointHandler(b2World* world, WindowPainter* wh, Renderer* renderer) {
+    mouseJointHandler(b2World* world, WindowHandler* wh) {
         this->world = world;
         b2BodyDef bodyDef;
         this->groundBody = world->CreateBody(&bodyDef);
         this->wh = wh;
-        this->renderer = renderer;
         mouseBody = nullptr;
         createMouseBody();
         queryCallback = new QueryCallback(this);
@@ -289,9 +287,5 @@ public:
         fixtureDef.isSensor = true;
 
         mouseBody->CreateFixture(&fixtureDef);
-    }
-
-    void drawMouseBody() {
-        renderer->debug_Circle(mouseBody->GetPosition(), bodyRadius * 2, 0.02f, b2Color(1.0f, 1.0f, 1.0f, 0.4f));
     }
 };

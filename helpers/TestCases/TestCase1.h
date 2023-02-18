@@ -1,4 +1,5 @@
 #include <BaseTestCase.h>
+#include <ThinDrawer.h>
 
 class TestCase1 : public BaseTestCase
 {
@@ -9,7 +10,7 @@ private:
     b2RevoluteJoint* snakeJoint = nullptr;
 
 public:
-    TestCase1(WindowPainter* wh) : BaseTestCase(wh){
+    TestCase1(WindowHandler* wh) : BaseTestCase(wh){
         testCaseItem = 0;
 
         beforeCreate();
@@ -47,8 +48,8 @@ public:
         diagonalPortal1->connect(diagonalPortal2, true, 0, 0);
 
         // TODO : do this special case automatically
-        //diagonalPortal2->connect(topPortal1, true, 1, 0);
-        //diagonalPortal2->connect(topPortal2, false, 1, 0);
+        diagonalPortal2->connect(topPortal1, true, 1, 0);
+        diagonalPortal2->connect(topPortal2, true, 1, 0);
         topPortal1->connect(topPortal2);
 
         createEdge(b2Vec2(-30.0f, yPos - portalSize), b2Vec2(+30.0f, yPos - portalSize), pWorld, b2_staticBody);
@@ -56,11 +57,15 @@ public:
         createEdge(b2Vec2(+30.0f, 21), b2Vec2(-30.0f, 21), pWorld, b2_staticBody);
         createEdge(b2Vec2(-30.0f, 21), b2Vec2(-30.0f, yPos - portalSize), pWorld, b2_staticBody);
 
+        extern ThinDrawer* thinDrawer;
+
+        thinDrawer->pWorld = pWorld;
+
         PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld, b2Vec2(0.0f, 3.0f)));
         PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld, b2Vec2(0.0f, 6.0f)));
 
-        renderer->addPortalBody(b1, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
-        renderer->addPortalBody(b2, b2Color(1.0f, 0.0f, 1.0f, 0.5f));
+        thinDrawer->addPortalBody(b1);
+        thinDrawer->addPortalBody(b2);
 
         b2Vec2 p(5.0f, 0.0f);
         b2Vec2 s(0.75f, 0.75f);
@@ -73,10 +78,10 @@ public:
         PortalBody* pb2 = pWorld->createPortalBody(body20);
         PortalBody* pb3 = pWorld->createPortalBody(body21);
 
-        renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f), "assets/textures/cube.png");
-        renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f), "assets/textures/cube.png");
-        renderer->addPortalBody(pb3, b2Color(0.6f, 1.0f, 0.5f, 0.5f));
-
+        thinDrawer->addPortalBody(pb1);
+        thinDrawer->addPortalBody(pb2);
+        thinDrawer->addPortalBody(pb3);
+        
         PortalBody* pb;
     #if 1
         // artificial kinematic body
@@ -84,8 +89,7 @@ public:
         s = b2Vec2(1.5f, 0.2f);
         platform = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
         pb = pWorld->createPortalBody(platform);
-        renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
-
+        thinDrawer->addPortalBody(pb);
         b2Vec2 vel(-10.0f, 0.0f);
         platform->SetLinearVelocity(vel);
         platform->SetBullet(true);
@@ -96,8 +100,7 @@ public:
         float r = 0.7f;
         b2Body* body3 = createCircle(p, r, pWorld, b2_dynamicBody);
         pb = pWorld->createPortalBody(body3);
-        renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.0f, 0.5f));
-
+        thinDrawer->addPortalBody(pb);
         b2Vec2 bPos(10.0f, 5.0f);
         s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
         createEdge(bPos - b2Vec2(-s.x, s.y), bPos + b2Vec2(s.x, s.y), pWorld, b2_staticBody);
@@ -106,16 +109,15 @@ public:
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
 
         pb = pWorld->createPortalBody(lastBody);
-        snakeHead = pb->worldIndex;
-        renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/head.png", GL_NEAREST);
+        thinDrawer->addPortalBody(pb);
+        snakeHead = &pb->worldIndex->pbIndices;
         for (int i = 0; i < 20; i++){
             startPos -= b2Vec2(0.7f, 0.0f);
             
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
             jointBody->GetFixtureList()->SetFriction(0.0f);
             pb = pWorld->createPortalBody(jointBody);
-            renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/body.png", GL_NEAREST);
-
+            thinDrawer->addPortalBody(pb);
             b2RevoluteJointDef revDef;
             revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
             revDef.calculateAnchorHelpers();
@@ -126,7 +128,7 @@ public:
 
             lastBody = jointBody;
         }
-        snakeTail = pb->worldIndex;
+        snakeTail = &pb->worldIndex->pbIndices;
     }
 
     void onUpdate()

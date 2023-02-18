@@ -1,9 +1,11 @@
 #pragma once
 
-#include <WindowPainter.h>
-#include <DebugDrawer.h>
+#include <WindowHandler.h>
 #include <PortalGunRayCast.h>
 #include <GameBase.h>
+#include <Camera.h>
+#include "PortalBody.h"
+#include "Portal.h"
 
 class TestPlayer
 {
@@ -16,7 +18,7 @@ public:
     std::vector<PortalBody*>* pBody;
     std::vector<PortalBody*>* gun;
     PortalWorld* pWorld;
-    WindowPainter* wp;
+    WindowHandler* wh;
     b2RevoluteJoint* oldJoint;
     PortalBody* oldPortalBody;
     b2Vec2 size;
@@ -45,9 +47,9 @@ public:
 
     b2Vec2 lastDirs[2];
 
-    TestPlayer(PortalWorld* pWorld, WindowPainter* wp, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 1.5f)){
+    TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 1.5f)){
         this->pWorld = pWorld;
-        this->wp = wp;
+        this->wh = wh;
         this->size = size;
         createBody(pos);
 
@@ -104,7 +106,7 @@ public:
         physicsData->data = this;
         bData->extraData = physicsData;
 
-        pBody = pb->worldIndex;
+        pBody = &pb->worldIndex->pbIndices;
 
         glm::vec2 gunSize(0.3f, 1.1f);
 
@@ -128,7 +130,7 @@ public:
 
         pb = pWorld->createPortalBody(body);
 
-        gun = pb->worldIndex;
+        gun = &pb->worldIndex->pbIndices;
 
         b2RevoluteJointDef jDef;
         jDef.bodyA = pBody->at(0)->body;
@@ -214,25 +216,25 @@ public:
             glm::vec2 diff = glm::vec2(abs(p2.x - p1.x), abs(p2.y - p1.y)) / 2.0f + 5.0f;
             glm::vec2 mid = glm::vec2(p2.x + p1.x, p2.y + p1.y) / 2.0f;
             
-            glm::vec2 posDiff = mid - wp->cam->pos;
+            glm::vec2 posDiff = mid - wh->cam->pos;
 
-            wp->cam->pos += posDiff * 0.03f;
-            float reqZoom = sqrt(abs(wp->cam->defaultXSides.x / diff.x));
+            wh->cam->pos += posDiff * 0.03f;
+            float reqZoom = sqrt(abs(wh->cam->defaultXSides.x / diff.x));
             if (reqZoom < camZoom)
             {
-                wp->cam->zoom += (reqZoom - wp->cam->zoom) / 10.0f;
+                wh->cam->zoom += (reqZoom - wh->cam->zoom) / 10.0f;
             }
             else
             {
-                wp->cam->zoom += (camZoom - wp->cam->zoom) / 50.0f;
+                wh->cam->zoom += (camZoom - wh->cam->zoom) / 50.0f;
             }
         }
         else
         {
             b2Vec2 bp = pBody->at(0)->body->GetPosition();
-            glm::vec2 diff = glm::vec2(bp.x, bp.y) - wp->cam->pos;
-            wp->cam->pos += diff * 0.03f;
-            wp->cam->zoom += (camZoom - wp->cam->zoom) / 50.0f;
+            glm::vec2 diff = glm::vec2(bp.x, bp.y) - wh->cam->pos;
+            wh->cam->pos += diff * 0.03f;
+            wh->cam->zoom += (camZoom - wh->cam->zoom) / 50.0f;
         }
     }
 
@@ -289,14 +291,14 @@ public:
             if (data->type != PORTAL_BODY) continue;
 
             PortalBody* possibleGun = (PortalBody*)data->data;
-            if (possibleGun->worldIndex == gun)
+            if (&possibleGun->worldIndex->pbIndices == gun)
             {
                 found = true;
                 gunBody = possibleGun;
                 rj = (b2RevoluteJoint*)edge->joint;
 
                 b2Vec2 gunCenter = pb->body->GetPosition() + b2Vec2(0.0f, 0.35f);
-                glm::vec2 mousePos = wp->cam->getMouseCoords();
+                glm::vec2 mousePos = wh->cam->getMouseCoords();
                 b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
                 ang = gunBody->offsetAngle + gunBody->body->GetAngle() - PortalWorld::calcAngle2(diff) + b2_pi * 0.5f;
                 ang = PortalWorld::normalizeAngle(ang);
@@ -348,7 +350,7 @@ public:
                 if (pConnection)
                 {
                     b2Vec2 gunCenter = pb->body->GetPosition() + b2Vec2(0.0f, 0.35f);
-                    glm::vec2 mousePos = wp->cam->getMouseCoords();
+                    glm::vec2 mousePos = wh->cam->getMouseCoords();
 
                     b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
                     b2Vec2 relPos = PortalWorld::getRelativePortalPosition_L(diff, pConnection);
@@ -424,35 +426,17 @@ public:
         b2Vec2 vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
         b2Vec2 unitVec = b2Vec2(cos(vecAngle), sin(vecAngle));
 
-        DebugDrawer* dDrawer = (DebugDrawer*)pWorld->getDebugDraw();
         PortalGunRayCast rayCaster = PortalGunRayCast(pWorld);
 
         rayCaster.cast(portalGun->body->GetPosition(), portalGun->body->GetPosition() + vec);
 
         if (rayCaster.found)
         {
-            dDrawer->DrawSegment(rayCaster.rayPoint, rayCaster.rayPoint + rayCaster.rayNormal, b2Color(1, 0, 0, 1));
-
             if (glfwGetTime() - lastPortalCreationTime > -0.002f)
             {
-                extern Renderer* renderer;
-                if (wp->keyData[GLFW_KEY_Q] == 1.0f)
+                if (wh->keyData[GLFW_KEY_Q] == 1.0f)
                 {
-                    if (portalA)
-                    {
-                        for (auto iter = renderer->portals.begin(); iter != renderer->portals.end(); iter++)
-                        {
-                            if ((*iter)->portal == portalA)
-                            {
-                                renderer->portals.erase(iter);
-                                break;
-                            }
-                        }
-                        pWorld->destroyPortal(portalA);
-                    }
-
                     portalA = pWorld->createPortal(rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
-                    renderer->addPortal(portalA, b2Color(1, 0, 0, 1));
                     portalA->evaluateWorld();
                     if (portalB)
                     {
@@ -461,23 +445,14 @@ public:
                     }
                     lastPortalCreationTime = glfwGetTime();
                 }
-                else if (wp->keyData[GLFW_KEY_E] == 1.0f)
+                else if (wh->keyData[GLFW_KEY_E] == 1.0f)
                 {
                     if (portalB)
                     {
-                        for (auto iter = renderer->portals.begin(); iter != renderer->portals.end(); iter++)
-                        {
-                            if ((*iter)->portal == portalB)
-                            {
-                                renderer->portals.erase(iter);
-                                break;
-                            }
-                        }
                         pWorld->destroyPortal(portalB);
                     }
 
                     portalB = pWorld->createPortal(rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
-                    renderer->addPortal(portalB, b2Color(0, 0, 1, 1));
                     portalB->evaluateWorld();
 
                     if (portalA)
@@ -532,7 +507,7 @@ public:
             speedOffset = platformBody->GetLinearVelocity().x;
         }
 
-        if (wp->keyData[GLFW_KEY_D] && wp->keyData[GLFW_KEY_A]){
+        if (wh->keyData[GLFW_KEY_D] && wh->keyData[GLFW_KEY_A]){
             if (lastDoubleKey == -1){
                 right = true;
             }
@@ -543,10 +518,10 @@ public:
                 left = true;
             }
         }
-        else if (wp->keyData[GLFW_KEY_D]){
+        else if (wh->keyData[GLFW_KEY_D]){
             right = true;
         }
-        else if (wp->keyData[GLFW_KEY_A]){
+        else if (wh->keyData[GLFW_KEY_A]){
             left = true;
         }
 
@@ -563,12 +538,12 @@ public:
             lastDirs[1] = pc2->side ? -pc2->portal->dir : pc2->portal->dir;
         }
 
-        if (!(wp->keyData[GLFW_KEY_A] && wp->keyData[GLFW_KEY_D]))
+        if (!(wh->keyData[GLFW_KEY_A] && wh->keyData[GLFW_KEY_D]))
         {
-            if (wp->keyData[GLFW_KEY_A]){
+            if (wh->keyData[GLFW_KEY_A]){
                 lastDoubleKey = GLFW_KEY_A;
             }
-            else if (wp->keyData[GLFW_KEY_D]){
+            else if (wh->keyData[GLFW_KEY_D]){
                 lastDoubleKey = GLFW_KEY_D;
             }
             else{
@@ -761,7 +736,7 @@ public:
         if (!contactBody) onAirFor += dt;
         else onAirFor = 0.0f;
 
-        if (wp->keyData[GLFW_KEY_W] == 2 && ((contactBody && lv.y <= 5.0f) ||
+        if (wh->keyData[GLFW_KEY_W] == 2 && ((contactBody && lv.y <= 5.0f) ||
             (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f)))
         {
             lv.y = 10.0f * (float)pBody->size();

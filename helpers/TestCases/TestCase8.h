@@ -11,7 +11,7 @@ public:
     std::vector<PortalBody*>* pbi1;
     std::vector<PortalBody*>* pbi2;
 
-    TestCase8(WindowPainter* wh) : BaseTestCase(wh)
+    TestCase8(WindowHandler* wh) : BaseTestCase(wh)
     {
         testCaseItem = 7;
 
@@ -92,11 +92,8 @@ public:
         PortalBody* pb1 = pWorld->createPortalBody(body1);
         PortalBody* pb2 = pWorld->createPortalBody(body2);
 
-        pbi1 = pb1->worldIndex;
-        pbi2 = pb2->worldIndex;
-
-        renderer->addPortalBody(pb1, b2Color(1.0f, 0.6f, 0.5f, 0.5f), "assets/textures/cube.png");
-        renderer->addPortalBody(pb2, b2Color(0.5f, 0.6f, 1.0f, 0.5f), "assets/textures/cube.png");
+        pbi1 = &pb1->worldIndex->pbIndices;
+        pbi2 = &pb2->worldIndex->pbIndices;
 
         b2Vec2 startPos = b2Vec2(35.0f, 4.0f);
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
@@ -135,9 +132,6 @@ public:
 
             PortalBody* pb1 = pWorld->createPortalBody(body1);
             PortalBody* pb2 = pWorld->createPortalBody(body2);
-
-            renderer->addPortalBody(pb1, b2Color(0.2f, 0.8f, 0.9f, 0.1f));
-            renderer->addPortalBody(pb2, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
         }
     }
 

@@ -3,7 +3,7 @@
 class TestCase5 : public BaseTestCase
 {
 public:
-    TestCase5(WindowPainter* wh) : BaseTestCase(wh){
+    TestCase5(WindowHandler* wh) : BaseTestCase(wh){
         testCaseItem = 4;
         
         beforeCreate();
@@ -40,7 +40,6 @@ public:
         b2Vec2 s = b2Vec2(3.0f, 0.2f);
         b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
         PortalBody* pb = pWorld->createPortalBody(body4);
-        renderer->addPortalBody(pb, b2Color(0.0f, 0.0f, 1.0f, 0.5f));
         b2Vec2 vel(0.0f, 5.0f);
         body4->SetLinearVelocity(vel);
         body4->SetBullet(true); // for mimicing static body continuous collision
@@ -54,13 +53,11 @@ public:
             b2Body* b = createCircle(b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f),
                                     (getRand() + sizeM) / div, pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            renderer->addPortalBody(pb, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
         }
         for (int i = 0; i < numPolygons; i++) {
             b2Body* b = createBox(b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f),
                                 b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
         }
 
         for (int i = 0; i < 10; i++) {

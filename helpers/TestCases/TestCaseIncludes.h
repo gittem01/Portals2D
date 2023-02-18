@@ -7,7 +7,7 @@
 #include <TestCase7.h>
 #include <TestCase8.h>
 
-BaseTestCase* newTest(WindowPainter* wh, int testCaseNum){
+BaseTestCase* newTest(WindowHandler* wh, int testCaseNum){
     switch (testCaseNum)
     {
         case 1:

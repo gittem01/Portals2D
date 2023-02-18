@@ -3,7 +3,7 @@
 class TestCase4 : public BaseTestCase
 {
 public:
-    TestCase4(WindowPainter* wh) : BaseTestCase(wh){
+    TestCase4(WindowHandler* wh) : BaseTestCase(wh){
         testCaseItem = 3;
         
         beforeCreate();
@@ -38,10 +38,8 @@ public:
         body2->SetLinearVelocity(vel);
 
         PortalBody* pb2 = pWorld->createPortalBody(body2);
-        renderer->addPortalBody(pb2, b2Color(1.0f, 1.0f, 0.0f, 0.5f));
 
         PortalBody* pb3 = pWorld->createPortalBody(body3);
-        renderer->addPortalBody(pb3, b2Color(1.0f, 0.0f, 1.0f, 0.5f));
 
         float p = -n * d + bias;
         for (int i = 0; i < n; i++){
@@ -73,20 +71,18 @@ public:
         endPortal2->connect(linePortals[0], true, 1, 0);
 
         body3->SetLinearVelocity(-vel);
-        for (PortalBody* portalBody : *pb2->worldIndex){
+        for (PortalBody* portalBody : pb2->worldIndex->pbIndices){
             portalBody->body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
         }
         for (int i = 0; i < iter; i++){
             pWorld->PortalStep(1.0f / iter, 8, 3);
         }
-        for (PortalBody* portalBody : *pb2->worldIndex){
+        for (PortalBody* portalBody : pb2->worldIndex->pbIndices){
             portalBody->body->SetLinearVelocity(vel);
         }
         
         Portal* endPortal3 = pWorld->createPortal(b2Vec2(p + d, yPos), b2Vec2(-1.0f, +0.0f), portalSize);
         Portal* endPortal4 = pWorld->createPortal(b2Vec2((-n - 2) * d + bias, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
         endPortal3->connect(endPortal4);
-
-        renderer->sizeMult = 0.6f;
     }
 };

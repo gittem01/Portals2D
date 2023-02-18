@@ -3,7 +3,7 @@
 class TestCase2 : public BaseTestCase
 {
 public:
-    TestCase2(WindowPainter* wh) : BaseTestCase(wh){
+    TestCase2(WindowHandler* wh) : BaseTestCase(wh){
         testCaseItem = 1;
         
         beforeCreate();
@@ -25,8 +25,6 @@ public:
         for (int i = 0; i < 300; i++){
             b2Body* body = createBox(b2Vec2(0, 0), b2Vec2(0.3f, 0.3f), pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(body);
-            renderer->addPortalBody(pb, 
-            b2Color(getRand() + 0.7f, getRand() + 0.5f, getRand() + 0.5f, 0.5f));
         }
     }
 };

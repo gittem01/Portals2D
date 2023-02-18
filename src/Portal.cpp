@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <chrono>
 #include <thread>
-#include <DebugDrawer.h>
 #include <GameBase.h>
 
 Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld){

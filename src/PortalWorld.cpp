@@ -1,4 +1,3 @@
-#include <DebugDrawer.h>
 #include "PortalBody.h"
 #include "Portal.h"
 #include <RotationJoint.h>
@@ -62,24 +61,33 @@ PortalBody* PortalWorld::createPortalBody(b2Body* body){
     return pBody;
 }
 
-void PortalWorld::createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew){
-    if (isNew){
-        std::vector<PortalBody*>* pbIndices = new std::vector<PortalBody*>();
-        pbIndices->push_back(pBody);
-        bodyIndices.push_back(pbIndices);
-        pBody->worldIndex = pbIndices;
+void PortalWorld::createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew)
+{
+    if (isNew)
+    {
+        pbWorldData* pbData = new pbWorldData();
+        pbData->pbIndices.push_back(pBody);
+        bodyIndices.push_back(pbData);
+        pBody->worldIndex = pbData;
 
         std::vector<float>* baseDensities = new std::vector<float>();
         pBody->baseDensities = baseDensities;
-        for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
+        for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext())
+        {
             baseDensities->push_back(fix->GetDensity());
         }
     }
-    else{
-        baseBody->worldIndex->push_back(pBody);
+    else
+    {
+        baseBody->worldIndex->pbIndices.push_back(pBody);
         pBody->worldIndex = baseBody->worldIndex;
 
         handledBodies.insert(pBody->worldIndex);
+
+        for (auto pair : baseBody->worldIndex->createCallbacks)
+        {
+            pair.first(pBody, pair.second);
+        }
     }
 }
 
@@ -128,8 +136,6 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
     diff = minFrac * diff;
     b2Vec2 collPoint = rayStart + diff;
-
-    pWorld->getDebugDraw()->DrawSegment(rayStart, collPoint, b2Color(1, 0, 0));
 
     if (closestFixture != NULL){
         if (closestFixture == closestPortalFixture){
@@ -188,21 +194,30 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
     globalPostHandle();
 }
 
-void PortalWorld::globalPostHandle(){
-    for (PortalBody* b : destroyBodies){
-        for (int i = 0; i < portalBodies.size(); i++){
-            if (portalBodies.at(i) == b){
+void PortalWorld::globalPostHandle()
+{
+    for (PortalBody* portalBody : destroyBodies)
+    {
+        for (int i = 0; i < portalBodies.size(); i++)
+        {
+            if (portalBodies.at(i) == portalBody)
+            {
                 portalBodies.erase(portalBodies.begin() + i);
                 break;
             }
         }
 
-        delete b;
+        for (auto pair : portalBody->worldIndex->destroyCallbacks)
+        {
+            pair.first(portalBody, pair.second);
+        }
+
+        delete portalBody;
     }
 
     for (auto& hBody : handledBodies){
-        int numBodies = hBody->size();
-        for (PortalBody* portBody : *hBody){
+        int numBodies = hBody->pbIndices.size();
+        for (PortalBody* portBody : hBody->pbIndices){
             int i = 0;
             for (b2Fixture* fix = portBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
                 fix->SetDensity(portBody->baseDensities->at(i++) / numBodies);
@@ -682,10 +697,6 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             }
         }
 
-        createPortalBody_i(npb, pBody, false);
-            
-        connectBodies(pBody, npb, c, side);
-
         npb->numFixtures = pBody->numFixtures;
         npb->outFixtures[c->side2][portal2] = npb->numFixtures + fixMargin;
         pBody->bodyMaps->push_back(t_bcs);
@@ -695,6 +706,10 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         {
             retVal = true;
         }
+
+        createPortalBody_i(npb, pBody, false);
+
+        connectBodies(pBody, npb, c, side);
     }
 
     return retVal;

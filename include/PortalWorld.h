@@ -54,6 +54,13 @@ typedef struct
     int side;
 } bodyStruct;
 
+typedef struct
+{
+    std::vector<PortalBody*> pbIndices;
+    std::vector<std::pair<void (*) (PortalBody*, void*), void*>> createCallbacks;
+    std::vector<std::pair<void (*) (PortalBody*, void*), void*>> destroyCallbacks;
+} pbWorldData;
+
 class EvaluationRay : public b2RayCastCallback
 {
 
@@ -127,9 +134,10 @@ friend class PositionJoint;
 friend class PositionJointDef;
 friend class RotationJoint;
 friend class RotationJointDef;
+friend class ThinDrawer;
 
 public:
-    std::vector<std::vector<PortalBody*>*> bodyIndices;
+    std::vector<pbWorldData*> bodyIndices;
     std::vector<Portal*> portals;
 
     PortalWorld();
@@ -150,7 +158,7 @@ private:
 
     std::vector<PortalBody*> portalBodies;
     std::set<PortalBody*> destroyBodies;
-    std::set<std::vector<PortalBody*>*> handledBodies;
+    std::set<pbWorldData*> handledBodies;
 
     static float normalizeAngle(float angle);
     static b2Vec2 rotateVec(b2Vec2 vec, float angle);
@@ -183,6 +191,4 @@ private:
     void CreatePositionJoint(PositionJointDef* def);
 
     void commonJointCreation(b2Joint* cj);
-
-    b2Draw* getDebugDraw() { return m_debugDraw; }
 };

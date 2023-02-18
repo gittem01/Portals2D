@@ -111,7 +111,7 @@ friend class Portal;
 friend class ContactListener;
 
 public:
-    std::vector<PortalBody*>* worldIndex;
+    pbWorldData* worldIndex;
     std::vector<bodyCollisionStatus*>* bodyMaps;
 
     // arrangement of the fixtures are fixed always

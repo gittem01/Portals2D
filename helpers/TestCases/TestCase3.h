@@ -3,7 +3,7 @@
 class TestCase3 : public BaseTestCase
 {
 public:
-    TestCase3(WindowPainter* wh) : BaseTestCase(wh){
+    TestCase3(WindowHandler* wh) : BaseTestCase(wh){
         testCaseItem = 2;
         
         beforeCreate();
@@ -47,18 +47,6 @@ public:
 
             PortalBody* pb1 = pWorld->createPortalBody(body1);
             PortalBody* pb2 = pWorld->createPortalBody(body2);
-
-            /*if (i == 0)
-            {
-                renderer->addPortalBody(pb1, b2Color(0.0f, 0.0f, 1.0f, 1.0f));
-                indexToTrack = pb1->worldIndex;
-            }
-            else*/
-            {
-                renderer->addPortalBody(pb1, b2Color(0.2f, 0.8f, 0.9f, 0.1f));
-            }
-            
-            renderer->addPortalBody(pb2, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
         }
     }
 };

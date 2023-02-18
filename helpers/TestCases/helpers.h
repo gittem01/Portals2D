@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <chrono>
+#include <random>
 
 const char* refreshRates[] = { "60", "90", "120", "144", "240" };
 const int correspondingValues[] = { 60, 90, 120, 144, 240 };
@@ -32,13 +33,11 @@ float getRand(){
     return randF(mt);
 }
 
-bool isPaused = false;
+bool isPaused = true;
 bool tick = false;
 int frame = 0;
 PortalWorld* pWorld = nullptr;
-Renderer* renderer = nullptr;
 mouseJointHandler* mjh = nullptr;
-DebugDrawer* drawer = nullptr;
 ContactListener* contactListener = nullptr;
 int totalIter = 5;
 
@@ -273,7 +272,8 @@ b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type, fl
     return body;
 }
 
-void keyHandler(WindowPainter* wh) {
+void keyHandler(WindowHandler* wh)
+{
     tick = false;
     if (wh->keyData[GLFW_KEY_P] == 2) {
         isPaused = !isPaused;
@@ -282,6 +282,4 @@ void keyHandler(WindowPainter* wh) {
         isPaused = true;
         tick = true;
     }
-    if (wh->keyData[GLFW_KEY_S] == 2)
-        renderer->drawReleases ^= 1;
 }

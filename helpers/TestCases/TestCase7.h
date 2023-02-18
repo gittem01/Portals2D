@@ -3,7 +3,7 @@
 class TestCase7 : public BaseTestCase
 {
 public:
-    TestCase7(WindowPainter* wh) : BaseTestCase(wh){
+    TestCase7(WindowHandler* wh) : BaseTestCase(wh){
         testCaseItem = 6;
         
         beforeCreate();
@@ -43,21 +43,18 @@ public:
             float sizey = getRand() * 0.5f + 0.8f;
             b2Body* b = createBox(b2Vec2(-roomWidth - 1, 0.0f), b2Vec2(sizex, sizey), pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 0.25f, 0.5f));
         }
 
         for (int i = 0; i < numOfCircles; i++){
             float size = getRand() * 0.5f + 0.8f;
             b2Body* b = createCircle(b2Vec2(-roomWidth - 1, 0.0f), size, pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            renderer->addPortalBody(pb, b2Color(0.25f, 1.0f, 0.7f, 0.5f));
         }
 
         b2Vec2 p = b2Vec2(roomWidth + 1.0f, +9.4f);
         b2Vec2 s = b2Vec2(roomWidth * 0.75f, 0.3f);
         b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
         PortalBody* pb = pWorld->createPortalBody(body4);
-        renderer->addPortalBody(pb, b2Color(1.0f, 1.0f, 1.0f, 0.5f));
         b2Vec2 vel(0.0f, 0.0f);
         body4->SetLinearVelocity(vel);
         body4->SetAngularVelocity(2.0f);
