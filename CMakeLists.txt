@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(Teleporter VERSION 2.0.0)
 
-set (APP_NAME PhysicsTeleport)
+set(APP_NAME PhysicsTeleport)
 set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(-DGL_SLIENCE_DEPRECATION)
@@ -21,15 +21,16 @@ include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/stb_image)
 include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
 
-link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
-link_directories(${CMAKE_SOURCE_DIR}/external/vulkan/lib)
-
 file(GLOB HELPER_SOURCES    ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp
                             ${CMAKE_SOURCE_DIR}/helpers/src/vkSource/*.cpp
                             ${CMAKE_SOURCE_DIR}/helpers/src/vkSource/ShaderSources/*.cpp)
 file(GLOB HELPER_HEADERS    ${CMAKE_SOURCE_DIR}/helpers/include/*.h
                             ${CMAKE_SOURCE_DIR}/helpers/include/vkInclude*.h
                             ${CMAKE_SOURCE_DIR}/helpers/TestCases/*.h)
+
+link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
+# put this before add_executable else get linker error
+link_directories(${CMAKE_SOURCE_DIR}/external/vulkan/lib)
 
 if(APPLE)
     set(MACOSX_BUNDLE_ICON_FILE portal.ico)
@@ -50,13 +51,14 @@ file(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
 
 add_library(PORTAL2D ${SOURCE_FILES} ${HEADER_FILES})
 
+target_link_libraries(${APP_NAME} PORTAL2D)
+target_link_libraries(${APP_NAME} box2d)
+target_link_libraries(${APP_NAME} glfw)
+
 if (APPLE)
-	target_link_libraries(${APP_NAME} vulkan)
+	target_link_libraries(${APP_NAME} libvulkan.1.3.216.dylib)
 elseif (UNIX)
 	target_link_libraries(${APP_NAME} vulkanUnx)
 elseif (WIN32)
 	target_link_libraries(${APP_NAME} vulkanWin)
 endif()
-target_link_libraries(${APP_NAME} PORTAL2D)
-target_link_libraries(${APP_NAME} box2d)
-target_link_libraries(${APP_NAME} glfw)

@@ -7,7 +7,6 @@ void ThinDrawer::createWindow()
 {
     wh = new WindowHandler(NULL);
     Camera* cam = new Camera(glm::vec2(0, 0), wh);
-    cam->zoom = 1.75f;
     wh->cam = cam;
 }
 

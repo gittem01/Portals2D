@@ -105,7 +105,7 @@ class PortalWorld;
 // per fixture
 typedef struct
 {
-    std::vector<uint32_t> dynamicOffsets;
+    std::vector<std::vector<uint32_t>> dynamicOffsets;
     s_buffers* vertexBuffer;
     struct fixtureData* fixData;
     b2Shape::Type renderType;

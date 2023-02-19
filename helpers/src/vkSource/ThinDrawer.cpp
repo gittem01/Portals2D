@@ -235,7 +235,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
             {
                 s_uboAll* allData;
                 vkMapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory,
-                    renderStruct->dynamicOffsets[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
+                    renderStruct->dynamicOffsets[frameNumber][0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->modelMatrix = modelMatrix;
 
                 allData->data.x = renderStruct->fixData->pCollisions.size();
@@ -268,7 +268,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
 
                         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             debugCircleShader->pipelineLayout, 1, 1, &debugCircleShader->descriptorSets[1][frameNumber],
-                            renderStruct->dynamicOffsets.size(), renderStruct->dynamicOffsets.data());
+                            renderStruct->dynamicOffsets[frameNumber].size(), renderStruct->dynamicOffsets[frameNumber].data());
 
                         vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderStruct->vertexBuffer->buffer, &offsets);
                         vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
@@ -283,7 +283,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
 
                         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             debugPolygonShader->pipelineLayout, 1, 1, &debugPolygonShader->descriptorSets[1][frameNumber],
-                            renderStruct->dynamicOffsets.size(), renderStruct->dynamicOffsets.data());
+                            renderStruct->dynamicOffsets[frameNumber].size(), renderStruct->dynamicOffsets[frameNumber].data());
 
                         vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
                     }
@@ -365,7 +365,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
         renderBody->renderFixtures.push_back(renderStruct);
         renderStruct->renderType = fix->GetType();
         renderStruct->fixData = (fixtureData*)fix->GetUserData().pointer;
-
+        renderStruct->dynamicOffsets.resize(swapChain->imageCount);
         renderStruct->vertexBuffer = (s_buffers*)malloc(sizeof(s_buffers));
         s_buffers* mirroredVertices = (s_buffers*)malloc(sizeof(s_buffers));
 
@@ -393,21 +393,21 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
             renderGroup->circlePositioningsMirrored[i] = PortalWorld::mirror(b2Vec2(0.0f, 1.0f), circShape->m_p);
 
             vertexBufferMirrored.resize(vertexBuffer.size());
-            int i = 0;
+            int j = 0;
             for (b2Vec2 vertex : vertexBuffer)
             {
-                vertexBufferMirrored[i++] = PortalWorld::mirror(b2Vec2(0.0f, 1.0f), vertex);
+                vertexBufferMirrored[j++] = PortalWorld::mirror(b2Vec2(0.0f, 1.0f), vertex);
             }
 
-            int offsetIndex = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
-            ShaderBase::avlAllocLastLoc[0]--;
-            renderStruct->dynamicOffsets = { (uint32_t)(offsetIndex * ShaderBase::alignedSizes[0]) };
-
-            for (int j = 0; j < swapChain->imageCount; j++)
+            for (j = 0; j < swapChain->imageCount; j++)
             {
+                int offsetIndex = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
+                ShaderBase::avlAllocLastLoc[0]--;
+                renderStruct->dynamicOffsets[j] = { (uint32_t)(offsetIndex * ShaderBase::alignedSizes[0]) };
+
                 s_uboAll* allData;
                 vkMapMemory(logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory,
-                    offsetIndex * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
+                            offsetIndex * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->color = glm::vec4(0.3f, 1.0f, 0.0f, 0.3f);
                 allData->data.y = 0.02f;
                 allData->data.z = 0.0f;
@@ -438,20 +438,21 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
                 vertexBufferMirrored.push_back(mirrored0);
             }
 
-            int offsetIndex0 = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
+
             int offsetIndex1 = ShaderBase::freeIndicesList[1][ShaderBase::avlAllocLastLoc[1]];
             int offsetIndex1Mirrored = ShaderBase::freeIndicesList[1][ShaderBase::avlAllocLastLoc[1] - 1];
-
-            ShaderBase::avlAllocLastLoc[0]--;
             ShaderBase::avlAllocLastLoc[1] -= 2;
-            renderStruct->dynamicOffsets = {    (uint32_t)(offsetIndex0 * ShaderBase::alignedSizes[0]),
-                                                (uint32_t)(offsetIndex1 * ShaderBase::alignedSizes[1]) };
 
             renderGroup->vertexStorageOffsets[i] = offsetIndex1 * ShaderBase::alignedSizes[1];
             renderGroup->vertexStorageOffsetsMirrored[i] = offsetIndex1Mirrored * ShaderBase::alignedSizes[1];
 
             for (int j = 0; j < swapChain->imageCount; j++)
             {
+                int offsetIndex0 = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
+                ShaderBase::avlAllocLastLoc[0]--;
+                renderStruct->dynamicOffsets[j] = { (uint32_t)(offsetIndex0 * ShaderBase::alignedSizes[0]),
+                                                    (uint32_t)(offsetIndex1 * ShaderBase::alignedSizes[1]) };
+
                 s_uboAll* allData;
                 vkMapMemory(logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory,
                     offsetIndex0 * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
@@ -516,6 +517,7 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
 
         s_renderStruct* renderStruct = new s_renderStruct;
         renderBody->renderFixtures.push_back(renderStruct);
+        renderStruct->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
         renderStruct->renderType = fix->GetType();
         renderStruct->fixData = (fixtureData*)fix->GetUserData().pointer;
         if (!portalBody->isMirrored)
@@ -531,12 +533,12 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
         {
             b2CircleShape* circShape = (b2CircleShape*)fix->GetShape();
 
-            int offsetIndex = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
-            ShaderBase::avlAllocLastLoc[0]--;
-            renderStruct->dynamicOffsets = { (uint32_t)(offsetIndex * ShaderBase::alignedSizes[0]) };
-
             for (int j = 0; j < thinDrawer->swapChain->imageCount; j++)
             {
+                int offsetIndex = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
+                ShaderBase::avlAllocLastLoc[0]--;
+                renderStruct->dynamicOffsets[j] = { (uint32_t)(offsetIndex * ShaderBase::alignedSizes[0]) };
+
                 s_uboAll* allData;
                 vkMapMemory(thinDrawer->logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory,
                     offsetIndex * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
@@ -556,13 +558,13 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
         {
             b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
 
-            int offsetIndex0 = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
-            ShaderBase::avlAllocLastLoc[0]--;
-            renderStruct->dynamicOffsets = {    (uint32_t)(offsetIndex0 * ShaderBase::alignedSizes[0]),
-                                                (uint32_t)(portalBody->isMirrored ? renderGroup->vertexStorageOffsetsMirrored[i] : renderGroup->vertexStorageOffsets[i]) };
-
             for (int j = 0; j < thinDrawer->swapChain->imageCount; j++)
             {
+                int offsetIndex0 = ShaderBase::freeIndicesList[0][ShaderBase::avlAllocLastLoc[0]];
+                ShaderBase::avlAllocLastLoc[0]--;
+                renderStruct->dynamicOffsets[j] = { (uint32_t)(offsetIndex0 * ShaderBase::alignedSizes[0]),
+                                                    (uint32_t)(portalBody->isMirrored ? renderGroup->vertexStorageOffsetsMirrored[i] : renderGroup->vertexStorageOffsets[i]) };
+
                 s_uboAll* allData;
                 vkMapMemory(thinDrawer->logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory,
                     offsetIndex0 * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
@@ -591,7 +593,11 @@ void ThinDrawer::portalBodyDestroyCallback(PortalBody* portalBody, void* data)
 
             for (s_renderStruct* renderStruct : renderBody->renderFixtures)
             {
-                ShaderBase::freeIndicesList[0][++ShaderBase::avlAllocLastLoc[0]] = renderStruct->dynamicOffsets[0] / ShaderBase::alignedSizes[0];
+                for (int j = 0; j < thinDrawer->swapChain->imageCount; j++)
+                {
+                    ShaderBase::freeIndicesList[0][++ShaderBase::avlAllocLastLoc[0]] =
+                            renderStruct->dynamicOffsets[j][0] / ShaderBase::alignedSizes[0];
+                }
                 delete renderStruct;
             }
 

@@ -2,6 +2,7 @@
 
 #include <helpers.h>
 #include <WindowHandler.h>
+#include <ThinDrawer.h>
 
 #define ENABLE_TESTPLAYER 0
 
@@ -56,7 +57,10 @@ public:
         pWorld->SetGravity(gravity);
 
     #if ENABLE_TESTPLAYER
+        extern ThinDrawer* thinDrawer;
         tp = new TestPlayer(pWorld, wh);
+        thinDrawer->addPortalBody(tp->pBody->at(0));
+        thinDrawer->addPortalBody(tp->gun->at(0));
     #endif
     }
 
@@ -80,7 +84,7 @@ public:
         if (!pWorld) return;
         for (int i = 0; i < totalIter; i++) {
 			// speeded up 2x times
-            float dt = (2.0f / 120) / totalIter;
+            float dt = (2.0f / 60.0f) / totalIter;
             mjh->mouseHandler(frame, totalIter);
         #if ENABLE_TESTPLAYER
             tp->update(dt, totalIter);
