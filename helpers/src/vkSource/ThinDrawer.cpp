@@ -254,13 +254,12 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                     allData->portals[i] = glm::vec4(pc->portal->points[1 ^ pc->side].x, pc->portal->points[1 ^ pc->side].y,
                                                     pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
                 }
-
-                vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory);
-                
+                  
                 if (fullOut)
                 {
                     if (!drawReleases)
                     {
+                        vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory);
                         continue;
                     }
                 }
@@ -268,6 +267,8 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                 {
                     allData->extraData.z = drawReleases ? -1.0f : 0.0f;
                 }
+
+                vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory);
 
                 switch (renderStruct->renderType)
                 {
