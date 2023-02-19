@@ -6,9 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(-DGL_SLIENCE_DEPRECATION)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glfw)
-
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/helpers/include)
 include_directories(${CMAKE_SOURCE_DIR}/helpers/include/vkInclude)
@@ -19,7 +16,12 @@ include_directories(${CMAKE_SOURCE_DIR}/external/box2d/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glfw/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/stb_image)
+include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
 include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glfw)
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/imgui)
 
 file(GLOB HELPER_SOURCES    ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp
                             ${CMAKE_SOURCE_DIR}/helpers/src/vkSource/*.cpp
@@ -27,6 +29,13 @@ file(GLOB HELPER_SOURCES    ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp
 file(GLOB HELPER_HEADERS    ${CMAKE_SOURCE_DIR}/helpers/include/*.h
                             ${CMAKE_SOURCE_DIR}/helpers/include/vkInclude*.h
                             ${CMAKE_SOURCE_DIR}/helpers/TestCases/*.h)
+
+set(   
+    IMGUI_BACKENDS  
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.h
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.h)
 
 link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 # put this before add_executable else get linker error
@@ -50,10 +59,12 @@ file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 file(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
 
 add_library(PORTAL2D ${SOURCE_FILES} ${HEADER_FILES})
+add_library(imgui ${IMGUI_SOURCES} ${IMGUI_HEADERS})
 
 target_link_libraries(${APP_NAME} PORTAL2D)
 target_link_libraries(${APP_NAME} box2d)
 target_link_libraries(${APP_NAME} glfw)
+target_link_libraries(${APP_NAME} imgui)
 
 if (APPLE)
 	target_link_libraries(${APP_NAME} libvulkan.1.3.216.dylib)

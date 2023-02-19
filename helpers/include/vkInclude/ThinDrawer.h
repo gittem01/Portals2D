@@ -7,6 +7,9 @@
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -140,11 +143,14 @@ class ThinDrawer
 public:
 
     PortalWorld* pWorld;
+    VkDescriptorPool imguiPool;
 
     ThinDrawer(PortalWorld* pWorld);
 
     bool drawReleases;
 
+    void initImgui();
+    ImDrawData* imguiRender();
     // Base var start
 
     uint32_t frameNumber = 0;

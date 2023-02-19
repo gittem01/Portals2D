@@ -52,6 +52,8 @@ void ThinDrawer::initExtra()
     preparePipelines();
     setupDescriptorPool();
     setupDescriptorSet();
+
+    initImgui();
 }
 
 void ThinDrawer::uniformFiller(int frameNum)
@@ -185,6 +187,65 @@ void ThinDrawer::setupDescriptorSet()
     debugCircleShader->setupDescriptorSet();
     debugLineShader->setupDescriptorSet();
     debugPolygonShader->setupDescriptorSet();
+}
+
+void ThinDrawer::initImgui()
+{
+    VkDescriptorPoolSize pool_sizes[] =
+    {
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1000;
+    pool_info.poolSizeCount = std::size(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
+
+    CHECK_RESULT_VK(vkCreateDescriptorPool(logicalDevice, &pool_info, nullptr, &imguiPool));
+    
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForVulkan(wh->window, true);
+    ImGui_ImplVulkan_InitInfo initInfo = {};
+    initInfo.Instance = instance;
+    initInfo.PhysicalDevice = physicalDevice;
+    initInfo.Device = logicalDevice;
+    initInfo.Queue = queues.graphicsQueue;
+    initInfo.QueueFamily = queues.graphicsQueueFamilyIndex;
+    initInfo.DescriptorPool = imguiPool;
+    initInfo.MinImageCount = swapChain->imageCount;
+    initInfo.ImageCount = swapChain->imageCount;
+    initInfo.MSAASamples = samples;
+    ImGui_ImplVulkan_Init(&initInfo, renderPass);
+
+    VkCommandBuffer commandBuffer = getCommandBuffer(true);
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+    flushCommandBuffer(commandBuffer);
+
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+    ImGuiStyle* style = &ImGui::GetStyle();
+    style->Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, 0.95);
+}
+
+ImDrawData* ThinDrawer::imguiRender()
+{
+    ImGui::ShowDemoWindow();
+    ImGui::Render();
+    return ImGui::GetDrawData();
 }
 
 void ThinDrawer::buildCommandBuffers(int frameNumber)
@@ -351,7 +412,13 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
     }
 
     // end
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
+    ImDrawData* drawData = imguiRender();
+    ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
+    
     vkCmdEndRenderPass(cmdBuff);
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
 }
