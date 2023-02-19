@@ -143,6 +143,8 @@ public:
 
     ThinDrawer(PortalWorld* pWorld);
 
+    bool drawReleases;
+
     // Base var start
 
     uint32_t frameNumber = 0;

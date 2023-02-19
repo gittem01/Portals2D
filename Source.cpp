@@ -1,8 +1,6 @@
 #include "TestCaseIncludes.h"
 #include "ThinDrawer.h"
 
-ThinDrawer* thinDrawer;
-
 int main(void)
 {
     thinDrawer = new ThinDrawer(pWorld);

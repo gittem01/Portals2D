@@ -10,6 +10,7 @@
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {
+    drawReleases = true;
     this->pWorld = pWorld;
 
     initBase();
@@ -247,6 +248,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                     if (pc->status < 0)
                     {
                         fullOut = true;
+                        allData->extraData.z = -2.0f;
                         break;
                     }
                     allData->portals[i] = glm::vec4(pc->portal->points[1 ^ pc->side].x, pc->portal->points[1 ^ pc->side].y,
@@ -254,10 +256,17 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                 }
 
                 vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory);
-
+                
                 if (fullOut)
                 {
-                    continue;
+                    if (!drawReleases)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    allData->extraData.z = drawReleases ? -1.0f : 0.0f;
                 }
 
                 switch (renderStruct->renderType)
@@ -414,6 +423,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
                 allData->data.w = circShape->m_radius;
                 allData->extraData.x = circShape->m_p.x;
                 allData->extraData.y = circShape->m_p.y;
+                allData->extraData.z = -1.0f;
                 allData->outerColor = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
                 allData->modelMatrix = glm::mat4(1.0f);
                 vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory);
@@ -459,6 +469,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
                 allData->color = glm::vec4(0.0f, 0.1f, 1.0f, 0.3f);
                 allData->data.y = 0.02f;
                 allData->data.z = 0.0f;
+                allData->extraData.z = -1.0f;
                 allData->outerColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
                 allData->modelMatrix = glm::mat4(1.0f);
                 vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory);
@@ -549,6 +560,7 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
                 b2Vec2 circPos = portalBody->isMirrored ? renderGroup->circlePositioningsMirrored[i] : renderGroup->circlePositionings[i];
                 allData->extraData.x = circPos.x;
                 allData->extraData.y = circPos.y;
+                allData->extraData.z = -1.0f;
                 allData->outerColor = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
                 allData->modelMatrix = glm::mat4(1.0f);
                 vkUnmapMemory(thinDrawer->logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory);
@@ -571,6 +583,7 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
                 allData->color = glm::vec4(0.0f, 0.1f, 1.0f, 0.3f);
                 allData->data.y = 0.02f;
                 allData->data.z = 0.0f;
+                allData->extraData.z = -1.0f;
                 allData->outerColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
                 allData->modelMatrix = glm::mat4(1.0f);
                 vkUnmapMemory(thinDrawer->logicalDevice, ShaderBase::commonStorageBuffers[j][0]->memory);

@@ -18,8 +18,10 @@ layout (std140, set = 1, binding = 0) readonly buffer UBO
     vec4 colour;
     vec4 outerColour;
     vec4 data; // numPortals, lineThickness, outerSmoothThicknessRatio, radius
-    vec4 extraData; // offsetx, offsety, unused, unused;
+    vec4 extraData; // offsetx, offsety, drawReleases, unused;
 } ubo;
+
+// drawReleases -2: fully released, -1: still colliding
 
 float lineRel(vec2 a, vec2 b, vec2 c)
 {
@@ -29,19 +31,40 @@ float lineRel(vec2 a, vec2 b, vec2 c)
 void main()
 {
     int numPortals = int(round(ubo.data.x));
-    for (int i = 0; i < numPortals; i++)
+    vec4 colour = ubo.colour;
+    vec4 outerColour = ubo.outerColour;
+
+    if (ubo.extraData.z > -1.5f)
     {
-        if (lineRel(ubo.portals[i].xy, ubo.portals[i].zw, worldPosition) > 0){
-            FragColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-            return;
+        for (int i = 0; i < numPortals; i++)
+        {
+            if (lineRel(ubo.portals[i].xy, ubo.portals[i].zw, worldPosition) > 0)
+            {
+                if (ubo.extraData.z < -0.5f)
+                {
+                    colour = vec4(1.0f, 1.0f, 1.0f, 0.05f);
+                    outerColour = vec4(1.0f, 1.0f, 1.0f, 0.8f);
+                    break;
+                }
+                else
+                {
+                    FragColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+                    return;
+                }
+            }
         }
+    }
+    else
+    {
+        colour = vec4(1.0f, 1.0f, 1.0f, 0.05f);
+        outerColour = vec4(1.0f, 1.0f, 1.0f, 0.4f);
     }
 
     float adjustedOuterLineWidth = ubo.data.y / (sharedUboData.data.x * sharedUboData.data.x * ubo.data.w);
     float len = length(localPos.xy - ubo.extraData.xy) / ubo.data.w;
     if (len < 1.0f - adjustedOuterLineWidth)
     {
-        FragColour = ubo.colour;
+        FragColour = colour;
     }
     if (len < 1.0f)
     {
@@ -54,11 +77,11 @@ void main()
             if (perct > reverseOuter)
             {
                 perct = (perct - reverseOuter) * (1.0f / (1.0f - ubo.data.z));
-                FragColour = vec4(ubo.outerColour.xyz, (1 - perct) * ubo.outerColour.w);
+                FragColour = vec4(outerColour.xyz, (1 - perct) * outerColour.w);
             }
             else
             {
-                FragColour = ubo.outerColour;
+                FragColour = outerColour;
             }
         }
         else if (len >= 1 - adjustedOuterLineWidth)
@@ -68,13 +91,13 @@ void main()
             if (perct > reverseOuter)
             {
                 perct = (perct - reverseOuter) * (1.0f / (1.0f - ubo.data.z));
-                float alphaVal = ubo.outerColour.w + perct * (ubo.colour.w - ubo.outerColour.w);
-                vec3 colourMix = ubo.outerColour.xyz * (1 - perct * ubo.colour.w / alphaVal) + ubo.colour.xyz * perct * ubo.colour.w / alphaVal;
+                float alphaVal = outerColour.w + perct * (colour.w - outerColour.w);
+                vec3 colourMix = outerColour.xyz * (1 - perct * colour.w / alphaVal) + colour.xyz * perct * colour.w / alphaVal;
                 FragColour = vec4(colourMix, alphaVal);
             }
             else
             {
-                FragColour = ubo.outerColour;
+                FragColour = outerColour;
             }
         }
     }

@@ -18,7 +18,7 @@ layout (std140, set = 1, binding = 0) readonly buffer UBO
     vec4 colour;
     vec4 outerColour;
     vec4 data; // unused, lineThickness, outerSmoothThicknessRatio, unused
-    int numPortals;
+    vec4 extraData;
 } ubo;
 
 

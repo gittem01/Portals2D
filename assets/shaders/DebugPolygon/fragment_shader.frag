@@ -1,6 +1,6 @@
 #version 460 core
 
-layout (location = 0) out vec4 color;
+layout (location = 0) out vec4 FragColour;
 
 layout (location = 0) in vec2 localPos;
 layout (location = 1) in vec2 worldPosition;
@@ -51,16 +51,36 @@ void main()
 {
     int numPortals = int(round(ubo.data.x));
     float zoom = sharedUboData.data.x;
-    color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-    for (int i = 0; i < numPortals; i++)
+    
+    vec4 colour = ubo.colour;
+    vec4 outerColour = ubo.outerColour;
+
+    if (ubo.extraData.z > -1.5f)
     {
-        if (lineRel(ubo.portals[i].xy, ubo.portals[i].zw, worldPosition) > 0){
-            color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-            return;
+        for (int i = 0; i < numPortals; i++)
+        {
+            if (lineRel(ubo.portals[i].xy, ubo.portals[i].zw, worldPosition) > 0)
+            {
+                if (ubo.extraData.z < -0.5f)
+                {
+                    colour = vec4(1.0f, 1.0f, 1.0f, 0.05f);
+                    outerColour = vec4(1.0f, 1.0f, 1.0f, 0.8f);
+                    break;
+                }
+                else
+                {
+                    FragColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+                    return;
+                }
+            }
         }
     }
+    else
+    {
+        colour = vec4(1.0f, 1.0f, 1.0f, 0.05f);
+        outerColour = vec4(1.0f, 1.0f, 1.0f, 0.4f);
+    }
 
-    vec4 innerColour = ubo.colour;
     float d = ubo.data.y / (zoom * zoom);
     
     for (int i1 = 0; i1 < polyData.numPolyPoints; i1++)
@@ -86,22 +106,22 @@ void main()
         if (perct > bias)
         {
             float newPerct = (perct - bias) / (1 - bias);
-            color = vec4(ubo.outerColour.xyz, (1 - newPerct) * ubo.outerColour.w);
+            FragColour = vec4(outerColour.xyz, (1 - newPerct) * outerColour.w);
         }
         else if (perct < -bias)
         {
             float newPerct = (-perct - bias) / (1 - bias);
-            float alphaVal = ubo.outerColour.w + newPerct * (innerColour.w - ubo.outerColour.w);
-            vec3 colourMix = ubo.outerColour.xyz * (1 - newPerct * innerColour.w / alphaVal) + innerColour.xyz * newPerct * innerColour.w / alphaVal;
-            color = vec4(colourMix, alphaVal);
+            float alphaVal = outerColour.w + newPerct * (colour.w - outerColour.w);
+            vec3 colourMix = outerColour.xyz * (1 - newPerct * colour.w / alphaVal) + colour.xyz * newPerct * colour.w / alphaVal;
+            FragColour = vec4(colourMix, alphaVal);
         }
         else
         {
-            color = ubo.outerColour;
+            FragColour = outerColour;
         }
     }
     else
     {
-        color = innerColour;
+        FragColour = colour;
     }
 }

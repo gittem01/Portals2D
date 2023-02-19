@@ -1,5 +1,8 @@
+#pragma once
+
 #include "mouseJointHandler.h"
 #include "ContactListener.h"
+#include "ThinDrawer.h"
 
 #include <thread>
 #include <chrono>
@@ -39,6 +42,7 @@ int frame = 0;
 PortalWorld* pWorld = nullptr;
 mouseJointHandler* mjh = nullptr;
 ContactListener* contactListener = nullptr;
+ThinDrawer* thinDrawer;
 int totalIter = 5;
 
 // O shaped body
@@ -275,11 +279,17 @@ b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type, fl
 void keyHandler(WindowHandler* wh)
 {
     tick = false;
-    if (wh->keyData[GLFW_KEY_P] == 2) {
+    if (wh->keyData[GLFW_KEY_P] == 2)
+    {
         isPaused = !isPaused;
     }
-    else if (wh->keyData[GLFW_KEY_O] == 2) {
+    else if (wh->keyData[GLFW_KEY_O] == 2)
+    {
         isPaused = true;
         tick = true;
+    }
+    if (wh->keyData[GLFW_KEY_S] == 2)
+    {
+        thinDrawer->drawReleases ^= 1;
     }
 }
