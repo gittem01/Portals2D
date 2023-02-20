@@ -2,7 +2,6 @@
 
 #include <helpers.h>
 #include <WindowHandler.h>
-#include <ThinDrawer.h>
 
 #define ENABLE_TESTPLAYER 0
 
@@ -17,12 +16,14 @@ protected:
     const char* name;
 
 public:
-    WindowHandler* wh;
+    ThinDrawer* td;
     bool shouldGetNewTest;
     int testCaseItem;
 
     void destroy()
     {
+        td->releaseRenderResources();
+
         delete mjh;
         delete pWorld;
     #if ENABLE_TESTPLAYER
@@ -32,15 +33,76 @@ public:
         pWorld = NULL;
     }
 
-    BaseTestCase(WindowHandler* wh, const char* name="Test Debug Window")
+    BaseTestCase(ThinDrawer* td, const char* name="Test Debug Window")
     {
-        this->wh = wh;
+        this->td = td;
         this->name = name;
 		refreshItem = 0;
         shouldGetNewTest = false;
     }
 
     virtual ~BaseTestCase() { }
+
+    void imguiRender()
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Debug Window", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+
+        int lastItem = testCaseItem;
+        ImGui::Combo(" ", &testCaseItem, testCases, numTestCases);
+        ImGui::SameLine();
+        if (ImGui::Button("Reset"))
+        {
+            shouldGetNewTest = true;
+        }
+
+        if (lastItem != testCaseItem)
+        {
+            shouldGetNewTest = true;
+        }
+
+        if (ImGui::RadioButton("Draw Releases", td->drawReleases))
+        {
+            td->drawReleases = !td->drawReleases;
+        }
+        ImGui::SameLine();
+        if (isPaused)
+        {
+            if (ImGui::Button("Resume"))
+            {
+                isPaused = false;
+            }
+        }
+        else
+        {
+            if (ImGui::Button("Stop"))
+            {
+                isPaused = true;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Tick"))
+        {
+            isPaused = true;
+            tick = true;
+        }
+
+        float oldVal = mjh->bodyRadius;
+        ImGui::SliderFloat("MouseSelectionArea", &mjh->bodyRadius, mjh->radiusLimits[0], mjh->radiusLimits[1], "%.2f", 1);
+        if (oldVal != mjh->bodyRadius)
+        {
+            mjh->createMouseBody();
+        }
+
+        ImGui::End();
+
+        ImGui::Render();
+
+        td->drawData = ImGui::GetDrawData();
+    }
 
     void beforeCreate()
     {
@@ -49,9 +111,11 @@ public:
             contactListener = new ContactListener();
         }
         pWorld = new PortalWorld();
+        thinDrawer->pWorld = pWorld;
+
         pWorld->SetContactListener(contactListener);
 
-        mjh = new mouseJointHandler(pWorld, wh);
+        mjh = new mouseJointHandler(pWorld, td->wh);
 
         b2Vec2 gravity(0.0f, -10.0f);
         pWorld->SetGravity(gravity);
@@ -77,19 +141,24 @@ public:
         }
     }
 
-    virtual void onUpdate(){
-    #if ENABLE_TESTPLAYER
+    virtual void onUpdate()
+    {
+#if ENABLE_TESTPLAYER
         tp->camHandle();
-    #endif
-        if (!pWorld) return;
-        for (int i = 0; i < totalIter; i++) {
+#endif
+        if (!pWorld)
+        {
+            return;
+        }
+        for (int i = 0; i < totalIter; i++)
+        {
 			// speeded up 2x times
             float dt = (2.0f / 60.0f) / totalIter;
             mjh->mouseHandler(frame, totalIter);
-        #if ENABLE_TESTPLAYER
-            tp->update(dt, totalIter);
-        #endif
             pWorld->PortalStep(dt, 8, 3);
+#if ENABLE_TESTPLAYER
+            tp->update(dt, totalIter);
+#endif
         }
     }
 

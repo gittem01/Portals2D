@@ -8,8 +8,6 @@
 #include <chrono>
 #include <random>
 
-const char* refreshRates[] = { "60", "90", "120", "144", "240" };
-const int correspondingValues[] = { 60, 90, 120, 144, 240 };
 const char* testCases[] =   { 
                                 "Random Portals",
                                 "Squares",
@@ -21,7 +19,6 @@ const char* testCases[] =   {
                                 "ShootShoot Place",
                             };
 
-const int refreshSize = sizeof(refreshRates) / sizeof(refreshRates[0]);
 const int numTestCases = sizeof(testCases) / sizeof(testCases[0]);
 
 std::random_device rd;

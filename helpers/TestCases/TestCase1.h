@@ -1,5 +1,4 @@
 #include <BaseTestCase.h>
-#include <ThinDrawer.h>
 
 class TestCase1 : public BaseTestCase
 {
@@ -10,7 +9,7 @@ private:
     b2RevoluteJoint* snakeJoint = nullptr;
 
 public:
-    TestCase1(WindowHandler* wh) : BaseTestCase(wh){
+    TestCase1(ThinDrawer* td) : BaseTestCase(td){
         testCaseItem = 0;
 
         beforeCreate();
@@ -56,8 +55,6 @@ public:
         createEdge(b2Vec2(+30.0f, yPos - portalSize), b2Vec2(+30.0f, 21), pWorld, b2_staticBody);
         createEdge(b2Vec2(+30.0f, 21), b2Vec2(-30.0f, 21), pWorld, b2_staticBody);
         createEdge(b2Vec2(-30.0f, 21), b2Vec2(-30.0f, yPos - portalSize), pWorld, b2_staticBody);
-
-        extern ThinDrawer* thinDrawer;
 
         thinDrawer->pWorld = pWorld;
 
@@ -146,7 +143,7 @@ public:
             }
         }
 
-        if (!snakeJoint && wh->keyData[GLFW_KEY_SPACE] == 2)
+        if (!snakeJoint && td->wh->keyData[GLFW_KEY_SPACE] == 2)
         {
             b2RevoluteJointDef revDef;
             revDef.bodyA = snakeHead->at(0)->body;

@@ -11,7 +11,7 @@ public:
     std::vector<PortalBody*>* pbi1;
     std::vector<PortalBody*>* pbi2;
 
-    TestCase8(WindowHandler* wh) : BaseTestCase(wh)
+    TestCase8(ThinDrawer* td) : BaseTestCase(td)
     {
         testCaseItem = 7;
 
@@ -92,6 +92,9 @@ public:
         PortalBody* pb1 = pWorld->createPortalBody(body1);
         PortalBody* pb2 = pWorld->createPortalBody(body2);
 
+        thinDrawer->addPortalBody(pb1);
+        thinDrawer->addPortalBody(pb2);
+
         pbi1 = &pb1->worldIndex->pbIndices;
         pbi2 = &pb2->worldIndex->pbIndices;
 
@@ -132,6 +135,9 @@ public:
 
             PortalBody* pb1 = pWorld->createPortalBody(body1);
             PortalBody* pb2 = pWorld->createPortalBody(body2);
+
+            thinDrawer->addPortalBody(pb1);
+            thinDrawer->addPortalBody(pb2);
         }
     }
 
@@ -145,21 +151,21 @@ public:
         b2Vec2 setSpeed = b2Vec2(0.0f, 0.0f);
         float setAngle = 0.0f;
 
-        if (wh->keyData[GLFW_KEY_LEFT])
+        if (td->wh->keyData[GLFW_KEY_LEFT])
         {
             setAngle += angSpeedAddition;
             //setSpeed += speedAddition * portal2->rotDir;
         }
-        if (wh->keyData[GLFW_KEY_RIGHT])
+        if (td->wh->keyData[GLFW_KEY_RIGHT])
         {
             setAngle -= angSpeedAddition;
             //setSpeed -= speedAddition * portal2->rotDir;
         }
-        if (wh->keyData[GLFW_KEY_DOWN])
+        if (td->wh->keyData[GLFW_KEY_DOWN])
         {
             setSpeed -= speedAddition * portal2->dir;
         }
-        if (wh->keyData[GLFW_KEY_UP])
+        if (td->wh->keyData[GLFW_KEY_UP])
         {
             setSpeed += speedAddition * portal2->dir;
         }

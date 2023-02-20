@@ -150,7 +150,7 @@ public:
     bool drawReleases;
 
     void initImgui();
-    ImDrawData* imguiRender();
+    ImDrawData* drawData = nullptr;
     // Base var start
 
     uint32_t frameNumber = 0;
@@ -230,6 +230,7 @@ public:
                      VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
     void addPortalBody(PortalBody* portalBody);
+    void releaseRenderResources();
 
     static bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
 

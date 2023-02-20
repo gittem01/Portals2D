@@ -3,7 +3,7 @@
 class TestCase2 : public BaseTestCase
 {
 public:
-    TestCase2(WindowHandler* wh) : BaseTestCase(wh){
+    TestCase2(ThinDrawer* td) : BaseTestCase(td){
         testCaseItem = 1;
         
         beforeCreate();
@@ -25,6 +25,7 @@ public:
         for (int i = 0; i < 300; i++){
             b2Body* body = createBox(b2Vec2(0, 0), b2Vec2(0.3f, 0.3f), pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(body);
+            thinDrawer->addPortalBody(pb);
         }
     }
 };

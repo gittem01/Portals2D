@@ -3,7 +3,7 @@
 class TestCase6 : public BaseTestCase
 {
 public:
-    TestCase6(WindowHandler* wh) : BaseTestCase(wh){
+    TestCase6(ThinDrawer* td) : BaseTestCase(td) {
         testCaseItem = 5;
         
         beforeCreate();
@@ -29,16 +29,21 @@ public:
         b2Body* body3 = createBox(b2Vec2(0, 0), b2Vec2(30, 0.5), pWorld, b2_dynamicBody);
         PortalBody* b3 = pWorld->createPortalBody(body3);
 
+        thinDrawer->addPortalBody(b1);
+        thinDrawer->addPortalBody(b2);
+        thinDrawer->addPortalBody(b3);
 
         b2Vec2 startPos = b2Vec2(29.0f, 20.0f);
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
 
         PortalBody* pb = pWorld->createPortalBody(lastBody);
+        thinDrawer->addPortalBody(pb);
         for (int i = 0; i < 100; i++){
             startPos -= b2Vec2(0.7f, 0.0f);
             
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
             pb = pWorld->createPortalBody(jointBody);
+            thinDrawer->addPortalBody(pb);
 
             b2RevoluteJointDef revDef;
             revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));

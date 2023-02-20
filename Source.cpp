@@ -1,28 +1,32 @@
 #include "TestCaseIncludes.h"
-#include "ThinDrawer.h"
 
 int main(void)
 {
     thinDrawer = new ThinDrawer(pWorld);
 
-    testCase = newTest(thinDrawer->wh, 1);
+    testCase = newTest(thinDrawer, 1);
 
     while (!glfwWindowShouldClose(thinDrawer->wh->window))
     {
         frame++;
 
-        thinDrawer->renderLoop();
+        testCase->imguiRender();
 
-        if (!isPaused || tick) {
+        if (!isPaused || tick)
+        {
             testCase->onUpdate();
         }
 
+        thinDrawer->renderLoop();
+
         keyHandler(thinDrawer->wh);
 
-        if (testCase->shouldGetNewTest){
+        if (testCase->shouldGetNewTest)
+        {
+            testCase->destroy();
             int nextTestCase = testCase->testCaseItem + 1;
             delete testCase;
-            testCase = newTest(thinDrawer->wh, nextTestCase);
+            testCase = newTest(thinDrawer, nextTestCase);
         }
     }
 

@@ -3,7 +3,8 @@
 class TestCase3 : public BaseTestCase
 {
 public:
-    TestCase3(WindowHandler* wh) : BaseTestCase(wh){
+    TestCase3(ThinDrawer* td) : BaseTestCase(td)
+    {
         testCaseItem = 2;
         
         beforeCreate();
@@ -11,7 +12,8 @@ public:
         afterCreate();
     }
 
-    void onCreate(){
+    void onCreate()
+    {
         srand(7);
         b2Vec2 gravity(0.0f, -9.81f);
         pWorld->SetGravity(gravity);
@@ -21,7 +23,8 @@ public:
         float anglePlus = glm::radians(0.0f);
         auto circlePortals = (Portal**)malloc(2 * n * sizeof(Portal*));
 
-        for (int i = 0; i < n * 2; i++){
+        for (int i = 0; i < n * 2; i++)
+        {
             float angle1 = (float)i * (b2_pi / n) + anglePlus;
             float angle2 = (float)(i + 1) * (b2_pi / n) + anglePlus;
             b2Vec2 p1 = b2Vec2(sin(angle1) * r, cos(angle1) * r);
@@ -31,13 +34,15 @@ public:
             Portal* portal = pWorld->createPortal(pos, -pos, l / 2.0f);
             circlePortals[i] = portal;
         }
-        for (int i = 0; i < n; i++){
+        for (int i = 0; i < n; i++)
+        {
             circlePortals[i]->connect(circlePortals[n + i]);
         }
         free(circlePortals);
 
         float sizeM = 0.2f;
-        for (int i = 0; i < 150; i++){
+        for (int i = 0; i < 150; i++)
+        {
             b2Vec2 size = b2Vec2(sizeM + sizeM * (rand() / (float)RAND_MAX), sizeM + sizeM * (rand() / (float)RAND_MAX));
             float r = sizeM + 2.0f * sizeM * (rand() / (float)RAND_MAX);
 
@@ -47,6 +52,9 @@ public:
 
             PortalBody* pb1 = pWorld->createPortalBody(body1);
             PortalBody* pb2 = pWorld->createPortalBody(body2);
+
+            thinDrawer->addPortalBody(pb1);
+            thinDrawer->addPortalBody(pb2);
         }
     }
 };
