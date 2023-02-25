@@ -22,9 +22,10 @@ public:
             found = true;
             rayNormal = normal;
             rayPoint = point;
-
+            edgeFix = fixture;
             closestFraction = fraction;
         }
+
         return -1.0f;
     }
 
@@ -32,6 +33,7 @@ public:
     {
         found = false;
         edgeFix = nullptr;
+        closestFraction = 1.1f;
         world->RayCast(this, p1, p2);
     }
 };

@@ -3,7 +3,7 @@
 #include <helpers.h>
 #include <WindowHandler.h>
 
-#define ENABLE_TESTPLAYER 0
+#define ENABLE_TESTPLAYER 1
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -122,7 +122,7 @@ public:
 
     #if ENABLE_TESTPLAYER
         extern ThinDrawer* thinDrawer;
-        tp = new TestPlayer(pWorld, wh);
+        tp = new TestPlayer(pWorld, td->wh);
         thinDrawer->addPortalBody(tp->pBody->at(0));
         thinDrawer->addPortalBody(tp->gun->at(0));
     #endif
@@ -134,17 +134,17 @@ public:
             b2Color c = b2Color(1, getRand() + 0.5f, getRand() + 0.5f, 1.0f);
         }
 
-        for (int i = 0; i < 2; i++){
+        /*for (int i = 0; i < 2; i++){
             for (Portal* p : pWorld->portals){
                 p->evaluateWorld();
             }
-        }
+        }*/
     }
 
     virtual void onUpdate()
     {
 #if ENABLE_TESTPLAYER
-        tp->camHandle();
+        //tp->camHandle();
 #endif
         if (!pWorld)
         {
@@ -153,7 +153,7 @@ public:
         for (int i = 0; i < totalIter; i++)
         {
 			// speeded up 2x times
-            float dt = (2.0f / 60.0f) / totalIter;
+            float dt = (2.0f / 144.0f) / totalIter;
             mjh->mouseHandler(frame, totalIter);
             pWorld->PortalStep(dt, 8, 3);
 #if ENABLE_TESTPLAYER

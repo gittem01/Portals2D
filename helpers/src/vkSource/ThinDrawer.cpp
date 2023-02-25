@@ -7,6 +7,7 @@
 #include <array>
 #include <Portal.h>
 #include <PortalBody.h>
+#include <GameBase.h>
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {
@@ -370,7 +371,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
         //pushData.positions = glm::vec4(1.0f, 1.0f, -1.0f, -1.0f);
         pushData.colour = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
         pushData.data.y = 0.02f;
-        pushData.data.z = 0.0f;
+        pushData.data.z = 0.3f;
 
         for (b2Body* body = pWorld->GetBodyList(); body; body = body->GetNext())
         {
@@ -382,12 +383,74 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                     {
                         b2EdgeShape* edgeShape = (b2EdgeShape*)fix->GetShape();
 
+                        glm::vec4 colorToRender = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+                        glm::vec4 gelColor = colorToRender;
+                        fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+                        if (fixData)
+                        {
+                            g_PhysicsData* pData = (g_PhysicsData*)fixData->extraData;
+                            if (pData && pData->type == EDGE)
+                            {
+                                g_EdgeData* eData = (g_EdgeData*)pData->data;
+                                switch (eData->wall)
+                                {
+                                case PORTALLABLE:
+                                    colorToRender = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+                                    break;
+                                case NOT_PORTALLABLE:
+                                    colorToRender = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                                    break;
+                                default:
+                                    break;
+                                }
+
+                                switch (eData->gel)
+                                {
+                                case NONE:
+                                    gelColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
+                                    break;
+                                case BLUE:
+                                    gelColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+                                    break;
+                                case ORANGE:
+                                    gelColor = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                                    break;
+                                case WHITE:
+                                    gelColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+                                    break;
+                                default:
+                                    break;
+                                }
+                            }
+                        }
+
                         b2Vec2 v1 = body->GetWorldPoint(edgeShape->m_vertex1);
                         b2Vec2 v2 = body->GetWorldPoint(edgeShape->m_vertex2);
 
-                        pushData.positions = glm::vec4(v1.x, v1.y, v2.x, v2.y);
+                        b2Vec2 dir = PortalWorld::rotateVec(v2 - v1, b2_pi * 0.25f);
+                        dir.Normalize();
+                        dir *= 0.1f;
 
-                        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                        pushData.colour = colorToRender;
+                        pushData.data.y = 0.04f;
+                        pushData.positions = glm::vec4(v1.x, v1.y, v2.x, v2.y);
+                        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
+                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            0, sizeof(s_pushConstantLine), (void*)&pushData);
+                        vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
+
+                        pushData.colour = gelColor;
+                        pushData.data.y = 0.03f;
+                        pushData.positions = glm::vec4(v1.x, v1.y, v1.x + dir.x, v1.y + dir.y);
+                        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
+                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            0, sizeof(s_pushConstantLine), (void*)&pushData);
+                        vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
+
+                        dir = PortalWorld::rotateVec(dir, b2_pi * 0.5f);
+                        pushData.positions = glm::vec4(v2.x, v2.y, v2.x + dir.x, v2.y + dir.y);
+                        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
+                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                             0, sizeof(s_pushConstantLine), (void*)&pushData);
                         vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
                     }
@@ -407,7 +470,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
         }
     }
 
-    // end
+    // imgui
     if (drawData)
     {
         ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);

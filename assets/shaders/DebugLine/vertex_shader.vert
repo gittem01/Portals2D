@@ -58,7 +58,7 @@ void main()
     float ySize = (ubo.data.y / (zoom * zoom)) * 0.5f;
     float xSize = dist * 0.5f;
     size = vec2(xSize + ySize, ySize);
-    if (vCopy.x > 0)
+    if (vertex.x > 0)
     {
         vCopy.x += ySize;
     }

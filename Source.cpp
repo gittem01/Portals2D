@@ -4,7 +4,7 @@ int main(void)
 {
     thinDrawer = new ThinDrawer(pWorld);
 
-    testCase = newTest(thinDrawer, 1);
+    testCase = newTest(thinDrawer, 8);
 
     while (!glfwWindowShouldClose(thinDrawer->wh->window))
     {

@@ -21,26 +21,21 @@ const char* testCases[] =   {
 
 const int numTestCases = sizeof(testCases) / sizeof(testCases[0]);
 
-std::random_device rd;
-std::mt19937 mt(rd());
-std::uniform_real_distribution<double> randF(-0.5f, 0.5f);
-
 std::vector<PortalBody*>* indexToTrack;
 
-float getRand(){
-    //return (rand() / RAND_MAX) - 0.5f;
-    randF(mt);
-    return randF(mt);
+float getRand()
+{
+    return ((double)rand() / RAND_MAX) - 0.5f;
 }
 
-bool isPaused = true;
+bool isPaused = false;
 bool tick = false;
 int frame = 0;
 PortalWorld* pWorld = nullptr;
 mouseJointHandler* mjh = nullptr;
 ContactListener* contactListener = nullptr;
 ThinDrawer* thinDrawer;
-int totalIter = 5;
+int totalIter = 1;
 
 // O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f, float isMixed=false) {
@@ -161,7 +156,7 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     return body;
 }
 
-b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type) {
+b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type=b2_staticBody) {
     b2BodyDef bd;
     bd.type = type;
     b2Body* edgeBody = world->CreateBody(&bd);

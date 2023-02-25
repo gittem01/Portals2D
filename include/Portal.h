@@ -17,16 +17,30 @@ class PortalWorldQuery : public b2QueryCallback
 {
 public:
     Portal* portal;
-    std::vector<b2Fixture*> foundEdges;
 
     PortalWorldQuery(Portal* portal);
 
-    void polygonTransform(b2Fixture* fix);
-    void edgeSplitHorizontal();
-    void edgeSplitVertical(b2Fixture* fix);
-
 	virtual bool ReportFixture(b2Fixture* fixture);
 };
+
+typedef struct createDestrData
+{
+    b2Body* body;
+    createDestrData* datas[2];
+    b2Vec2 vertexPos;
+    GEL_TYPE gel;
+    WALL_TYPE wall;
+    float friction;
+    float restitution;
+} createDestrData;
+
+typedef struct
+{
+    // first and lastDatas
+    createDestrData* datas[2];
+    bool isLeaned[2];
+    bool reverseTrack;
+} destructonCreatorData;
 
 class Portal{
 
@@ -52,13 +66,12 @@ public:
     b2Vec2 rotDir;
     float size;
 
-    // 0: left 1: right
-    b2Fixture* sideEdges[2];
-
+    destructonCreatorData* destructionData = nullptr;
     PortalWorldQuery* queryClass;
     b2Vec2 boxMin;
     b2Vec2 boxMax;
-    void evaluateWorld();
+
+    void reviveAround();
 
     bool isParallel(b2Vec2 p1, b2Vec2 p2);
     void setLinVel(b2Vec2 speed);
@@ -67,6 +80,7 @@ public:
     void setAngVel(float angVel);
     float getAngVel();
     b2Body* body;
+
 private:
 
     Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);

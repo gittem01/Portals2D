@@ -1,4 +1,5 @@
 #include <BaseTestCase.h>
+#include <GameBase.h>
 
 class TestCase8 : public BaseTestCase
 {
@@ -37,15 +38,45 @@ public:
 
     void onCreate()
     {
+        srand(2);
         pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
         //pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
-        pWorld->SetAllowSleeping(false);
-        createEdge(b2Vec2(-10000.0f, -10.0f), b2Vec2(+10000.0f, -10.0f), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld, b2_staticBody);
-        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(+40.0f, 10.0f), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld, b2_staticBody);
 
-        portal1 = pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
+        b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
+        
+        int n = 100;
+        b2Body* body;
+        b2Body* lastBody = nullptr;
+        g_EdgeData* lastData = nullptr;
+        for (int i = 0; i < n; i++)
+        {
+            float inc = getRand() + 0.6f;
+            body = createEdge(startPos, startPos + b2Vec2(inc, 0.0f), pWorld);
+            startPos.x += inc;
+            fixtureData* fixData;
+            g_EdgeData* edgeData;
+            createEdgeData(&fixData, &edgeData);
+            edgeData->gel = (GEL_TYPE)(NONE << (int)(getRand() * 4.0f + 2.0f));
+            edgeData->wall = getRand() > -0.2f ? PORTALLABLE : NOT_PORTALLABLE;
+            edgeData->fix = body->GetFixtureList();
+
+            edgeData->fix->GetUserData().pointer = (uintptr_t)fixData;
+
+            edgeData->edges[0] = lastData;
+            edgeData->edges[1] = nullptr;
+            if (lastData)
+            {
+                lastData->edges[1] = edgeData;
+            }
+
+            lastData = edgeData;
+        }
+
+        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld);
+        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(+40.0f, 10.0f), pWorld);
+        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld);
+
+        /*portal1 = pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
         portal2 = pWorld->createPortal(b2Vec2(-2.0f, -3.0f), portal1->dir, portal1->size);
 
         Portal* portal3 = pWorld->createPortal(b2Vec2(-0.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
@@ -76,7 +107,7 @@ public:
         makePortalDynamic(portal5);
         makePortalDynamic(portal6);
         makePortalDynamic(portal7);
-        makePortalDynamic(portal8);
+        makePortalDynamic(portal8);*/
 
         b2Vec2 p = b2Vec2(1.0f, -3.0f);
         b2Vec2 s = b2Vec2(0.4f, 0.4f);
@@ -98,47 +129,9 @@ public:
         pbi1 = &pb1->worldIndex->pbIndices;
         pbi2 = &pb2->worldIndex->pbIndices;
 
-        b2Vec2 startPos = b2Vec2(35.0f, 4.0f);
-        b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
+        startPos = b2Vec2(35.0f, 4.0f);
+        lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
         lastBody->SetLinearDamping(0.0f);
-
-        /*PortalBody* pb = pWorld->createPortalBody(lastBody);
-        renderer->addPortalBody(pb, b2Color(1, 1, 1, 0.5f), "assets/textures/head.png", GL_NEAREST);
-        for (int i = 0; i < 50; i++)
-        {
-            startPos -= b2Vec2(0.7f, 0.0f);
-
-            b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
-            jointBody->SetLinearDamping(0.0f);
-            jointBody->GetFixtureList()->SetFriction(0.2f);
-            pb = pWorld->createPortalBody(jointBody);
-            renderer->addPortalBody(pb, b2Color(getRand() + 0.5f, getRand() + 0.5f, 1.0f, 0.5f), "assets/textures/body.png", GL_NEAREST);
-
-            b2RevoluteJointDef revDef;
-            revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
-            revDef.calculateAnchorHelpers();
-            revDef.enableLimit = true;
-            revDef.upperAngle = +b2_pi * 0.1f;
-            revDef.lowerAngle = -b2_pi * 0.1f;
-            pWorld->CreateJoint(&revDef);
-
-            lastBody = jointBody;
-        }*/
-
-        float sizeM = 0.2f;
-        for (int i = 0; i < 150; i++) {
-            b2Vec2 size = b2Vec2(sizeM + sizeM * (rand() / (float)RAND_MAX), sizeM + sizeM * (rand() / (float)RAND_MAX));
-            float r = sizeM + 2.0f * sizeM * (rand() / (float)RAND_MAX);
-
-            b2Body* body1 = createBox(b2Vec2(0, 0), size, pWorld, b2_dynamicBody);
-            b2Body* body2 = createCircle(b2Vec2(rand() % 5 + r, rand() % 5), r, pWorld, b2_dynamicBody);
-
-            PortalBody* pb1 = pWorld->createPortalBody(body1);
-            PortalBody* pb2 = pWorld->createPortalBody(body2);
-
-            thinDrawer->addPortalBody(pb1);
-            thinDrawer->addPortalBody(pb2);
-        }
     }
 
     void onUpdate()

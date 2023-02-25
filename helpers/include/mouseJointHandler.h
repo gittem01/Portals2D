@@ -39,7 +39,7 @@ public:
     QueryCallback* queryCallback;
 
 	float frequencyHz = 5.0f;
-	float dampingRatio = 0.5f;
+	float dampingRatio = 1.0f;
     float bodyRadius = 0.0f;
     float radiusLimits[2] = { 0.0f, 2.5f };
 
@@ -110,7 +110,7 @@ public:
             else
                 jd.target = target;
 
-            jd.maxForce = 100.0f * clickedBody->GetMass();
+            jd.maxForce = 500.0f * clickedBody->GetMass();
             jd.collideConnected = true;
             
             b2LinearStiffness(jd.stiffness, jd.damping, frequencyHz, dampingRatio, jd.bodyA, jd.bodyB);
@@ -139,11 +139,24 @@ public:
             clicks[0] = new glm::vec2(mp.x, mp.y);
         }
         if (clicks[1]) {
+            fixtureData* fData;
+            g_EdgeData* eData;
+            createEdgeData(&fData, &eData);
+            
             b2EdgeShape shape;
             b2BodyDef bDef;
             b2Body* edgeBody = world->CreateBody(&bDef);
-            shape.SetTwoSided(b2Vec2(clicks[0]->x, clicks[0]->y), b2Vec2(clicks[1]->x, clicks[1]->y));
-            edgeBody->CreateFixture(&shape, 0.0f);
+            
+            shape.SetTwoSided(b2Vec2(clicks[1]->x, clicks[1]->y), b2Vec2(clicks[0]->x, clicks[0]->y));
+            b2Fixture* edgeFix = edgeBody->CreateFixture(&shape, 0.0f);
+
+            edgeFix->GetUserData().pointer = (uintptr_t)fData;
+
+            eData->edges[0] = nullptr;
+            eData->edges[1] = nullptr;
+            eData->fix = edgeFix;
+            eData->wall = NOT_PORTALLABLE;
+            eData->gel = WHITE;
 
             delete(clicks[0]);
             delete(clicks[1]);

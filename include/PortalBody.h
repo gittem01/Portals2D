@@ -7,6 +7,7 @@
 #include <set>
 #include <map>
 #include <GLFW/glfw3.h>
+#include <GameBase.h>
 
 struct bodyData;
 struct portalConnection;

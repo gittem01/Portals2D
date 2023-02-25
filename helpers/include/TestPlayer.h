@@ -216,9 +216,9 @@ public:
             glm::vec2 diff = glm::vec2(abs(p2.x - p1.x), abs(p2.y - p1.y)) / 2.0f + 5.0f;
             glm::vec2 mid = glm::vec2(p2.x + p1.x, p2.y + p1.y) / 2.0f;
             
-            glm::vec2 posDiff = mid - wh->cam->pos;
+            glm::vec2 posDiff = mid - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y);
 
-            wh->cam->pos += posDiff * 0.03f;
+            wh->cam->pos += glm::vec2(posDiff.x, -posDiff.y) * 0.03f;
             float reqZoom = sqrt(abs(wh->cam->defaultXSides.x / diff.x));
             if (reqZoom < camZoom)
             {
@@ -232,8 +232,8 @@ public:
         else
         {
             b2Vec2 bp = pBody->at(0)->body->GetPosition();
-            glm::vec2 diff = glm::vec2(bp.x, bp.y) - wh->cam->pos;
-            wh->cam->pos += diff * 0.03f;
+            glm::vec2 diff = glm::vec2(bp.x, bp.y) - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y);
+            wh->cam->pos += glm::vec2(diff.x, -diff.y) * 0.03f;
             wh->cam->zoom += (camZoom - wh->cam->zoom) / 50.0f;
         }
     }
@@ -416,6 +416,107 @@ public:
         }
     }
 
+    bool canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size)
+    {
+        float maxReqSize = size + 0.5f;
+        float rightSize = 0.0f;
+        float leftSize = 0.0f;
+
+        b2Vec2 rightPosCopy = pos;
+        b2Vec2 leftPosCopy = pos;
+
+        g_EdgeData* edgeData = nullptr;
+        fixtureData* fixData = (fixtureData*)edgeFix->GetUserData().pointer;
+        if (fixData && fixData->extraData)
+        {
+            g_PhysicsData* pData = (g_PhysicsData*)fixData->extraData;
+            if (pData && pData->type == EDGE && pData->data)
+            {
+                edgeData = (g_EdgeData*)pData->data;
+            }
+        }
+
+        g_EdgeData* rightEdgeData = edgeData;
+        g_EdgeData* leftEdgeData = edgeData;
+
+        bool rightDone = false;
+        bool leftDone = false;
+
+        for (; !rightDone || !leftDone;)
+        {
+            if (!rightDone && rightEdgeData && (rightEdgeData->wall == PORTALLABLE || rightEdgeData->gel == WHITE))
+            {
+                b2Fixture* fix = rightEdgeData->fix;
+                b2EdgeShape* eShape = (b2EdgeShape*)fix->GetShape();
+                b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex2);
+                float dist = (rightPosCopy - vertexPos).Length();
+                rightPosCopy = vertexPos;
+                rightSize += dist;
+                if (rightSize > maxReqSize)
+                {
+                    rightSize = maxReqSize;
+                    rightDone = true;
+                }
+                else
+                {
+                    g_EdgeData* eData = rightEdgeData->edges[1];
+                    if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
+                    {
+                        rightDone = true;
+                    }
+                    else
+                    {
+                        rightEdgeData = eData;
+                    }
+                }
+            }
+            else
+            {
+                rightDone = true;
+            }
+
+            if (!leftDone && leftEdgeData && (leftEdgeData->wall == PORTALLABLE || leftEdgeData->gel & WHITE))
+            {
+                b2Fixture* fix = leftEdgeData->fix;
+                b2EdgeShape* eShape = (b2EdgeShape*)fix->GetShape();
+                b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex1);
+                float dist = (leftPosCopy - vertexPos).Length();
+                leftPosCopy = vertexPos;
+                leftSize += dist;
+                if (leftSize > maxReqSize)
+                {
+                    leftSize = maxReqSize;
+                    leftDone = true;
+                }
+                else
+                {
+                    g_EdgeData* eData = leftEdgeData->edges[0];
+                    if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
+                    {
+                        leftDone = true;
+                    }
+                    else
+                    {
+                        leftEdgeData = eData;
+                    }
+                }
+            }
+            else
+            {
+                leftDone = true;
+            }
+        }
+
+        float totalLen = rightSize + leftSize;
+
+        if (totalLen < size - 0.000001f)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     void handlePortalCD()
     {
         const float rayLength = 100.0f;
@@ -436,28 +537,52 @@ public:
             {
                 if (wh->keyData[GLFW_KEY_Q] == 1.0f)
                 {
-                    portalA = pWorld->createPortal(rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
-                    portalA->evaluateWorld();
+                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f))
+                    {
+                        b2Body* fixBody = rayCaster.edgeFix->GetBody();
+                        if (portalA)
+                        {
+                            pWorld->destroyPortal(portalA);
+                        }
+
+                        Portal* portal = pWorld->createPortalWithChecks(fixBody->GetFixtureList(), rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+
+                        if (portal)
+                        {
+                            portal->reviveAround();
+                            portalA = portal;
+                        }
+                    }
+
                     if (portalB)
                     {
-                        portalA->connect(portalB);
+                        //portalA->connect(portalB);
                         //portalB->evaluateWorld();
                     }
+
                     lastPortalCreationTime = glfwGetTime();
                 }
                 else if (wh->keyData[GLFW_KEY_E] == 1.0f)
                 {
-                    if (portalB)
+                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f))
                     {
-                        pWorld->destroyPortal(portalB);
+                        b2Body* fixBody = rayCaster.edgeFix->GetBody();
+                        if (portalB)
+                        {
+                            pWorld->destroyPortal(portalB);
+                        }
+
+                        Portal* portal = pWorld->createPortalWithChecks(fixBody->GetFixtureList(), rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+
+                        if (portal)
+                        {
+                            portal->reviveAround();
+                            portalB = portal;
+                        }
                     }
-
-                    portalB = pWorld->createPortal(rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
-                    portalB->evaluateWorld();
-
                     if (portalA)
                     {
-                        portalB->connect(portalA);
+                        //portalB->connect(portalA);
                         //portalA->evaluateWorld();
                     }
                     lastPortalCreationTime = glfwGetTime();
