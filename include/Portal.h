@@ -27,7 +27,7 @@ typedef struct createDestrData
 {
     b2Body* body;
     createDestrData* datas[2];
-    b2Vec2 vertexPos;
+    b2Vec2 vertexPositions[2];
     GEL_TYPE gel;
     WALL_TYPE wall;
     float friction;
@@ -38,8 +38,6 @@ typedef struct
 {
     // first and lastDatas
     createDestrData* datas[2];
-    bool isLeaned[2];
-    bool reverseTrack;
 } destructonCreatorData;
 
 class Portal{

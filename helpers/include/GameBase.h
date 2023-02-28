@@ -42,3 +42,7 @@ typedef struct
 } g_PhysicsData;
 
 void createEdgeData(fixtureData** fData, g_EdgeData** eData);
+g_EdgeData* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2Body* body);
+g_EdgeData* createEdge(struct createDestrData* cdData);
+b2Vec2 getVertexByIndex(g_EdgeData* edgeData, int vertexNum);
+void fillCdData(struct createDestrData* cdData, g_EdgeData* edgeData);

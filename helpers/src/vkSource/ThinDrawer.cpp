@@ -375,7 +375,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
 
         for (b2Body* body = pWorld->GetBodyList(); body; body = body->GetNext())
         {
-            if (body->GetType() == b2_staticBody)
+            if (body->GetType() == b2_staticBody || 1)
             {
                 for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
                 {

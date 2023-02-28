@@ -416,7 +416,7 @@ public:
         }
     }
 
-    bool canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size)
+    bool canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size, Portal* oldPortal)
     {
         float maxReqSize = size + 0.5f;
         float rightSize = 0.0f;
@@ -507,6 +507,23 @@ public:
             }
         }
 
+        if (leftEdgeData && leftEdgeData->wall == PORTAL_ITSELF)
+        {
+            bodyData* bData = (bodyData*)leftEdgeData->fix->GetBody()->GetUserData().pointer;
+            if ((Portal*)bData->data == oldPortal)
+            {
+                return true;
+            }
+        }
+        if (rightEdgeData && rightEdgeData->wall == PORTAL_ITSELF)
+        {
+            bodyData* bData = (bodyData*)rightEdgeData->fix->GetBody()->GetUserData().pointer;
+            if ((Portal*)bData->data == oldPortal)
+            {
+                return true;
+            }
+        }
+
         float totalLen = rightSize + leftSize;
 
         if (totalLen < size - 0.000001f)
@@ -535,55 +552,60 @@ public:
         {
             if (glfwGetTime() - lastPortalCreationTime > -0.002f)
             {
-                if (wh->keyData[GLFW_KEY_Q] == 1.0f)
+                if (wh->keyData[GLFW_KEY_Q] == 2.0f)
                 {
-                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f))
+                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f, portalA))
                     {
                         b2Body* fixBody = rayCaster.edgeFix->GetBody();
                         if (portalA)
                         {
                             pWorld->destroyPortal(portalA);
+                            rayCaster.cast(portalGun->body->GetPosition(), portalGun->body->GetPosition() + vec);
+                            portalA = nullptr;
                         }
 
-                        Portal* portal = pWorld->createPortalWithChecks(fixBody->GetFixtureList(), rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
 
                         if (portal)
                         {
                             portal->reviveAround();
                             portalA = portal;
-                        }
-                    }
 
-                    if (portalB)
-                    {
-                        //portalA->connect(portalB);
-                        //portalB->evaluateWorld();
+                            if (portalB)
+                            {
+                                portalA->connect(portalB);
+                                portalB->reviveAround();
+                            }
+                        }
                     }
 
                     lastPortalCreationTime = glfwGetTime();
                 }
                 else if (wh->keyData[GLFW_KEY_E] == 1.0f)
                 {
-                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f))
+                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f, portalB))
                     {
                         b2Body* fixBody = rayCaster.edgeFix->GetBody();
                         if (portalB)
                         {
                             pWorld->destroyPortal(portalB);
+                            rayCaster.cast(portalGun->body->GetPosition(), portalGun->body->GetPosition() + vec);
+                            portalB = nullptr;
                         }
 
-                        Portal* portal = pWorld->createPortalWithChecks(fixBody->GetFixtureList(), rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
 
                         if (portal)
                         {
                             portal->reviveAround();
                             portalB = portal;
+
+                            if (portalA)
+                            {
+                                portalB->connect(portalA);
+                                portalA->reviveAround();
+                            }
                         }
-                    }
-                    if (portalA)
-                    {
-                        //portalB->connect(portalA);
-                        //portalA->evaluateWorld();
                     }
                     lastPortalCreationTime = glfwGetTime();
                 }

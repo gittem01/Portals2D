@@ -90,20 +90,25 @@ Portal::~Portal(){
 
     for (int i = 0; i < 2; i++)
     {
-        if (isVoid[i]){
+        if (isVoid[i])
+        {
             free(connections[i][0]);
             continue;
         }
-        for (int j = 0; j < connections[i].size(); j++){
+        for (int j = 0; j < connections[i].size(); j++)
+        {
             Portal* otherPortal = connections[i][j]->portal2;
-            if (otherPortal == this){
+            if (otherPortal == this)
+            {
                 free(connections[i][j]);
                 break;
             }
             int connectionSide2 = connections[i][j]->side2;
-            for (int k = 0; k < otherPortal->connections[connectionSide2].size(); k++){
+            for (int k = 0; k < otherPortal->connections[connectionSide2].size(); k++)
+            {
                 portalConnection* pc = otherPortal->connections[connectionSide2].at(k);
-                if (pc->portal2 == this){
+                if (pc->portal2 == this)
+                {
                     free(pc);
                     otherPortal->connections[connectionSide2].erase(otherPortal->connections[connectionSide2].begin() + k);
                 }
@@ -113,88 +118,57 @@ Portal::~Portal(){
         }
     }
 
-    if (destructionData && destructionData->isLeaned[0])
+    if (destructionData)
     {
-        fixtureData* thisFixData = (fixtureData*)yFix[0]->GetUserData().pointer;
-        g_PhysicsData* thisPhysicsdata = (g_PhysicsData*)thisFixData->extraData;
-        g_EdgeData* thisEdgeData = (g_EdgeData*)thisPhysicsdata->data;
-        b2Vec2 outerVertex;
-        if (thisEdgeData->edges[0])
+        createDestrData* leftCrtData = destructionData->datas[0];
+        createDestrData* rightCrtData = destructionData->datas[1];
+        fixtureData* fData = (fixtureData*)midFixture->GetUserData().pointer;
+        g_PhysicsData* pData = (g_PhysicsData*)fData->extraData;
+        g_EdgeData* eData = (g_EdgeData*)pData->data;
+
+        g_EdgeData* leftEdge = eData->edges[0];
+        g_EdgeData* rightEdge = eData->edges[1];
+
+
+        if (!leftEdge || (leftEdge->gel != WHITE && leftEdge->wall != PORTALLABLE) || (leftEdge->gel != leftCrtData->gel))
         {
-            b2Fixture* outerFix = thisEdgeData->edges[0]->fix;
-            if (thisEdgeData->edges[0]->wall == PORTAL_ITSELF)
-            {
-                bodyData* bd = (bodyData*)outerFix->GetBody()->GetUserData().pointer;
-                Portal* p = (Portal*)bd->data;
-                outerVertex = p->points[1];
-            }
-            else
-            {
-                b2EdgeShape* outerEdgeShape = (b2EdgeShape*)outerFix->GetShape();
-                outerVertex = outerFix->GetBody()->GetWorldPoint(outerEdgeShape->m_vertex2);
-            }
+            leftCrtData->vertexPositions[0] = points[0];
         }
-        else
+        else if (leftEdge)
         {
-            outerVertex = points[0];
+            leftCrtData->vertexPositions[0] = getVertexByIndex(leftEdge, 0);
+            leftEdge->fix->GetBody()->DestroyFixture(leftEdge->fix);
+            leftEdge = leftEdge->edges[0];
         }
 
-        g_EdgeData* lastEdgeData = thisEdgeData->edges[0];
-        createDestrData* cdData;
-        for (cdData = destructionData->datas[0]; cdData->body; cdData = cdData->datas[1])
+        if (!rightEdge || (rightEdge->gel != WHITE && rightEdge->wall != PORTALLABLE) || (rightEdge->gel != rightCrtData->gel))
         {
-            b2Vec2 thisVertex = cdData->vertexPos;
-            b2EdgeShape eShape;
-            eShape.SetTwoSided(outerVertex, thisVertex);
-            outerVertex = thisVertex;
-
-            b2Fixture* fix = cdData->body->CreateFixture(&eShape, 0.0f);
-            fix->SetFriction(cdData->friction);
-            fix->SetRestitution(cdData->restitution);
-
-            fixtureData* fData;
-            g_EdgeData* eData;
-            createEdgeData(&fData, &eData);
-            fix->GetUserData().pointer = (uintptr_t)fData;
-            eData->fix = fix;
-            eData->gel = cdData->gel;
-            eData->wall = cdData->wall;
-            eData->edges[0] = lastEdgeData;
-            eData->edges[1] = nullptr;
-            if (lastEdgeData)
-            {
-                lastEdgeData->edges[1] = eData;
-            }
-
-            lastEdgeData = eData;
-
-            if (cdData->datas[1] == nullptr)
-            {
-                break;
-            }
+            rightCrtData->vertexPositions[1] = points[1];
+        }
+        else if (rightEdge)
+        {
+            rightCrtData->vertexPositions[1] = getVertexByIndex(rightEdge, 1);
+            rightEdge->fix->GetBody()->DestroyFixture(rightEdge->fix);
+            rightEdge = rightEdge->edges[1];
         }
 
-        if (thisEdgeData->edges[1])
+        for (; leftCrtData; leftCrtData = leftCrtData->datas[1])
         {
-            lastEdgeData->edges[1] = thisEdgeData->edges[1];
-            if (destructionData->isLeaned[1])
+            g_EdgeData* eData = createEdge(leftCrtData);
+            eData->edges[0] = leftEdge;
+            if (leftEdge)
             {
-                thisEdgeData->edges[1]->edges[0] = lastEdgeData;
+                leftEdge->edges[1] = eData;
             }
-            else
-            {
-                b2Fixture* outerFix = thisEdgeData->edges[1]->fix;
-                outerFix->GetBody()->DestroyFixture(outerFix);
 
-                lastEdgeData->edges[1] = thisEdgeData->edges[1]->edges[1];
-                if (thisEdgeData->edges[1]->edges[1])
-                {
-                    thisEdgeData->edges[1]->edges[1]->edges[0] = lastEdgeData;
-                }
-            }
+            leftEdge = eData;
         }
 
-        free(destructionData);
+        leftEdge->edges[1] = rightEdge;
+        if (rightEdge)
+        {
+            rightEdge->edges[0] = leftEdge;
+        }
     }
 
     free((void*)body->GetUserData().pointer);
@@ -250,7 +224,7 @@ void Portal::createPortalBody(){
     body = pWorld->CreateBody(&bd);
 
     b2EdgeShape shape;
-    shape.SetTwoSided(b2Vec2(0.0f, -size), b2Vec2(0.0f, +size));
+    shape.SetTwoSided(b2Vec2(0.0f, +size), b2Vec2(0.0f, -size));
 
     b2FixtureDef midPortal;
     midPortal.isSensor = true;
