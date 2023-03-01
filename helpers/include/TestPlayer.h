@@ -444,7 +444,7 @@ public:
             {
                 b2Fixture* fix = rightEdgeData->fix;
                 b2EdgeShape* eShape = (b2EdgeShape*)fix->GetShape();
-                b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex2);
+                b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex1);
                 float dist = (rightPosCopy - vertexPos).Length();
                 rightPosCopy = vertexPos;
                 rightSize += dist;
@@ -455,7 +455,7 @@ public:
                 }
                 else
                 {
-                    g_EdgeData* eData = rightEdgeData->edges[1];
+                    g_EdgeData* eData = rightEdgeData->edges[0];
                     if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
                     {
                         rightDone = true;
@@ -475,7 +475,7 @@ public:
             {
                 b2Fixture* fix = leftEdgeData->fix;
                 b2EdgeShape* eShape = (b2EdgeShape*)fix->GetShape();
-                b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex1);
+                b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex2);
                 float dist = (leftPosCopy - vertexPos).Length();
                 leftPosCopy = vertexPos;
                 leftSize += dist;
@@ -486,7 +486,7 @@ public:
                 }
                 else
                 {
-                    g_EdgeData* eData = leftEdgeData->edges[0];
+                    g_EdgeData* eData = leftEdgeData->edges[1];
                     if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
                     {
                         leftDone = true;

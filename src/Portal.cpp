@@ -125,54 +125,54 @@ Portal::~Portal(){
 
     if (destructionData)
     {
-        createDestrData* leftCrtData = destructionData->datas[0];
-        createDestrData* rightCrtData = destructionData->datas[1];
+        createDestrData* leftCrtData = destructionData->datas[1];
+        createDestrData* rightCrtData = destructionData->datas[0];
         fixtureData* fData = (fixtureData*)midFixture->GetUserData().pointer;
         g_PhysicsData* pData = (g_PhysicsData*)fData->extraData;
         g_EdgeData* eData = (g_EdgeData*)pData->data;
 
-        g_EdgeData* leftEdge = eData->edges[0];
-        g_EdgeData* rightEdge = eData->edges[1];
+        g_EdgeData* leftEdge = eData->edges[1];
+        g_EdgeData* rightEdge = eData->edges[0];
 
 
         if (!leftEdge || (leftEdge->gel != WHITE && leftEdge->wall != PORTALLABLE) || (leftEdge->gel != leftCrtData->gel))
         {
-            leftCrtData->vertexPositions[0] = points[0];
+            leftCrtData->vertexPositions[1] = points[0];
         }
         else if (leftEdge)
         {
-            leftCrtData->vertexPositions[0] = getVertexByIndex(leftEdge, 0);
+            leftCrtData->vertexPositions[1] = getVertexByIndex(leftEdge, 1);
             leftEdge->fix->GetBody()->DestroyFixture(leftEdge->fix);
-            leftEdge = leftEdge->edges[0];
+            leftEdge = leftEdge->edges[1];
         }
 
         if (!rightEdge || (rightEdge->gel != WHITE && rightEdge->wall != PORTALLABLE) || (rightEdge->gel != rightCrtData->gel))
         {
-            rightCrtData->vertexPositions[1] = points[1];
+            rightCrtData->vertexPositions[0] = points[1];
         }
         else if (rightEdge)
         {
-            rightCrtData->vertexPositions[1] = getVertexByIndex(rightEdge, 1);
+            rightCrtData->vertexPositions[0] = getVertexByIndex(rightEdge, 0);
             rightEdge->fix->GetBody()->DestroyFixture(rightEdge->fix);
-            rightEdge = rightEdge->edges[1];
+            rightEdge = rightEdge->edges[0];
         }
 
-        for (; leftCrtData; leftCrtData = leftCrtData->datas[1])
+        for (; leftCrtData; leftCrtData = leftCrtData->datas[0])
         {
             g_EdgeData* eData = createEdge(leftCrtData);
-            eData->edges[0] = leftEdge;
+            eData->edges[1] = leftEdge;
             if (leftEdge)
             {
-                leftEdge->edges[1] = eData;
+                leftEdge->edges[0] = eData;
             }
 
             leftEdge = eData;
         }
 
-        leftEdge->edges[1] = rightEdge;
+        leftEdge->edges[0] = rightEdge;
         if (rightEdge)
         {
-            rightEdge->edges[0] = leftEdge;
+            rightEdge->edges[1] = leftEdge;
         }
     }
 
@@ -229,7 +229,7 @@ void Portal::createPortalBody(){
     body = pWorld->CreateBody(&bd);
 
     b2EdgeShape shape;
-    shape.SetTwoSided(b2Vec2(0.0f, +size), b2Vec2(0.0f, -size));
+    shape.SetTwoSided(b2Vec2(0.0f, -size), b2Vec2(0.0f, +size));
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;

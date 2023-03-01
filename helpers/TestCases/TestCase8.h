@@ -51,7 +51,7 @@ public:
         for (int i = 0; i < n; i++)
         {
             float inc = 0.02f + getRand() * 0.2f + 0.08f;
-            body = createEdge(startPos, startPos + b2Vec2(inc, 0.0f), pWorld);
+            body = createEdge(startPos + b2Vec2(inc, 0.0f), startPos, pWorld);
             body->GetFixtureList()->SetFriction(0.0f);
             startPos.x += inc;
             fixtureData* fixData;
@@ -65,11 +65,11 @@ public:
 
             edgeData->fix->GetUserData().pointer = (uintptr_t)fixData;
 
-            edgeData->edges[0] = lastData;
-            edgeData->edges[1] = nullptr;
+            edgeData->edges[1] = lastData;
+            edgeData->edges[0] = nullptr;
             if (lastData)
             {
-                lastData->edges[1] = edgeData;
+                lastData->edges[0] = edgeData;
             }
 
             lastData = edgeData;
