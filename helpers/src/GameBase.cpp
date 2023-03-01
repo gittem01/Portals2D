@@ -21,8 +21,14 @@ void createEdgeData(fixtureData** fData, g_EdgeData** eData)
 
 g_EdgeData* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2Body* body)
 {
+    b2Vec2 v1 = body->GetLocalPoint(p1);
+    b2Vec2 v2 = body->GetLocalPoint(p2);
+
+    b2Vec2 dir = v1 - v2;
     b2EdgeShape shape;
-    shape.SetTwoSided(body->GetLocalPoint(p1), body->GetLocalPoint(p2));
+    shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
+    
+    //shape.SetTwoSided(v1, v2);
 
     fixtureData* fData;
     g_EdgeData* eData;
@@ -41,10 +47,14 @@ g_EdgeData* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2Body* body)
 
 g_EdgeData* createEdge(createDestrData* cdData)
 {
-    b2EdgeShape shape;
     b2Vec2 v1 = cdData->body->GetLocalPoint(cdData->vertexPositions[0]);
     b2Vec2 v2 = cdData->body->GetLocalPoint(cdData->vertexPositions[1]);
-    shape.SetTwoSided(v1, v2);
+    
+    b2Vec2 dir = v1 - v2;
+    b2EdgeShape shape;
+    shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
+    
+    //shape.SetTwoSided(v1, v2);
 
     fixtureData* fData;
     g_EdgeData* eData;

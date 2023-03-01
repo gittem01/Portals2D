@@ -156,17 +156,15 @@ b2Body* createWbody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=27
     return body;
 }
 
-b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type=b2_staticBody) {
+b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type=b2_staticBody, bool oneSided=false) {
     b2BodyDef bd;
     bd.type = type;
     b2Body* edgeBody = world->CreateBody(&bd);
 
+    b2Vec2 dir = p1 - p2;
     b2EdgeShape shape;
-    shape.SetTwoSided(p1, p2);
-    //b2Vec2 dir = p1 - p2;
-    //shape.m_vertex0 = p2 - dir;
-    //shape.m_vertex3 = p1 + dir;
-    //shape.m_oneSided = true;
+    shape.SetOneSided(p1 + dir, p1, p2, p2 - dir);
+    shape.m_oneSided = oneSided;
 
     b2FixtureDef fixDef;
     fixDef.shape = &shape;

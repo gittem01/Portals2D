@@ -941,6 +941,11 @@ b2Vec2 PortalWorld::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 
 
 Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Vec2 dir, float size)
 {
+    if (!edgeFix)
+    {
+        return nullptr;
+    }
+
     float maxReqSize = size + 0.5f;
     float rightSize = 0.0f;
     float leftSize = 0.0f;

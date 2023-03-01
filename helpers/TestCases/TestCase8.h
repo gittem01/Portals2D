@@ -44,15 +44,14 @@ public:
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
         
-        int n = 550;
+        int n = 300;
         b2Body* body;
         b2Body* lastBody = nullptr;
         g_EdgeData* lastData = nullptr;
         for (int i = 0; i < n; i++)
         {
-            float inc = 0.02f + getRand() * 0.2f + 0.08f;
-            body = createEdge(startPos + b2Vec2(inc, 0.0f), startPos, pWorld);
-            body->GetFixtureList()->SetFriction(0.0f);
+            float inc = 0.1f + getRand() * 0.2f + 0.08f;
+            body = createEdge(startPos + b2Vec2(inc, 0.0f), startPos, pWorld, b2_staticBody, true);
             startPos.x += inc;
             fixtureData* fixData;
             g_EdgeData* edgeData;
@@ -75,11 +74,11 @@ public:
             lastData = edgeData;
         }
 
-        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld);
-        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(+40.0f, 10.0f), pWorld);
-        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld);
+        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld, b2_staticBody, true);
 
-        body = createEdge(b2Vec2(-8.0f, -3.0f), b2Vec2(-8.0f, -8.0f), pWorld, b2_kinematicBody);
+        body = createEdge(b2Vec2(-8.0f, -8.0f), b2Vec2(-8.0f, -3.0f), pWorld, b2_kinematicBody, true);
         body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
         fixtureData* fixData;
         g_EdgeData* edgeData;

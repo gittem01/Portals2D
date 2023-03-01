@@ -542,8 +542,10 @@ public:
         b2Vec2 unitVec = b2Vec2(cos(vecAngle), sin(vecAngle));
 
         PortalGunRayCast rayCaster = PortalGunRayCast(pWorld);
+        b2Vec2 rayPoint1 = portalGun->body->GetPosition();
+        b2Vec2 rayPoint2 = portalGun->body->GetPosition() + vec;
 
-        rayCaster.cast(portalGun->body->GetPosition(), portalGun->body->GetPosition() + vec);
+        rayCaster.cast(rayPoint1, rayPoint2);
 
         if (rayCaster.found)
         {
@@ -557,7 +559,10 @@ public:
                         if (portalA)
                         {
                             pWorld->destroyPortal(portalA);
-                            rayCaster.cast(portalGun->body->GetPosition(), portalGun->body->GetPosition() + vec);
+                            b2Vec2 dir = rayPoint2 - rayPoint1;
+                            dir.Normalize();
+                            dir *= 0.1f;
+                            rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
                             portalA = nullptr;
                         }
 
@@ -586,7 +591,10 @@ public:
                         if (portalB)
                         {
                             pWorld->destroyPortal(portalB);
-                            rayCaster.cast(portalGun->body->GetPosition(), portalGun->body->GetPosition() + vec);
+                            b2Vec2 dir = rayPoint2 - rayPoint1;
+                            dir.Normalize();
+                            dir *= 0.1f;
+                            rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
                             portalB = nullptr;
                         }
 
