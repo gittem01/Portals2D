@@ -1131,6 +1131,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
                     portalEdgeData->fix = portal->midFixture;
 
                     portal->destructionData = destrData;
+                    portal->body->SetLinearVelocity(edgeBody->GetLinearVelocity());
 
                     return portal;
                 }
@@ -1195,6 +1196,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
                     portalEdgeData->fix = portal->midFixture;
 
                     portal->destructionData = destrData;
+                    portal->body->SetLinearVelocity(leftBody->GetLinearVelocity());
 
                     return portal;
                 }
@@ -1261,6 +1263,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
                     portalEdgeData->fix = portal->midFixture;
 
                     portal->destructionData = destrData;
+                    portal->body->SetLinearVelocity(nextBody->GetLinearVelocity());
 
                     return portal;
                 }
@@ -1375,6 +1378,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
     portalEdgeData->fix = portal->midFixture;
 
     portal->destructionData = destrData;
+    portal->body->SetLinearVelocity(cdData->body->GetLinearVelocity());
 
     return portal;
 }

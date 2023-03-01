@@ -148,6 +148,7 @@ public:
             b2Body* edgeBody = world->CreateBody(&bDef);
             
             shape.SetTwoSided(b2Vec2(clicks[1]->x, clicks[1]->y), b2Vec2(clicks[0]->x, clicks[0]->y));
+
             b2Fixture* edgeFix = edgeBody->CreateFixture(&shape, 0.0f);
 
             edgeFix->GetUserData().pointer = (uintptr_t)fData;

@@ -39,12 +39,12 @@ public:
     void onCreate()
     {
         srand(2);
-        pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
+        //pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
         //pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
         
-        int n = 500;
+        int n = 550;
         b2Body* body;
         b2Body* lastBody = nullptr;
         g_EdgeData* lastData = nullptr;
@@ -52,13 +52,15 @@ public:
         {
             float inc = 0.02f + getRand() * 0.2f + 0.08f;
             body = createEdge(startPos, startPos + b2Vec2(inc, 0.0f), pWorld);
+            body->GetFixtureList()->SetFriction(0.0f);
             startPos.x += inc;
             fixtureData* fixData;
             g_EdgeData* edgeData;
             createEdgeData(&fixData, &edgeData);
             edgeData->gel = (GEL_TYPE)(NONE << (int)(getRand() * 4.0f + 2.0f));
-            edgeData->wall = getRand() > -0.4f ? PORTALLABLE : NOT_PORTALLABLE;
-            edgeData->wall = PORTALLABLE;
+            //edgeData->gel = WHITE;
+            edgeData->wall = getRand() > -0.45f ? PORTALLABLE : NOT_PORTALLABLE;
+            //edgeData->wall = PORTALLABLE;
             edgeData->fix = body->GetFixtureList();
 
             edgeData->fix->GetUserData().pointer = (uintptr_t)fixData;
@@ -77,7 +79,7 @@ public:
         createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(+40.0f, 10.0f), pWorld);
         createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld);
 
-        body = createEdge(b2Vec2(-8.0f, -8.0f), b2Vec2(-8.0f, -3.0f), pWorld, b2_kinematicBody);
+        body = createEdge(b2Vec2(-8.0f, -3.0f), b2Vec2(-8.0f, -8.0f), pWorld, b2_kinematicBody);
         body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
         fixtureData* fixData;
         g_EdgeData* edgeData;
@@ -142,6 +144,8 @@ public:
 
         startPos = b2Vec2(35.0f, 4.0f);
         lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
+        PortalBody* lastPb = pWorld->createPortalBody(lastBody);
+        thinDrawer->addPortalBody(lastPb);
         lastBody->SetLinearDamping(0.0f);
     }
 

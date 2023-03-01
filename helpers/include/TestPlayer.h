@@ -152,7 +152,8 @@ public:
     }
 
     void reportContact(b2Contact* contact, b2Body* contactingBody, b2Fixture* fix2){
-        if (!contact->IsEnabled() || fix2->IsSensor()){
+        if (!contact->IsEnabled() || fix2->IsSensor())
+        {
             return;
         }
 
@@ -365,6 +366,8 @@ public:
 
         if (rj)
         {
+            const float threshold = 0.0f;
+            const float speedMult = 30.0f;
             rj->EnableMotor(true);
             rj->SetMaxMotorTorque(300.0f * gunBody->body->GetMass());
 
@@ -373,20 +376,13 @@ public:
                 mult = -1.0f;
             }
 
-            if (ang > 0.03f)
+            if (ang > threshold)
             {
-                rj->SetMotorSpeed(-30.0f * ang * mult);
-            }
-            else if (ang < -0.03f)
-            {
-                rj->SetMotorSpeed(30.0f * -ang * mult);
+                rj->SetMotorSpeed(-speedMult * +ang * mult);
             }
             else
             {
-                gunBody->body->SetTransform(gunBody->body->GetPosition(), gunBody->body->GetAngle() - ang);
-                gunBody->body->SetAngularVelocity(0.0f);
-                rj->EnableMotor(false);
-                rj->SetMotorSpeed(0.0f);
+                rj->SetMotorSpeed(+speedMult * -ang * mult);
             }
         }
 
@@ -536,6 +532,7 @@ public:
 
     void handlePortalCD()
     {
+        const float portalSize = 2.5f;
         const float rayLength = 100.0f;
         PortalBody* portalGun = gun->at(0);
         float vecAngle = b2_pi * 0.5f;
@@ -554,7 +551,7 @@ public:
             {
                 if (wh->keyData[GLFW_KEY_Q] == 2.0f)
                 {
-                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f, portalA))
+                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA))
                     {
                         b2Body* fixBody = rayCaster.edgeFix->GetBody();
                         if (portalA)
@@ -564,7 +561,7 @@ public:
                             portalA = nullptr;
                         }
 
-                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
                         if (portal)
                         {
@@ -583,7 +580,7 @@ public:
                 }
                 else if (wh->keyData[GLFW_KEY_E] == 1.0f)
                 {
-                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, 1.5f, portalB))
+                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB))
                     {
                         b2Body* fixBody = rayCaster.edgeFix->GetBody();
                         if (portalB)
@@ -593,7 +590,7 @@ public:
                             portalB = nullptr;
                         }
 
-                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, 1.5f);
+                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
                         if (portal)
                         {
@@ -875,7 +872,7 @@ public:
             // kinematic body
             lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
         }
-        else if (contactBody && contactType == b2_staticBody && onAirFor == 0.0f)
+        else if (contactBody && contactType != b2_dynamicBody && onAirFor == 0.0f)
         {
             lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
         }

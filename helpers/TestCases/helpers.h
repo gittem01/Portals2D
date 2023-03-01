@@ -163,6 +163,10 @@ b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type=b2_stat
 
     b2EdgeShape shape;
     shape.SetTwoSided(p1, p2);
+    //b2Vec2 dir = p1 - p2;
+    //shape.m_vertex0 = p2 - dir;
+    //shape.m_vertex3 = p1 + dir;
+    //shape.m_oneSided = true;
 
     b2FixtureDef fixDef;
     fixDef.shape = &shape;

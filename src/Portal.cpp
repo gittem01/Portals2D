@@ -84,6 +84,11 @@ Portal::~Portal(){
                 delete deleteStat->body;
             }
 
+            for (int i = 0; i < 2; i++)
+            {
+                leftOutBody->outFixtures[i].clear();
+                leftOutBody->createDestroyMap[i].clear();
+            }
             leftOutBody->bodyMaps->clear();
         }
     }
@@ -219,7 +224,7 @@ void Portal::createPortalBody(){
     *data = { PORTAL, this };
     bd.userData.pointer = (uintptr_t)data;
     
-    bd.type = b2_staticBody;
+    bd.type = b2_kinematicBody;
     bd.angle = dirAngle;
     body = pWorld->CreateBody(&bd);
 
@@ -227,7 +232,6 @@ void Portal::createPortalBody(){
     shape.SetTwoSided(b2Vec2(0.0f, +size), b2Vec2(0.0f, -size));
 
     b2FixtureDef midPortal;
-    midPortal.isSensor = true;
     midPortal.shape = &shape;
     midPortal.isSensor = false;
     

@@ -438,10 +438,33 @@ void PortalBody::postHandle()
         }
     }
 
+#if 1
+
+    if (worldIndex->pbIndices.size() == 1)
+    {
+        body->ApplyForceToCenter(body->GetMass() * pWorld->GetGravity(), true);
+    }
+    else
+    {
+        b2Vec2 centerOfMass = body->GetPosition();
+        b2MassData md;
+        body->GetMassData(&md);
+        centerOfMass = body->GetWorldPoint(md.center);
+        for (bodyCollisionStatus* bcs : *bodyMaps)
+        {
+            if (bcs->connection->portal1->getPointSide(centerOfMass) == bcs->connection->side1)
+            {
+                body->ApplyForceToCenter(body->GetMass() * pWorld->GetGravity(), true);
+                break;
+            }
+        }
+    }
+#else
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
     {
         applyPartialGravity(fix);
     }
+#endif
 }
 
 bool PortalBody::shouldCreate(b2Fixture* fix, Portal* portal, PortalCollisionType out){
