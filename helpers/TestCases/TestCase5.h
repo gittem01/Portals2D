@@ -27,14 +27,15 @@ public:
         portal1->connect(portal2);
         portal3->connect(portal4);
 
-        createEdge(b2Vec2(-xSize, -ySize), b2Vec2(+xSize, -ySize), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-xSize, -ySize), b2Vec2(-xSize, +ySize), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-xSize, +ySize), b2Vec2(+xSize, +ySize), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-xSize - 0.01f, +ySize), b2Vec2(-xSize, +ySize + 5.0f), pWorld, b2_staticBody);
-        createEdge(b2Vec2(+xSize + 0.01f, +ySize), b2Vec2(+xSize, +ySize + 5.0f), pWorld, b2_staticBody);
-        // edge in the middle of the portal
-        createEdge(b2Vec2(-xSize * 0.4f, +ySize), b2Vec2(+xSize * 0.5f, +ySize), pWorld, b2_staticBody);
-        createEdge(b2Vec2(xSize, ySize), b2Vec2(xSize, -ySize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-xSize, -ySize), b2Vec2(portal1->points[0].x, -ySize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(portal1->points[1].x, -ySize), b2Vec2(+xSize, -ySize), pWorld, b2_staticBody);
+
+        createEdge(b2Vec2(-xSize, +ySize), b2Vec2(portal2->points[1].x, +ySize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(portal2->points[0].x, +ySize), b2Vec2(+xSize, +ySize), pWorld, b2_staticBody);
+        
+        // fences
+        createEdge(b2Vec2(-xSize, +ySize), b2Vec2(-xSize, +ySize + 5.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(+xSize, +ySize), b2Vec2(+xSize, +ySize + 5.0f), pWorld, b2_staticBody);
 
         b2Vec2 p = b2Vec2(0.0f, 0.0f);
         b2Vec2 s = b2Vec2(3.0f, 0.2f);
@@ -66,13 +67,13 @@ public:
         for (int i = 0; i < 10; i++) {
             b2Body* b1 = createCircle(b2Vec2(getRand() * xSize * 1.0f, 10.0f),
                                     (getRand() + sizeM) / div, pWorld, b2_dynamicBody);
-            // PortalBody* pb = pWorld->createPortalBody(b1);
-            // renderer->addPortalBody(pb, b2Color(1.0f, 0.25f, 0.7f, 0.5f));
+            PortalBody* pb = pWorld->createPortalBody(b1);
+            thinDrawer->addPortalBody(pb);
 
             b2Body* b2 = createBox(b2Vec2(getRand() * xSize * 1.0f, 10.0f),
                                 b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), pWorld, b2_dynamicBody);
-            // pb = pWorld->createPortalBody(b2);
-            // renderer->addPortalBody(pb, b2Color(0.0f, 1.0f, 1.0f, 0.5f));
+            pb = pWorld->createPortalBody(b2);
+            thinDrawer->addPortalBody(pb);
         }
     }
 };

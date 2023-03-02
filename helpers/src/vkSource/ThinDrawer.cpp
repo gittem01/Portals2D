@@ -294,12 +294,12 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                     renderStruct->dynamicOffsets[frameNumber][0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->modelMatrix = modelMatrix;
 
-                allData->data.x = renderStruct->fixData->pCollisions.size();
+                allData->data.x = renderStruct->pbfData->pCollisions.size();
 
                 bool fullOut = false;
-                for (int i = 0; i < renderStruct->fixData->pCollisions.size(); i++)
+                for (int i = 0; i < renderStruct->pbfData->pCollisions.size(); i++)
                 {
-                    portalCollision* pc = renderStruct->fixData->pCollisions[i];
+                    portalCollision* pc = renderStruct->pbfData->pCollisions[i];
                     if (pc->status < 0)
                     {
                         fullOut = true;
@@ -449,6 +449,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
 
                         dir = PortalWorld::rotateVec(dir, b2_pi * 0.5f);
                         pushData.positions = glm::vec4(v2.x, v2.y, v2.x + dir.x, v2.y + dir.y);
+                        
                         vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                             0, sizeof(s_pushConstantLine), (void*)&pushData);
@@ -502,7 +503,9 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
         s_renderStruct* renderStruct = new s_renderStruct;
         renderBody->renderFixtures.push_back(renderStruct);
         renderStruct->renderType = fix->GetType();
-        renderStruct->fixData = (fixtureData*)fix->GetUserData().pointer;
+        fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
+        PBFixtureData* pbfData = (PBFixtureData*)fData->data;
+        renderStruct->pbfData = pbfData;
         renderStruct->dynamicOffsets.resize(swapChain->imageCount);
         renderStruct->vertexBuffer = (s_buffers*)malloc(sizeof(s_buffers));
         s_buffers* mirroredVertices = (s_buffers*)malloc(sizeof(s_buffers));
@@ -662,7 +665,9 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
         renderBody->renderFixtures.push_back(renderStruct);
         renderStruct->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
         renderStruct->renderType = fix->GetType();
-        renderStruct->fixData = (fixtureData*)fix->GetUserData().pointer;
+        fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
+        PBFixtureData* pbfData = (PBFixtureData*)fData->data;
+        renderStruct->pbfData = pbfData;
         if (!portalBody->isMirrored)
         {
             renderStruct->vertexBuffer = renderGroup->vertexBuffers[i];

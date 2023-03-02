@@ -284,9 +284,10 @@ public:
         }
         b2BodyDef bodyDef;
         bodyDef.type = b2_kinematicBody;
-        if (!bData){
+        if (!bData)
+        {
             bData = (bodyData*)malloc(sizeof(bodyData));
-            *bData = { MOUSE, this };
+            *bData = { B_MOUSE, this };
         }
         bodyDef.userData.pointer = (uintptr_t)bData;
         mouseBody = world->CreateBody(&bodyDef);

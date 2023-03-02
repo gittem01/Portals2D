@@ -163,8 +163,16 @@ private:
         velVecB = PortalWorld::getRelativePortalPositionReverse_L(velVecB, pc);
         velVecB = PortalWorld::project(velVecB, dirA);
 
-        b2Vec2 relVel1 = PortalWorld::getRelativePortalPosition_L(pc->portal1->getLinVel(), pc);
-        b2Vec2 relVel2 = PortalWorld::getRelativePortalPositionReverse_L(pc->portal2->getLinVel(), pc);
+        b2Vec2 relativePortalPos1 = pc->portal1->pos - pc->portal1->body->GetPosition();
+        b2Vec2 linSpeedAddition1 = pc->portal1->body->GetAngularVelocity() * PortalWorld::rotateVec(relativePortalPos1, b2_pi * 0.5f);
+        b2Vec2 portal1LinSpeed = pc->portal1->getLinVel() + linSpeedAddition1;
+
+        b2Vec2 relativePortalPos2 = pc->portal2->pos - pc->portal2->body->GetPosition();
+        b2Vec2 linSpeedAddition2 = pc->portal2->body->GetAngularVelocity() * PortalWorld::rotateVec(relativePortalPos2, b2_pi * 0.5f);
+        b2Vec2 portal2LinSpeed = pc->portal2->getLinVel() + linSpeedAddition2;
+
+        b2Vec2 relVel1 = PortalWorld::getRelativePortalPosition_L(portal1LinSpeed, pc);
+        b2Vec2 relVel2 = PortalWorld::getRelativePortalPositionReverse_L(portal2LinSpeed, pc);
         
         float Cdot =    -b2Dot(dirA, vA - relVel2 - velVecB)
                         -b2Dot(dirB, vB - relVel1 - velVecA);

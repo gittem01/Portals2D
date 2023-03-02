@@ -289,7 +289,7 @@ public:
                 otherBody = edge->joint->GetBodyA();
             }
             bodyData* data = (bodyData*)otherBody->GetUserData().pointer;
-            if (data->type != PORTAL_BODY) continue;
+            if (data->type != B_PORTAL_BODY) continue;
 
             PortalBody* possibleGun = (PortalBody*)data->data;
             if (&possibleGun->worldIndex->pbIndices == gun)
@@ -328,7 +328,7 @@ public:
                 }
 
                 bodyData* data = (bodyData*)otherBody->GetUserData().pointer;
-                if (data->type == PORTAL_BODY && data->extraData != nullptr)
+                if (data->type == B_PORTAL_BODY && data->extraData != nullptr)
                 {
                     playerBody = (PortalBody*)data->data;
                     jointFound = (b2RevoluteJoint*)edge->joint;
@@ -458,6 +458,7 @@ public:
                     g_EdgeData* eData = rightEdgeData->edges[0];
                     if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
                     {
+                        rightEdgeData = eData;
                         rightDone = true;
                     }
                     else
@@ -489,6 +490,7 @@ public:
                     g_EdgeData* eData = leftEdgeData->edges[1];
                     if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
                     {
+                        leftEdgeData = eData;
                         leftDone = true;
                     }
                     else
@@ -505,16 +507,18 @@ public:
 
         if (leftEdgeData && leftEdgeData->wall == PORTAL_ITSELF)
         {
-            bodyData* bData = (bodyData*)leftEdgeData->fix->GetBody()->GetUserData().pointer;
-            if ((Portal*)bData->data == oldPortal)
+            b2Fixture* nextFix = leftEdgeData->fix->GetNext();
+            fixtureData* fData = (fixtureData*)nextFix->GetUserData().pointer;
+            if ((Portal*)fData->data == oldPortal)
             {
                 return true;
             }
         }
         if (rightEdgeData && rightEdgeData->wall == PORTAL_ITSELF)
         {
-            bodyData* bData = (bodyData*)rightEdgeData->fix->GetBody()->GetUserData().pointer;
-            if ((Portal*)bData->data == oldPortal)
+            b2Fixture* nextFix = rightEdgeData->fix->GetNext();
+            fixtureData* fData = (fixtureData*)nextFix->GetUserData().pointer;
+            if ((Portal*)fData->data == oldPortal)
             {
                 return true;
             }
@@ -682,12 +686,18 @@ public:
             PortalBody* b1 = pBody->at(0);
             PortalBody* b2 = pBody->at(1);
             fixtureData* fixData1 = (fixtureData*)b1->body->GetFixtureList()->GetUserData().pointer;
+            PBFixtureData* pbfData1 = (PBFixtureData*)fixData1->data;
             fixtureData* fixData2 = (fixtureData*)b2->body->GetFixtureList()->GetUserData().pointer;
-            portalCollision* pc1 = fixData1->pCollisions.at(0);
-            portalCollision* pc2 = fixData2->pCollisions.at(0);
+            PBFixtureData* pbfData2 = (PBFixtureData*)fixData2->data;
 
-            lastDirs[0] = pc1->side ? -pc1->portal->dir : pc1->portal->dir;
-            lastDirs[1] = pc2->side ? -pc2->portal->dir : pc2->portal->dir;
+            if (pbfData1->pCollisions.size() > 0 && pbfData2->pCollisions.size() > 0)
+            {
+                portalCollision* pc1 = pbfData1->pCollisions.at(0);
+                portalCollision* pc2 = pbfData2->pCollisions.at(0);
+
+                lastDirs[0] = pc1->side ? -pc1->portal->dir : pc1->portal->dir;
+                lastDirs[1] = pc2->side ? -pc2->portal->dir : pc2->portal->dir;
+            }
         }
 
         if (!(wh->keyData[GLFW_KEY_A] && wh->keyData[GLFW_KEY_D]))

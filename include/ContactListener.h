@@ -17,5 +17,5 @@ public:
 
 	virtual void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse);
 
-    void endBeginHandle(contactType type, b2Contact* contact);
+    void endBeginHandle(ContactType type, b2Contact* contact);
 };

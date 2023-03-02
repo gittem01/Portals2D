@@ -81,11 +81,15 @@ public:
 
 private:
 
-    Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld);
+    Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld, b2Body* onBody);
+
+    b2Vec2 posOffset;
+    float angleOffset;
 
     PortalWorld* pWorld;
     
     b2Fixture* midFixture;
+    b2Fixture* dumbFix;
     b2Fixture* yFix[2];
 
     b2RayCastInput rcInp1;
@@ -105,7 +109,7 @@ private:
     PortalCollisionType preCollision   (b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2);
 
     void calculatePoints();
-    void createPortalBody();
+    void createPortalBody(b2Body* onBody);
 
     PortalCollisionType handleCollidingFixtures(b2Contact* contact, b2Fixture* fix2);
     bool rayCheck(b2Fixture* fix);

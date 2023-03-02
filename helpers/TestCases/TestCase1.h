@@ -46,15 +46,21 @@ public:
         portal5->connect(portal6, true, 0, 0);
         diagonalPortal1->connect(diagonalPortal2, true, 0, 0);
 
-        // TODO : do this special case automatically
         diagonalPortal2->connect(topPortal1, true, 1, 0);
         diagonalPortal2->connect(topPortal2, false, 1, 0);
         //topPortal1->connect(topPortal2);
 
-        createEdge(b2Vec2(-30.0f, yPos - portalSize), b2Vec2(+30.0f, yPos - portalSize), pWorld, b2_staticBody);
         createEdge(b2Vec2(+30.0f, yPos - portalSize), b2Vec2(+30.0f, 21), pWorld, b2_staticBody);
-        createEdge(b2Vec2(+30.0f, 21), b2Vec2(-30.0f, 21), pWorld, b2_staticBody);
         createEdge(b2Vec2(-30.0f, 21), b2Vec2(-30.0f, yPos - portalSize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(+30.0f, 21), b2Vec2(-30.0f, 21), pWorld, b2_staticBody);
+
+        createEdge(b2Vec2(-30.0f, yPos - portalSize), b2Vec2(portal6->points[0].x, yPos - portalSize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(portal6->points[1].x, yPos - portalSize), b2Vec2(portal5->points[0].x, yPos - portalSize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(portal5->points[1].x, yPos - portalSize), b2Vec2(portal3->points[0].x, yPos - portalSize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(portal3->points[1].x, yPos - portalSize), b2Vec2(portal42->points[1].x, yPos - portalSize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(portal42->points[1].x, yPos - portalSize), b2Vec2(+30.0f, yPos - portalSize), pWorld, b2_staticBody);
+
+        createEdge(b2Vec2(10.2f, 5.0f), b2Vec2(10.2f, 16.0f), pWorld, b2_staticBody);
 
         thinDrawer->pWorld = pWorld;
 
@@ -98,9 +104,6 @@ public:
         b2Body* body3 = createCircle(p, r, pWorld, b2_dynamicBody);
         pb = pWorld->createPortalBody(body3);
         thinDrawer->addPortalBody(pb);
-        b2Vec2 bPos(10.0f, 5.0f);
-        s = b2Vec2(0.2f, -yPos + portalSize + bPos.y);
-        createEdge(bPos - b2Vec2(-s.x, s.y), bPos + b2Vec2(s.x, s.y), pWorld, b2_staticBody);
 
         b2Vec2 startPos = b2Vec2(29.0f, 20.0f);
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);

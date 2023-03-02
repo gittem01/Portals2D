@@ -45,11 +45,18 @@ public:
 
     void imguiRender()
     {
+        ImGuiIO io = ImGui::GetIO();
+
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         ImGui::Begin("Debug Window", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+
+        ImGui::Text("fps: %.2f", io.Framerate);
+        ImGui::SameLine();
+        ImGui::Text("dt: %.4f", io.DeltaTime * 1000.0f);
+
 
         int lastItem = testCaseItem;
         ImGui::Combo(" ", &testCaseItem, testCases, numTestCases);

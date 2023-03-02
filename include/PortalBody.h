@@ -41,6 +41,14 @@ enum PortalCollisionType
     DEFAULT_COLLISION = 1 << 31,
 };
 
+enum FixtureDataType
+{
+    F_OTHER = 0x0001,
+    F_PORTAL = 0x0002,
+    F_PORTAL_BODY = 0x0004,
+    F_END = 0x0008,
+};
+
 typedef struct
 {
     Portal* portal;
@@ -48,28 +56,21 @@ typedef struct
     int side;
 } portalCollision;
 
-typedef class fixtureData
+typedef struct PBFixtureData
 {
-public:
     std::vector<portalCollision*> pCollisions;
     int index;
     // will be calculated only for polygon shapes
     float angleThold;
-    void* extraData;
-
-    fixtureData()
-    {
-        extraData = nullptr;
-    }
 
     // return 2 if not found, return 1 for colliding, otherwise return release value
-    int getPortalStatus(Portal* portal, int side){
-        for (auto pCollision : pCollisions){
-            if (pCollision->portal == portal){
-                if (pCollision->side == side){
+    int getPortalStatus(Portal* portal, int side) {
+        for (auto pCollision : pCollisions) {
+            if (pCollision->portal == portal) {
+                if (pCollision->side == side) {
                     return pCollision->status;
                 }
-                else{
+                else {
                     return 2;
                 }
             }
@@ -78,22 +79,36 @@ public:
         return 2;
     }
 
-    std::vector<portalCollision*>::iterator getPortalCollision(Portal* portal, int status=2){
-        for (auto i = pCollisions.begin(); i != pCollisions.end(); i++){
+    std::vector<portalCollision*>::iterator getPortalCollision(Portal* portal, int status = 2) {
+        for (auto i = pCollisions.begin(); i != pCollisions.end(); i++) {
             portalCollision* pColl = *i;
-            if (status == 2){
-                if (pColl->portal == portal){
+            if (status == 2) {
+                if (pColl->portal == portal) {
                     return i;
                 }
             }
-            else{
-                if (pColl->portal == portal && pColl->status == status){
+            else {
+                if (pColl->portal == portal && pColl->status == status) {
                     return i;
                 }
             }
         }
 
         return pCollisions.end();
+    }
+} PBFixtureData;
+
+typedef class fixtureData
+{
+public:
+    void* data;
+    void* extraData;
+    FixtureDataType type;
+
+    fixtureData()
+    {
+        extraData = nullptr;
+        type = F_END;
     }
 
 } fixtureData;
@@ -142,8 +157,8 @@ private:
 
     void destroyCheck(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     bool shouldCreate(b2Fixture* fix, Portal* portal, PortalCollisionType out);
-    int shouldCollideHelper(portalCollision* coll, fixtureData* fixData1, fixtureData* fixData2, PortalBody* pb);
-    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, bodyData* bData);
+    int shouldCollideHelper(portalCollision* coll, PBFixtureData* pbfData1, PBFixtureData* pbfData2, PortalBody* pb);
+    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, fixtureData* fData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out);
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     void releaseOut2(b2Fixture* fix, Portal* portal);

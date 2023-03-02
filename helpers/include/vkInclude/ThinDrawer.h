@@ -110,7 +110,7 @@ typedef struct
 {
     std::vector<std::vector<uint32_t>> dynamicOffsets;
     s_buffers* vertexBuffer;
-    struct fixtureData* fixData;
+    struct PBFixtureData* pbfData;
     b2Shape::Type renderType;
 } s_renderStruct;
 

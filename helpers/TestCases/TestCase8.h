@@ -6,6 +6,7 @@ class TestCase8 : public BaseTestCase
 public:
     Portal* portal1;
     Portal* portal2;
+    b2Body* bodyToMove;
 
     float t = 0.0f;
 
@@ -78,8 +79,12 @@ public:
         createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), pWorld, b2_staticBody, true);
         createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld, b2_staticBody, true);
 
-        body = createEdge(b2Vec2(-8.0f, -8.0f), b2Vec2(-8.0f, -3.0f), pWorld, b2_kinematicBody, true);
-        body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
+        body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), pWorld, b2_kinematicBody, true);
+        body->SetTransform(b2Vec2(6.0f, 0.0f), -b2_pi * 0.0f);
+
+        bodyToMove = body;
+        /*body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
+        body->SetAngularVelocity(0.1f);*/
         fixtureData* fixData;
         g_EdgeData* edgeData;
         createEdgeData(&fixData, &edgeData);
@@ -156,7 +161,7 @@ public:
         BaseTestCase::onUpdate();
 
         const float speedAddition = 1.5f;
-        const float angSpeedAddition = 0.5f;
+        const float angSpeedAddition = 0.51f;
 
         b2Vec2 setSpeed = b2Vec2(0.0f, 0.0f);
         float setAngle = 0.0f;
@@ -180,7 +185,7 @@ public:
             setSpeed += speedAddition * portal2->dir;
         }
 
-        portal1->setLinVel(setSpeed);
-        portal1->setAngVel(setAngle);
+        bodyToMove->SetLinearVelocity(setSpeed);
+        bodyToMove->SetAngularVelocity(setAngle);
     }
 };

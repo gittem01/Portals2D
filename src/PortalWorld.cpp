@@ -34,8 +34,9 @@ PortalWorld::~PortalWorld(){
     delete evalRayHandler;
 }
 
-Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size){
-    Portal* portal = new Portal(pos, dir, size, this);
+Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size, b2Body* onBody)
+{
+    Portal* portal = new Portal(pos, dir, size, this, onBody);
     portals.push_back(portal);
 
     return portal;
@@ -139,8 +140,8 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
     if (closestFixture != NULL){
         if (closestFixture == closestPortalFixture){
-            bodyData* bd = (bodyData*)closestFixture->GetBody()->GetUserData().pointer;
-            Portal* p = (Portal*)bd->data;
+            fixtureData* fData = (fixtureData*)closestFixture->GetUserData().pointer;
+            Portal* p = (Portal*)fData->data;
             b2Vec2 posDiff = p->pos - collPoint;
             int raySide = p->getPointSide(rayStart);
             b2Vec2 p1Dir = raySide ? -p->dir : p->dir;
@@ -185,7 +186,6 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
     // for moving portals
     for (Portal* p : portals)
     {
-        p->pos = p->body->GetPosition();
         p->calculatePoints();
     }
 
@@ -321,9 +321,13 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
     collPortal->collidingBodies[side].insert(pBody);
 
+    b2Vec2 relativePortalPos1 = collPortal->pos - collPortal->body->GetPosition();
+    b2Vec2 linSpeedAddition1 = collPortal->body->GetAngularVelocity() * PortalWorld::rotateVec(relativePortalPos1, b2_pi * 0.5f);
+    b2Vec2 portalLinSpeed1 = collPortal->getLinVel() + linSpeedAddition1;
+
     for (portalConnection* c : collPortal->connections[side])
     {
-        b2Vec2 speed = baseSpeed - collPortal->body->GetLinearVelocity();
+        b2Vec2 speed = baseSpeed - portalLinSpeed1;
         Portal* portal2 = c->portal2;
         
         b2Vec2 dir2 = c->side2 ? -portal2->dir : portal2->dir;
@@ -540,7 +544,11 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             body2->SetAngularVelocity(body1->GetAngularVelocity() /*- collPortal->getAngVel() + portal2->getAngVel()*/);
         }
 
-        lvToSet += c->portal2->getLinVel();
+        b2Vec2 relativePortalPos2 = c->portal2->pos - c->portal2->body->GetPosition();
+        b2Vec2 linSpeedAddition2 = c->portal2->body->GetAngularVelocity() * PortalWorld::rotateVec(relativePortalPos2, b2_pi * 0.5f);
+        b2Vec2 portalLinSpeed2 = c->portal2->getLinVel() + linSpeedAddition2;
+
+        lvToSet += portalLinSpeed2;
 
         body2->SetLinearVelocity(lvToSet);
 
@@ -602,15 +610,20 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             npb->fixtures[i] = f;
 
             fixtureData* fixData1 = (fixtureData*)fix->GetUserData().pointer;
+            PBFixtureData* pbfData1 = (PBFixtureData*)fixData1->data;
             fixtureData* fixData2 = new fixtureData();
-            fixData2->index = i;
-            fixData2->angleThold = PortalBody::calculateAngleThold(f);
+            PBFixtureData* pbfData2 = new PBFixtureData();
+            fixData2->type = F_PORTAL_BODY;
+            fixData2->data = (void*)pbfData2;
+
+            pbfData2->index = i;
+            pbfData2->angleThold = PortalBody::calculateAngleThold(f);
             f->GetUserData().pointer = (uintptr_t)fixData2;
 
             portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
 
-            int status = fixData1->getPortalStatus(collPortal, side);
-            int status2 = fixData1->getPortalStatus(collPortal, side ^ 1);
+            int status = pbfData1->getPortalStatus(collPortal, side);
+            int status2 = pbfData1->getPortalStatus(collPortal, side ^ 1);
             if (status == 1){
                 int fixSide = collPortal->getFixtureSide(fix);
                 
@@ -632,7 +645,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = 1;
-                    fixData2->pCollisions.push_back(col);
+                    pbfData2->pCollisions.push_back(col);
                     allOut = false;
                 }
                 else if (release){
@@ -640,7 +653,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = -1;
-                    fixData2->pCollisions.push_back(col);
+                    pbfData2->pCollisions.push_back(col);
                     allOut = false;
                 }
                 else{
@@ -653,7 +666,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = -2;
-                    fixData2->pCollisions.push_back(col);
+                    pbfData2->pCollisions.push_back(col);
 
                     bool rayCheck;
                     int fixSide = collPortal->getFixtureSide(fix);
@@ -668,7 +681,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = status2 - 2;
-                    fixData2->pCollisions.push_back(col);
+                    pbfData2->pCollisions.push_back(col);
 
                     if (status2 % 2 == 0){
                         bool rayCheck;
@@ -685,7 +698,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = -1;
-                    fixData2->pCollisions.push_back(col);
+                    pbfData2->pCollisions.push_back(col);
                 }
             }
             else{
@@ -1128,15 +1141,15 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
                     b2Vec2 mid = newVertexPos + size * 0.5f * diff;
                     b2Vec2 dir = rotateVec(diff, b2_pi * 0.5f);
 
-                    Portal* portal = createPortal(mid, dir, size * 0.5);
-                    portal->midFixture->GetUserData().pointer = (uintptr_t)portalFixData;
+                    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
+                    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
                     portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
                     portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
 
-                    portalEdgeData->fix = portal->midFixture;
+                    portalEdgeData->fix = portal->dumbFix;
 
                     portal->destructionData = destrData;
-                    portal->body->SetLinearVelocity(edgeBody->GetLinearVelocity());
+                    //portal->body->SetLinearVelocity(edgeBody->GetLinearVelocity());
 
                     return portal;
                 }
@@ -1193,15 +1206,15 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
                     b2Vec2 mid = v1 + size * 0.5f * diff;
                     b2Vec2 dir = rotateVec(diff, b2_pi * 0.5f);
 
-                    Portal* portal = createPortal(mid, dir, size * 0.5);
-                    portal->midFixture->GetUserData().pointer = (uintptr_t)portalFixData;
+                    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
+                    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
                     portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
                     portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
 
-                    portalEdgeData->fix = portal->midFixture;
+                    portalEdgeData->fix = portal->dumbFix;
 
                     portal->destructionData = destrData;
-                    portal->body->SetLinearVelocity(leftBody->GetLinearVelocity());
+                    //portal->body->SetLinearVelocity(leftBody->GetLinearVelocity());
 
                     return portal;
                 }
@@ -1260,15 +1273,15 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
                     b2Vec2 mid = v2 + size * 0.5f * diff;
                     b2Vec2 dir = rotateVec(diff, b2_pi * 0.5f);
 
-                    Portal* portal = createPortal(mid, dir, size * 0.5);
-                    portal->midFixture->GetUserData().pointer = (uintptr_t)portalFixData;
+                    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
+                    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
                     portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
                     portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
 
-                    portalEdgeData->fix = portal->midFixture;
+                    portalEdgeData->fix = portal->dumbFix;
 
                     portal->destructionData = destrData;
-                    portal->body->SetLinearVelocity(nextBody->GetLinearVelocity());
+                    //portal->body->SetLinearVelocity(nextBody->GetLinearVelocity());
 
                     return portal;
                 }
@@ -1375,15 +1388,15 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
     b2Vec2 mid = leftPortalPoint + size * 0.5f * diff;
     dir = rotateVec(diff, b2_pi * 0.5f);
 
-    Portal* portal = createPortal(mid, dir, size * 0.5);
-    portal->midFixture->GetUserData().pointer = (uintptr_t)portalFixData;
+    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
+    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
     portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
     portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
 
-    portalEdgeData->fix = portal->midFixture;
+    portalEdgeData->fix = portal->dumbFix;
 
     portal->destructionData = destrData;
-    portal->body->SetLinearVelocity(cdData->body->GetLinearVelocity());
+    //portal->body->SetLinearVelocity(cdData->body->GetLinearVelocity());
 
     return portal;
 }
@@ -1396,19 +1409,20 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
     if (fixture->IsSensor()) return 1.0f;
 
     bool isPortal = false;
-    bodyData* bd = (bodyData*)(fixture->GetBody()->GetUserData().pointer);
-    if (bd){
-        if (bd->type == PORTAL){
-            Portal* p = (Portal*)bd->data;
+    fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
+    if (fData){
+        if (fData->type == F_PORTAL){
+            Portal* p = (Portal*)fData->data;
             int side = p->getPointSide(point + normal);
             if (p->connections[side].size() != 0){
                 isPortal = true;
             }
         }
-        else if (bd->type == PORTAL_BODY){
-            PortalBody* pb = (PortalBody*)bd->data;
-            fixtureData* fixData = (fixtureData*)(fixture->GetUserData().pointer);
-            std::vector<portalCollision*> collidingPortals = fixData->pCollisions;
+        else if (fData->type == F_PORTAL_BODY){
+            bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
+            PortalBody* pb = (PortalBody*)bData->data;
+            PBFixtureData* pbfData = (PBFixtureData*)fData->data;
+            std::vector<portalCollision*> collidingPortals = pbfData->pCollisions;
             for (portalCollision* pc : collidingPortals){
                 if (!pc->status || pc->portal->getPointSide(point) == (pc->side ^ 1)){
                     return 1.0f;

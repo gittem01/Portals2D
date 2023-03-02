@@ -18,19 +18,19 @@ class PortalWorld;
 class RotationJoint;
 class PositionJoint;
 
-typedef enum
+enum ContactType
 {
     BEGIN_CONTACT = 1,
     END_CONTACT = 2,
-} contactType;
+};
 
-typedef enum
+enum BodyDataType
 {
-	OTHER = 0x1,
-	PORTAL = 0x2,
-	PORTAL_BODY = 0x4,
-	MOUSE = 0x8,
-} dataTypes;
+	B_OTHER = 0x1,
+	B_PORTAL = 0x2,
+	B_PORTAL_BODY = 0x4,
+	B_MOUSE = 0x8,
+};
 
 typedef struct rayData
 {
@@ -40,10 +40,8 @@ typedef struct rayData
 
 typedef struct bodyData
 {
-	dataTypes type;
+	BodyDataType type;
 	void* data;
-
-    // reserved for user
     void* extraData;
 } bodyData;
 
@@ -145,7 +143,7 @@ public:
 
     void PortalStep(float timeStep, int32 velocityIterations, int32 positionIterations);
 
-    Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size);
+    Portal* createPortal(b2Vec2 pos, b2Vec2 dir, float size, b2Body* onBody=nullptr);
     void destroyPortal(Portal* portal);
 
     PortalBody* createPortalBody(b2Body* body);
