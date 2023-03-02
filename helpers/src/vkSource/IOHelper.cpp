@@ -38,6 +38,5 @@ void IOHelper::getAssetsFolder()
 
 	assetsFolder = "assets/";
 
-	printf("Could not find assets folder");
-	assert(false);
+	printf("Could not find assets folder. Assigning it as '/assets'\n");
 }
