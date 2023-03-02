@@ -407,7 +407,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                                 switch (eData->gel)
                                 {
                                 case NONE:
-                                    gelColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
+                                    gelColor = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
                                     break;
                                 case BLUE:
                                     gelColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
@@ -431,7 +431,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                         dir.Normalize();
                         dir *= 0.1f;
 
-                        pushData.colour = colorToRender;
+                        pushData.colour = gelColor;
                         pushData.data.y = 0.04f;
                         pushData.positions = glm::vec4(v1.x, v1.y, v2.x, v2.y);
                         vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
@@ -439,7 +439,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                             0, sizeof(s_pushConstantLine), (void*)&pushData);
                         vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
 
-                        pushData.colour = gelColor;
+                        pushData.colour = colorToRender;
                         pushData.data.y = 0.03f;
                         pushData.positions = glm::vec4(v1.x, v1.y, v1.x + dir.x, v1.y + dir.y);
                         vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,

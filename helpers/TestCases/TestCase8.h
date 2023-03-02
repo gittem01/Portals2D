@@ -39,7 +39,7 @@ public:
     void onCreate()
     {
         srand(2);
-        //pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
+        pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
         //pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
@@ -88,9 +88,12 @@ public:
         edgeData->fix = body->GetFixtureList();
         edgeData->fix->GetUserData().pointer = (uintptr_t)fixData;
 
-        /*portal1 = pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
+        portal1 = pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
         portal2 = pWorld->createPortal(b2Vec2(-2.0f, -3.0f), portal1->dir, portal1->size);
 
+        portal1->connect(portal2, true, 0, 0);
+
+        /*
         Portal* portal3 = pWorld->createPortal(b2Vec2(-0.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
         Portal* portal4 = pWorld->createPortal(b2Vec2(-0.0f, -3.0f), portal1->dir, portal1->size);
 
@@ -177,7 +180,7 @@ public:
             setSpeed += speedAddition * portal2->dir;
         }
 
-        //portal2->setLinVel(setSpeed);
-        //portal2->setAngVel(setAngle);
+        portal1->setLinVel(setSpeed);
+        portal1->setAngVel(setAngle);
     }
 };
