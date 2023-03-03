@@ -33,10 +33,10 @@ void ThinDrawer::surfaceRecreate()
     swapChain->createFrameBuffers();
     preparePipelines();
 
-    for (int i = 0; i < frames.size(); i++)
-    {
-        vkResetCommandBuffer(frames[i].commandBuffer, 0);
-    }
+   for (int i = 0; i < frames.size(); i++)
+   {
+       vkResetCommandBuffer(frames[i].commandBuffer, 0);
+   }
 
     vkDeviceWaitIdle(logicalDevice);
 }
@@ -82,12 +82,6 @@ void ThinDrawer::renderLoop()
                           currentFrame.presentSemaphore, VK_NULL_HANDLE, &lastSwapChainImageIndex);
 
     uniformFiller(lastSwapChainImageIndex);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        surfaceRecreate();
-        return;
-    }
 
     vkResetCommandBuffer(frames[lastSwapChainImageIndex].commandBuffer, 0);
     buildCommandBuffers(lastSwapChainImageIndex);

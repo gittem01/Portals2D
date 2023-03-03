@@ -3,6 +3,8 @@
 #include <IOHelper.h>
 #include <Camera.h>
 
+#define PREFER_DISCRETE 1
+
 void ThinDrawer::createWindow()
 {
     wh = new WindowHandler(NULL);
@@ -97,6 +99,8 @@ void ThinDrawer::selectPhysicalDevice()
 
     physicalDevice = VK_NULL_HANDLE;
 
+    bool gpuFound = false;
+
     for (uint32_t i = 0; i < deviceCount; i++)
     {
         VkPhysicalDeviceProperties deviceProperties;
@@ -114,11 +118,8 @@ void ThinDrawer::selectPhysicalDevice()
                 vkGetPhysicalDeviceSurfaceSupportKHR(devices[i], j, swapChain->surface, &presentSupported);
                 if (queueFamilies[j].queueFlags & VK_QUEUE_GRAPHICS_BIT && presentSupported)
                 {
-                    physicalDevice = devices[i];
-                    queues.graphicsQueueFamilyIndex = j;
                     vkGetPhysicalDeviceProperties(devices[i], &vulkanInfo->deviceProperties);
-                    if ((vulkanInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU ||
-                        vulkanInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU) && deviceCount > 1)
+                    if (vulkanInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
                     {
                         continue;
                     }
@@ -126,8 +127,15 @@ void ThinDrawer::selectPhysicalDevice()
 #if PRINT_INFO_MESSAGES
                     printf("Selected GPU : %s\n", vulkanInfo->deviceProperties.deviceName);
 #endif
-                    i = deviceCount;
-                    break;
+                    physicalDevice = devices[i];
+                    queues.graphicsQueueFamilyIndex = j;
+                    gpuFound = true;
+
+                    if (vulkanInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && PREFER_DISCRETE)
+                    {
+                        i = deviceCount;
+                        break;
+                    }
                 }
             }
         }
@@ -135,7 +143,7 @@ void ThinDrawer::selectPhysicalDevice()
     }
     free(devices);
 
-    if (physicalDevice == VK_NULL_HANDLE)
+    if (!gpuFound)
     {
         printf("failed to find a suitable GPU!");
         exit(1);
