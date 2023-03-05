@@ -25,6 +25,7 @@ void ThinDrawer::surfaceRecreate()
     vkDestroyPipeline(logicalDevice, debugCircleShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, debugLineShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, debugPolygonShader->pipeline, VK_NULL_HANDLE);
+    vkDestroyPipeline(logicalDevice, whiteWallShader->pipeline, VK_NULL_HANDLE);
     vkDestroyRenderPass(logicalDevice, renderPass, VK_NULL_HANDLE);
     swapChain->destroy();
     
@@ -46,6 +47,7 @@ void ThinDrawer::initExtra()
     debugCircleShader = new DebugCircle(this);
     debugLineShader = new DebugLine(this);
     debugPolygonShader = new DebugPolygon(this);
+    whiteWallShader = new WhiteWall(this);
 
     prepareVertices();
     prepareUniformBuffers();
@@ -62,6 +64,7 @@ void ThinDrawer::uniformFiller(int frameNum)
     s_sharedUniformData* sharedData;
     CHECK_RESULT_VK(vkMapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory, 0, sizeof(s_sharedUniformData), 0, (void**)&sharedData));
     sharedData->orthoMatrix = wh->cam->camMatrix;
+    sharedData->cameraPos = glm::vec4(glm::vec3(wh->cam->pos), 1.0f);
     sharedData->data.x = 0.5f;
     vkUnmapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory);
 }
@@ -127,6 +130,7 @@ void ThinDrawer::prepareVertices()
     debugCircleShader->prepareVertexData();
     debugLineShader->prepareVertexData();
     debugPolygonShader->prepareVertexData();
+    whiteWallShader->prepareVertexData();
 }
 
 void ThinDrawer::prepareUniformBuffers()
@@ -138,9 +142,11 @@ void ThinDrawer::prepareUniformBuffers()
         sharedOrthoUniform[i] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
         uniformHelper(sizeof(s_sharedUniformData), sharedOrthoUniform[i]);
     }
+
     debugCircleShader->prepareUniforms();
     debugLineShader->prepareUniforms();
     debugPolygonShader->prepareUniforms();
+    whiteWallShader->prepareUniforms();
 }
 
 void ThinDrawer::setupDescriptorSetLayout()
@@ -148,6 +154,7 @@ void ThinDrawer::setupDescriptorSetLayout()
     debugCircleShader->setupDescriptorSetLayout();
     debugLineShader->setupDescriptorSetLayout();
     debugPolygonShader->setupDescriptorSetLayout();
+    whiteWallShader->setupDescriptorSetLayout();
 }
 
 void ThinDrawer::preparePipelines()
@@ -155,6 +162,7 @@ void ThinDrawer::preparePipelines()
     debugCircleShader->preparePipeline();
     debugLineShader->preparePipeline();
     debugPolygonShader->preparePipeline();
+    whiteWallShader->preparePipeline();
 }
 
 void ThinDrawer::setupDescriptorPool()
@@ -182,6 +190,7 @@ void ThinDrawer::setupDescriptorSet()
     debugCircleShader->setupDescriptorSet();
     debugLineShader->setupDescriptorSet();
     debugPolygonShader->setupDescriptorSet();
+    whiteWallShader->setupDescriptorSet();
 }
 
 void ThinDrawer::buildCommandBuffers(int frameNumber)
@@ -424,6 +433,22 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
     {
         ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
     }
+
+    for (int i = 0; i < 4; i++)
+    {
+        uint32_t dynOffset = i * pad_storage_buffer_size(sizeof(s_wallUbo));
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, whiteWallShader->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &whiteWallShader->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            whiteWallShader->pipelineLayout, 0, 1, &whiteWallShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            whiteWallShader->pipelineLayout, 1, 1, &whiteWallShader->descriptorSets[1][frameNumber], 1, &dynOffset);
+
+        vkCmdDraw(cmdBuff, whiteWallShader->buffers[0]->count, 1, 0, 0);
+    }
+
     
     vkCmdEndRenderPass(cmdBuff);
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));

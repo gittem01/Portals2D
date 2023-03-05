@@ -4,6 +4,7 @@
 #include <ShaderHeaders/DebugCircle.h>
 #include <ShaderHeaders/DebugLine.h>
 #include <ShaderHeaders/DebugPolygon.h>
+#include <ShaderHeaders/WhiteWall.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <GLFW/glfw3.h>
@@ -63,6 +64,7 @@ typedef struct
 typedef struct
 {
     glm::mat4 orthoMatrix;
+    glm::vec4 cameraPos;
     glm::vec4 data;
 } s_sharedUniformData;
 
@@ -75,6 +77,18 @@ typedef struct
     glm::vec4 data;
     glm::vec4 extraData;
 } s_uboAll;
+
+typedef struct
+{
+    glm::mat4 transformMatrix;
+    glm::mat4 rotationMatrix;
+    glm::vec4 bgColour;
+    glm::vec4 dotColour;
+    glm::vec4 edgeColour;
+    glm::vec4 leftUp;
+    glm::vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
+    glm::vec4 data2; // sizeX, sizeY, unused, unused
+} s_wallUbo;
 
 typedef struct
 {
@@ -99,6 +113,12 @@ typedef struct
 {
     glm::vec2 pos;
 } s_basicVertex;
+
+typedef struct
+{
+    glm::vec3 pos;
+    glm::vec3 normal;
+} s_averageVertex;
 
 class SwapChain;
 class PortalBody;
@@ -156,7 +176,7 @@ public:
     uint32_t frameNumber = 0;
     uint32_t lastSwapChainImageIndex = 0;
     VkSampleCountFlagBits samples;
-    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_4_BIT;
 
     s_vulkanInfo* vulkanInfo;
     VkInstance instance;
@@ -185,6 +205,7 @@ public:
     ShaderBase* debugCircleShader;
     ShaderBase* debugLineShader;
     ShaderBase* debugPolygonShader;
+    ShaderBase* whiteWallShader;
 
     // var end
 

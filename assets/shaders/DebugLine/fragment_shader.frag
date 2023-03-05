@@ -8,6 +8,7 @@ layout (location = 1) in vec2 size;
 layout (set = 0, binding = 0) uniform SharedUboData
 {
     mat4 orthoMatrix;
+    vec4 cameraPos;
     vec4 data; // zoom, unused, unused, unused
 } sharedUboData;
 
