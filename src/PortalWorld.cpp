@@ -4,7 +4,8 @@
 #include <PositionJoint.h>
 #include <GameBase.h>
 
-PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f)){
+PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f))
+{
     this->rayHandler = new PortalRay(this);
     this->evalRayHandler = new EvaluationRay(this);
 }
