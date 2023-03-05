@@ -61,8 +61,8 @@ void ThinDrawer::uniformFiller(int frameNum)
 {
     s_sharedUniformData* sharedData;
     CHECK_RESULT_VK(vkMapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory, 0, sizeof(s_sharedUniformData), 0, (void**)&sharedData));
-    sharedData->orthoMatrix = wh->cam->ortho;
-    sharedData->data.x = wh->cam->zoom;
+    sharedData->orthoMatrix = wh->cam->camMatrix;
+    sharedData->data.x = 0.5f;
     vkUnmapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory);
 }
 
@@ -184,65 +184,20 @@ void ThinDrawer::setupDescriptorSet()
     debugPolygonShader->setupDescriptorSet();
 }
 
-void ThinDrawer::initImgui()
-{
-    VkDescriptorPoolSize pool_sizes[] =
-    {
-        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-    };
-
-    VkDescriptorPoolCreateInfo pool_info = {};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1000;
-    pool_info.poolSizeCount = std::size(pool_sizes);
-    pool_info.pPoolSizes = pool_sizes;
-
-    CHECK_RESULT_VK(vkCreateDescriptorPool(logicalDevice, &pool_info, nullptr, &imguiPool));
-    
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForVulkan(wh->window, true);
-    ImGui_ImplVulkan_InitInfo initInfo = {};
-    initInfo.Instance = instance;
-    initInfo.PhysicalDevice = physicalDevice;
-    initInfo.Device = logicalDevice;
-    initInfo.Queue = queues.graphicsQueue;
-    initInfo.QueueFamily = queues.graphicsQueueFamilyIndex;
-    initInfo.DescriptorPool = imguiPool;
-    initInfo.MinImageCount = swapChain->imageCount;
-    initInfo.ImageCount = swapChain->imageCount;
-    initInfo.MSAASamples = samples;
-    ImGui_ImplVulkan_Init(&initInfo, renderPass);
-
-    VkCommandBuffer commandBuffer = getCommandBuffer(true);
-    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-    flushCommandBuffer(commandBuffer);
-
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
-
-    ImGuiStyle* style = &ImGui::GetStyle();
-    style->Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, 0.95);
-}
-
 void ThinDrawer::buildCommandBuffers(int frameNumber)
 {
     VkCommandBufferBeginInfo cmdBufInfo = vkinit::commandBufferBeginInfo();
 
     VkClearValue clearValue;
     clearValue.color = { 0.0f, 0.0f, 0.0f, 0.0f };
-    VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, &clearValue);
+
+    VkClearValue depthClear;
+    depthClear.depthStencil.depth = 1.0f;
+
+    VkClearValue clearValues[] = { clearValue, depthClear };
+
+    VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, clearValues);
+    renderPassBeginInfo.clearValueCount = std::size(clearValues);
 
     renderPassBeginInfo.framebuffer = swapChain->frameBuffers[frameNumber];
     VkCommandBuffer cmdBuff = frames[frameNumber].commandBuffer;
@@ -269,8 +224,9 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         debugPolygonShader->pipelineLayout, 0, 1, &debugPolygonShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
 
-    // for debug line
-
+    vkCmdSetDepthTestEnable(cmdBuff, VK_TRUE);
+    vkCmdSetDepthWriteEnable(cmdBuff, VK_FALSE);
+    
     for (s_renderGroup* rg : renderGroups)
     {
         for (s_renderBody* renderBody : rg->renderBodies)
@@ -353,7 +309,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
             }
         }
     }
-
+    
     if (pWorld)
     {
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -365,7 +321,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
         //pushData.positions = glm::vec4(1.0f, 1.0f, -1.0f, -1.0f);
         pushData.colour = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
         pushData.data.y = 0.02f;
-        pushData.data.z = 0.3f;
+        pushData.data.z = 0.5f;
 
         for (b2Body* body = pWorld->GetBodyList(); body; body = body->GetNext())
         {
@@ -426,7 +382,6 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                         dir *= 0.1f;
 
                         pushData.colour = gelColor;
-                        pushData.data.y = 0.04f;
                         pushData.positions = glm::vec4(v1.x, v1.y, v2.x, v2.y);
                         vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -434,7 +389,6 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                         vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
 
                         pushData.colour = colorToRender;
-                        pushData.data.y = 0.03f;
                         pushData.positions = glm::vec4(v1.x, v1.y, v1.x + dir.x, v1.y + dir.y);
                         vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -548,7 +502,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
                             offsetIndex * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->color = glm::vec4(0.3f, 1.0f, 0.0f, 0.3f);
                 allData->data.y = 0.02f;
-                allData->data.z = 0.0f;
+                allData->data.z = 0.6f;
                 allData->data.w = circShape->m_radius;
                 allData->extraData.x = circShape->m_p.x;
                 allData->extraData.y = circShape->m_p.y;
@@ -597,7 +551,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
                     offsetIndex0 * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->color = glm::vec4(0.0f, 0.1f, 1.0f, 0.3f);
                 allData->data.y = 0.02f;
-                allData->data.z = 0.0f;
+                allData->data.z = 0.6f;
                 allData->extraData.z = -1.0f;
                 allData->outerColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
                 allData->modelMatrix = glm::mat4(1.0f);
@@ -686,7 +640,7 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
                     offsetIndex * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->color = glm::vec4(0.3f, 1.0f, 0.0f, 0.3f);
                 allData->data.y = 0.02f;
-                allData->data.z = 0.0f;
+                allData->data.z = 0.6f;
                 allData->data.w = circShape->m_radius;
                 b2Vec2 circPos = portalBody->isMirrored ? renderGroup->circlePositioningsMirrored[i] : renderGroup->circlePositionings[i];
                 allData->extraData.x = circPos.x;
@@ -713,7 +667,7 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
                     offsetIndex0 * ShaderBase::alignedSizes[0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->color = glm::vec4(0.0f, 0.1f, 1.0f, 0.3f);
                 allData->data.y = 0.02f;
-                allData->data.z = 0.0f;
+                allData->data.z = 0.6f;
                 allData->extraData.z = -1.0f;
                 allData->outerColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
                 allData->modelMatrix = glm::mat4(1.0f);
@@ -787,6 +741,7 @@ void ThinDrawer::releaseRenderResources()
             {
                 ShaderBase::freeIndicesList[1][++ShaderBase::avlAllocLastLoc[1]] =
                     renderGroup->vertexStorageOffsets[i] / ShaderBase::alignedSizes[1];
+                
                 ShaderBase::freeIndicesList[1][++ShaderBase::avlAllocLastLoc[1]] =
                     renderGroup->vertexStorageOffsetsMirrored[i] / ShaderBase::alignedSizes[1];
             }

@@ -1074,7 +1074,6 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
     {
         b2Vec2 vertexPos = getVertexByIndex(leftEdge, 1);
         float dist = (lastVertexPos - vertexPos).Length();
-        printf("dist: %f\n", dist);
         reqLeft -= dist;
 
         if (reqLeft < 0.0f)

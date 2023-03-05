@@ -7,10 +7,11 @@
 
 SwapChain::SwapChain(ThinDrawer* td)
 {
-    thinDrawer = td;
+    this->thinDrawer = td;
 }
 
-void SwapChain::destroy() {
+void SwapChain::destroy()
+{
     for (int i = 0; i < imageCount; i++) {
         vkDestroyFramebuffer(thinDrawer->logicalDevice, frameBuffers[i], VK_NULL_HANDLE);
         vkDestroyImageView(thinDrawer->logicalDevice, imageViews[i], VK_NULL_HANDLE);
@@ -31,11 +32,13 @@ void SwapChain::destroy() {
 
 void SwapChain::creationLoop()
 {
-    for (;;) {
+    for (;;)
+    {
         glfwPollEvents();
         querySwapChainSupport();
         extent = chooseSwapExtent();
-        if (extent.width > 0 && extent.height > 0) {
+        if (extent.width > 0 && extent.height > 0)
+        {
             createSwapChain();
             return;
         }
@@ -43,14 +46,17 @@ void SwapChain::creationLoop()
 }
 
 VkExtent2D SwapChain::chooseSwapExtent() {
-    if (surfaceCapabilities.currentExtent.width != UINT32_MAX) {
+    if (surfaceCapabilities.currentExtent.width != UINT32_MAX)
+    {
         return surfaceCapabilities.currentExtent;
     }
-    else {
+    else
+    {
         int width, height;
         glfwGetFramebufferSize(thinDrawer->wh->window, &width, &height);
 
-        VkExtent2D actualExtent = {
+        VkExtent2D actualExtent =
+        {
             static_cast<uint32_t>(width),
             static_cast<uint32_t>(height)
         };
@@ -126,7 +132,7 @@ void SwapChain::createSwapChain()
     {
         presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
-
+    presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     extent = chooseSwapExtent();
 
     imageCount = (int)surfaceCapabilities.minImageCount + 1;
@@ -187,6 +193,8 @@ void SwapChain::createSwapChain()
     {
         createColorResources();
     }
+
+    createDepthResources();
 }
 
 void SwapChain::createFrameBuffers()
@@ -204,13 +212,8 @@ void SwapChain::createFrameBuffers()
 	for (int i = 0; i < imageCount; i++)
     {
         std::vector<VkImageView> attachments;
-
-        if (thinDrawer->samples > VK_SAMPLE_COUNT_1_BIT)
-        {
-            attachments.push_back(colorImageView);
-        }
-
-        attachments.push_back(imageViews[i]);
+        if (thinDrawer->samples > VK_SAMPLE_COUNT_1_BIT) attachments = { colorImageView, depthImageView, imageViews[i] };
+        else attachments = { imageViews[i], depthImageView };
 
 		frameBufferInfo.attachmentCount = attachments.size();
 		frameBufferInfo.pAttachments = attachments.data();
@@ -228,13 +231,6 @@ void SwapChain::createColorResources()
             1
     };
 
-    VkImageCreateInfo colorImageInfo;
-    colorImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    colorImageInfo.extent = colorImageExtent;
-    colorImageInfo.format = surfaceFormat.format;
-    colorImageInfo.flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    colorImageInfo.samples = thinDrawer->samples;
-
     thinDrawer->createImage(extent.width, extent.height, 1, thinDrawer->samples, surfaceFormat.format,
                 VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory);
@@ -251,4 +247,31 @@ void SwapChain::createColorResources()
     imageViewCreateInfo.image = colorImage;
 
     CHECK_RESULT_VK(vkCreateImageView(thinDrawer->logicalDevice, &imageViewCreateInfo, NULL, &colorImageView));
+}
+
+void SwapChain::createDepthResources()
+{
+    VkExtent3D depthImageExtent =
+    {
+            extent.width,
+            extent.height,
+            1
+    };
+
+    thinDrawer->createImage(extent.width, extent.height, 1, thinDrawer->samples, VK_FORMAT_D32_SFLOAT,
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+
+    VkImageViewCreateInfo imageViewCreateInfo = { };
+    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.format = VK_FORMAT_D32_SFLOAT;
+    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
+    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    imageViewCreateInfo.image = depthImage;
+
+    CHECK_RESULT_VK(vkCreateImageView(thinDrawer->logicalDevice, &imageViewCreateInfo, NULL, &depthImageView));
 }

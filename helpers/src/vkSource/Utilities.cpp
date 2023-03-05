@@ -373,6 +373,8 @@ VkGraphicsPipelineCreateInfo* ThinDrawer::getPipelineInfoBase()
     VkViewport* viewport = (VkViewport*)calloc(1, sizeof(VkViewport));
     viewport->width = swapChain->extent.width;
     viewport->height = swapChain->extent.height;
+    viewport->minDepth = 0.0f;
+    viewport->maxDepth = +1.0f;
 
     viewportState->viewportCount = 1;
     viewportState->pViewports = viewport;
@@ -391,13 +393,35 @@ VkGraphicsPipelineCreateInfo* ThinDrawer::getPipelineInfoBase()
     multisampleState->sampleShadingEnable = VK_FALSE;
     multisampleState->minSampleShading = 1.0f;
 
+    VkPipelineDepthStencilStateCreateInfo* pipelineDepthStencilCreateInfo = (VkPipelineDepthStencilStateCreateInfo*)calloc(1, sizeof(VkPipelineDepthStencilStateCreateInfo));
+    pipelineDepthStencilCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    pipelineDepthStencilCreateInfo->pNext = NULL;
+
+    pipelineDepthStencilCreateInfo->depthTestEnable = VK_TRUE;
+    pipelineDepthStencilCreateInfo->depthWriteEnable = VK_TRUE;
+    pipelineDepthStencilCreateInfo->depthCompareOp = VK_COMPARE_OP_LESS;
+    pipelineDepthStencilCreateInfo->depthBoundsTestEnable = VK_FALSE;
+    pipelineDepthStencilCreateInfo->minDepthBounds = 0.0f; // Optional
+    pipelineDepthStencilCreateInfo->maxDepthBounds = 1.0f; // Optional
+    pipelineDepthStencilCreateInfo->stencilTestEnable = VK_FALSE;
+
+    int numDynamicStates = 2;
+    VkDynamicState* dynamicStates = (VkDynamicState*)calloc(numDynamicStates, sizeof(VkDynamicState));
+    dynamicStates[0] = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE;
+    dynamicStates[1] = VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE;
+
+    VkPipelineDynamicStateCreateInfo* dynamicStateCreateInfo = (VkPipelineDynamicStateCreateInfo*)calloc(1, sizeof(VkPipelineDynamicStateCreateInfo));
+    dynamicStateCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateCreateInfo->dynamicStateCount = numDynamicStates;
+    dynamicStateCreateInfo->pDynamicStates = dynamicStates;
+
     pipelineCreateInfo->pInputAssemblyState = inputAssemblyState;
     pipelineCreateInfo->pRasterizationState = rasterizationStateCreateInfo;
     pipelineCreateInfo->pColorBlendState = colorBlendState;
     pipelineCreateInfo->pMultisampleState = multisampleState;
     pipelineCreateInfo->pViewportState = viewportState;
-    pipelineCreateInfo->pDepthStencilState = VK_NULL_HANDLE;
-    pipelineCreateInfo->pDynamicState = VK_NULL_HANDLE;
+    pipelineCreateInfo->pDepthStencilState = pipelineDepthStencilCreateInfo;
+    pipelineCreateInfo->pDynamicState = dynamicStateCreateInfo;
 
     return pipelineCreateInfo;
 }
@@ -412,6 +436,7 @@ void ThinDrawer::freePipelineData(VkGraphicsPipelineCreateInfo* pipelineCreateIn
     free((void*)pipelineCreateInfo->pInputAssemblyState);
     free((void*)pipelineCreateInfo->pRasterizationState);
     free((void*)pipelineCreateInfo->pMultisampleState);
+    free((void*)pipelineCreateInfo->pDepthStencilState);
     free((void*)pipelineCreateInfo);
 }
 

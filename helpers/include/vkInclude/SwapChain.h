@@ -23,9 +23,15 @@ public:
 
     VkImage* images;
     VkImageView* imageViews;
+    
     VkImage colorImage;
     VkImageView colorImageView;
     VkDeviceMemory colorImageMemory;
+
+    VkImage depthImage;
+    VkImageView depthImageView;
+    VkDeviceMemory depthImageMemory;
+
     VkFramebuffer* frameBuffers;
     int imageCount;
 
@@ -38,6 +44,7 @@ public:
     void createSwapChain();
     void createFrameBuffers();
     void createColorResources();
+    void createDepthResources();
 
     void creationLoop();
 };

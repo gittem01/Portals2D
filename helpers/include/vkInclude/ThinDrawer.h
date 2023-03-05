@@ -168,6 +168,9 @@ public:
     VkCommandPool uploadPool;
     VkFence uploadFence;
 
+    SwapChain* thickSwapChain;
+    VkRenderPass* thickRenderPass;
+
     WindowHandler* wh;
 
     std::vector<s_frameData> frames;

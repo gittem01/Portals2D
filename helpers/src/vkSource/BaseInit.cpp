@@ -8,7 +8,7 @@
 void ThinDrawer::createWindow()
 {
     wh = new WindowHandler(NULL);
-    Camera* cam = new Camera(glm::vec2(0, 0), wh);
+    Camera* cam = new Camera(glm::vec3(0.0f, 0.0f, 30.0f), wh);
     wh->cam = cam;
 }
 
@@ -248,6 +248,23 @@ void ThinDrawer::createRenderPass()
 
     attachments.push_back(colorAttachment);
 
+    VkAttachmentDescription depthAttachment = {};
+    depthAttachment.flags = 0;
+    depthAttachment.format = VK_FORMAT_D32_SFLOAT;
+    depthAttachment.samples = samples;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef = {};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    attachments.push_back(depthAttachment);
+
     VkAttachmentReference colorReference = { };
     colorReference.attachment = 0;
     colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -268,18 +285,19 @@ void ThinDrawer::createRenderPass()
         attachments.push_back(colorAttachmentResolve);
     }
 
-    VkAttachmentReference color_attachment_resolve_ref = { };
-    color_attachment_resolve_ref.attachment = 1;
-    color_attachment_resolve_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference colorAttachmentResolveRef = { };
+    colorAttachmentResolveRef.attachment = 2;
+    colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpassDescription = { };
     subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpassDescription.colorAttachmentCount = 1;
     subpassDescription.pColorAttachments = &colorReference;
+    subpassDescription.pDepthStencilAttachment = &depthAttachmentRef;
 
     if (samples > VK_SAMPLE_COUNT_1_BIT)
     {
-        subpassDescription.pResolveAttachments = &color_attachment_resolve_ref;
+        subpassDescription.pResolveAttachments = &colorAttachmentResolveRef;
     }
 
     VkRenderPassCreateInfo renderPassInfo = { };
@@ -335,4 +353,56 @@ void ThinDrawer::createSyncThings()
 
     fenceCreateInfo.flags = 0;
     CHECK_RESULT_VK(vkCreateFence(logicalDevice, &fenceCreateInfo, VK_NULL_HANDLE, &uploadFence));
+}
+
+void ThinDrawer::initImgui()
+{
+    VkDescriptorPoolSize pool_sizes[] =
+    {
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1000;
+    pool_info.poolSizeCount = std::size(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
+
+    CHECK_RESULT_VK(vkCreateDescriptorPool(logicalDevice, &pool_info, nullptr, &imguiPool));
+
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForVulkan(wh->window, true);
+    ImGui_ImplVulkan_InitInfo initInfo = {};
+    initInfo.Instance = instance;
+    initInfo.PhysicalDevice = physicalDevice;
+    initInfo.Device = logicalDevice;
+    initInfo.Queue = queues.graphicsQueue;
+    initInfo.QueueFamily = queues.graphicsQueueFamilyIndex;
+    initInfo.DescriptorPool = imguiPool;
+    initInfo.MinImageCount = swapChain->imageCount;
+    initInfo.ImageCount = swapChain->imageCount;
+    initInfo.MSAASamples = samples;
+    ImGui_ImplVulkan_Init(&initInfo, renderPass);
+
+    VkCommandBuffer commandBuffer = getCommandBuffer(true);
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+    flushCommandBuffer(commandBuffer);
+
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+    ImGuiStyle* style = &ImGui::GetStyle();
+    style->Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, 0.95);
 }
