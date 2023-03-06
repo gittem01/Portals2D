@@ -132,7 +132,9 @@ void SwapChain::createSwapChain()
     {
         presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
-    presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+
+    //presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+
     extent = chooseSwapExtent();
 
     imageCount = (int)surfaceCapabilities.minImageCount + 1;

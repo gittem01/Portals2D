@@ -193,6 +193,96 @@ VkCommandBuffer ThinDrawer::createCommandBuffer(VkCommandBufferLevel level, VkCo
     return cmdBuffer;
 }
 
+void ThinDrawer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
+{
+    VkFormatProperties formatProperties;
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
+
+    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+    {
+        printf("linear blitting is not supported");
+        exit(-1);
+    }
+
+    VkCommandBuffer commandBuffer = getCommandBuffer(true);
+
+    VkImageMemoryBarrier barrier = { };
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.image = image;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.levelCount = 1;
+
+    int32_t mipWidth = texWidth;
+    int32_t mipHeight = texHeight;
+
+    for (uint32_t i = 1; i < mipLevels; i++)
+    {
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
+
+        VkImageBlit blit{};
+        blit.srcOffsets[0] = { 0, 0, 0 };
+        blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstOffsets[0] = { 0, 0, 0 };
+        blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+
+        vkCmdBlitImage(commandBuffer,
+            image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &blit,
+            VK_FILTER_LINEAR);
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
+
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+    }
+
+    barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier);
+
+    flushCommandBuffer(commandBuffer);
+}
+
 void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
 {
     std::string finalPath = IOHelper::assetsFolder + fileName;
@@ -200,7 +290,8 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
     int width, height, nChannels;
     stbi_uc* pixels = stbi_load(finalPath.c_str(), &width, &height, &nChannels, STBI_rgb_alpha);
 
-    if (!pixels) {
+    if (!pixels)
+    {
         printf("Failed to load texture file: %s\n", finalPath.c_str());
         exit(-1);
     }
@@ -211,7 +302,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
 
     texture->width = width;
     texture->height = height;
-    texture->mipLevels = 1;
+    texture->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;;
 
     VkMemoryAllocateInfo memAllocInfo = { };
     memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -236,6 +327,8 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
     memcpy(data, pixels, imageSize);
     vkUnmapMemory(logicalDevice, stagingMemory);
 
+    stbi_image_free(pixels);
+
     VkExtent3D imageExtent;
     imageExtent.width = static_cast<uint32_t>(width);
     imageExtent.height = static_cast<uint32_t>(height);
@@ -253,7 +346,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
     copyRegion.imageExtent = imageExtent;
 
     createImage(texture->width, texture->height, texture->mipLevels, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 texture->image, texture->deviceMemory);
 
     VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, uploadPool, true);
@@ -279,35 +372,29 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
 
     vkCmdCopyBufferToImage(copyCmd, stagingBuffer, texture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    vkCmdPipelineBarrier(copyCmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
-                         VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier);
-
-    texture->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
     flushCommandBuffer(copyCmd);
 
     vkFreeMemory(logicalDevice, stagingMemory, VK_NULL_HANDLE);
     vkDestroyBuffer(logicalDevice, stagingBuffer, VK_NULL_HANDLE);
 
+    generateMipmaps(texture->image, VK_FORMAT_R8G8B8A8_UNORM, width, height, texture->mipLevels);
+
+    texture->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     VkSamplerCreateInfo sampler = { };
     sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler.magFilter = VK_FILTER_NEAREST;
-    sampler.minFilter = VK_FILTER_NEAREST;
-    sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler.magFilter = VK_FILTER_LINEAR;
+    sampler.minFilter = VK_FILTER_LINEAR;
+    sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler.mipLodBias = 0.0f;
     sampler.compareOp = VK_COMPARE_OP_NEVER;
     sampler.minLod = 0.0f;
-    sampler.maxLod = (float)texture->mipLevels;
-    sampler.maxAnisotropy = 1.0;
-    sampler.anisotropyEnable = VK_FALSE;
+    sampler.maxLod = VK_LOD_CLAMP_NONE;
+    sampler.maxAnisotropy = 16.0;
+    sampler.anisotropyEnable = VK_TRUE;
     sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     
     CHECK_RESULT_VK(vkCreateSampler(logicalDevice, &sampler, VK_NULL_HANDLE, &texture->sampler));

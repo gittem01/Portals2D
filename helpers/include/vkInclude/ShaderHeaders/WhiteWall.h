@@ -9,6 +9,8 @@ class WhiteWall : public ShaderBase
 private:
     WhiteWall(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
+    int wallCount;
+
     void prepareUniforms();
     void setupDescriptorSetLayout();
     void preparePipeline();

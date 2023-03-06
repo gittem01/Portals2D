@@ -9,6 +9,7 @@ void createEdgeData(fixtureData** fData, g_EdgeData** eData)
 	g_EdgeData*	edgData = (g_EdgeData*)malloc(sizeof(g_EdgeData));
 
 	fixData->extraData = (void*)phyData;
+    fixData->type = F_OTHER;
 	phyData->type = EDGE;
 	phyData->data = edgData;
 

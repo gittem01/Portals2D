@@ -166,12 +166,18 @@ b2Body* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2BodyType type=b2_stat
     shape.SetOneSided(p1 + dir, p1, p2, p2 - dir);
     shape.m_oneSided = oneSided;
 
-    b2FixtureDef fixDef;
-    fixDef.shape = &shape;
-    fixtureData* fData = new fixtureData();
-    fixDef.userData.pointer = (uintptr_t)fData;
+    fixtureData* fData;
+    g_EdgeData* eData;
+    createEdgeData(&fData, &eData);
 
-    edgeBody->CreateFixture(&fixDef);
+    b2FixtureDef fixDef;
+    fixDef.userData.pointer = (uintptr_t)fData;
+    fixDef.shape = &shape;
+
+    b2Fixture* fix = edgeBody->CreateFixture(&fixDef);
+
+    eData->fix = fix;
+    eData->wall = PORTALLABLE;
 
     return edgeBody;
 }

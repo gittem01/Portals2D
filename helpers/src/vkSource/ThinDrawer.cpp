@@ -224,6 +224,25 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
 
     VkDeviceSize offsets = 0;
 
+    vkCmdSetDepthTestEnable(cmdBuff, VK_TRUE);
+    vkCmdSetDepthWriteEnable(cmdBuff, VK_TRUE);
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, whiteWallShader->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &whiteWallShader->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        whiteWallShader->pipelineLayout, 0, 1, &whiteWallShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        whiteWallShader->pipelineLayout, 1, 1, &whiteWallShader->descriptorSets[1][frameNumber], 0, 0);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        whiteWallShader->pipelineLayout, 2, 1, &whiteWallShader->textureData[0]->set, 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, whiteWallShader->buffers[0]->count, whiteWallShader->wallCount, 0, 0);
+
+
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         debugCircleShader->pipelineLayout, 0, 1, &debugCircleShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
 
@@ -233,7 +252,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         debugPolygonShader->pipelineLayout, 0, 1, &debugPolygonShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
 
-    vkCmdSetDepthTestEnable(cmdBuff, VK_TRUE);
+    vkCmdSetDepthTestEnable(cmdBuff, VK_FALSE);
     vkCmdSetDepthWriteEnable(cmdBuff, VK_FALSE);
     
     for (s_renderGroup* rg : renderGroups)
@@ -332,7 +351,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
         pushData.data.y = 0.02f;
         pushData.data.z = 0.5f;
 
-        for (b2Body* body = pWorld->GetBodyList(); body; body = body->GetNext())
+        for (b2Body* body = pWorld->GetBodyList(); body && false; body = body->GetNext())
         {
             if (body->GetType() == b2_staticBody || 1)
             {
@@ -434,22 +453,6 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
         ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
     }
 
-    for (int i = 0; i < 4; i++)
-    {
-        uint32_t dynOffset = i * pad_storage_buffer_size(sizeof(s_wallUbo));
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, whiteWallShader->pipeline);
-
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &whiteWallShader->buffers[0]->buffer, &offsets);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            whiteWallShader->pipelineLayout, 0, 1, &whiteWallShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            whiteWallShader->pipelineLayout, 1, 1, &whiteWallShader->descriptorSets[1][frameNumber], 1, &dynOffset);
-
-        vkCmdDraw(cmdBuff, whiteWallShader->buffers[0]->count, 1, 0, 0);
-    }
-
-    
     vkCmdEndRenderPass(cmdBuff);
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
 }

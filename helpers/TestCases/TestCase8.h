@@ -41,11 +41,11 @@ public:
     {
         srand(2);
         pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
-        //pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
+        pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
         
-        int n = 300;
+        int n = 0;
         b2Body* body;
         b2Body* lastBody = nullptr;
         g_EdgeData* lastData = nullptr;
@@ -77,6 +77,7 @@ public:
 
         createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld, b2_staticBody, true);
         createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(-10.0f, -10.0f), pWorld, b2_staticBody, true);
         createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld, b2_staticBody, true);
 
         body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), pWorld, b2_kinematicBody, true);

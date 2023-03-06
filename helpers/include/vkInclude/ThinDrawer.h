@@ -118,6 +118,7 @@ typedef struct
 {
     glm::vec3 pos;
     glm::vec3 normal;
+    glm::vec2 tc;
 } s_averageVertex;
 
 class SwapChain;
@@ -176,7 +177,7 @@ public:
     uint32_t frameNumber = 0;
     uint32_t lastSwapChainImageIndex = 0;
     VkSampleCountFlagBits samples;
-    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_4_BIT;
+    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_1_BIT;
 
     s_vulkanInfo* vulkanInfo;
     VkInstance instance;
@@ -205,7 +206,7 @@ public:
     ShaderBase* debugCircleShader;
     ShaderBase* debugLineShader;
     ShaderBase* debugPolygonShader;
-    ShaderBase* whiteWallShader;
+    WhiteWall* whiteWallShader;
 
     // var end
 
@@ -247,6 +248,7 @@ public:
     void setSamples();
 
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin);
+    void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
     void loadTexture(char* fileName, s_texture* texture);
     void updateImageDescriptors(s_texture* tex, VkDescriptorSetLayout& setLayout);
     void createImage(uint32_t width, uint32_t p_height, uint32_t mipLevels,
