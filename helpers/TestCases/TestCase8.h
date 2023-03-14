@@ -144,17 +144,38 @@ public:
         PortalBody* pb1 = pWorld->createPortalBody(body1);
         PortalBody* pb2 = pWorld->createPortalBody(body2);
 
-        thinDrawer->addPortalBody(pb1);
-        thinDrawer->addPortalBody(pb2);
+        thinDrawer->debug_addPortalBody(pb1);
+        thinDrawer->debug_addPortalBody(pb2);
+
+        std::vector<std::pair<std::string, std::string>> names =
+        {
+            {"pCube.edge2", "edge2.png"},
+            {"pCube.edge3", "edge3.png"},
+            {"pCube.edge4", "edge4.png"},
+            {"pCube.edge1", "edge1.png"},
+            {"pCube.body",  "body.png" }
+        };
+
+        thinDrawer->addPortalBody(pb1, names);
+        thinDrawer->addPortalBody(pb2, names);
 
         pbi1 = &pb1->worldIndex->pbIndices;
         pbi2 = &pb2->worldIndex->pbIndices;
 
-        startPos = b2Vec2(35.0f, 4.0f);
-        lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
+        startPos = b2Vec2(10.0f, 4.0f);
+        lastBody = createCircle(startPos, 0.5f, pWorld, b2_dynamicBody);
         PortalBody* lastPb = pWorld->createPortalBody(lastBody);
-        thinDrawer->addPortalBody(lastPb);
+        thinDrawer->debug_addPortalBody(lastPb);
+
+        names = { {"sphere.sphere", "sphere.png"} };
+        thinDrawer->addPortalBody(lastPb, names);
+
         lastBody->SetLinearDamping(0.0f);
+
+        lastBody = createBox(startPos, b2Vec2(0.7f, 0.7f), pWorld, b2_dynamicBody);
+        lastPb = pWorld->createPortalBody(lastBody);
+        names = {};
+        thinDrawer->addPortalBody(lastPb, names);
     }
 
     void onUpdate()

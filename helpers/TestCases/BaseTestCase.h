@@ -3,7 +3,7 @@
 #include <helpers.h>
 #include <WindowHandler.h>
 
-#define ENABLE_TESTPLAYER 1
+#define ENABLE_TESTPLAYER 0
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -130,16 +130,17 @@ public:
     #if ENABLE_TESTPLAYER
         extern ThinDrawer* thinDrawer;
         tp = new TestPlayer(pWorld, td->wh);
-        thinDrawer->addPortalBody(tp->pBody->at(0));
-        thinDrawer->addPortalBody(tp->gun->at(0));
+        thinDrawer->debug_addPortalBody(tp->pBody->at(0));
+        thinDrawer->debug_addPortalBody(tp->gun->at(0));
+
+        std::vector<std::pair<std::string, std::string>> empty;
+        thinDrawer->addPortalBody(tp->pBody->at(0), empty);
+        thinDrawer->addPortalBody(tp->gun->at(0), empty);
     #endif
     }
 
-    void afterCreate(){
-        // manual random coloring for now
-        for (Portal* p : pWorld->portals){
-            b2Color c = b2Color(1, getRand() + 0.5f, getRand() + 0.5f, 1.0f);
-        }
+    void afterCreate()
+    {
 
         /*for (int i = 0; i < 2; i++){
             for (Portal* p : pWorld->portals){
@@ -151,7 +152,7 @@ public:
     virtual void onUpdate()
     {
 #if ENABLE_TESTPLAYER
-        //tp->camHandle();
+        tp->camHandle();
 #endif
         if (!pWorld)
         {

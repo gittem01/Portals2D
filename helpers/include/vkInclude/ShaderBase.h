@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-typedef struct
+typedef struct s_buffers
 {
     VkDeviceMemory memory;
     VkBuffer buffer;
@@ -18,7 +18,7 @@ typedef struct
     VkDescriptorBufferInfo descriptor;
 } s_uniformBuffer;
 
-typedef struct
+typedef struct s_texture
 {
     VkSampler sampler;
     VkImage image;

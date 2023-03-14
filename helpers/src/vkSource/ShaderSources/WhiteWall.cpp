@@ -36,8 +36,8 @@ void WhiteWall::prepareVertexData()
 void WhiteWall::prepareUniforms()
 {
     int imCount = thinDrawer->swapChain->imageCount;
-    int alignedSizeFS = thinDrawer->pad_storage_buffer_size(sizeof(s_wallUbo));
-
+    // offset is not used no need for alignment
+    int alignedSizeFS = sizeof(s_wallUbo);
     uniformBuffers.resize(imCount);
 
     int x = 25;
@@ -50,7 +50,7 @@ void WhiteWall::prepareUniforms()
     {
         uniformBuffers[i].resize(1);
 
-        uniformBuffers[i][0] = (s_uniformBuffer*)malloc(sizeof(s_wallUbo));
+        uniformBuffers[i][0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
         thinDrawer->uniformHelper(alignedSizeFS * wallCountInMind, uniformBuffers[i][0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     }
@@ -69,13 +69,14 @@ void WhiteWall::prepareUniforms()
                 wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
+                wallUbo.dotColour = glm::vec4(1.0, 0.0, 0.0, 1.0);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.08f + randVal22, 0.06f, 2.0f, 0.3f);
+                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 0.3f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
                 CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[i][0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
-                memcpy(pData, &wallUbo, sizeof(s_wallUbo));
+                memcpy(pData, &wallUbo, alignedSizeFS);
                 vkUnmapMemory(logicalDevice, uniformBuffers[i][0]->memory);
             }
             wallCount++;
@@ -97,7 +98,7 @@ void WhiteWall::prepareUniforms()
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.08f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -126,7 +127,7 @@ void WhiteWall::prepareUniforms()
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.08f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -153,7 +154,7 @@ void WhiteWall::prepareUniforms()
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.08f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -180,12 +181,12 @@ void WhiteWall::prepareUniforms()
                     s_wallUbo wallUbo;
                     wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.y - 8.75, 10.0 * m, size.x * 0.5 * k));
                     wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0));
-                    wallUbo.rotationMatrix = glm::rotate(wallUbo.rotationMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0));
+                    wallUbo.rotationMatrix = glm::rotate(wallUbo.rotationMatrix, glm::radians(90.0f * m), glm::vec3(1.0f, 0.0f, 0.0));
                     wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                     wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                     wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                     wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                    wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
+                    wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
                     wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                     void* pData;
@@ -211,12 +212,12 @@ void WhiteWall::prepareUniforms()
                 {
                     s_wallUbo wallUbo;
                     wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-10.0 + m * 50.0f, 7.5 + size.y * 0.5 - k * size.y, size.x * 0.5 * j));
-                    wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0));
+                    wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f * (-m * 2 + 1)), glm::vec3(0.0f, 1.0f, 0.0));
                     wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                     wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                     wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                     wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                    wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
+                    wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
                     wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                     void* pData;
@@ -273,20 +274,7 @@ void WhiteWall::preparePipeline()
     vertexInputBinding.stride = sizeof(s_averageVertex);
 
     VkVertexInputAttributeDescription attributeDescriptions[3];
-    attributeDescriptions[0].binding = 0;
-    attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset = offsetof(s_averageVertex, pos);
-
-    attributeDescriptions[1].binding = 0;
-    attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(s_averageVertex, normal);
-
-    attributeDescriptions[2].binding = 0;
-    attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(s_averageVertex, tc);
+    s_averageVertex::getVertexAttributeDescriptions(attributeDescriptions);
 
     VkPipelineVertexInputStateCreateInfo vertexInputState = { };
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -308,6 +296,8 @@ void WhiteWall::preparePipeline()
     pipelineCreateInfo->pVertexInputState = &vertexInputState;
 
     CHECK_RESULT_VK(vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, pipelineCreateInfo, VK_NULL_HANDLE, &pipeline));
+
+    ThinDrawer::freePipelineData(pipelineCreateInfo);
 }
 
 void WhiteWall::setupDescriptorSet()
@@ -317,9 +307,11 @@ void WhiteWall::setupDescriptorSet()
     textureData.push_back(tex);
 
     s_texture* tex2 = (s_texture*)malloc(sizeof(s_texture));
-    thinDrawer->loadTexture((char*)"textures/grad.png", tex2);
+    thinDrawer->loadTexture((char*)"textures/grad2.png", tex2);
     textureData.push_back(tex2);
-    
+ 
+    int bindingCount = 2;
+
     int imCount = thinDrawer->swapChain->imageCount;
 
     descriptorSets.resize(descriptorSetLayouts.size());
@@ -353,15 +345,14 @@ void WhiteWall::setupDescriptorSet()
         vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
     }
 
-    for (int i = 0; i < 2; i++)
+    for (int j = 0; j < textureData.size(); j++)
     {
         VkDescriptorSetAllocateInfo allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[2], 1);
-
-        vkAllocateDescriptorSets(logicalDevice, &allocInfo, &textureData[i]->set);
+        vkAllocateDescriptorSets(logicalDevice, &allocInfo, &textureData[j]->set);
 
         VkDescriptorImageInfo imageBufferInfo;
-        imageBufferInfo.imageView = textureData[i]->view;
-        imageBufferInfo.sampler = textureData[i]->sampler;
+        imageBufferInfo.imageView = textureData[j]->view;
+        imageBufferInfo.sampler = textureData[j]->sampler;
         imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
         VkWriteDescriptorSet textureWrite = { };
@@ -370,7 +361,7 @@ void WhiteWall::setupDescriptorSet()
         textureWrite.dstSet = textureData[0]->set;
         textureWrite.descriptorCount = 1;
         textureWrite.pImageInfo = &imageBufferInfo;
-        textureWrite.dstBinding = i;
+        textureWrite.dstBinding = j;
 
         vkUpdateDescriptorSets(logicalDevice, 1, &textureWrite, 0, VK_NULL_HANDLE);
     }

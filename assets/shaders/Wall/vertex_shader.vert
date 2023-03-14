@@ -58,7 +58,7 @@ void main()
     vec4 scaledVertex = vec4(vertex * vec3(ubo.sData[instanceID].data2.xy, 1.0), 1.0);
     vec4 pos = sharedUboData.cameraMatrix * ubo.sData[instanceID].transformMatrix * ubo.sData[instanceID].rotationMatrix * scaledVertex;
 
-    out_tc = tc * vec2(15.5f, 30.5);
+    out_tc = tc * vec2(data2.x / data.x, data2.y / data.x);
     outNormal = ubo.sData[instanceID].rotationMatrix * vec4(normal, 1.0);
     localPos = vec4((vertex + vec3(0.5, 0.5, 0.0)) * vec3(ubo.sData[instanceID].data2.xy, 1.0), 1.0);
     worldPos = ubo.sData[instanceID].transformMatrix * ubo.sData[instanceID].rotationMatrix * scaledVertex;

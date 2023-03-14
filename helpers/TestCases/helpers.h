@@ -35,7 +35,7 @@ PortalWorld* pWorld = nullptr;
 mouseJointHandler* mjh = nullptr;
 ContactListener* contactListener = nullptr;
 ThinDrawer* thinDrawer;
-int totalIter = 1;
+int totalIter = 2;
 
 // O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f, float isMixed=false) {

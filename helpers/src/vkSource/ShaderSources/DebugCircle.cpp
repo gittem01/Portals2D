@@ -95,7 +95,11 @@ void DebugCircle::preparePipeline()
     pipelineCreateInfo->pStages = shader2.shaderStages.data();
     pipelineCreateInfo->pVertexInputState = &vertexInputState;
 
+    ((VkPipelineDepthStencilStateCreateInfo*)pipelineCreateInfo->pDepthStencilState)->depthTestEnable = VK_FALSE;
+
     CHECK_RESULT_VK(vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, pipelineCreateInfo, VK_NULL_HANDLE, &pipeline));
+
+    ThinDrawer::freePipelineData(pipelineCreateInfo);
 }
 
 void DebugCircle::setupDescriptorSet()

@@ -93,7 +93,8 @@ void DebugPolygon::preparePipeline()
     vertexInputState.pVertexAttributeDescriptions = &vertexInputAttributeFor0;
     vertexInputState.pVertexBindingDescriptions = &vertexInputBinding;
 
-    std::vector<std::string> fileNames = {
+    std::vector<std::string> fileNames =
+    {
             std::string("shaders/DebugPolygon/vertex_shader.vert.spv"),
             std::string("shaders/DebugPolygon/fragment_shader.frag.spv")
     };
@@ -104,6 +105,8 @@ void DebugPolygon::preparePipeline()
     pipelineCreateInfo->pStages = shader.shaderStages.data();
 
     pipelineCreateInfo->pVertexInputState = &vertexInputState;
+
+    ((VkPipelineDepthStencilStateCreateInfo*)pipelineCreateInfo->pDepthStencilState)->depthTestEnable = VK_FALSE;
 
     CHECK_RESULT_VK(vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, pipelineCreateInfo, VK_NULL_HANDLE, &pipeline));
 

@@ -67,8 +67,8 @@ public:
         PortalBody* b1 = pWorld->createPortalBody(createObody(pWorld, b2Vec2(0.0f, 3.0f)));
         PortalBody* b2 = pWorld->createPortalBody(createWbody(pWorld, b2Vec2(0.0f, 6.0f)));
 
-        thinDrawer->addPortalBody(b1);
-        thinDrawer->addPortalBody(b2);
+        thinDrawer->debug_addPortalBody(b1);
+        thinDrawer->debug_addPortalBody(b2);
 
         b2Vec2 p(5.0f, 0.0f);
         b2Vec2 s(0.75f, 0.75f);
@@ -81,9 +81,9 @@ public:
         PortalBody* pb2 = pWorld->createPortalBody(body20);
         PortalBody* pb3 = pWorld->createPortalBody(body21);
 
-        thinDrawer->addPortalBody(pb1);
-        thinDrawer->addPortalBody(pb2);
-        thinDrawer->addPortalBody(pb3);
+        thinDrawer->debug_addPortalBody(pb1);
+        thinDrawer->debug_addPortalBody(pb2);
+        thinDrawer->debug_addPortalBody(pb3);
         
         PortalBody* pb;
     #if 1
@@ -92,7 +92,7 @@ public:
         s = b2Vec2(1.5f, 0.2f);
         platform = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
         pb = pWorld->createPortalBody(platform);
-        thinDrawer->addPortalBody(pb);
+        thinDrawer->debug_addPortalBody(pb);
         b2Vec2 vel(-10.0f, 0.0f);
         platform->SetLinearVelocity(vel);
         platform->SetBullet(true);
@@ -103,13 +103,13 @@ public:
         float r = 0.7f;
         b2Body* body3 = createCircle(p, r, pWorld, b2_dynamicBody);
         pb = pWorld->createPortalBody(body3);
-        thinDrawer->addPortalBody(pb);
+        thinDrawer->debug_addPortalBody(pb);
 
         b2Vec2 startPos = b2Vec2(29.0f, 20.0f);
         b2Body* lastBody = createBox(startPos, b2Vec2(0.5f, 0.25f), pWorld, b2_dynamicBody);
 
         pb = pWorld->createPortalBody(lastBody);
-        thinDrawer->addPortalBody(pb);
+        thinDrawer->debug_addPortalBody(pb);
         snakeHead = &pb->worldIndex->pbIndices;
         for (int i = 0; i < 20; i++){
             startPos -= b2Vec2(0.7f, 0.0f);
@@ -117,7 +117,7 @@ public:
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
             jointBody->GetFixtureList()->SetFriction(0.0f);
             pb = pWorld->createPortalBody(jointBody);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
             b2RevoluteJointDef revDef;
             revDef.Initialize(jointBody, lastBody, startPos + b2Vec2(0.35f, 0.0f));
             revDef.calculateAnchorHelpers();

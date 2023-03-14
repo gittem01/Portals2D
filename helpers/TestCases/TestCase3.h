@@ -53,8 +53,8 @@ public:
             PortalBody* pb1 = pWorld->createPortalBody(body1);
             PortalBody* pb2 = pWorld->createPortalBody(body2);
 
-            thinDrawer->addPortalBody(pb1);
-            thinDrawer->addPortalBody(pb2);
+            thinDrawer->debug_addPortalBody(pb1);
+            thinDrawer->debug_addPortalBody(pb2);
         }
     }
 };

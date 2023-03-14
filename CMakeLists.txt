@@ -15,7 +15,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/glm/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/box2d/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glfw/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/stb_image)
+include_directories(${CMAKE_SOURCE_DIR}/external/tiny_gltf)
 include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
 include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
 

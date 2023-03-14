@@ -25,7 +25,7 @@ public:
 
 	float baseX = 16.0f;
 
-	glm::vec2 zoomLimits = glm::vec2(0.25, 10);
+	glm::vec2 zoomLimits = glm::vec2(0.55, 20);
 
 	glm::mat4 pers;
 	glm::mat4 view;
@@ -33,7 +33,7 @@ public:
 	glm::mat4 camMatrix;
 
 	GLFWwindow* window;
-	float zoom = 0.6;
+	float zoom = 1.0;
 	float zoomInc = 0.15;
 	float dragSmth = 0.2f;
 	float neededZoom = 0;

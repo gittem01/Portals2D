@@ -43,21 +43,21 @@ public:
             float sizey = getRand() * 0.5f + 0.8f;
             b2Body* b = createBox(b2Vec2(-roomWidth - 1, 0.0f), b2Vec2(sizex, sizey), pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
         }
 
         for (int i = 0; i < numOfCircles; i++){
             float size = getRand() * 0.5f + 0.8f;
             b2Body* b = createCircle(b2Vec2(-roomWidth - 1, 0.0f), size, pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
         }
 
         b2Vec2 p = b2Vec2(roomWidth + 1.0f, +9.4f);
         b2Vec2 s = b2Vec2(roomWidth * 0.75f, 0.3f);
         b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
         PortalBody* pb = pWorld->createPortalBody(body4);
-        thinDrawer->addPortalBody(pb);
+        thinDrawer->debug_addPortalBody(pb);
         b2Vec2 vel(0.0f, 0.0f);
         body4->SetLinearVelocity(vel);
         body4->SetAngularVelocity(2.0f);

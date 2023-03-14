@@ -25,7 +25,7 @@ public:
         for (int i = 0; i < 300; i++){
             b2Body* body = createBox(b2Vec2(0, 0), b2Vec2(0.3f, 0.3f), pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(body);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
         }
     }
 };

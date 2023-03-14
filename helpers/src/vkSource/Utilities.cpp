@@ -1,9 +1,11 @@
+#define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <tiny_gltf.h>
 
 #include <ThinDrawer.h>
 #include <SwapChain.h>
 #include <vkInit.h>
-#include <stb_image.h>
 #include <IOHelper.h>
 
 bool ThinDrawer::isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
@@ -297,12 +299,12 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
     }
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-
+    
     VkDeviceSize imageSize = width * height * (uint64_t)4;
 
     texture->width = width;
     texture->height = height;
-    texture->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;;
+    texture->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
     VkMemoryAllocateInfo memAllocInfo = { };
     memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -377,7 +379,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
     vkFreeMemory(logicalDevice, stagingMemory, VK_NULL_HANDLE);
     vkDestroyBuffer(logicalDevice, stagingBuffer, VK_NULL_HANDLE);
 
-    generateMipmaps(texture->image, VK_FORMAT_R8G8B8A8_UNORM, width, height, texture->mipLevels);
+    generateMipmaps(texture->image, format, width, height, texture->mipLevels);
 
     texture->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -492,10 +494,8 @@ VkGraphicsPipelineCreateInfo* ThinDrawer::getPipelineInfoBase()
     pipelineDepthStencilCreateInfo->maxDepthBounds = 1.0f; // Optional
     pipelineDepthStencilCreateInfo->stencilTestEnable = VK_FALSE;
 
-    int numDynamicStates = 2;
+    int numDynamicStates = 0;
     VkDynamicState* dynamicStates = (VkDynamicState*)calloc(numDynamicStates, sizeof(VkDynamicState));
-    dynamicStates[0] = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE;
-    dynamicStates[1] = VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE;
 
     VkPipelineDynamicStateCreateInfo* dynamicStateCreateInfo = (VkPipelineDynamicStateCreateInfo*)calloc(1, sizeof(VkPipelineDynamicStateCreateInfo));
     dynamicStateCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -524,6 +524,8 @@ void ThinDrawer::freePipelineData(VkGraphicsPipelineCreateInfo* pipelineCreateIn
     free((void*)pipelineCreateInfo->pRasterizationState);
     free((void*)pipelineCreateInfo->pMultisampleState);
     free((void*)pipelineCreateInfo->pDepthStencilState);
+    free((void*)pipelineCreateInfo->pDynamicState->pDynamicStates);
+    free((void*)pipelineCreateInfo->pDynamicState);
     free((void*)pipelineCreateInfo);
 }
 
@@ -572,22 +574,22 @@ int ThinDrawer::pad_uniform_buffer_size(int originalSize)
 {
     // calculate required alignment based on minimum device offset alignment
     int minUboAlignment = vulkanInfo->deviceProperties.limits.minUniformBufferOffsetAlignment;
-    int alignedSize = originalSize;
+    int alignedSize_body = originalSize;
     if (minUboAlignment > 0)
     {
-        alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
+        alignedSize_body = (alignedSize_body + minUboAlignment - 1) & ~(minUboAlignment - 1);
     }
-    return alignedSize;
+    return alignedSize_body;
 }
 
 int ThinDrawer::pad_storage_buffer_size(int originalSize)
 {
     // calculate required alignment based on minimum device offset alignment
     int minStorageAlignment = vulkanInfo->deviceProperties.limits.minStorageBufferOffsetAlignment;
-    int alignedSize = originalSize;
+    int alignedSize_body = originalSize;
     if (minStorageAlignment > 0)
     {
-        alignedSize = (alignedSize + minStorageAlignment - 1) & ~(minStorageAlignment - 1);
+        alignedSize_body = (alignedSize_body + minStorageAlignment - 1) & ~(minStorageAlignment - 1);
     }
-    return alignedSize;
+    return alignedSize_body;
 }

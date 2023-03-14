@@ -5,6 +5,7 @@
 #include <ShaderHeaders/DebugLine.h>
 #include <ShaderHeaders/DebugPolygon.h>
 #include <ShaderHeaders/WhiteWall.h>
+#include <ShaderHeaders/Body.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +18,8 @@
 #include <vector>
 #include <set>
 #include <box2d/box2d.h>
+
+#include <IOHelper.h>
 
 #define PRINT_INFO_MESSAGES 1
 
@@ -92,6 +95,18 @@ typedef struct
 
 typedef struct
 {
+    glm::mat4 modelMatrix;
+    glm::mat4 rotationMatrix;
+}s_bodyUbo;
+
+typedef struct
+{
+    glm::vec4 portals[4];
+    glm::vec4 data; // numPortals, unused, unused, unused
+} s_fixUbo;
+
+typedef struct
+{
     glm::vec4 polyPoints[4];
     int numPolyPoints;
 } s_uboPolyData;
@@ -119,6 +134,24 @@ typedef struct
     glm::vec3 pos;
     glm::vec3 normal;
     glm::vec2 tc;
+
+    static void getVertexAttributeDescriptions(VkVertexInputAttributeDescription* descriptions)
+    {
+        descriptions[0].binding = 0;
+        descriptions[0].location = 0;
+        descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        descriptions[0].offset = offsetof(s_averageVertex, pos);
+        
+        descriptions[1].binding = 0;
+        descriptions[1].location = 1;
+        descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        descriptions[1].offset = offsetof(s_averageVertex, normal);
+
+        descriptions[2].binding = 0;
+        descriptions[2].location = 2;
+        descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        descriptions[2].offset = offsetof(s_averageVertex, tc);
+    }
 } s_averageVertex;
 
 class SwapChain;
@@ -133,14 +166,14 @@ typedef struct
     s_buffers* vertexBuffer;
     struct PBFixtureData* pbfData;
     b2Shape::Type renderType;
-} s_renderStruct;
+} s_debug_renderStruct;
 
 // per fixture
 typedef struct
 {
-    std::vector<s_renderStruct*> renderFixtures;
+    std::vector<s_debug_renderStruct*> renderFixtures;
     PortalBody* portalBody;
-} s_renderBody;
+} s_debug_renderBody;
 
 // per worldIndex
 typedef struct
@@ -156,6 +189,32 @@ typedef struct
     std::vector<b2Vec2> circlePositionings;
     std::vector<b2Vec2> circlePositioningsMirrored;
 
+    std::set<s_debug_renderBody*> renderBodies;
+} s_debug_renderGroup;
+
+// per fixture
+typedef struct
+{
+    std::vector<std::array<uint32_t, 2>> dynamicOffsets;
+    s_buffers* vertexBuffer;
+    s_buffers* indexBuffer;
+    struct PBFixtureData* pbfData;
+    VkDescriptorSet imageDescriptorSet;
+} s_renderStruct;
+
+// per fixture
+typedef struct
+{
+    std::vector<uint32_t> dynamicOffsets;
+    std::vector<s_renderStruct*> renderFixtures;
+    PortalBody* portalBody;
+} s_renderBody;
+
+// per worldIndex
+typedef struct
+{
+    glm::mat4 scaleMatrix;
+    std::vector<s_meshData*> meshDatas;
     std::set<s_renderBody*> renderBodies;
 } s_renderGroup;
 
@@ -177,7 +236,7 @@ public:
     uint32_t frameNumber = 0;
     uint32_t lastSwapChainImageIndex = 0;
     VkSampleCountFlagBits samples;
-    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_4_BIT;
 
     s_vulkanInfo* vulkanInfo;
     VkInstance instance;
@@ -200,6 +259,7 @@ public:
 
     // Diff var start
 
+    std::vector<s_debug_renderGroup*> debug_renderGroups;
     std::vector<s_renderGroup*> renderGroups;
 
     std::vector<s_uniformBuffer*> sharedOrthoUniform;
@@ -207,6 +267,7 @@ public:
     ShaderBase* debugLineShader;
     ShaderBase* debugPolygonShader;
     WhiteWall* whiteWallShader;
+    Body* bodyShader;
 
     // var end
 
@@ -228,7 +289,14 @@ public:
     void preparePipelines();
     void setupDescriptorPool();
     void setupDescriptorSet();
-    void buildCommandBuffers(int frameNumber);
+
+    void renderCommandBeginner(VkCommandBuffer& cmdBuff);
+    void debug_renderPortalBodies(VkCommandBuffer& cmdBuff);
+    void debug_renderPortals(VkCommandBuffer& cmdBuff);
+    void debug_renderEdges(VkCommandBuffer& cmdBuff);
+    void renderPortalBodies(VkCommandBuffer& cmdBuff);
+    void renderWalls(VkCommandBuffer& cmdBuff);
+    void buildCommandBuffers();
 
     void uniformFiller(int frameNum);
     void renderLoop();
@@ -255,11 +323,16 @@ public:
                      VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                      VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
-    void addPortalBody(PortalBody* portalBody);
+    // mesh names are hold per fixture
+    void addPortalBody(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames);
+    void debug_addPortalBody(PortalBody* portalBody);
     void releaseRenderResources();
 
     static bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
 
     static void portalBodyCreateCallback(PortalBody* pb, void* data);
     static void portalBodyDestroyCallback(PortalBody* pb, void* data);
+
+    static void debug_portalBodyCreateCallback(PortalBody* pb, void* data);
+    static void debug_portalBodyDestroyCallback(PortalBody* pb, void* data);
 };

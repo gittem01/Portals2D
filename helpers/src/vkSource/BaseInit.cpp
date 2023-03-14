@@ -3,7 +3,7 @@
 #include <IOHelper.h>
 #include <Camera.h>
 
-#define PREFER_DISCRETE 1
+#define PREFER_DISCRETE 0
 
 void ThinDrawer::createWindow()
 {
@@ -14,6 +14,7 @@ void ThinDrawer::createWindow()
 
 void ThinDrawer::initBase()
 {
+    IOHelper::thinDrawer = this;
     IOHelper::getAssetsFolder();
 
     vulkanInfo = new s_vulkanInfo;
@@ -58,7 +59,7 @@ void ThinDrawer::createInstance()
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.pApplicationInfo = &appInfo;
 
-    uint32_t glfwExtensionCount = 0;
+    uint32_t glfwExtensionCount;
     uint32_t extensionCount;
     const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -68,10 +69,10 @@ void ThinDrawer::createInstance()
     extensionCount = glfwExtensionCount + 2;
     const char** requiredExtensions = (const char**)malloc(sizeof(const char*) * extensionCount);
     requiredExtensions[glfwExtensionCount] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
-    requiredExtensions[glfwExtensionCount + 1] = "VK_KHR_get_physical_device_properties2";
+    requiredExtensions[glfwExtensionCount + 1] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
 #else
     extensionCount = glfwExtensionCount;
-    const char** requiredExtensions = (const char**)malloc(sizeof(char*) * glfwExtensionCount);
+    const char** requiredExtensions = (const char**)malloc(sizeof(char*) * extensionCount);
 #endif
 
     memcpy(requiredExtensions, glfwExtensions, sizeof(const char*) * glfwExtensionCount);
@@ -130,6 +131,12 @@ void ThinDrawer::selectPhysicalDevice()
                     physicalDevice = devices[i];
                     queues.graphicsQueueFamilyIndex = j;
                     gpuFound = true;
+
+                    if (!PREFER_DISCRETE)
+                    {
+                        i = deviceCount;
+                        break;
+                    }
 
                     if (vulkanInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && PREFER_DISCRETE)
                     {

@@ -513,7 +513,7 @@ void PortalBody::postHandle()
         {
             if (bcs->connection->portal1->getPointSide(centerOfMass) == bcs->connection->side1)
             {
-                body->ApplyForceToCenter(body->GetMass() * pWorld->GetGravity(), true);
+                body->ApplyForceToCenter(worldIndex->pbIndices.size() * body->GetMass() * pWorld->GetGravity(), true);
                 break;
             }
         }

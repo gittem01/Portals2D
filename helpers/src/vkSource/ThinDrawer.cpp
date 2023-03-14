@@ -8,6 +8,7 @@
 #include <Portal.h>
 #include <PortalBody.h>
 #include <GameBase.h>
+#include <IOHelper.h>
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {
@@ -26,6 +27,7 @@ void ThinDrawer::surfaceRecreate()
     vkDestroyPipeline(logicalDevice, debugLineShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, debugPolygonShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, whiteWallShader->pipeline, VK_NULL_HANDLE);
+    vkDestroyPipeline(logicalDevice, bodyShader->pipeline, VK_NULL_HANDLE);
     vkDestroyRenderPass(logicalDevice, renderPass, VK_NULL_HANDLE);
     swapChain->destroy();
     
@@ -48,6 +50,7 @@ void ThinDrawer::initExtra()
     debugLineShader = new DebugLine(this);
     debugPolygonShader = new DebugPolygon(this);
     whiteWallShader = new WhiteWall(this);
+    bodyShader = new Body(this);
 
     prepareVertices();
     prepareUniformBuffers();
@@ -65,7 +68,7 @@ void ThinDrawer::uniformFiller(int frameNum)
     CHECK_RESULT_VK(vkMapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory, 0, sizeof(s_sharedUniformData), 0, (void**)&sharedData));
     sharedData->orthoMatrix = wh->cam->camMatrix;
     sharedData->cameraPos = glm::vec4(glm::vec3(wh->cam->pos), 1.0f);
-    sharedData->data.x = 0.5f;
+    sharedData->data.x = sqrt(wh->cam->zoom * 0.25);
     vkUnmapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory);
 }
 
@@ -87,7 +90,7 @@ void ThinDrawer::renderLoop()
     uniformFiller(lastSwapChainImageIndex);
 
     vkResetCommandBuffer(frames[lastSwapChainImageIndex].commandBuffer, 0);
-    buildCommandBuffers(lastSwapChainImageIndex);
+    buildCommandBuffers();
 
     VkSubmitInfo submit = { };
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -131,6 +134,7 @@ void ThinDrawer::prepareVertices()
     debugLineShader->prepareVertexData();
     debugPolygonShader->prepareVertexData();
     whiteWallShader->prepareVertexData();
+    bodyShader->prepareVertexData();
 }
 
 void ThinDrawer::prepareUniformBuffers()
@@ -147,6 +151,7 @@ void ThinDrawer::prepareUniformBuffers()
     debugLineShader->prepareUniforms();
     debugPolygonShader->prepareUniforms();
     whiteWallShader->prepareUniforms();
+    bodyShader->prepareUniforms();
 }
 
 void ThinDrawer::setupDescriptorSetLayout()
@@ -155,6 +160,7 @@ void ThinDrawer::setupDescriptorSetLayout()
     debugLineShader->setupDescriptorSetLayout();
     debugPolygonShader->setupDescriptorSetLayout();
     whiteWallShader->setupDescriptorSetLayout();
+    bodyShader->setupDescriptorSetLayout();
 }
 
 void ThinDrawer::preparePipelines()
@@ -163,6 +169,7 @@ void ThinDrawer::preparePipelines()
     debugLineShader->preparePipeline();
     debugPolygonShader->preparePipeline();
     whiteWallShader->preparePipeline();
+    bodyShader->preparePipeline();
 }
 
 void ThinDrawer::setupDescriptorPool()
@@ -191,9 +198,19 @@ void ThinDrawer::setupDescriptorSet()
     debugLineShader->setupDescriptorSet();
     debugPolygonShader->setupDescriptorSet();
     whiteWallShader->setupDescriptorSet();
+    bodyShader->setupDescriptorSet();
+
+    IOHelper::loadTexture("defaultTex.png");
+    IOHelper::loadTexture("sphere.png");
+
+    IOHelper::loadTexture("edge1.png");
+    IOHelper::loadTexture("edge2.png");
+    IOHelper::loadTexture("edge3.png");
+    IOHelper::loadTexture("edge4.png");
+    IOHelper::loadTexture("body.png");
 }
 
-void ThinDrawer::buildCommandBuffers(int frameNumber)
+void ThinDrawer::renderCommandBeginner(VkCommandBuffer& cmdBuff)
 {
     VkCommandBufferBeginInfo cmdBufInfo = vkinit::commandBufferBeginInfo();
 
@@ -208,8 +225,7 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
     VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, clearValues);
     renderPassBeginInfo.clearValueCount = std::size(clearValues);
 
-    renderPassBeginInfo.framebuffer = swapChain->frameBuffers[frameNumber];
-    VkCommandBuffer cmdBuff = frames[frameNumber].commandBuffer;
+    renderPassBeginInfo.framebuffer = swapChain->frameBuffers[lastSwapChainImageIndex];
 
     CHECK_RESULT_VK(vkBeginCommandBuffer(cmdBuff, &cmdBufInfo));
 
@@ -221,43 +237,24 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
     viewport.minDepth = (float)0.0f;
     viewport.maxDepth = (float)1.0f;
     vkCmdSetViewport(cmdBuff, 0, 1, &viewport);
+}
 
-    VkDeviceSize offsets = 0;
-
-    vkCmdSetDepthTestEnable(cmdBuff, VK_TRUE);
-    vkCmdSetDepthWriteEnable(cmdBuff, VK_TRUE);
-
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, whiteWallShader->pipeline);
-
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &whiteWallShader->buffers[0]->buffer, &offsets);
+void ThinDrawer::debug_renderPortalBodies(VkCommandBuffer& cmdBuff)
+{
+    const VkDeviceSize offsets = 0;
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        whiteWallShader->pipelineLayout, 0, 1, &whiteWallShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
+        debugCircleShader->pipelineLayout, 0, 1, &debugCircleShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        whiteWallShader->pipelineLayout, 1, 1, &whiteWallShader->descriptorSets[1][frameNumber], 0, 0);
+        debugLineShader->pipelineLayout, 0, 1, &debugLineShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        whiteWallShader->pipelineLayout, 2, 1, &whiteWallShader->textureData[0]->set, 0, VK_NULL_HANDLE);
+        debugPolygonShader->pipelineLayout, 0, 1, &debugPolygonShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, whiteWallShader->buffers[0]->count, whiteWallShader->wallCount, 0, 0);
-
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        debugCircleShader->pipelineLayout, 0, 1, &debugCircleShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        debugLineShader->pipelineLayout, 0, 1, &debugLineShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        debugPolygonShader->pipelineLayout, 0, 1, &debugPolygonShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
-
-    vkCmdSetDepthTestEnable(cmdBuff, VK_FALSE);
-    vkCmdSetDepthWriteEnable(cmdBuff, VK_FALSE);
-    
-    for (s_renderGroup* rg : renderGroups)
+    for (s_debug_renderGroup* rg : debug_renderGroups)
     {
-        for (s_renderBody* renderBody : rg->renderBodies)
+        for (s_debug_renderBody* renderBody : rg->renderBodies)
         {
             b2Vec2 bodyPos = renderBody->portalBody->body->GetPosition();
             float bodyAngle = renderBody->portalBody->body->GetAngle() + renderBody->portalBody->offsetAngle;
@@ -265,11 +262,11 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
             glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(bodyPos.x, bodyPos.y, 0.0f));
             modelMatrix = glm::rotate(modelMatrix, bodyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
 
-            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
+            for (s_debug_renderStruct* renderStruct : renderBody->renderFixtures)
             {
                 s_uboAll* allData;
-                vkMapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory,
-                    renderStruct->dynamicOffsets[frameNumber][0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
+                vkMapMemory(logicalDevice, ShaderBase::commonStorageBuffers[lastSwapChainImageIndex][0]->memory,
+                    renderStruct->dynamicOffsets[lastSwapChainImageIndex][0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->modelMatrix = modelMatrix;
 
                 allData->data.x = renderStruct->pbfData->pCollisions.size();
@@ -285,14 +282,14 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                         break;
                     }
                     allData->portals[i] = glm::vec4(pc->portal->points[1 ^ pc->side].x, pc->portal->points[1 ^ pc->side].y,
-                                                    pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+                        pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
                 }
-                  
+
                 if (fullOut)
                 {
                     if (!drawReleases)
                     {
-                        vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory);
+                        vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[lastSwapChainImageIndex][0]->memory);
                         continue;
                     }
                 }
@@ -301,153 +298,263 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
                     allData->extraData.z = drawReleases ? -1.0f : 0.0f;
                 }
 
-                vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[frameNumber][0]->memory);
+                vkUnmapMemory(logicalDevice, ShaderBase::commonStorageBuffers[lastSwapChainImageIndex][0]->memory);
 
                 switch (renderStruct->renderType)
                 {
-                    case b2Shape::e_circle:
-                    {
-                        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugCircleShader->pipeline);
+                case b2Shape::e_circle:
+                {
+                    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugCircleShader->pipeline);
 
-                        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            debugCircleShader->pipelineLayout, 1, 1, &debugCircleShader->descriptorSets[1][frameNumber],
-                            renderStruct->dynamicOffsets[frameNumber].size(), renderStruct->dynamicOffsets[frameNumber].data());
+                    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        debugCircleShader->pipelineLayout, 1, 1, &debugCircleShader->descriptorSets[1][lastSwapChainImageIndex],
+                        renderStruct->dynamicOffsets[lastSwapChainImageIndex].size(), renderStruct->dynamicOffsets[lastSwapChainImageIndex].data());
 
-                        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderStruct->vertexBuffer->buffer, &offsets);
-                        vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
-                    }
-                    break;
+                    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderStruct->vertexBuffer->buffer, &offsets);
+                    vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
+                }
+                break;
 
-                    case b2Shape::e_polygon:
-                    {
-                        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPolygonShader->pipeline);
+                case b2Shape::e_polygon:
+                {
+                    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPolygonShader->pipeline);
 
-                        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderStruct->vertexBuffer->buffer, &offsets);
+                    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderStruct->vertexBuffer->buffer, &offsets);
 
-                        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            debugPolygonShader->pipelineLayout, 1, 1, &debugPolygonShader->descriptorSets[1][frameNumber],
-                            renderStruct->dynamicOffsets[frameNumber].size(), renderStruct->dynamicOffsets[frameNumber].data());
+                    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        debugPolygonShader->pipelineLayout, 1, 1, &debugPolygonShader->descriptorSets[1][lastSwapChainImageIndex],
+                        renderStruct->dynamicOffsets[lastSwapChainImageIndex].size(), renderStruct->dynamicOffsets[lastSwapChainImageIndex].data());
 
-                        vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
-                    }
-                    break;
+                    vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
+                }
+                break;
                 default:
                     break;
                 }
             }
         }
     }
-    
-    if (pWorld)
+}
+
+void ThinDrawer::debug_renderPortals(VkCommandBuffer& cmdBuff)
+{
+    const VkDeviceSize offsets = 0;
+ 
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        debugLineShader->pipelineLayout, 0, 1, &debugLineShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugLineShader->pipeline);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0]->buffer, &offsets);
+
+    s_pushConstantLine pushData;
+    pushData.colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    pushData.data.z = 0.5f;
+    pushData.data.y = 0.03f;
+    pushData.colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    for (Portal* p : pWorld->portals)
     {
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            debugLineShader->pipelineLayout, 0, 1, &debugLineShader->descriptorSets[0][frameNumber], 0, VK_NULL_HANDLE);
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugLineShader->pipeline);
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0]->buffer, &offsets);
+        pushData.positions = glm::vec4(p->points[0].x, p->points[0].y, p->points[1].x, p->points[1].y);
 
-        s_pushConstantLine pushData;
-        //pushData.positions = glm::vec4(1.0f, 1.0f, -1.0f, -1.0f);
-        pushData.colour = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-        pushData.data.y = 0.02f;
-        pushData.data.z = 0.5f;
+        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            0, sizeof(s_pushConstantLine), (void*)&pushData);
+        vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
+    }
+}
 
-        for (b2Body* body = pWorld->GetBodyList(); body && false; body = body->GetNext())
+void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
+{
+    const VkDeviceSize offsets = 0;
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        debugLineShader->pipelineLayout, 0, 1, &debugLineShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugLineShader->pipeline);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0]->buffer, &offsets);
+
+    s_pushConstantLine pushData;
+    pushData.data.y = 0.02f;
+    pushData.data.z = 0.5f;
+
+    for (b2Body* body = pWorld->GetBodyList(); body; body = body->GetNext())
+    {
+        for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
         {
-            if (body->GetType() == b2_staticBody || 1)
+            if (fix->GetType() == b2Shape::e_edge)
             {
-                for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
+                b2EdgeShape* edgeShape = (b2EdgeShape*)fix->GetShape();
+
+                glm::vec4 colorToRender = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+                glm::vec4 gelColor = colorToRender;
+                fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+                if (fixData)
                 {
-                    if (fix->GetType() == b2Shape::e_edge)
+                    g_PhysicsData* pData = (g_PhysicsData*)fixData->extraData;
+                    if (pData && pData->type == EDGE)
                     {
-                        b2EdgeShape* edgeShape = (b2EdgeShape*)fix->GetShape();
-
-                        glm::vec4 colorToRender = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-                        glm::vec4 gelColor = colorToRender;
-                        fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
-                        if (fixData)
+                        g_EdgeData* eData = (g_EdgeData*)pData->data;
+                        switch (eData->wall)
                         {
-                            g_PhysicsData* pData = (g_PhysicsData*)fixData->extraData;
-                            if (pData && pData->type == EDGE)
-                            {
-                                g_EdgeData* eData = (g_EdgeData*)pData->data;
-                                switch (eData->wall)
-                                {
-                                case PORTALLABLE:
-                                    colorToRender = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-                                    break;
-                                case NOT_PORTALLABLE:
-                                    colorToRender = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-                                    break;
-                                default:
-                                    break;
-                                }
-
-                                switch (eData->gel)
-                                {
-                                case NONE:
-                                    gelColor = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
-                                    break;
-                                case BLUE:
-                                    gelColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-                                    break;
-                                case ORANGE:
-                                    gelColor = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                                    break;
-                                case WHITE:
-                                    gelColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-                                    break;
-                                default:
-                                    break;
-                                }
-                            }
+                        case PORTALLABLE:
+                            colorToRender = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+                            break;
+                        case NOT_PORTALLABLE:
+                            colorToRender = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                            break;
+                        default:
+                            break;
                         }
 
-                        b2Vec2 v1 = body->GetWorldPoint(edgeShape->m_vertex1);
-                        b2Vec2 v2 = body->GetWorldPoint(edgeShape->m_vertex2);
-
-                        b2Vec2 dir = PortalWorld::rotateVec(v2 - v1, b2_pi * 0.25f);
-                        dir.Normalize();
-                        dir *= 0.1f;
-
-                        pushData.colour = gelColor;
-                        pushData.positions = glm::vec4(v1.x, v1.y, v2.x, v2.y);
-                        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                            0, sizeof(s_pushConstantLine), (void*)&pushData);
-                        vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
-
-                        pushData.colour = colorToRender;
-                        pushData.positions = glm::vec4(v1.x, v1.y, v1.x + dir.x, v1.y + dir.y);
-                        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                            0, sizeof(s_pushConstantLine), (void*)&pushData);
-                        vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
-
-                        dir = PortalWorld::rotateVec(dir, b2_pi * 0.5f);
-                        pushData.positions = glm::vec4(v2.x, v2.y, v2.x + dir.x, v2.y + dir.y);
-                        
-                        vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                            0, sizeof(s_pushConstantLine), (void*)&pushData);
-                        vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
+                        switch (eData->gel)
+                        {
+                        case NONE:
+                            gelColor = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+                            break;
+                        case BLUE:
+                            gelColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+                            break;
+                        case ORANGE:
+                            gelColor = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                            break;
+                        case WHITE:
+                            gelColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+                            break;
+                        default:
+                            break;
+                        }
                     }
                 }
+
+                b2Vec2 v1 = body->GetWorldPoint(edgeShape->m_vertex1);
+                b2Vec2 v2 = body->GetWorldPoint(edgeShape->m_vertex2);
+
+                b2Vec2 dir = PortalWorld::rotateVec(v2 - v1, b2_pi * 0.25f);
+                dir.Normalize();
+                dir *= 0.1f;
+
+                pushData.colour = gelColor;
+                pushData.positions = glm::vec4(v1.x, v1.y, v2.x, v2.y);
+                vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, sizeof(s_pushConstantLine), (void*)&pushData);
+                vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
+
+                pushData.colour = colorToRender;
+                pushData.positions = glm::vec4(v1.x, v1.y, v1.x + dir.x, v1.y + dir.y);
+                vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, sizeof(s_pushConstantLine), (void*)&pushData);
+                vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
+
+                dir = PortalWorld::rotateVec(dir, b2_pi * 0.5f);
+                pushData.positions = glm::vec4(v2.x, v2.y, v2.x + dir.x, v2.y + dir.y);
+
+                vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, sizeof(s_pushConstantLine), (void*)&pushData);
+                vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
             }
         }
+    }
+}
 
-        pushData.data.y = 0.03f;
-        pushData.colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-        for (Portal* p : pWorld->portals)
+void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
+{
+    const VkDeviceSize offsets = 0;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, whiteWallShader->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &whiteWallShader->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        whiteWallShader->pipelineLayout, 0, 1, &whiteWallShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        whiteWallShader->pipelineLayout, 1, 1, &whiteWallShader->descriptorSets[1][lastSwapChainImageIndex], 0, 0);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        whiteWallShader->pipelineLayout, 2, 1, &whiteWallShader->textureData[0]->set, 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, whiteWallShader->buffers[0]->count, whiteWallShader->wallCount, 0, 0);
+}
+
+void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
+{
+    const VkDeviceSize offsets = 0;
+
+    uint32_t dynamicOffset = 0;
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, bodyShader->pipeline);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        bodyShader->pipelineLayout, 0, 1, &bodyShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
+
+    for (s_renderGroup* renderGroup : renderGroups)
+    {
+        for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
-            pushData.positions = glm::vec4(p->points[0].x, p->points[0].y, p->points[1].x, p->points[1].y);
+            PortalBody* pb = renderBody->portalBody;
+            s_bodyUbo* bodyUbo;
+            
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader->uniformBuffers[lastSwapChainImageIndex][0]->memory,
+                renderBody->dynamicOffsets[lastSwapChainImageIndex], bodyShader->alignedSize_body, 0, (void**)&bodyUbo));
 
-            vkCmdPushConstants(cmdBuff, debugLineShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                0, sizeof(s_pushConstantLine), (void*)&pushData);
-            vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, 1, 0, 0);
+            bodyUbo->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(pb->body->GetPosition().x, pb->body->GetPosition().y, 0.0f));
+            bodyUbo->rotationMatrix = glm::rotate(glm::mat4(1.0f), pb->body->GetAngle() + pb->offsetAngle, glm::vec3(0.0f, 0.0f, 1.0));
+            bodyUbo->modelMatrix = bodyUbo->modelMatrix * bodyUbo->rotationMatrix * renderGroup->scaleMatrix;
+            vkUnmapMemory(logicalDevice, bodyShader->uniformBuffers[lastSwapChainImageIndex][0]->memory);
+
+            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
+            {
+                s_fixUbo* fixUbo;
+                CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader->uniformBuffers[lastSwapChainImageIndex][1]->memory,
+                    renderStruct->dynamicOffsets[lastSwapChainImageIndex][1], bodyShader->alignedSize_fixture, 0, (void**)&fixUbo));
+
+                fixUbo->data.x = (float)renderStruct->pbfData->pCollisions.size();
+                int i = 0;
+                for (portalCollision* pc : renderStruct->pbfData->pCollisions)
+                {
+                    fixUbo->portals[i] = glm::vec4( pc->portal->points[pc->side ^ 1].x, pc->portal->points[pc->side ^ 1].y,
+                                                    pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+                }
+
+                vkUnmapMemory(logicalDevice, bodyShader->uniformBuffers[lastSwapChainImageIndex][1]->memory);
+
+                vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    bodyShader->pipelineLayout, 1, 1, &bodyShader->descriptorSets[1][lastSwapChainImageIndex],
+                    std::size(renderStruct->dynamicOffsets[lastSwapChainImageIndex]), renderStruct->dynamicOffsets[lastSwapChainImageIndex].data());
+
+
+                vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    bodyShader->pipelineLayout, 2, 1, &renderStruct->imageDescriptorSet, 0, VK_NULL_HANDLE);
+
+
+                VkIndexType indexType = VK_INDEX_TYPE_UINT16;
+                vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderStruct->vertexBuffer->buffer, &offsets);
+                vkCmdBindIndexBuffer(cmdBuff, renderStruct->indexBuffer->buffer, 0, indexType);
+                vkCmdDrawIndexed(cmdBuff, renderStruct->indexBuffer->count, 1, 0, 0, 0);
+            }
         }
     }
+}
 
-    // imgui
+void ThinDrawer::buildCommandBuffers()
+{
+    VkCommandBuffer cmdBuff = frames[lastSwapChainImageIndex].commandBuffer;
+
+    renderCommandBeginner(cmdBuff);
+
+    VkDeviceSize offsets = 0;
+
+    renderWalls(cmdBuff);
+
+    renderPortalBodies(cmdBuff);
+
+    //debug_renderPortalBodies(cmdBuff);
+
+    if (pWorld)
+    {
+        debug_renderEdges(cmdBuff);
+
+        debug_renderPortals(cmdBuff);
+    }
+
     if (drawData)
     {
         ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
@@ -457,10 +564,185 @@ void ThinDrawer::buildCommandBuffers(int frameNumber)
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
 }
 
-void ThinDrawer::addPortalBody(PortalBody* portalBody)
+void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames)
 {
     s_renderGroup* renderGroup = new s_renderGroup;
     s_renderBody* renderBody = new s_renderBody;
+    renderGroup->renderBodies.insert(renderBody);
+    renderBody->portalBody = portalBody;
+
+    renderBody->dynamicOffsets.resize(swapChain->imageCount);
+    for (int i = 0; i < swapChain->imageCount; i++)
+    {
+        renderBody->dynamicOffsets[i] = bodyShader->availableOffsets_body[bodyShader->lastAllocationPos_body++];
+    }
+
+    renderGroups.push_back(renderGroup);
+
+    s_meshData* meshData;
+
+    int i;
+    for (i = 0; i < portalBody->fixtures.size(); i++)
+    {
+        fixtureData* fixData = (fixtureData*)portalBody->fixtures[i]->GetUserData().pointer;
+
+        s_renderStruct* renderStruct = new s_renderStruct;
+        renderBody->renderFixtures.push_back(renderStruct);
+        
+        renderStruct->dynamicOffsets.resize(swapChain->imageCount);
+        for (int j = 0; j < swapChain->imageCount; j++)
+        {
+            renderStruct->dynamicOffsets[j][0] = renderBody->dynamicOffsets[j];
+            renderStruct->dynamicOffsets[j][1] = bodyShader->availableOffsets_fixture[bodyShader->lastAllocationPos_fixture++];
+        }
+
+        int meshIndex = std::min(i, (int)meshNames.size() - 1);
+
+        if (meshNames.size() == 0) meshData = IOHelper::assetMap["default.default"];
+        else meshData = IOHelper::assetMap[meshNames[meshIndex].first];
+        if (!meshData) meshData = IOHelper::assetMap["default.default"];
+
+        if (meshNames.size() == 0 || IOHelper::textureMap.find(meshNames[meshIndex].second) == IOHelper::textureMap.end())
+        {
+            renderStruct->imageDescriptorSet = IOHelper::textureMap["defaultTex.png"]->set;
+        }
+        else
+        {
+            renderStruct->imageDescriptorSet = IOHelper::textureMap[meshNames[meshIndex].second]->set;
+        }
+
+        renderGroup->meshDatas.push_back(meshData);
+
+        renderStruct->vertexBuffer = meshData->vertexBuffers[0];
+        renderStruct->indexBuffer = meshData->indexBuffers[0];
+        renderStruct->pbfData = (PBFixtureData*)fixData->data;
+    }
+
+    if (meshNames.size() == 0) meshData = IOHelper::assetMap["default.default"];
+    else meshData = IOHelper::assetMap[meshNames[0].first];
+    if (!meshData) meshData = IOHelper::assetMap["default.default"];
+
+    b2Fixture* firstFix = portalBody->fixtures[0];
+    glm::vec2 xLimits;
+    glm::vec2 yLimits;
+
+    if (firstFix->GetType() == b2Shape::e_polygon)
+    {
+        b2PolygonShape* polyShape = (b2PolygonShape*)firstFix->GetShape();
+
+        xLimits = glm::vec2(polyShape->m_vertices[0].x, polyShape->m_vertices[0].x);
+        yLimits = glm::vec2(polyShape->m_vertices[0].y, polyShape->m_vertices[0].y);
+
+        for (int i = 1; i < polyShape->m_count; i++)
+        {
+            b2Vec2 vertex = polyShape->m_vertices[i];
+            if (vertex.x < xLimits[0]) xLimits[0] = vertex.x;
+            else if (vertex.x > xLimits[1]) xLimits[1] = vertex.x;
+
+            if (vertex.y < yLimits[0]) yLimits[0] = vertex.y;
+            else if (vertex.y > yLimits[1]) yLimits[1] = vertex.y;
+        }
+    }
+    else if (firstFix->GetType() == b2Shape::e_circle)
+    {
+        b2CircleShape* circleShape = (b2CircleShape*)firstFix->GetShape();
+
+        b2Vec2 circlePos = circleShape->m_p;
+
+        xLimits = glm::vec2(circlePos.x - circleShape->m_radius, circlePos.x + circleShape->m_radius);
+        yLimits = glm::vec2(circlePos.y - circleShape->m_radius, circlePos.y + circleShape->m_radius);
+    }
+
+    float xScale = (xLimits[1] - xLimits[0]) / (meshData->minMaxValues[1][0] - meshData->minMaxValues[0][0]);
+    float yScale = (yLimits[1] - yLimits[0]) / (meshData->minMaxValues[1][1] - meshData->minMaxValues[0][1]);
+
+    renderGroup->scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(xScale, yScale, xScale));
+
+    portalBody->worldIndex->createCallbacks.push_back(std::make_pair(portalBodyCreateCallback, (void*)renderGroup));
+    portalBody->worldIndex->destroyCallbacks.push_back(std::make_pair(portalBodyDestroyCallback, (void*)renderGroup));
+}
+
+void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
+{
+    extern ThinDrawer* thinDrawer;
+    s_renderGroup* renderGroup = (s_renderGroup*)data;
+
+    s_renderBody* firstRenderBody = *renderGroup->renderBodies.begin();
+
+    s_renderBody* renderBody = new s_renderBody;
+    renderGroup->renderBodies.insert(renderBody);
+
+    renderBody->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
+    for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+    {
+        renderBody->dynamicOffsets[i] = thinDrawer->bodyShader->availableOffsets_body[thinDrawer->bodyShader->lastAllocationPos_body++];
+    }
+    renderBody->portalBody = portalBody;
+    renderBody->renderFixtures.resize(portalBody->numFixtures);
+
+    int bufferIndex = portalBody->isMirrored ? 1 : 0;
+
+    for (int i = 0; i < portalBody->numFixtures; i++)
+    {
+        fixtureData* fixData = (fixtureData*)portalBody->fixtures[i]->GetUserData().pointer;
+
+        s_renderStruct* renderStruct = new s_renderStruct;
+        renderBody->renderFixtures[i] = renderStruct;
+
+        renderStruct->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
+        for (int j = 0; j < thinDrawer->swapChain->imageCount; j++)
+        {
+            renderStruct->dynamicOffsets[j][0] = renderBody->dynamicOffsets[j];
+            renderStruct->dynamicOffsets[j][1] = thinDrawer->bodyShader->availableOffsets_fixture[thinDrawer->bodyShader->lastAllocationPos_fixture++];
+        }
+
+        renderStruct->imageDescriptorSet = firstRenderBody->renderFixtures[i]->imageDescriptorSet;
+
+        renderStruct->pbfData = (PBFixtureData*)fixData->data;
+
+        renderStruct->vertexBuffer = renderGroup->meshDatas[i]->vertexBuffers[bufferIndex];
+        renderStruct->indexBuffer = renderGroup->meshDatas[i]->indexBuffers[bufferIndex];
+    }
+}
+
+void ThinDrawer::portalBodyDestroyCallback(PortalBody* portalBody, void* data)
+{
+    extern ThinDrawer* thinDrawer;
+    s_renderGroup* renderGroup = (s_renderGroup*)data;
+    
+    for (auto iter = renderGroup->renderBodies.begin(); iter != renderGroup->renderBodies.end(); iter++)
+    {
+        s_renderBody* renderBody = *iter;
+        if (renderBody->portalBody == portalBody)
+        {
+            for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+            {
+                thinDrawer->bodyShader->lastAllocationPos_body--;
+                thinDrawer->bodyShader->availableOffsets_body[thinDrawer->bodyShader->lastAllocationPos_body] = renderBody->dynamicOffsets[i];
+            }
+
+            for (s_renderStruct* rs : renderBody->renderFixtures)
+            {
+                for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                {
+                    thinDrawer->bodyShader->lastAllocationPos_fixture--;
+                    thinDrawer->bodyShader->availableOffsets_fixture[thinDrawer->bodyShader->lastAllocationPos_fixture] = rs->dynamicOffsets[i][1];
+                }
+                
+                delete rs;
+            }
+
+            renderGroup->renderBodies.erase(iter);
+            delete renderBody;
+            break;
+        }
+    }
+}
+
+void ThinDrawer::debug_addPortalBody(PortalBody* portalBody)
+{
+    s_debug_renderGroup* renderGroup = new s_debug_renderGroup;
+    s_debug_renderBody* renderBody = new s_debug_renderBody;
     renderBody->portalBody = portalBody;
 
     int numFixtures = portalBody->fixtures.size();
@@ -476,7 +758,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
     {
         b2Fixture* fix = portalBody->fixtures.at(i);
 
-        s_renderStruct* renderStruct = new s_renderStruct;
+        s_debug_renderStruct* renderStruct = new s_debug_renderStruct;
         renderBody->renderFixtures.push_back(renderStruct);
         renderStruct->renderType = fix->GetType();
         fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
@@ -619,25 +901,25 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody)
     }
 
     renderGroup->renderBodies.insert(renderBody);
-    renderGroups.push_back(renderGroup);
+    debug_renderGroups.push_back(renderGroup);
 
-    portalBody->worldIndex->createCallbacks.push_back(std::make_pair(portalBodyCreateCallback, (void*)renderGroup));
-    portalBody->worldIndex->destroyCallbacks.push_back(std::make_pair(portalBodyDestroyCallback, (void*)renderGroup));
+    portalBody->worldIndex->createCallbacks.push_back(std::make_pair(debug_portalBodyCreateCallback, (void*)renderGroup));
+    portalBody->worldIndex->destroyCallbacks.push_back(std::make_pair(debug_portalBodyDestroyCallback, (void*)renderGroup));
 }
 
-void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
+void ThinDrawer::debug_portalBodyCreateCallback(PortalBody* portalBody, void* data)
 {
     extern ThinDrawer* thinDrawer;
-    s_renderGroup* renderGroup = (s_renderGroup*)data;
+    s_debug_renderGroup* renderGroup = (s_debug_renderGroup*)data;
     
-    s_renderBody* renderBody = new s_renderBody;
+    s_debug_renderBody* renderBody = new s_debug_renderBody;
     renderBody->portalBody = portalBody;
     renderGroup->renderBodies.insert(renderBody);
     for (int i = 0; i < portalBody->fixtures.size(); i++)
     {
         b2Fixture* fix = portalBody->fixtures.at(i);
 
-        s_renderStruct* renderStruct = new s_renderStruct;
+        s_debug_renderStruct* renderStruct = new s_debug_renderStruct;
         renderBody->renderFixtures.push_back(renderStruct);
         renderStruct->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
         renderStruct->renderType = fix->GetType();
@@ -705,19 +987,19 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
     }
 }
 
-void ThinDrawer::portalBodyDestroyCallback(PortalBody* portalBody, void* data)
+void ThinDrawer::debug_portalBodyDestroyCallback(PortalBody* portalBody, void* data)
 {
     extern ThinDrawer* thinDrawer;
-    s_renderGroup* renderGroup = (s_renderGroup*)data;
+    s_debug_renderGroup* renderGroup = (s_debug_renderGroup*)data;
 
     for (auto iter = renderGroup->renderBodies.begin(); iter != renderGroup->renderBodies.end(); iter++)
     {
-        s_renderBody* renderBody = *iter;
+        s_debug_renderBody* renderBody = *iter;
         if ((*iter)->portalBody == portalBody)
         {
             renderGroup->renderBodies.erase(iter);
 
-            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
+            for (s_debug_renderStruct* renderStruct : renderBody->renderFixtures)
             {
                 for (int j = 0; j < thinDrawer->swapChain->imageCount; j++)
                 {
@@ -738,11 +1020,11 @@ void ThinDrawer::releaseRenderResources()
 {
     vkDeviceWaitIdle(logicalDevice);
 
-    for (s_renderGroup* renderGroup : renderGroups)
+    for (s_debug_renderGroup* renderGroup : debug_renderGroups)
     {
-        for (s_renderBody* renderBody : renderGroup->renderBodies)
+        for (s_debug_renderBody* renderBody : renderGroup->renderBodies)
         {
-            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
+            for (s_debug_renderStruct* renderStruct : renderBody->renderFixtures)
             {
                 for (int j = 0; j < swapChain->imageCount; j++)
                 {
@@ -775,6 +1057,31 @@ void ThinDrawer::releaseRenderResources()
             }
         }
 
+        delete renderGroup;
+    }
+
+    debug_renderGroups.clear();
+
+    for (s_renderGroup* renderGroup : renderGroups)
+    {
+        for (s_renderBody* renderBody : renderGroup->renderBodies)
+        {
+            for (int j = 0; j < swapChain->imageCount; j++)
+            {
+                bodyShader->lastAllocationPos_body--;
+                bodyShader->availableOffsets_body[bodyShader->lastAllocationPos_body] = renderBody->dynamicOffsets[j];
+            }
+            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
+            {
+                for (int j = 0; j < swapChain->imageCount; j++)
+                {
+                    bodyShader->lastAllocationPos_fixture--;
+                    bodyShader->availableOffsets_fixture[bodyShader->lastAllocationPos_fixture] = renderStruct->dynamicOffsets[j][1];
+                }
+                delete renderStruct;
+            }
+            delete renderBody;
+        }
         delete renderGroup;
     }
 

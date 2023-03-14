@@ -37,7 +37,7 @@ void Camera::updateOrtho()
 
 	updateVectors();
 
-	pers = glm::perspective(glm::radians(45.0f / zoom), windowHandler->windowSizes.x / windowHandler->windowSizes.y, 0.1f, 500.0f);
+	pers = glm::perspective(glm::radians(30.0f / zoom), windowHandler->windowSizes.x / windowHandler->windowSizes.y, 0.1f, 500.0f);
 	view = glm::lookAt(pos, pos + lookDir, upDir);
 	pers[1][1] *= -1;
 
@@ -46,7 +46,7 @@ void Camera::updateOrtho()
 
 void Camera::changeZoom(float inc)
 {
-	glm::vec2 mp = this->getCameraCoords(this->zoomPoint);
+	/*glm::vec2 mp = this->getCameraCoords(this->zoomPoint);
 
 	float zoomAfter = this->limitZoom(zoom + inc);
 
@@ -60,7 +60,7 @@ void Camera::changeZoom(float inc)
 	float yPerctAfter = (mp.y - this->pos.y) / (ySidesAfter.y - ySidesAfter.x);
 
 	this->pos.x += (xPerctAfter - xPerctBefore) * (xSidesAfter.y - xSidesAfter.x);
-	this->pos.y += (yPerctAfter - yPerctBefore) * (ySidesAfter.y - ySidesAfter.x);
+	this->pos.y += (yPerctAfter - yPerctBefore) * (ySidesAfter.y - ySidesAfter.x);*/
 	this->zoom += inc;
 	this->zoom = this->limitZoom(zoom);
 }
@@ -87,6 +87,7 @@ void Camera::update()
 	}
 
 	this->dragFunc(windowHandler->windowSizes.x, windowHandler->windowSizes.y);
+
 	if (windowHandler->mouseData[5] != 0 &&
 		!windowHandler->keyData[GLFW_KEY_LEFT_CONTROL] &&
 		!windowHandler->keyData[GLFW_KEY_RIGHT_CONTROL] &&

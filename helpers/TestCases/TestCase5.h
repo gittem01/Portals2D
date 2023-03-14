@@ -41,7 +41,7 @@ public:
         b2Vec2 s = b2Vec2(3.0f, 0.2f);
         b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
         PortalBody* pb = pWorld->createPortalBody(body4);
-        thinDrawer->addPortalBody(pb);
+        thinDrawer->debug_addPortalBody(pb);
         b2Vec2 vel(0.0f, 5.0f);
         body4->SetLinearVelocity(vel);
         body4->SetBullet(true); // for mimicing static body continuous collision
@@ -55,25 +55,25 @@ public:
             b2Body* b = createCircle(b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f),
                                     (getRand() + sizeM) / div, pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
         }
         for (int i = 0; i < numPolygons; i++) {
             b2Body* b = createBox(b2Vec2(getRand() * xSize * 1.9f, getRand() * ySize * 1.9f),
                                 b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
         }
 
         for (int i = 0; i < 10; i++) {
             b2Body* b1 = createCircle(b2Vec2(getRand() * xSize * 1.0f, 10.0f),
                                     (getRand() + sizeM) / div, pWorld, b2_dynamicBody);
             PortalBody* pb = pWorld->createPortalBody(b1);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
 
             b2Body* b2 = createBox(b2Vec2(getRand() * xSize * 1.0f, 10.0f),
                                 b2Vec2(((getRand() + sizeM) / div), (getRand() + sizeM) / div), pWorld, b2_dynamicBody);
             pb = pWorld->createPortalBody(b2);
-            thinDrawer->addPortalBody(pb);
+            thinDrawer->debug_addPortalBody(pb);
         }
     }
 };

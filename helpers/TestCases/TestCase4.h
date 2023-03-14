@@ -40,8 +40,8 @@ public:
         PortalBody* pb2 = pWorld->createPortalBody(body2);
         PortalBody* pb3 = pWorld->createPortalBody(body3);
 
-        thinDrawer->addPortalBody(pb2);
-        thinDrawer->addPortalBody(pb3);
+        thinDrawer->debug_addPortalBody(pb2);
+        thinDrawer->debug_addPortalBody(pb3);
 
         float p = -n * d + bias;
         for (int i = 0; i < n; i++){

@@ -125,6 +125,4 @@ void main()
     {
         FragColour = colour;
     }
-
-    gl_FragDepth = 0.5f;
 }
