@@ -10,16 +10,16 @@ int main(void)
     {
         frame++;
 
-        testCase->imguiRender();
-
         if (!isPaused || tick)
         {
             testCase->onUpdate();
         }
 
+        testCase->imguiRender();
+
         thinDrawer->renderLoop();
 
-        keyHandler(thinDrawer->wh);
+        testCase->keyHandler(thinDrawer->wh);
 
         if (testCase->shouldGetNewTest)
         {

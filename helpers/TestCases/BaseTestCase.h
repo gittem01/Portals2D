@@ -3,7 +3,7 @@
 #include <helpers.h>
 #include <WindowHandler.h>
 
-#define ENABLE_TESTPLAYER 0
+#define ENABLE_TESTPLAYER 1
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -19,6 +19,10 @@ public:
     ThinDrawer* td;
     bool shouldGetNewTest;
     int testCaseItem;
+    
+    double lastTime = 0.0;
+    double requestedDtPerStep = 0.002;
+    double deltaTime;
 
     void destroy()
     {
@@ -141,16 +145,20 @@ public:
 
     void afterCreate()
     {
-
-        /*for (int i = 0; i < 2; i++){
-            for (Portal* p : pWorld->portals){
-                p->evaluateWorld();
-            }
-        }*/
+        lastTime = glfwGetTime();
     }
 
     virtual void onUpdate()
     {
+        deltaTime = glfwGetTime() - lastTime;
+        lastTime = glfwGetTime();
+        if (deltaTime > 1.0) deltaTime = 1.0;
+
+        int requiredIters = fmax(deltaTime / requestedDtPerStep, 1);
+        double requiredDt = deltaTime / requiredIters;
+
+        printf("%d, %f, %.4f\n", requiredIters, requiredDt, requiredIters * requiredDt);
+
 #if ENABLE_TESTPLAYER
         tp->camHandle();
 #endif
@@ -158,15 +166,37 @@ public:
         {
             return;
         }
-        for (int i = 0; i < totalIter; i++)
+        for (int i = 0; i < requiredIters; i++)
         {
 			// speeded up 2x times
-            float dt = (2.0f / 144.0f) / totalIter;
+            float dt = requiredDt * 2.0;
             mjh->mouseHandler(frame, totalIter);
             pWorld->PortalStep(dt, 8, 3);
 #if ENABLE_TESTPLAYER
             tp->update(dt, totalIter);
 #endif
+        }
+    }
+
+    void keyHandler(WindowHandler* wh)
+    {
+        extern BaseTestCase* testCase;
+
+        tick = false;
+        if (wh->keyData[GLFW_KEY_P] == 2)
+        {
+            isPaused = !isPaused;
+            lastTime = glfwGetTime() - 0.01;
+        }
+        else if (wh->keyData[GLFW_KEY_O] == 2)
+        {
+            isPaused = true;
+            tick = true;
+            lastTime = glfwGetTime() - 0.01;
+        }
+        if (wh->keyData[GLFW_KEY_S] == 2)
+        {
+            thinDrawer->drawReleases ^= 1;
         }
     }
 
