@@ -7,10 +7,11 @@
 #include <cassert>
 
 #include <map>
+#include <vector>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
-typedef struct s_meshData
+typedef struct MeshData
 {
 	struct s_buffers* vertexBuffers[2];
 	struct s_buffers* indexBuffers[2];

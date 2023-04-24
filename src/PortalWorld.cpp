@@ -40,13 +40,26 @@ Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size, b2Body* on
     Portal* portal = new Portal(pos, dir, size, this, onBody);
     portals.push_back(portal);
 
+    for (auto callback : portalCreateCallbacks)
+    {
+        callback(portal);
+    }
+
     return portal;
 }
 
-void PortalWorld::destroyPortal(Portal* portal){
-    for (int i = 0; i < portals.size(); i++){
+void PortalWorld::destroyPortal(Portal* portal)
+{
+    for (auto callback : portalDestroyCallbacks)
+    {
+        callback(portal);
+    }
+
+    for (int i = 0; i < portals.size(); i++)
+    {
         Portal* p = portals.at(i);
-        if (p == portal){
+        if (p == portal)
+        {
             portals.erase(portals.begin() + i);
             delete portal;
             break;

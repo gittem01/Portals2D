@@ -69,9 +69,8 @@ void WhiteWall::prepareUniforms()
                 wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
-                wallUbo.dotColour = glm::vec4(1.0, 0.0, 0.0, 1.0);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 0.3f);
+                wallUbo.data = glm::vec4(0.04f + randVal22, 0.06f, 2.0f, 0.3f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;

@@ -48,6 +48,7 @@ friend class PortalRay;
 friend class PortalWorldQuery;
 friend class PositionJoint;
 friend class RotationJoint;
+friend class TestPlayer;
 
 public:
 

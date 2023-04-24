@@ -14,6 +14,10 @@ int main(void)
         {
             testCase->onUpdate();
         }
+        else
+        {
+            thinDrawer->pDeltaTime = 0.0;
+        }
 
         testCase->imguiRender();
 

@@ -148,6 +148,9 @@ public:
 
     PortalBody* createPortalBody(b2Body* body);
 
+    std::vector<void (*) (Portal*)> portalCreateCallbacks;
+    std::vector<void (*) (Portal*)> portalDestroyCallbacks;
+
     static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
 
 private:

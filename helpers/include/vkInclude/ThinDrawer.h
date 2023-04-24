@@ -6,18 +6,15 @@
 #include <ShaderHeaders/DebugPolygon.h>
 #include <ShaderHeaders/WhiteWall.h>
 #include <ShaderHeaders/Body.h>
+#include <ShaderHeaders/PortalShader.h>
 #include <WindowHandler.h>
 #include <definitions.h>
+#include <RenderExtra.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <vulkan/vulkan.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-#include <vector>
-#include <set>
-#include <box2d/box2d.h>
 
 #include <IOHelper.h>
 
@@ -93,6 +90,17 @@ typedef struct
     glm::vec4 data2; // sizeX, sizeY, unused, unused
 } s_wallUbo;
 
+typedef struct s_portalUbo
+{
+    glm::mat4 modelMatrix;
+    glm::vec4 data0; // a, b, abRatio, eThick
+    glm::vec4 data1; // lineLength, maxAngleInc, minAngleInc, noiseScale
+    glm::vec4 data2; // sizex, sizey, iTime, 0
+    glm::vec4 data3; // funcMult0, funcMult1, noiseMult, 0
+    glm::vec4 portalColour;
+    glm::vec4 edgeColour;
+}s_portalUbo;
+
 typedef struct
 {
     glm::mat4 modelMatrix;
@@ -129,7 +137,7 @@ typedef struct
     glm::vec2 pos;
 } s_basicVertex;
 
-typedef struct
+typedef struct AverageVertex
 {
     glm::vec3 pos;
     glm::vec3 normal;
@@ -140,17 +148,17 @@ typedef struct
         descriptions[0].binding = 0;
         descriptions[0].location = 0;
         descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        descriptions[0].offset = offsetof(s_averageVertex, pos);
+        descriptions[0].offset = offsetof(AverageVertex, pos);
         
         descriptions[1].binding = 0;
         descriptions[1].location = 1;
         descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        descriptions[1].offset = offsetof(s_averageVertex, normal);
+        descriptions[1].offset = offsetof(AverageVertex, normal);
 
         descriptions[2].binding = 0;
         descriptions[2].location = 2;
         descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        descriptions[2].offset = offsetof(s_averageVertex, tc);
+        descriptions[2].offset = offsetof(AverageVertex, tc);
     }
 } s_averageVertex;
 
@@ -159,71 +167,14 @@ class PortalBody;
 class Portal;
 class PortalWorld;
 
-// per fixture
-typedef struct
-{
-    std::vector<std::vector<uint32_t>> dynamicOffsets;
-    s_buffers* vertexBuffer;
-    struct PBFixtureData* pbfData;
-    b2Shape::Type renderType;
-} s_debug_renderStruct;
-
-// per fixture
-typedef struct
-{
-    std::vector<s_debug_renderStruct*> renderFixtures;
-    PortalBody* portalBody;
-} s_debug_renderBody;
-
-// per worldIndex
-typedef struct
-{
-    // ordered consistently with the fixture list
-    std::vector<s_buffers*> vertexBuffers;
-    std::vector<s_buffers*> vertexBuffersMirrored;
-    // available only for polygon fixtures
-    // data in between polygons are irrelevant
-    std::vector<int> vertexStorageOffsets;
-    std::vector<int> vertexStorageOffsetsMirrored;
-
-    std::vector<b2Vec2> circlePositionings;
-    std::vector<b2Vec2> circlePositioningsMirrored;
-
-    std::set<s_debug_renderBody*> renderBodies;
-} s_debug_renderGroup;
-
-// per fixture
-typedef struct
-{
-    std::vector<std::array<uint32_t, 2>> dynamicOffsets;
-    s_buffers* vertexBuffer;
-    s_buffers* indexBuffer;
-    struct PBFixtureData* pbfData;
-    VkDescriptorSet imageDescriptorSet;
-} s_renderStruct;
-
-// per fixture
-typedef struct
-{
-    std::vector<uint32_t> dynamicOffsets;
-    std::vector<s_renderStruct*> renderFixtures;
-    PortalBody* portalBody;
-} s_renderBody;
-
-// per worldIndex
-typedef struct
-{
-    glm::mat4 scaleMatrix;
-    std::vector<s_meshData*> meshDatas;
-    std::set<s_renderBody*> renderBodies;
-} s_renderGroup;
-
 class ThinDrawer
 {
 public:
 
     PortalWorld* pWorld;
     VkDescriptorPool imguiPool;
+
+    double pDeltaTime = 0.0;
 
     ThinDrawer(PortalWorld* pWorld);
 
@@ -262,12 +213,17 @@ public:
     std::vector<s_debug_renderGroup*> debug_renderGroups;
     std::vector<s_renderGroup*> renderGroups;
 
+    std::map<Portal*, s_portalRender> portalsToRender;
+
+    AnimGroup* animations = nullptr;
+
     std::vector<s_uniformBuffer*> sharedOrthoUniform;
     ShaderBase* debugCircleShader;
     ShaderBase* debugLineShader;
     ShaderBase* debugPolygonShader;
     WhiteWall* whiteWallShader;
     Body* bodyShader;
+    PortalShader* portalShader;
 
     // var end
 
@@ -296,10 +252,15 @@ public:
     void debug_renderEdges(VkCommandBuffer& cmdBuff);
     void renderPortalBodies(VkCommandBuffer& cmdBuff);
     void renderWalls(VkCommandBuffer& cmdBuff);
+    void renderPortals(VkCommandBuffer& cmdBuff);
     void buildCommandBuffers();
 
+    void beforeCreate();
+    void afterCreate();
+    
     void uniformFiller(int frameNum);
     void renderLoop();
+    void animate();
 
     void bufferStage(void* bufferData, uint32_t dataSize, VkBufferUsageFlags flags, s_buffers* fillBuffer);
     VkGraphicsPipelineCreateInfo* getPipelineInfoBase();
@@ -329,6 +290,9 @@ public:
     void releaseRenderResources();
 
     static bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
+
+    static void portalCreateCallback(Portal* portal);
+    static void portalDestroyCallback(Portal* portal);
 
     static void portalBodyCreateCallback(PortalBody* pb, void* data);
     static void portalBodyDestroyCallback(PortalBody* pb, void* data);

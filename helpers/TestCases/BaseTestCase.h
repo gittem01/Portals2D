@@ -1,7 +1,6 @@
 #pragma once
 
 #include <helpers.h>
-#include <WindowHandler.h>
 
 #define ENABLE_TESTPLAYER 1
 
@@ -21,7 +20,7 @@ public:
     int testCaseItem;
     
     double lastTime = 0.0;
-    double requestedDtPerStep = 0.002;
+    double requestedDtPerStep = 0.0015;
     double deltaTime;
 
     void destroy()
@@ -60,7 +59,6 @@ public:
         ImGui::Text("fps: %.2f", io.Framerate);
         ImGui::SameLine();
         ImGui::Text("dt: %.4f", io.DeltaTime * 1000.0f);
-
 
         int lastItem = testCaseItem;
         ImGui::Combo(" ", &testCaseItem, testCases, numTestCases);
@@ -122,17 +120,16 @@ public:
             contactListener = new ContactListener();
         }
         pWorld = new PortalWorld();
-        thinDrawer->pWorld = pWorld;
-
         pWorld->SetContactListener(contactListener);
-
-        mjh = new mouseJointHandler(pWorld, td->wh);
-
         b2Vec2 gravity(0.0f, -10.0f);
         pWorld->SetGravity(gravity);
 
+        mjh = new mouseJointHandler(pWorld, td->wh);
+
+        thinDrawer->pWorld = pWorld;
+        thinDrawer->beforeCreate();
+
     #if ENABLE_TESTPLAYER
-        extern ThinDrawer* thinDrawer;
         tp = new TestPlayer(pWorld, td->wh);
         thinDrawer->debug_addPortalBody(tp->pBody->at(0));
         thinDrawer->debug_addPortalBody(tp->gun->at(0));
@@ -145,6 +142,8 @@ public:
 
     void afterCreate()
     {
+        thinDrawer->afterCreate();
+
         lastTime = glfwGetTime();
     }
 
@@ -152,12 +151,11 @@ public:
     {
         deltaTime = glfwGetTime() - lastTime;
         lastTime = glfwGetTime();
-        if (deltaTime > 1.0) deltaTime = 1.0;
+
+        thinDrawer->pDeltaTime = deltaTime;
 
         int requiredIters = fmax(deltaTime / requestedDtPerStep, 1);
         double requiredDt = deltaTime / requiredIters;
-
-        printf("%d, %f, %.4f\n", requiredIters, requiredDt, requiredIters * requiredDt);
 
 #if ENABLE_TESTPLAYER
         tp->camHandle();
