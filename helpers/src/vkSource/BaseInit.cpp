@@ -8,7 +8,7 @@
 void ThinDrawer::createWindow()
 {
     wh = new WindowHandler(NULL);
-    Camera* cam = new Camera(glm::vec3(0.0f, 0.0f, 30.0f), wh);
+    Camera* cam = new Camera(glm::vec2(0.0f, 0.0f), wh);
     wh->cam = cam;
 }
 
@@ -255,23 +255,6 @@ void ThinDrawer::createRenderPass()
 
     attachments.push_back(colorAttachment);
 
-    VkAttachmentDescription depthAttachment = {};
-    depthAttachment.flags = 0;
-    depthAttachment.format = VK_FORMAT_D32_SFLOAT;
-    depthAttachment.samples = samples;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depthAttachmentRef = {};
-    depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    attachments.push_back(depthAttachment);
-
     VkAttachmentReference colorReference = { };
     colorReference.attachment = 0;
     colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -293,14 +276,13 @@ void ThinDrawer::createRenderPass()
     }
 
     VkAttachmentReference colorAttachmentResolveRef = { };
-    colorAttachmentResolveRef.attachment = 2;
+    colorAttachmentResolveRef.attachment = 1;
     colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpassDescription = { };
     subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpassDescription.colorAttachmentCount = 1;
     subpassDescription.pColorAttachments = &colorReference;
-    subpassDescription.pDepthStencilAttachment = &depthAttachmentRef;
 
     if (samples > VK_SAMPLE_COUNT_1_BIT)
     {

@@ -6,6 +6,7 @@
 #include <Camera.h>
 #include "PortalBody.h"
 #include "Portal.h"
+#include <SwapChain.h>
 #include "ThinDrawer.h"
 
 class TestPlayer
@@ -217,15 +218,15 @@ public:
             glm::vec2 diff = glm::vec2(abs(p2.x - p1.x), abs(p2.y - p1.y)) / 2.0f + 5.0f;
             glm::vec2 mid = glm::vec2(p2.x + p1.x, p2.y + p1.y) / 2.0f;
             
-            glm::vec2 posDiff = mid - glm::vec2(wh->cam->pos.x, wh->cam->pos.y);
+            glm::vec2 posDiff = mid - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y);
 
-            wh->cam->pos += glm::vec3(posDiff.x, posDiff.y, 0.0f) * 0.01f;
+            wh->cam->pos += glm::vec2(posDiff.x, -posDiff.y) * 0.02f;
         }
         else
         {
             b2Vec2 bp = pBody->at(0)->body->GetPosition();
-            glm::vec2 diff = glm::vec2(bp.x, bp.y) - glm::vec2(wh->cam->pos.x, wh->cam->pos.y);
-            wh->cam->pos += glm::vec3(diff.x, diff.y, 0.0f) * 0.01f;
+            glm::vec2 diff = glm::vec2(bp.x, bp.y) - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y);
+            wh->cam->pos += glm::vec2(diff.x, -diff.y) * 0.02f;
         }
 
         wh->cam->updateOrtho();
@@ -534,51 +535,6 @@ public:
         return true;
     }
 
-    void createPortalAnimation(Portal* portal, bool empty=false)
-    {
-        extern ThinDrawer* thinDrawer;
-
-        s_portalRender* pr = &thinDrawer->portalsToRender[portal];
-
-        AnimGroup* animGroup = new AnimGroup(10);
-        pr->animGroup = animGroup;
-        animGroup->toNull = &pr->animGroup;
-        AnimStruct* animStruct = animGroup->createAnimation(&pr->portalSizeUp, 5.0f, 0.0f, 1.0f);
-        animStruct->registeredFunction = AnimStruct::linearFunc;
-
-        pr->portalSizeY = 0.2f;
-        AnimStruct* animStruct2 = animGroup->createAnimation(&pr->portalSizeY, 5.0f, pr->portalSizeY, portal->size - 0.02);
-        animStruct2->registeredFunction = AnimStruct::linearFunc;
-
-        if (!empty)
-        {
-            pr->noiseMult = 0.0f;
-            AnimStruct* chainedStruct = animGroup->createChainedAnimation(animStruct2, &pr->noiseMult, 2.0f, pr->noiseMult, 1.0);
-            chainedStruct->registeredFunction = AnimStruct::linearFunc;
-
-            pr->noiseScale = 10.0;
-            AnimStruct* chainedStruct2 = animGroup->createChainedAnimation(animStruct2, &pr->noiseScale, 5.0f, pr->noiseScale, 15.0);
-            chainedStruct2->registeredFunction = AnimStruct::linearFunc;
-        }
-        else
-        {
-            pr->noiseScale = 15.0;
-            AnimStruct* chainedStruct2 = animGroup->createChainedAnimation(animStruct2, &pr->noiseScale, 5.0f, pr->noiseScale, 12.0);
-            chainedStruct2->registeredFunction = AnimStruct::linearFunc;
-
-            pr->noiseMult = 1.0f;
-            AnimStruct* chainedStruct = animGroup->createChainedAnimation(animStruct2, &pr->noiseMult, 5.0f, pr->noiseMult, 0.0);
-            chainedStruct->registeredFunction = AnimStruct::linearFunc;
-        }
-
-        animGroup->next = thinDrawer->animations;
-        if (thinDrawer->animations)
-        {
-            thinDrawer->animations->prev = animGroup;
-        }
-        thinDrawer->animations = animGroup;
-    }
-
     void handlePortalCD()
     {
         extern ThinDrawer* thinDrawer;
@@ -619,64 +575,25 @@ public:
 
                         Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
+                        auto iter = thinDrawer->renderPortalData.find(portal);
+                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                        {
+                            s_portalUbo* pUbo;
+                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory,
+                                iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                            pUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
+                        }
+
                         if (portal)
                         {
-                            s_portalRender* pr = &thinDrawer->portalsToRender[portal];
-                            
-                            for (int i = 0; i < thinDrawer->portalShader->uniformBuffers.size(); i++)
-                            {
-                                s_portalUbo* pUbo;
-                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory, pr->dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-
-                                pUbo->portalColour = glm::vec4(0.0, 0.2, 1.0, 0.0);
-                                pUbo->edgeColour = glm::vec4(0.0, 0.5, 1.0, 0.0);
-
-                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
-                            }
-
                             portal->reviveAround();
                             portalA = portal;
 
                             if (portalB)
                             {
-                                createPortalAnimation(portal, true);
-
-                                s_portalRender* pr = &thinDrawer->portalsToRender[portalB];
-
-                                if (pr->animGroup)
-                                {
-                                    pr->animGroup->updateStructWithPointer(&pr->noiseMult, 5.0, pr->noiseMult, 0.0);
-                                }
-                                else
-                                {
-                                    AnimGroup* animGroup = new AnimGroup(10);
-                                    pr->animGroup = animGroup;
-                                    animGroup->toNull = &pr->animGroup;
-
-                                    AnimStruct* animStruct = animGroup->createAnimation(&pr->noiseMult, 5.0f, pr->noiseMult, 1.0);
-                                    animStruct->registeredFunction = AnimStruct::linearFunc;
-
-                                    pr->noiseScale = 15.0;
-                                    AnimStruct* animStruct2 = animGroup->createAnimation(&pr->noiseScale, 5.0f, pr->noiseScale, 12.0);
-                                    animStruct2->registeredFunction = AnimStruct::linearFunc;
-
-                                    AnimStruct* chainedStruct = animGroup->createChainedAnimation(animStruct, &pr->noiseMult, 5.0f, 1.0, 0.0);
-                                    chainedStruct->registeredFunction = AnimStruct::linearFunc;
-
-                                    animGroup->next = thinDrawer->animations;
-                                    if (thinDrawer->animations)
-                                    {
-                                        thinDrawer->animations->prev = animGroup;
-                                    }
-                                    thinDrawer->animations = animGroup;
-                                }
-
                                 portalA->connect(portalB);
                                 portalB->reviveAround();
-                            }
-                            else
-                            {
-                                createPortalAnimation(portal);
                             }
                         }
                     }
@@ -700,64 +617,25 @@ public:
 
                         Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
+                        auto iter = thinDrawer->renderPortalData.find(portal);
+                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                        {
+                            s_portalUbo* pUbo;
+                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory,
+                                iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                            pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
+                        }
+
                         if (portal)
                         {
-                            s_portalRender* pr = &thinDrawer->portalsToRender[portal];
-
-                            for (int i = 0; i < thinDrawer->portalShader->uniformBuffers.size(); i++)
-                            {
-                                s_portalUbo* pUbo;
-                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory, pr->dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-
-                                pUbo->portalColour = glm::vec4(1.0, 0.2, 0.0, 0.0);
-                                pUbo->edgeColour = glm::vec4(1.0, 0.5, 0.0, 0.0);
-
-                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
-                            }
-
                             portal->reviveAround();
                             portalB = portal;
 
                             if (portalA)
                             {
-                                createPortalAnimation(portal, true);
-
-                                s_portalRender* pr = &thinDrawer->portalsToRender[portalA];
-
-                                if (pr->animGroup)
-                                {
-                                    pr->animGroup->updateStructWithPointer(&pr->noiseMult, 5.0, pr->noiseMult, 0.0);
-                                }
-                                else
-                                {
-                                    AnimGroup* animGroup = new AnimGroup(10);
-                                    pr->animGroup = animGroup;
-                                    animGroup->toNull = &pr->animGroup;
-
-                                    AnimStruct* animStruct = animGroup->createAnimation(&pr->noiseMult, 5.0f, pr->noiseMult, 1.0);
-                                    animStruct->registeredFunction = AnimStruct::linearFunc;
-
-                                    pr->noiseScale = 15.0;
-                                    AnimStruct* animStruct2 = animGroup->createAnimation(&pr->noiseScale, 5.0f, pr->noiseScale, 12.0);
-                                    animStruct2->registeredFunction = AnimStruct::linearFunc;
-
-                                    AnimStruct* chainedStruct = animGroup->createChainedAnimation(animStruct, &pr->noiseMult, 5.0f, 1.0, 0.0);
-                                    chainedStruct->registeredFunction = AnimStruct::linearFunc;
-
-                                    animGroup->next = thinDrawer->animations;
-                                    if (thinDrawer->animations)
-                                    {
-                                        thinDrawer->animations->prev = animGroup;
-                                    }
-                                    thinDrawer->animations = animGroup;
-                                }
-
                                 portalB->connect(portalA);
                                 portalA->reviveAround();
-                            }
-                            else
-                            {
-                                createPortalAnimation(portal);
                             }
                         }
                     }

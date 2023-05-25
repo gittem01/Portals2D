@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 1
+#define ENABLE_TESTPLAYER 0
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -77,7 +77,22 @@ public:
         {
             td->drawReleases = !td->drawReleases;
         }
-        ImGui::SameLine();
+
+        if (ImGui::RadioButton("Draw Debug Bodies", td->drawDebugBodies))
+        {
+            td->drawDebugBodies = !td->drawDebugBodies;
+        }
+
+        if (ImGui::RadioButton("Draw Debug Edges", td->drawDebugEdges))
+        {
+            td->drawDebugEdges = !td->drawDebugEdges;
+        }
+
+        if (ImGui::RadioButton("Draw Debug Portals", td->drawDebugPortals))
+        {
+            td->drawDebugPortals = !td->drawDebugPortals;
+        }
+
         if (isPaused)
         {
             if (ImGui::Button("Resume"))
@@ -134,9 +149,12 @@ public:
         thinDrawer->debug_addPortalBody(tp->pBody->at(0));
         thinDrawer->debug_addPortalBody(tp->gun->at(0));
 
+        thinDrawer->addPortalBody(tp->gun->at(0), { "gun2.png" });
+        thinDrawer->addPortalBody(tp->pBody->at(0), { "redHood.png" });
+        
         std::vector<std::pair<std::string, std::string>> empty;
-        thinDrawer->addPortalBody(tp->pBody->at(0), empty);
-        thinDrawer->addPortalBody(tp->gun->at(0), empty);
+        thinDrawer->addPortalBody_3d(tp->pBody->at(0), empty);
+        thinDrawer->addPortalBody_3d(tp->gun->at(0), empty);
     #endif
     }
 
@@ -156,6 +174,7 @@ public:
 
         int requiredIters = fmax(deltaTime / requestedDtPerStep, 1);
         double requiredDt = deltaTime / requiredIters;
+        requiredIters = fmin(requiredIters, 10);
 
 #if ENABLE_TESTPLAYER
         tp->camHandle();

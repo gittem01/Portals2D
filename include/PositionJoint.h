@@ -131,10 +131,10 @@ private:
 
     void InitVelocityConstraints(const b2SolverData& data) override
     {
-        updateParameters();
-
         m_indexA = m_bodyA->m_islandIndex;
         m_indexB = m_bodyB->m_islandIndex;
+
+        updateParameters();
 
         b2Vec2 cA = data.positions[m_indexA].c;
         b2Vec2 vA = data.velocities[m_indexA].v;

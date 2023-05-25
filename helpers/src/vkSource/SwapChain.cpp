@@ -195,8 +195,6 @@ void SwapChain::createSwapChain()
     {
         createColorResources();
     }
-
-    createDepthResources();
 }
 
 void SwapChain::createFrameBuffers()
@@ -214,8 +212,8 @@ void SwapChain::createFrameBuffers()
 	for (int i = 0; i < imageCount; i++)
     {
         std::vector<VkImageView> attachments;
-        if (thinDrawer->samples > VK_SAMPLE_COUNT_1_BIT) attachments = { colorImageView, depthImageView, imageViews[i] };
-        else attachments = { imageViews[i], depthImageView };
+        if (thinDrawer->samples > VK_SAMPLE_COUNT_1_BIT) attachments = { colorImageView, imageViews[i] };
+        else attachments = { imageViews[i] };
 
 		frameBufferInfo.attachmentCount = attachments.size();
 		frameBufferInfo.pAttachments = attachments.data();
@@ -234,8 +232,8 @@ void SwapChain::createColorResources()
     };
 
     thinDrawer->createImage(extent.width, extent.height, 1, thinDrawer->samples, surfaceFormat.format,
-                VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory);
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory);
 
     VkImageViewCreateInfo imageViewCreateInfo = { };
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -249,31 +247,4 @@ void SwapChain::createColorResources()
     imageViewCreateInfo.image = colorImage;
 
     CHECK_RESULT_VK(vkCreateImageView(thinDrawer->logicalDevice, &imageViewCreateInfo, NULL, &colorImageView));
-}
-
-void SwapChain::createDepthResources()
-{
-    VkExtent3D depthImageExtent =
-    {
-            extent.width,
-            extent.height,
-            1
-    };
-
-    thinDrawer->createImage(extent.width, extent.height, 1, thinDrawer->samples, VK_FORMAT_D32_SFLOAT,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-
-    VkImageViewCreateInfo imageViewCreateInfo = { };
-    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewCreateInfo.format = VK_FORMAT_D32_SFLOAT;
-    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-    imageViewCreateInfo.subresourceRange.levelCount = 1;
-    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
-    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    imageViewCreateInfo.image = depthImage;
-
-    CHECK_RESULT_VK(vkCreateImageView(thinDrawer->logicalDevice, &imageViewCreateInfo, NULL, &depthImageView));
 }

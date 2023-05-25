@@ -1,9 +1,10 @@
 #version 460 core
 
+#define PI 3.14159265359
+
 layout (location = 0) in vec2 vertex;
 
 layout (location = 0) out vec2 localPos;
-layout (location = 1) out vec2 realLocalPos;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -14,19 +15,23 @@ layout (set = 0, binding = 0) uniform SharedUboData
 
 layout (std140, set = 1, binding = 0) uniform UBO
 {
-    mat4 modelMatrix;
-    vec4 data0; // a, b, abRatio, eThick
-    vec4 data1; // lineLength, maxAngleInc, minAngleInc, noiseScale
-    vec4 data2; // sizex, sizey, iTime, 0
-    vec4 data3; // funcMult0, funcMult1, 0, 0
-    vec4 portalColour;
-    vec4 edgeColour;
+    vec4 posSize; // pos.x, pos.y, size.x, size.y
+    vec4 color;
+    vec4 data0; // dirAngle, pixeler, midThick, xDropSize
 } ubo;
+
+vec2 rotatePoint(vec2 point, float angle)
+{
+    float c = cos(angle);
+    float s = sin(angle);
+    mat2 rotationMatrix = mat2(c, -s, s, c);
+    return rotationMatrix * point;
+}
 
 void main()
 {
-    localPos = vertex * ubo.data2.xy;
-    realLocalPos = (vertex + 0.5) * 0.5;
-
-    gl_Position = sharedUboData.cameraMatrix * ubo.modelMatrix * vec4(0.0, localPos.y, localPos.x, 1.0);
+    localPos = vertex * ubo.posSize.zw;
+    vec2 newVertexPos = rotatePoint(localPos, ubo.data0.x - PI * 0.5) + ubo.posSize.xy;
+    
+    gl_Position = sharedUboData.cameraMatrix * vec4(newVertexPos, 0.0, 1.0);
 }

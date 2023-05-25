@@ -11,15 +11,22 @@ layout (set = 0, binding = 0) uniform SharedUboData
 	mat4 orthoMatrix;
 } sharedUboData;
 
-layout (set = 0, binding = 1) uniform UBO
+layout (set = 2, binding = 0) uniform UBO
 {
 	mat4 modelMatrix;
+	int isMirrored;
+	int isMirrored2;
 } ubo;
 
 void main() 
 {
 	o_texCoord = i_texCoord;
-	vec4 wp = ubo.modelMatrix * vec4(inPos.xy, 0.0, 1.0f);
+	vec2 pos = inPos.xy;
+	if ((ubo.isMirrored ^ ubo.isMirrored2) == 1)
+	{
+		pos.x *= -1.0;;
+	}
+	vec4 wp = ubo.modelMatrix * vec4(pos, 0.0, 1.0f);
 	worldPosition = wp.xy;
 
 	gl_Position = sharedUboData.orthoMatrix * wp;

@@ -37,7 +37,6 @@ void main()
     float sizeX = data2.x;
     float sizeY = data2.y;
 
-    float camDot = max(dot(normalize(worldPos - sharedUboData.cameraPos), -normal), 0.0) + 0.2;
     vec4 txClr = texture(tex, tc);
     vec4 grdClr = texture(gradTex, tc / vec2(sizeX / dotSize, sizeY / dotSize));
     vec4 clr = vec4(vec3(dotColour) * txClr.w + vec3(bgColour) * (1.0 - txClr.w), 1.0);
@@ -53,18 +52,18 @@ void main()
     {
         float ratio = grdClr.x / divRat;
         ratio = pow(ratio, 1.0);
-        FragColour = (clr * (1.0 - ratio) + bgColour * ratio) * camDot;
+        FragColour = (clr * (1.0 - ratio) + bgColour * ratio);
         return;
     }
     else if (grdClr.x > divRat)
     {
         float ratio = (grdClr.x - divRat) / (1 - divRat);
         ratio = pow(ratio, 2.0);
-        FragColour = (bgColour * (1.0 - ratio) + vec4(0.0) * ratio) * camDot;
+        FragColour = (bgColour * (1.0 - ratio) + vec4(0.0) * ratio);
     }
     else
     {
-        FragColour = (clr) * camDot;
+        FragColour = clr;
     }
 
     return;

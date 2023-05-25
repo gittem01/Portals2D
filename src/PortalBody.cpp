@@ -497,7 +497,7 @@ void PortalBody::postHandle()
         }
     }
 
-#if 1
+#if 0
 
     if (worldIndex->pbIndices.size() == 1)
     {

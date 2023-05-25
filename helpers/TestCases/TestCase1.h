@@ -48,7 +48,7 @@ public:
 
         diagonalPortal2->connect(topPortal1, true, 1, 0);
         diagonalPortal2->connect(topPortal2, false, 1, 0);
-        //topPortal1->connect(topPortal2);
+        topPortal1->connect(topPortal2);
 
         createEdge(b2Vec2(+30.0f, yPos - portalSize), b2Vec2(+30.0f, 21), pWorld, b2_staticBody);
         createEdge(b2Vec2(-30.0f, 21), b2Vec2(-30.0f, yPos - portalSize), pWorld, b2_staticBody);
@@ -80,6 +80,13 @@ public:
         PortalBody* pb1 = pWorld->createPortalBody(body2);
         PortalBody* pb2 = pWorld->createPortalBody(body20);
         PortalBody* pb3 = pWorld->createPortalBody(body21);
+
+        std::vector<std::string> cubeNames;
+        for (int i = 0; i < 6; i++)
+        {
+            cubeNames.push_back("pixelCubes/cube_" + std::to_string(i) + ".png");
+        }
+        thinDrawer->addPortalBody(pb1, cubeNames);
 
         thinDrawer->debug_addPortalBody(pb1);
         thinDrawer->debug_addPortalBody(pb2);

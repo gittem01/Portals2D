@@ -363,6 +363,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         def.gravityScale = 0.0f;
 
         b2Body* body2 = CreateBody(&def);
+
         PortalBody* npb = new PortalBody(body2, this);
         bodyData* extraDataFiller = (bodyData*)body2->GetUserData().pointer;
         extraDataFiller->extraData = extraData0;
@@ -549,23 +550,6 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         npb->fixtures.resize(pBody->fixtures.size());
         t_bcs->connection = c;
 
-        b2Vec2 lvToSet = rotateVec(speed, angleRot);
-        if (c->isReversed){
-            body2->SetAngularVelocity(-body1->GetAngularVelocity() /*+ collPortal->getAngVel() + portal2->getAngVel()*/);
-            lvToSet = mirror(dir2, lvToSet);
-        }
-        else{
-            body2->SetAngularVelocity(body1->GetAngularVelocity() /*- collPortal->getAngVel() + portal2->getAngVel()*/);
-        }
-
-        b2Vec2 relativePortalPos2 = c->portal2->pos - c->portal2->body->GetPosition();
-        b2Vec2 linSpeedAddition2 = c->portal2->body->GetAngularVelocity() * PortalWorld::rotateVec(relativePortalPos2, b2_pi * 0.5f);
-        b2Vec2 portalLinSpeed2 = c->portal2->getLinVel() + linSpeedAddition2;
-
-        lvToSet += portalLinSpeed2;
-
-        body2->SetLinearVelocity(lvToSet);
-
         bool allOut = true;
         int fixMargin = 0;
         for (int i = pBody->fixtures.size() - 1; i > -1; i--){
@@ -737,6 +721,25 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         createPortalBody_i(npb, pBody, false);
 
         connectBodies(pBody, npb, c, side);
+
+        b2Vec2 lvToSet = rotateVec(speed, angleRot);
+        if (c->isReversed)
+        {
+            body2->SetAngularVelocity(-body1->GetAngularVelocity() /*+ collPortal->getAngVel() + portal2->getAngVel()*/);
+            lvToSet = mirror(dir2, lvToSet);
+        }
+        else
+        {
+            body2->SetAngularVelocity(body1->GetAngularVelocity() /*- collPortal->getAngVel() + portal2->getAngVel()*/);
+        }
+
+        b2Vec2 relativePortalPos2 = c->portal2->pos - c->portal2->body->GetPosition();
+        b2Vec2 linSpeedAddition2 = c->portal2->body->GetAngularVelocity() * PortalWorld::rotateVec(relativePortalPos2, b2_pi * 0.5f);
+        b2Vec2 portalLinSpeed2 = c->portal2->getLinVel() + linSpeedAddition2;
+
+        lvToSet += portalLinSpeed2;
+
+        body2->SetLinearVelocity(lvToSet);
     }
 
     return retVal;

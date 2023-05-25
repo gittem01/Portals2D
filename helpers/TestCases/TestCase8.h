@@ -44,7 +44,7 @@ public:
         pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
-        
+
         int n = 0;
         b2Body* body;
         b2Body* lastBody = nullptr;
@@ -83,6 +83,8 @@ public:
         body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), pWorld, b2_kinematicBody, true);
         body->SetTransform(b2Vec2(6.0f, 0.0f), -b2_pi * 0.0f);
 
+        createEdge(b2Vec2(12.0f, +3.0f), b2Vec2(6.0f, +3.0f), pWorld, b2_kinematicBody, true);
+
         bodyToMove = body;
         /*body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
         body->SetAngularVelocity(0.1f);*/
@@ -120,7 +122,7 @@ public:
 
         portal7->connect(portal8, true, 0, 0);
         portal7->connect(portal8, false, 1, 1);
-        
+
         makePortalDynamic(portal1);
         makePortalDynamic(portal2);
         makePortalDynamic(portal3);
@@ -144,6 +146,13 @@ public:
         PortalBody* pb1 = pWorld->createPortalBody(body1);
         PortalBody* pb2 = pWorld->createPortalBody(body2);
 
+        std::vector<std::string> cubeNames;
+        for (int i = 0; i < 6; i++)
+        {
+            cubeNames.push_back("pixelCubes/cube_" + std::to_string(i) + ".png");
+        }
+        thinDrawer->addPortalBody(pb1, cubeNames);
+
         thinDrawer->debug_addPortalBody(pb1);
         thinDrawer->debug_addPortalBody(pb2);
 
@@ -156,8 +165,8 @@ public:
             {"pCube.body",  "body.png" }
         };
 
-        thinDrawer->addPortalBody(pb1, names);
-        thinDrawer->addPortalBody(pb2, names);
+        thinDrawer->addPortalBody_3d(pb1, names);
+        thinDrawer->addPortalBody_3d(pb2, names);
 
         pbi1 = &pb1->worldIndex->pbIndices;
         pbi2 = &pb2->worldIndex->pbIndices;
@@ -168,14 +177,32 @@ public:
         thinDrawer->debug_addPortalBody(lastPb);
 
         names = { {"sphere.sphere", "sphere.png"} };
-        thinDrawer->addPortalBody(lastPb, names);
+        thinDrawer->addPortalBody_3d(lastPb, names);
 
         lastBody->SetLinearDamping(0.0f);
 
         lastBody = createBox(startPos, b2Vec2(0.7f, 0.7f), pWorld, b2_dynamicBody);
         lastPb = pWorld->createPortalBody(lastBody);
+        thinDrawer->debug_addPortalBody(lastPb);
+        thinDrawer->addPortalBody(lastPb, {});
         names = {};
-        thinDrawer->addPortalBody(lastPb, names);
+        thinDrawer->addPortalBody_3d(lastPb, names);
+
+        b2PolygonShape pShape;
+        b2Vec2 points[] = {
+            b2Vec2(+0.1f, 8.0f),
+            b2Vec2(-0.1f, 8.0f),
+            b2Vec2(+0.0f, 12.0f),
+        };
+        pShape.Set(points, std::size(points));
+        b2BodyDef bDefX;
+        bDefX.type = b2_dynamicBody;
+        b2Body* bodyX = pWorld->CreateBody(&bDefX);
+        bodyX->CreateFixture(&pShape, 1.0f);
+
+        PortalBody* pbx = pWorld->createPortalBody(bodyX);
+
+        thinDrawer->debug_addPortalBody(pbx);
     }
 
     void onUpdate()

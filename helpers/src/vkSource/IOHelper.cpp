@@ -170,10 +170,10 @@ void IOHelper::loadGlTF(std::string fileName)
     }
 }
 
-void IOHelper::loadTexture(std::string fileName)
+void IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMode, VkFilter filter)
 {
     s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
-    thinDrawer->loadTexture(("textures/" + fileName).data(), tex);
+    thinDrawer->loadTexture(("textures/" + fileName).data(), tex, false, addressMode, filter);
 
     VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 

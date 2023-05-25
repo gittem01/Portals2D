@@ -2,8 +2,8 @@
 
 #include <ShaderBase.h>
 
-#define UNIFORM_ALLOC_COUNT_BODY 10000
-#define UNIFORM_ALLOC_COUNT_FIXTURE UNIFORM_ALLOC_COUNT_BODY * 4
+#define UNIFORM_ALLOC_COUNT_BODY_3D 1000
+#define UNIFORM_ALLOC_COUNT_FIXTURE_3D UNIFORM_ALLOC_COUNT_BODY_3D * 4
 
 class Body : public ShaderBase
 {
@@ -14,11 +14,11 @@ private:
 
     int lastAllocationPos_body;
     int alignedSize_body;
-    uint32_t availableOffsets_body[UNIFORM_ALLOC_COUNT_BODY];
+    uint32_t availableOffsets_body[UNIFORM_ALLOC_COUNT_BODY_3D];
 
     int lastAllocationPos_fixture;
     int alignedSize_fixture;
-    uint32_t availableOffsets_fixture[UNIFORM_ALLOC_COUNT_FIXTURE];
+    uint32_t availableOffsets_fixture[UNIFORM_ALLOC_COUNT_FIXTURE_3D];
 
     void prepareVertexData();
     void prepareUniforms();

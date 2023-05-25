@@ -41,5 +41,6 @@ public:
 	static void getAssetsFolder();
 	// file name without .glb
 	static void loadGlTF(std::string fileName);
-	static void loadTexture(std::string fileName);
+	static void loadTexture(std::string fileName,
+		VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filter = VK_FILTER_LINEAR);
 };

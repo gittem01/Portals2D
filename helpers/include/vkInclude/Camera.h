@@ -10,12 +10,8 @@ class WindowHandler;
 class Camera
 {
 public:
-	glm::vec3 pos;
-	glm::vec3 rotation;
-
-	glm::vec3 lookDir;
-	glm::vec3 rightDir;
-	glm::vec3 upDir;
+	glm::vec2 pos;
+	float rotation;
 
 	glm::vec2 defaultXSides = glm::vec2(-8.0f, +8.0f);
 	glm::vec2 defaultYSides = glm::vec2(-4.5f, +4.5f);
@@ -25,15 +21,12 @@ public:
 
 	float baseX = 16.0f;
 
-	glm::vec2 zoomLimits = glm::vec2(0.55, 20);
-
-	glm::mat4 pers;
-	glm::mat4 view;
+	glm::vec2 zoomLimits = glm::vec2(0.4, 20);
 
 	glm::mat4 camMatrix;
 
 	GLFWwindow* window;
-	float zoom = 1.0;
+	float zoom = 0.5;
 	float zoomInc = 0.15;
 	float dragSmth = 0.2f;
 	float neededZoom = 0;
@@ -43,12 +36,11 @@ public:
 
 	WindowHandler* windowHandler;
 
-	Camera(glm::vec3 pos, WindowHandler* wh);
+	Camera(glm::vec2 pos, WindowHandler* wh);
 	void update();
 	glm::vec2 getCameraCoords(glm::vec2 p);
 	glm::vec2 getMouseCoords();
 	void updateOrtho();
-	void updateVectors();
 	void changeZoom(float inc);
 	float limitZoom(float inZoom);
 	void dragFunc(int width, int height);

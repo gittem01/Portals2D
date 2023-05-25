@@ -17,8 +17,6 @@ private:
 
     PortalShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
-    static glm::vec2 getEllipsePosOnAngle(float a, float b, float angle);
-
     void prepareUniforms();
     void setupDescriptorSetLayout();
     void preparePipeline();

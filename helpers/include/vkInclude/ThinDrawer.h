@@ -1,12 +1,14 @@
 #pragma once
 
-#include <ShaderHeaders/VulkanTriangle.h>
+#include <ShaderHeaders/BodyShader.h>
 #include <ShaderHeaders/DebugCircle.h>
 #include <ShaderHeaders/DebugLine.h>
 #include <ShaderHeaders/DebugPolygon.h>
 #include <ShaderHeaders/WhiteWall.h>
 #include <ShaderHeaders/Body.h>
 #include <ShaderHeaders/PortalShader.h>
+#include <ShaderHeaders/PortalParticleShader.h>
+#include <ShaderHeaders/PortalShader3D.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
@@ -90,7 +92,7 @@ typedef struct
     glm::vec4 data2; // sizeX, sizeY, unused, unused
 } s_wallUbo;
 
-typedef struct s_portalUbo
+typedef struct s_portalUbo3D
 {
     glm::mat4 modelMatrix;
     glm::vec4 data0; // a, b, abRatio, eThick
@@ -99,7 +101,36 @@ typedef struct s_portalUbo
     glm::vec4 data3; // funcMult0, funcMult1, noiseMult, 0
     glm::vec4 portalColour;
     glm::vec4 edgeColour;
+}s_portalUbo3D;
+
+typedef struct s_portalUbo
+{
+    glm::vec4 posSize; // pos.x, pos.y, size.x, size.y
+    glm::vec4 color;
+    glm::vec4 data0; // dirAngle, pixeler, midThick, xDropSize
 }s_portalUbo;
+
+typedef struct s_portalParticleUbo
+{
+    glm::vec4 portalPoints;
+    glm::vec4 color;
+    glm::vec4 data0; // dist, speed, time, angle
+    glm::vec4 data1; // sizex, sizey, randomization, none
+
+}s_portalParticleUbo;
+
+typedef struct
+{
+    glm::mat4 modelMatrix;
+    int isMirrored;
+    int isMirrored2;
+}s_renderBodyUbo;
+
+typedef struct
+{
+    glm::vec4 portals[4];
+    int numPortals;
+}s_renderFixtureUbo;
 
 typedef struct
 {
@@ -178,7 +209,10 @@ public:
 
     ThinDrawer(PortalWorld* pWorld);
 
-    bool drawReleases;
+    bool drawReleases = false;
+    bool drawDebugBodies = false;
+    bool drawDebugEdges = false;
+    bool drawDebugPortals = false;
 
     void initImgui();
     ImDrawData* drawData = nullptr;
@@ -187,7 +221,7 @@ public:
     uint32_t frameNumber = 0;
     uint32_t lastSwapChainImageIndex = 0;
     VkSampleCountFlagBits samples;
-    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_4_BIT;
+    VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_1_BIT;
 
     s_vulkanInfo* vulkanInfo;
     VkInstance instance;
@@ -212,8 +246,10 @@ public:
 
     std::vector<s_debug_renderGroup*> debug_renderGroups;
     std::vector<s_renderGroup*> renderGroups;
+    std::map<Portal*, s_portalRender> renderPortalData;
+    std::vector<s_renderGroup3D*> renderGroups3D;
 
-    std::map<Portal*, s_portalRender> portalsToRender;
+    std::map<Portal*, s_portalRender3D> portalsToRender3D;
 
     AnimGroup* animations = nullptr;
 
@@ -222,8 +258,11 @@ public:
     ShaderBase* debugLineShader;
     ShaderBase* debugPolygonShader;
     WhiteWall* whiteWallShader;
-    Body* bodyShader;
     PortalShader* portalShader;
+    PortalParticleShader* portalParticleShader;
+    Body* bodyShader3D;
+    PortalShader3D* portalShader3D;
+    BodyShader* bodyShader;
 
     // var end
 
@@ -251,8 +290,10 @@ public:
     void debug_renderPortals(VkCommandBuffer& cmdBuff);
     void debug_renderEdges(VkCommandBuffer& cmdBuff);
     void renderPortalBodies(VkCommandBuffer& cmdBuff);
-    void renderWalls(VkCommandBuffer& cmdBuff);
     void renderPortals(VkCommandBuffer& cmdBuff);
+    void renderPortalBodies3D(VkCommandBuffer& cmdBuff);
+    void renderWalls(VkCommandBuffer& cmdBuff);
+    void renderPortals3D(VkCommandBuffer& cmdBuff);
     void buildCommandBuffers();
 
     void beforeCreate();
@@ -278,24 +319,32 @@ public:
 
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin);
     void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-    void loadTexture(char* fileName, s_texture* texture);
+    void loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy=true,
+        VkSamplerAddressMode addressMode=VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filter= VK_FILTER_LINEAR);
     void updateImageDescriptors(s_texture* tex, VkDescriptorSetLayout& setLayout);
     void createImage(uint32_t width, uint32_t p_height, uint32_t mipLevels,
                      VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                      VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
     // mesh names are hold per fixture
-    void addPortalBody(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames);
+    void addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames);
     void debug_addPortalBody(PortalBody* portalBody);
+    void addPortalBody(PortalBody* portalBody, std::vector<std::string> textures);
     void releaseRenderResources();
 
     static bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
 
+    static void portalBodyCreateCallback(PortalBody* pb, void* data);
+    static void portalBodyDestroyCallback(PortalBody* pb, void* data);
+
     static void portalCreateCallback(Portal* portal);
     static void portalDestroyCallback(Portal* portal);
 
-    static void portalBodyCreateCallback(PortalBody* pb, void* data);
-    static void portalBodyDestroyCallback(PortalBody* pb, void* data);
+    static void portalCreateCallback_3d(Portal* portal);
+    static void portalDestroyCallback_3d(Portal* portal);
+
+    static void portalBodyCreateCallback_3d(PortalBody* pb, void* data);
+    static void portalBodyDestroyCallback_3d(PortalBody* pb, void* data);
 
     static void debug_portalBodyCreateCallback(PortalBody* pb, void* data);
     static void debug_portalBodyDestroyCallback(PortalBody* pb, void* data);

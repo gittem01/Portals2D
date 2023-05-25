@@ -33,14 +33,6 @@ void PortalShader::prepareVertexData()
     thinDrawer->bufferStage(vertexBuffer.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vertices);
 }
 
-glm::vec2 PortalShader::getEllipsePosOnAngle(float a, float b, float angle)
-{
-    glm::vec2 retVec = glm::vec2(   (a * b) / sqrt(b * b + a * a * tan(angle) * tan(angle)),
-                                    (a * b * tan(angle)) / sqrt(b * b + a * a * tan(angle) * tan(angle)));
-
-    return retVec;
-}
-
 void PortalShader::prepareUniforms()
 {
     int imCount = thinDrawer->swapChain->imageCount;
@@ -48,27 +40,22 @@ void PortalShader::prepareUniforms()
     uniformBuffers.resize(imCount);
 
     lastAllocationPos = 0;
-
     for (int i = 0; i < UNIFORM_ALLOC_COUNT; i++)
     {
         availableOffsets[i] = i * alignedSize;
     }
 
-    const glm::vec2 size = glm::vec2(2.5f, 5.0f);
-
     for (int i = 0; i < imCount; i++)
     {
         uniformBuffers[i].resize(1);
-
         uniformBuffers[i][0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
         thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, uniformBuffers[i][0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);
     }
 }
 
 void PortalShader::setupDescriptorSetLayout()
 {
-    const int descriptorSetLayoutCount = 3;
+    const int descriptorSetLayoutCount = 2;
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
 
@@ -77,20 +64,14 @@ void PortalShader::setupDescriptorSetLayout()
     VkDescriptorSetLayoutBinding layoutBinding10 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
-    VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
-
     VkDescriptorSetLayoutBinding bindings1[] = { layoutBinding0 };
     VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding10 };
-    VkDescriptorSetLayoutBinding texBindings[] = { textureBind };
 
     VkDescriptorSetLayoutCreateInfo descriptorLayout = vkinit::descriptorSetLayoutCreateInfo(bindings1, sizeof(bindings1) / sizeof(bindings1[0]));
     CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout, VK_NULL_HANDLE, &descriptorSetLayouts[0]));
 
     VkDescriptorSetLayoutCreateInfo descriptorLayout2 = vkinit::descriptorSetLayoutCreateInfo(bindings2, sizeof(bindings2) / sizeof(bindings2[0]));
     CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout2, VK_NULL_HANDLE, &descriptorSetLayouts[1]));
-
-    VkDescriptorSetLayoutCreateInfo setInfo = vkinit::descriptorSetLayoutCreateInfo(texBindings, std::size(texBindings));
-    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &setInfo, VK_NULL_HANDLE, &descriptorSetLayouts[2]));
 
     VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo(descriptorSetLayouts.data(), descriptorSetLayouts.size());
     CHECK_RESULT_VK(vkCreatePipelineLayout(logicalDevice, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &pipelineLayout));
@@ -131,10 +112,6 @@ void PortalShader::preparePipeline()
     pipelineCreateInfo->pStages = shader2.shaderStages.data();
     pipelineCreateInfo->pVertexInputState = &vertexInputState;
 
-    ((VkPipelineDepthStencilStateCreateInfo*)pipelineCreateInfo->pDepthStencilState)->depthCompareOp = VK_COMPARE_OP_ALWAYS;
-    ((VkPipelineRasterizationStateCreateInfo*)pipelineCreateInfo->pRasterizationState)->cullMode = VK_CULL_MODE_BACK_BIT;
-    ((VkPipelineMultisampleStateCreateInfo*)pipelineCreateInfo->pMultisampleState)->sampleShadingEnable = VK_TRUE;
-
     CHECK_RESULT_VK(vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, pipelineCreateInfo, VK_NULL_HANDLE, &pipeline));
 
     ThinDrawer::freePipelineData(pipelineCreateInfo);
@@ -142,10 +119,6 @@ void PortalShader::preparePipeline()
 
 void PortalShader::setupDescriptorSet()
 {
-    s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
-    thinDrawer->loadTexture((char*)"textures/grad2.png", tex);
-    textureData.push_back(tex);
-
     int imCount = thinDrawer->swapChain->imageCount;
 
     descriptorSets.resize(descriptorSetLayouts.size());
@@ -178,22 +151,4 @@ void PortalShader::setupDescriptorSet()
 
         vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
     }
-
-    VkDescriptorSetAllocateInfo allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[2], 1);
-    vkAllocateDescriptorSets(logicalDevice, &allocInfo, &tex->set);
-
-    VkDescriptorImageInfo imageBufferInfo;
-    imageBufferInfo.imageView = tex->view;
-    imageBufferInfo.sampler = tex->sampler;
-    imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    VkWriteDescriptorSet textureWrite = { };
-    textureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    textureWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    textureWrite.dstSet = tex->set;
-    textureWrite.descriptorCount = 1;
-    textureWrite.pImageInfo = &imageBufferInfo;
-    textureWrite.dstBinding = 0;
-
-    vkUpdateDescriptorSets(logicalDevice, 1, &textureWrite, 0, VK_NULL_HANDLE);
 }

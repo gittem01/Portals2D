@@ -7,14 +7,10 @@ layout (location = 1) in vec2 worldPosition;
 
 layout(set = 1, binding = 0) uniform sampler2D tex;
 
-layout (set = 0, binding = 2) uniform Ubo
+layout (set = 2, binding = 1) uniform PortalData
 {
+	vec4 portals[4];
 	int numPortals;
-} ubo;
-
-layout (set = 0, binding = 3) uniform PortalData
-{
-	vec4 portals[256];
 } portalData;
 
 float lineRel(vec2 a, vec2 b, vec2 c)
@@ -24,9 +20,10 @@ float lineRel(vec2 a, vec2 b, vec2 c)
 
 void main()
 {
-	for (int i = 0; i < ubo.numPortals; i++)
+	for (int i = 0; i < portalData.numPortals; i++)
 	{
-		if (lineRel(portalData.portals[i].xy, portalData.portals[i].zw, worldPosition) > 0){
+		if (lineRel(portalData.portals[i].xy, portalData.portals[i].zw, worldPosition) > 0)
+		{
 			outFragColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 			return;
 		}

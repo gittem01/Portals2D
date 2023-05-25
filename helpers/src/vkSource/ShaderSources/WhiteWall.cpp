@@ -60,17 +60,17 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.02f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
-                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 40 - 1.25*0.5, k * size.y - (y * size.y + size.y) * 0.5, size.x));
+                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 40 - 1.25*0.5, k * size.y - (y * size.y + size.y) * 0.5, -size.x));
                 wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
                 wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.04f + randVal22, 0.06f, 2.0f, 0.3f);
+                wallUbo.data = glm::vec4(0.1 + randVal22, 0.06f, 2.0f, 0.3f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -87,17 +87,17 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.02f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
-                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x + 41.25 - size.x * 0.5, k * size.y - (y * size.y + size.y) * 0.5, size.x));
+                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x + 41.25 - size.x * 0.5, k * size.y - (y * size.y + size.y) * 0.5, -size.x));
                 wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
                 wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -116,17 +116,17 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.02f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
-                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 8.75 - 1.25*0.5, k * size.y + 10 + size.y * 0.5, size.x));
+                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 8.75 - 1.25*0.5, k * size.y + 10 + size.y * 0.5, -size.x));
                 wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
                 wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -143,17 +143,17 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.02f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
-                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 8.75 - 1.25 * 0.5, k * size.y - size.y * y - 8.75, size.x));
+                wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 8.75 - 1.25 * 0.5, k * size.y - size.y * y - 8.75, -size.x));
                 wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
                 wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -162,70 +162,6 @@ void WhiteWall::prepareUniforms()
                 vkUnmapMemory(logicalDevice, uniformBuffers[i][0]->memory);
             }
             wallCount++;
-        }
-    }
-
-    x = 50.0 / size.y;
-
-    for (int j = 0; j < x; j++)
-    {
-        for (int k = -1; k < 2; k += 2)
-        {
-            for (int m = -1; m < 2; m += 2)
-            {
-                float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-                float randVal22 = (((float)rand() / RAND_MAX)) * 0.02f;
-                for (int i = 0; i < imCount; i++)
-                {
-                    s_wallUbo wallUbo;
-                    wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.y - 8.75, 10.0 * m, size.x * 0.5 * k));
-                    wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0));
-                    wallUbo.rotationMatrix = glm::rotate(wallUbo.rotationMatrix, glm::radians(90.0f * m), glm::vec3(1.0f, 0.0f, 0.0));
-                    wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
-                    wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-                    wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
-                    wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                    wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
-                    wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
-
-                    void* pData;
-                    CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[i][0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
-                    memcpy(pData, &wallUbo, sizeof(s_wallUbo));
-                    vkUnmapMemory(logicalDevice, uniformBuffers[i][0]->memory);
-                }
-                wallCount++;
-            }
-        }
-    }
-
-    y = 20 / size.y;
-    for (int j = -1; j < 2; j += 2)
-    {
-        for (int k = 0; k < y; k++)
-        {
-            for (int m = 0; m < 2; m++)
-            {
-                float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-                float randVal22 = (((float)rand() / RAND_MAX)) * 0.02f;
-                for (int i = 0; i < imCount; i++)
-                {
-                    s_wallUbo wallUbo;
-                    wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-10.0 + m * 50.0f, 7.5 + size.y * 0.5 - k * size.y, size.x * 0.5 * j));
-                    wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f * (-m * 2 + 1)), glm::vec3(0.0f, 1.0f, 0.0));
-                    wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
-                    wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-                    wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
-                    wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                    wallUbo.data = glm::vec4(0.02f + randVal22, 0.06f, 2.0f, 1.0f);
-                    wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
-
-                    void* pData;
-                    CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[i][0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
-                    memcpy(pData, &wallUbo, sizeof(s_wallUbo));
-                    vkUnmapMemory(logicalDevice, uniformBuffers[i][0]->memory);
-                }
-                wallCount++;
-            }
         }
     }
 }

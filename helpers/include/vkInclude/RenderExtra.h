@@ -7,22 +7,6 @@
 #include <set>
 #include <map>
 
-// per fixture
-typedef struct
-{
-    std::vector<std::vector<uint32_t>> dynamicOffsets;
-    struct s_buffers* vertexBuffer;
-    struct PBFixtureData* pbfData;
-    b2Shape::Type renderType;
-} s_debug_renderStruct;
-
-// per fixture
-typedef struct
-{
-    std::vector<s_debug_renderStruct*> renderFixtures;
-    class PortalBody* portalBody;
-} s_debug_renderBody;
-
 class AnimStruct
 {
 public:
@@ -64,6 +48,22 @@ public:
     AnimStruct* createAnimation(float* value, float scale, float from = 0.0f, float to = 1.0f);
 };
 
+// per fixture
+typedef struct
+{
+    std::vector<std::vector<uint32_t>> dynamicOffsets;
+    struct s_buffers* vertexBuffer;
+    struct PBFixtureData* pbfData;
+    b2Shape::Type renderType;
+} s_debug_renderStruct;
+
+// per fixture
+typedef struct
+{
+    std::vector<s_debug_renderStruct*> renderFixtures;
+    class PortalBody* portalBody;
+} s_debug_renderBody;
+
 // per worldIndex
 typedef struct
 {
@@ -81,6 +81,46 @@ typedef struct
     std::set<s_debug_renderBody*> renderBodies;
 } s_debug_renderGroup;
 
+typedef struct renderOffsets
+{
+    uint32_t bodyOffsets;
+    uint32_t fixtureOffsets;
+} renderOffsets;
+
+// per fixture
+typedef struct s_renderStruct
+{
+    std::vector<renderOffsets> dynamicOffsets;
+    struct PBFixtureData* pbfData;
+    bool renderDisabled;
+} s_renderStruct;
+
+// per fixture
+typedef struct
+{
+    std::vector<s_renderStruct*> renderFixtures;
+    class PortalBody* portalBody;
+} s_renderBody;
+
+// per worldIndex
+typedef struct
+{
+    std::vector<VkDescriptorSet*> imageSets;
+    // ordered consistently with the fixture list
+    std::vector<s_buffers*> vertexBuffers;
+    std::set<s_renderBody*> renderBodies;
+
+    int currentImgIndex;
+} s_renderGroup;
+
+typedef struct PortalRender
+{
+    std::vector<uint32_t> dynamicOffsets;
+    glm::vec4 data0;
+    class Portal* portal;
+    glm::vec2 scale;
+} s_portalRender;
+
 // per fixture
 typedef struct
 {
@@ -89,25 +129,25 @@ typedef struct
     s_buffers* indexBuffer;
     struct PBFixtureData* pbfData;
     VkDescriptorSet imageDescriptorSet;
-} s_renderStruct;
+} s_renderStruct3D;
 
 // per fixture
 typedef struct
 {
     std::vector<uint32_t> dynamicOffsets;
-    std::vector<s_renderStruct*> renderFixtures;
+    std::vector<s_renderStruct3D*> renderFixtures;
     class PortalBody* portalBody;
-} s_renderBody;
+} s_renderBody3D;
 
 // per worldIndex
 typedef struct RenderGroup
 {
     glm::mat4 scaleMatrix;
     std::vector<struct MeshData*> meshDatas;
-    std::set<s_renderBody*> renderBodies;
-} s_renderGroup;
+    std::set<s_renderBody3D*> renderBodies;
+} s_renderGroup3D;
 
-typedef struct PortalRender
+typedef struct PortalRender3D
 {
     std::vector<uint32_t> dynamicOffsets;
     AnimGroup* animGroup;
@@ -117,4 +157,4 @@ typedef struct PortalRender
     float sideFlatness;
     float noiseMult;
     float noiseScale;
-} s_portalRender;
+} s_portalRender3D;

@@ -285,7 +285,7 @@ void ThinDrawer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t te
     flushCommandBuffer(commandBuffer);
 }
 
-void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
+void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter)
 {
     std::string finalPath = IOHelper::assetsFolder + fileName;
 
@@ -298,8 +298,16 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
         exit(-1);
     }
 
-    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
     
+    VkFormatProperties formatProperties;
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
+
+    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))
+    {
+        format = VK_FORMAT_R8G8B8A8_UNORM;
+    }
+
     VkDeviceSize imageSize = width * height * (uint64_t)4;
 
     texture->width = width;
@@ -385,18 +393,18 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture)
 
     VkSamplerCreateInfo sampler = { };
     sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler.magFilter = VK_FILTER_LINEAR;
-    sampler.minFilter = VK_FILTER_LINEAR;
-    sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.magFilter = filter;
+    sampler.minFilter = filter;
+    sampler.mipmapMode = (VkSamplerMipmapMode)filter;
+    sampler.addressModeU = addressMode;
+    sampler.addressModeV = addressMode;
+    sampler.addressModeW = addressMode;
     sampler.mipLodBias = 0.0f;
     sampler.compareOp = VK_COMPARE_OP_NEVER;
     sampler.minLod = 0.0f;
     sampler.maxLod = VK_LOD_CLAMP_NONE;
     sampler.maxAnisotropy = 16.0;
-    sampler.anisotropyEnable = VK_TRUE;
+    sampler.anisotropyEnable = (VkBool32)enableAnisotropy;
     sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     
     CHECK_RESULT_VK(vkCreateSampler(logicalDevice, &sampler, VK_NULL_HANDLE, &texture->sampler));

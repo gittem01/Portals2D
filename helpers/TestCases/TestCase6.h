@@ -12,7 +12,7 @@ public:
     }
 
     void onCreate(){
-        createEdge(b2Vec2(-10000.0f, -10.0f), b2Vec2(+10000.0f, -10.0f), pWorld, b2_staticBody);
+        createEdge(b2Vec2(+10000.0f, -10.0f), b2Vec2(-10000.0f, -10.0f), pWorld, b2_staticBody);
 
         Portal* portal1 = pWorld->createPortal(b2Vec2(0.0f, -3.0f), b2Vec2(0.0f, +1.0f), 5.0f);
         Portal* portal2 = pWorld->createPortal(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -1.0f), 5.0f);
@@ -29,6 +29,8 @@ public:
         b2Body* body3 = createBox(b2Vec2(0, 0), b2Vec2(30, 0.5), pWorld, b2_dynamicBody);
         PortalBody* b3 = pWorld->createPortalBody(body3);
 
+        thinDrawer->addPortalBody(b3, {"long.png"});
+
         thinDrawer->debug_addPortalBody(b1);
         thinDrawer->debug_addPortalBody(b2);
         thinDrawer->debug_addPortalBody(b3);
@@ -43,6 +45,7 @@ public:
             
             b2Body* jointBody = createBox(startPos, b2Vec2(0.5f, 0.2f), pWorld, b2_dynamicBody);
             pb = pWorld->createPortalBody(jointBody);
+            thinDrawer->addPortalBody(pb, { "chain.png" });
             thinDrawer->debug_addPortalBody(pb);
 
             b2RevoluteJointDef revDef;

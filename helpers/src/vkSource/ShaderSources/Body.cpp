@@ -27,11 +27,11 @@ void Body::prepareUniforms()
     lastAllocationPos_body = 0;
     lastAllocationPos_fixture = 0;
    
-    for (int i = 0; i < UNIFORM_ALLOC_COUNT_BODY; i++)
+    for (int i = 0; i < UNIFORM_ALLOC_COUNT_BODY_3D; i++)
     {
         availableOffsets_body[i] = i * alignedSize_body;
     }
-    for (int i = 0; i < UNIFORM_ALLOC_COUNT_FIXTURE; i++)
+    for (int i = 0; i < UNIFORM_ALLOC_COUNT_FIXTURE_3D; i++)
     {
         availableOffsets_fixture[i] = i * alignedSize_fixture;
     }
@@ -44,8 +44,8 @@ void Body::prepareUniforms()
             uniformBuffers[i][j] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
         }
 
-        thinDrawer->uniformHelper(alignedSize_body * UNIFORM_ALLOC_COUNT_BODY, uniformBuffers[i][0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_BODY);
-        thinDrawer->uniformHelper(alignedSize_fixture * UNIFORM_ALLOC_COUNT_FIXTURE, uniformBuffers[i][1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_FIXTURE);
+        thinDrawer->uniformHelper(alignedSize_body * UNIFORM_ALLOC_COUNT_BODY_3D, uniformBuffers[i][0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_BODY_3D);
+        thinDrawer->uniformHelper(alignedSize_fixture * UNIFORM_ALLOC_COUNT_FIXTURE_3D, uniformBuffers[i][1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_FIXTURE_3D);
     }
 }
 

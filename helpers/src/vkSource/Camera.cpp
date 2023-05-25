@@ -1,10 +1,9 @@
 #include <Camera.h>
 #include <WindowHandler.h>
 
-Camera::Camera(glm::vec3 pos, WindowHandler* wh)
+Camera::Camera(glm::vec2 pos, WindowHandler* wh)
 {
 	this->pos = pos;
-	this->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
 	this->window = wh->window;
 	this->windowHandler = wh;
 
@@ -14,19 +13,6 @@ Camera::Camera(glm::vec3 pos, WindowHandler* wh)
 	updateOrtho();
 }
 
-void Camera::updateVectors()
-{	
-	glm::mat4 rotator = glm::mat4(1.0f);
-
-	rotator = glm::rotate(rotator, rotation.x, glm::vec3(1, 0, 0));
-	rotator = glm::rotate(rotator, rotation.y, glm::vec3(0, 1, 0));
-	rotator = glm::rotate(rotator, rotation.z, glm::vec3(0, 0, 1));
-
-	lookDir = glm::vec3(glm::vec4(0.0f, 0.0f, -1.0f, 1.0f) * rotator);
-	rightDir = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), lookDir));
-	upDir = glm::normalize(glm::cross(lookDir, rightDir));
-}
-
 void Camera::updateOrtho()
 {
 	xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
@@ -34,19 +20,11 @@ void Camera::updateOrtho()
 
 	camMatrix = glm::ortho(xSides.x, xSides.y, ySides.x, ySides.y, -100.0f, +100.0f);
 	camMatrix[1][1] *= -1;
-
-	updateVectors();
-
-	pers = glm::perspective(glm::radians(30.0f / zoom), windowHandler->windowSizes.x / windowHandler->windowSizes.y, 0.1f, 500.0f);
-	view = glm::lookAt(pos, pos + lookDir, upDir);
-	pers[1][1] *= -1;
-
-	camMatrix = pers * view;
 }
 
 void Camera::changeZoom(float inc)
 {
-	/*glm::vec2 mp = this->getCameraCoords(this->zoomPoint);
+	glm::vec2 mp = this->getCameraCoords(this->zoomPoint);
 
 	float zoomAfter = this->limitZoom(zoom + inc);
 
@@ -60,7 +38,7 @@ void Camera::changeZoom(float inc)
 	float yPerctAfter = (mp.y - this->pos.y) / (ySidesAfter.y - ySidesAfter.x);
 
 	this->pos.x += (xPerctAfter - xPerctBefore) * (xSidesAfter.y - xSidesAfter.x);
-	this->pos.y += (yPerctAfter - yPerctBefore) * (ySidesAfter.y - ySidesAfter.x);*/
+	this->pos.y += (yPerctAfter - yPerctBefore) * (ySidesAfter.y - ySidesAfter.x);
 	this->zoom += inc;
 	this->zoom = this->limitZoom(zoom);
 }
@@ -115,16 +93,8 @@ void Camera::dragFunc(int width, int height)
 
 	if (abs(lng) > 0) 
 	{
-		if (windowHandler->keyData[GLFW_KEY_LEFT_ALT])
-		{
-			rotation.y += diffVec.x * dragSmth * 0.001f;
-			rotation.x += diffVec.y * dragSmth * 0.001f;
-		}
-		else
-		{
-			pos.x -= diffVec.x * (sideDiffs.x / width) * dragSmth;
-			pos.y += diffVec.y * (sideDiffs.y / height) * dragSmth;
-		}
+		pos.x -= diffVec.x * (sideDiffs.x / width) * dragSmth / (zoom * zoom);
+		pos.y -= diffVec.y * (sideDiffs.y / height) * dragSmth / (zoom * zoom);
 
 		lastPos.x += diffVec.x * dragSmth;
 		lastPos.y += diffVec.y * dragSmth;
@@ -169,19 +139,7 @@ glm::vec2 Camera::getMouseCoords()
 	float xPos = xSides.x + xPerct * xDiff;
 	float yPos = ySides.x + yPerct * yDiff;
 
-	//return glm::vec2(xPos, yPos);
-
-	float ndc_x = (2.0f * windowHandler->mouseData[0]) / width - 1.0f;
-	float ndc_y = (2.0f * windowHandler->mouseData[1]) / height - 1.0f;
-
-	glm::vec4 clip_pos = glm::vec4(ndc_x, ndc_y, 0.0, 1.0);
-	glm::vec4 eye_pos = glm::inverse(pers) * clip_pos;
-	glm::vec4 world_pos = glm::inverse(view) * eye_pos;
-	glm::vec3 look_dir = glm::normalize(glm::vec3(world_pos) / world_pos.w - pos);
-
-	float multer = -pos.z / look_dir.z;
-
-	return glm::vec2(look_dir.x * multer + pos.x, look_dir.y * multer + pos.y);
+	return glm::vec2(xPos, yPos);
 }
 
 glm::vec2 Camera::getCameraCoords(glm::vec2 p)
