@@ -114,9 +114,8 @@ typedef struct s_portalParticleUbo
 {
     glm::vec4 portalPoints;
     glm::vec4 color;
-    glm::vec4 data0; // dist, speed, time, angle
-    glm::vec4 data1; // sizex, sizey, randomization, none
-
+    glm::vec4 data0; // dist, speed, time, upSize
+    glm::vec4 data1; // sizex, sizey, randomization, instanceCount
 }s_portalParticleUbo;
 
 typedef struct
@@ -252,6 +251,9 @@ public:
     std::map<Portal*, s_portalRender3D> portalsToRender3D;
 
     AnimGroup* animations = nullptr;
+    double gameTime = 0.0;
+    double upUpAnim = 0.0;
+    double upDownAnim = 0.0;
 
     std::vector<s_uniformBuffer*> sharedOrthoUniform;
     ShaderBase* debugCircleShader;

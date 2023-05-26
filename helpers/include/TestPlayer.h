@@ -575,25 +575,43 @@ public:
 
                         Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
-                        auto iter = thinDrawer->renderPortalData.find(portal);
-                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-                        {
-                            s_portalUbo* pUbo;
-                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory,
-                                iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-                            pUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
-                        }
-
                         if (portal)
                         {
                             portal->reviveAround();
                             portalA = portal;
 
+                            auto iter = thinDrawer->renderPortalData.find(portal);
+                            for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                            {
+                                s_portalUbo* pUbo;
+                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory,
+                                    iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                                pUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
+                            }
+
                             if (portalB)
                             {
                                 portalA->connect(portalB);
                                 portalB->reviveAround();
+
+                                auto iter2 = thinDrawer->renderPortalData.find(portalB);
+
+                                for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                                {
+                                    s_portalParticleUbo* ppUbo;
+                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
+                                        iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                    ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
+
+                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
+                                        iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                    ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
+                                }
                             }
                         }
                     }
@@ -617,25 +635,43 @@ public:
 
                         Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
-                        auto iter = thinDrawer->renderPortalData.find(portal);
-                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-                        {
-                            s_portalUbo* pUbo;
-                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory,
-                                iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-                            pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
-                        }
-
                         if (portal)
                         {
                             portal->reviveAround();
                             portalB = portal;
 
+                            auto iter = thinDrawer->renderPortalData.find(portal);
+                            for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                            {
+                                s_portalUbo* pUbo;
+                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory,
+                                    iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                                pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
+                            }
+
                             if (portalA)
                             {
                                 portalB->connect(portalA);
                                 portalA->reviveAround();
+
+                                auto iter2 = thinDrawer->renderPortalData.find(portalA);
+
+                                for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                                {
+                                    s_portalParticleUbo* ppUbo;
+                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
+                                        iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                    ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
+
+                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
+                                        iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                    ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
+                                }
                             }
                         }
                     }

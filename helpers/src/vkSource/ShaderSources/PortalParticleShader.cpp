@@ -54,9 +54,9 @@ void PortalParticleShader::prepareUniforms()
         s_portalParticleUbo* pUbo;
         vkMapMemory(logicalDevice, uniformBuffers[i][0]->memory, 0, alignedSize, 0, (void**)&pUbo);
         pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-        pUbo->portalPoints = glm::vec4(0.0f, 3.0f, 0.0f, -3.0f);
-        pUbo->data0 = glm::vec4(3.0f, 1.0f, 0.0f, 0.0f);
-        pUbo->data1 = glm::vec4(0.4f, 0.4f, 0.0f, 0.0f);
+        pUbo->portalPoints = glm::vec4(-2.0f, 5.0f, -2.0f, 1.0f);
+        pUbo->data0 = glm::vec4(0.6f, 1.0f, glfwGetTime(), 5.0f);
+        pUbo->data1 = glm::vec4(0.2f, 0.2f, 0.0f, 100.0f);
         vkUnmapMemory(logicalDevice, uniformBuffers[i][0]->memory);
     }
 }

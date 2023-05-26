@@ -77,6 +77,7 @@ void ThinDrawer::uniformFiller(int frameNum)
     sharedData->orthoMatrix = wh->cam->camMatrix;
     sharedData->cameraPos = glm::vec4(wh->cam->pos.x, wh->cam->pos.y, 0.0f, 1.0f);
     sharedData->data.x = wh->cam->zoom;
+    sharedData->data.y = gameTime;
     vkUnmapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory);
 }
 
@@ -701,6 +702,11 @@ void ThinDrawer::renderPortals3D(VkCommandBuffer& cmdBuff)
 
 void ThinDrawer::animate()
 {
+    gameTime += pDeltaTime;
+    upUpAnim = fmod(upUpAnim + gameTime, 1.0);
+    upDownAnim = fmod(upDownAnim + gameTime, 2.0);
+    if (upDownAnim > 1.0) upDownAnim = 2.0 - upDownAnim;
+
     for (AnimGroup* animGroup = animations; ;)
     {
         if (!animGroup)
@@ -805,12 +811,37 @@ void ThinDrawer::buildCommandBuffers()
 void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
 {
     VkDeviceSize offsets = 0;
-    uint32_t dynamicOffset = 0;
 
-    s_portalParticleUbo* pUbo;
-    vkMapMemory(logicalDevice, portalParticleShader->uniformBuffers[lastSwapChainImageIndex][0]->memory, 0, portalParticleShader->alignedSize, 0, (void**)&pUbo);
-    pUbo->data0.z = glfwGetTime();
-    vkUnmapMemory(logicalDevice, portalParticleShader->uniformBuffers[lastSwapChainImageIndex][0]->memory);
+    for (auto pair : renderPortalData)
+    {
+        s_portalRender* pr = &pair.second;
+
+        Portal* portal = pr->portal;
+
+        s_portalUbo* pUbo;
+        vkMapMemory(logicalDevice, portalShader->uniformBuffers[lastSwapChainImageIndex][0]->memory,
+            pr->dynamicOffsets[lastSwapChainImageIndex], portalShader->alignedSize, 0, (void**)&pUbo);
+        pUbo->posSize.x = pr->portal->pos.x; pUbo->posSize.y = pr->portal->pos.y;
+        pUbo->posSize.z = pr->scale.x; pUbo->posSize.w = pr->scale.y + (sin(gameTime * 3.0) + 1.0) * 0.03;
+        pUbo->data0 = pr->data0;
+        pUbo->data0.w *= (sin(gameTime * 3.0) + 2.0);
+        pUbo->data0.x = portal->dirAngle;
+        vkUnmapMemory(logicalDevice, portalShader->uniformBuffers[lastSwapChainImageIndex][0]->memory);
+
+        if (portal->connections[0].size() > 0)
+        {
+            b2Vec2 p0 = portal->pos + fmax(pr->scale.x * 0.5, 0.01) * portal->rotDir;
+            b2Vec2 p1 = portal->pos - fmax(pr->scale.x * 0.5, 0.01) * portal->rotDir;
+         
+            s_portalParticleUbo* ppUbo;
+            vkMapMemory(logicalDevice, portalParticleShader->uniformBuffers[lastSwapChainImageIndex][0]->memory,
+                pr->particleDynamicOffsets[lastSwapChainImageIndex], portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+            ppUbo->portalPoints = glm::vec4(p0.x, p0.y, p1.x, p1.y);
+            ppUbo->data0 = glm::vec4(0.6f, 1.0f, ppUbo->data0.z, 3.0f);
+            ppUbo->data1 = glm::vec4(0.4f, 0.3f, 0.0f, 125.0f);
+            vkUnmapMemory(logicalDevice, portalParticleShader->uniformBuffers[lastSwapChainImageIndex][0]->memory);
+        }
+    }
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, portalParticleShader->pipeline);
 
@@ -819,24 +850,16 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         portalParticleShader->pipelineLayout, 0, 1, &portalParticleShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
 
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        portalParticleShader->pipelineLayout, 1, 1, &portalParticleShader->descriptorSets[1][lastSwapChainImageIndex], 1, &dynamicOffset);
-
-    vkCmdDraw(cmdBuff, portalParticleShader->buffers[0]->count, 300, 0, 0);
-
     for (auto pair : renderPortalData)
     {
-        s_portalRender* pr = &pair.second;
+        if (pair.second.portal->connections[0].size() > 0)
+        {
+            vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                portalParticleShader->pipelineLayout, 1, 1, &portalParticleShader->descriptorSets[1][lastSwapChainImageIndex], 1, &pair.second.particleDynamicOffsets[lastSwapChainImageIndex]);
 
-        s_portalUbo* pUbo;
-        vkMapMemory(logicalDevice, portalShader->uniformBuffers[lastSwapChainImageIndex][0]->memory, pr->dynamicOffsets[lastSwapChainImageIndex], portalShader->alignedSize, 0, (void**)&pUbo);
-        pUbo->posSize.x = pr->portal->pos.x; pUbo->posSize.y = pr->portal->pos.y;
-        pUbo->posSize.z = pr->scale.x; pUbo->posSize.w = pr->scale.y;
-        pUbo->data0 = pr->data0;
-        vkUnmapMemory(logicalDevice, portalShader->uniformBuffers[lastSwapChainImageIndex][0]->memory);
+            vkCmdDraw(cmdBuff, portalParticleShader->buffers[0]->count, 125, 0, 0);
+        }
     }
-
-    offsets = 0;
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, portalShader->pipeline);
 
@@ -861,23 +884,25 @@ void ThinDrawer::portalCreateCallback(Portal* portal)
     s_portalRender* pr = &thinDrawer->renderPortalData[portal];
     pr->portal = portal;
     pr->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
-    pr->data0 = glm::vec4(portal->dirAngle, 0.0001f, 0.0f, portal->size * 0.4);
-    pr->scale = glm::vec2(0.0f, 0.0f);
+    pr->particleDynamicOffsets.resize(thinDrawer->swapChain->imageCount);
+    pr->data0 = glm::vec4(portal->dirAngle, 0.0001f, 0.04f, 0.0);
+    pr->scale = glm::vec2(0.0f, 0.08f);
 
-    AnimGroup* ag = new AnimGroup(5);
-    AnimStruct* animStruct = ag->createAnimation(&pr->scale.y, 4.0f, 0.0f, 0.2f);
+    AnimGroup* ag = new AnimGroup(4);
+
+    pr->animGroup = ag;
+    ag->toNull = &pr->animGroup;
+
+    AnimStruct* animStruct = ag->createAnimation(&pr->scale.x, 4.0f, 0.0f, portal->size * 2.0f);
     animStruct->registeredFunction = AnimStruct::linearFunc;
 
-    animStruct = ag->createAnimation(&pr->scale.x, 4.0f, 0.0f, portal->size * 2.0f);
+    AnimStruct* animStruct3 = ag->createChainedAnimation(animStruct, &pr->scale.y, 4.0f, 0.08f, 0.15f);
+    animStruct3->registeredFunction = AnimStruct::linearFunc;
+
+    animStruct = ag->createChainedAnimation(animStruct, &pr->data0.w, 4.0f, 0.0f, portal->size * 0.3);
     animStruct->registeredFunction = AnimStruct::linearFunc;
 
-    animStruct = ag->createAnimation(&pr->data0.w, 4.0f, 0.0f, portal->size * 0.5);
-    animStruct->registeredFunction = AnimStruct::linearFunc;
-
-    AnimStruct* animStruct2 = ag->createChainedAnimation(animStruct, &pr->data0.z, 8.0f, 0.0f, 0.03f);
-    animStruct2->registeredFunction = AnimStruct::linearFunc;
-
-    animStruct2 = ag->createChainedAnimation(animStruct2, &pr->data0.y, 4.0f, 0.0001f, 0.02f);
+    AnimStruct* animStruct2 = ag->createChainedAnimation(animStruct, &pr->data0.y, 4.0f, 0.0001f, 0.02f);
     animStruct2->registeredFunction = AnimStruct::linearFunc;
 
     ag->next = thinDrawer->animations;
@@ -887,12 +912,22 @@ void ThinDrawer::portalCreateCallback(Portal* portal)
     for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
     {
         uint32_t offset = thinDrawer->portalShader->availableOffsets[thinDrawer->portalShader->lastAllocationPos++];
+        uint32_t particleOffset = thinDrawer->portalParticleShader->availableOffsets[thinDrawer->portalParticleShader->lastAllocationPos++];
+        
         pr->dynamicOffsets[i] = offset;
+        pr->particleDynamicOffsets[i] = particleOffset;
 
         s_portalUbo* pUbo;
         vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory, offset, thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
         pUbo->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[i][0]->memory);
+
+        s_portalParticleUbo* ppUbo;
+        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory, particleOffset, thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+        ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+        ppUbo->portalPoints = glm::vec4(portal->points[0].x, portal->points[0].y, portal->points[1].x, portal->points[1].y);
+        ppUbo->data0 = glm::vec4(0.6f, 1.0f, glfwGetTime(), 3.0f);
+        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
     }
 }
 
@@ -903,10 +938,26 @@ void ThinDrawer::portalDestroyCallback(Portal* portal)
     auto iter = thinDrawer->renderPortalData.find(portal);
     s_portalRender* pr = &(*iter).second;
 
+    AnimGroup* animGroup = pr->animGroup;
+    if (animGroup)
+    {
+        if (!animGroup->prev)
+        {
+            thinDrawer->animations = animGroup->next;
+        }
+        delete animGroup;
+    }
+
     for (uint32_t offset : pr->dynamicOffsets)
     {
         thinDrawer->portalShader->lastAllocationPos--;
         thinDrawer->portalShader->availableOffsets[thinDrawer->portalShader->lastAllocationPos] = offset;
+    }
+
+    for (uint32_t offset : pr->particleDynamicOffsets)
+    {
+        thinDrawer->portalParticleShader->lastAllocationPos--;
+        thinDrawer->portalParticleShader->availableOffsets[thinDrawer->portalParticleShader->lastAllocationPos] = offset;
     }
 
     thinDrawer->renderPortalData.erase(iter);

@@ -22,10 +22,10 @@ layout (std140, set = 1, binding = 0) uniform UBO
 
 vec2 rotatePoint(vec2 point, float angle)
 {
-    float c = cos(angle);
-    float s = sin(angle);
-    mat2 rotationMatrix = mat2(c, -s, s, c);
-    return rotationMatrix * point;
+    float x = cos(angle) * point.x - sin(angle) * point.y;
+    float y = sin(angle) * point.x + cos(angle) * point.y;
+
+    return vec2(x, y);
 }
 
 void main()
