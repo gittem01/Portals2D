@@ -1,6 +1,5 @@
 #include <Sounder.h>
 #include <IOHelper.h>
-#include <GLFW/glfw3.h>
 
 Sounder* Sounder::object;
 
@@ -38,13 +37,13 @@ Sounder::Sounder()
     Sounder::object = this;
 
     // load default
-    loadSound("portalRadio.wav");
+    ALuint src = loadSound("portalRadio.wav");
     loadSound("jumpTest.wav");
     loadSound("wav_stereo.wav");
     loadSound("blueShoot.wav");
     loadSound("orangeShoot.wav");
 
-    //ALuint source = playLoopingSound(radio);
+    playLoopingSound(src);
 
     // device switch
     /*bool hasReopenDeviceExtension = alcIsExtensionPresent(device, "ALC_SOFT_reopen_device");
@@ -123,8 +122,12 @@ ALuint Sounder::loadSound(std::string fileName)
 
     AudioFile<short> audioFile;
     
-    audioFile.load(IOHelper::assetsFolder + "/sounds/" + fileName);
+    std::string path = IOHelper::assetsFolder + "sounds/" + fileName;
+    
+    audioFile.load(path);
     audioFile.printSummary();
+
+    if (audioFile.getNumSamplesPerChannel() == 0) return 0;
 
     ALvoid* data;
     ALsizei size;

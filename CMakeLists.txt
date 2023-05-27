@@ -53,16 +53,15 @@ if(APPLE)
 elseif(MSVC)
     #add_executable(${APP_NAME} WIN32 Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS} ${CMAKE_CURRENT_SOURCE_DIR}/icon/portal.rc)
     add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
-    #add_definitions(-DENABLE_WINMAIN)
-else()
-    add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
-endif()
-
-add_custom_command(TARGET ${APP_NAME} POST_BUILD
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_BINARY_DIR}/external/OpenALSoft/OpenAl32.dll
             ${CMAKE_BINARY_DIR}
     )
+    #add_definitions(-DENABLE_WINMAIN)
+else()
+    add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
+endif()
 
 file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 file(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)

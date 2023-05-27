@@ -9,7 +9,7 @@
 #include <PortalBody.h>
 #include <GameBase.h>
 #include <IOHelper.h>
-    
+
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {

@@ -22,18 +22,27 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld, b2Body* 
 Portal::~Portal(){
     delete queryClass;
 
+    std::set<pbWorldData*> handledIndices;
     for (int i = 0; i < 2; i++)
     {
         std::vector<PortalBody*> leftOutBodies;
         for (PortalBody* pb : collidingBodies[i])
         {
+            if (handledIndices.find(pb->worldIndex) != handledIndices.end())
+            {
+                continue;
+            }
+
             PortalBody* leftOutBody = pb;
             Portal* outPortal = this;
             int side = i;
 
             for (bodyCollisionStatus* bcs : *pb->bodyMaps)
             {
-                if (bcs->connection->portal2->getPointSide(bcs->body->body->GetPosition()) == bcs->connection->side2)
+                b2MassData mData;
+                bcs->body->body->GetMassData(&mData);
+                b2Vec2 center = bcs->body->body->GetWorldPoint(mData.center);
+                if (bcs->connection->portal2->getPointSide(center) == bcs->connection->side2)
                 {
                     leftOutBody = bcs->body;
                     outPortal = bcs->connection->portal2;
@@ -42,6 +51,7 @@ Portal::~Portal(){
                 }
             }
             leftOutBodies.push_back(leftOutBody);
+            handledIndices.insert(leftOutBody->worldIndex);
 
             b2Vec2 posChangeDir;
             if (side == 0)

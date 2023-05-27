@@ -5,9 +5,9 @@ int main(void)
 {
     IOHelper::getAssetsFolder();
 
-    Sounder* s = new Sounder();
-
     thinDrawer = new ThinDrawer(pWorld);
+
+    Sounder* s = new Sounder();
 
     testCase = newTest(thinDrawer, 8);
 

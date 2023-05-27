@@ -112,7 +112,7 @@ void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* 
 void PortalBody::collisionEnd(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
     fixtureData* fixData = (fixtureData*)fix2->GetUserData().pointer;
 
-    if (fixData && fixData->type == F_PORTAL)
+    if (fixData && fixData->type == F_PORTAL && pWorld->IsLocked())
     {
         Portal* p = (Portal*)fixData->data;
         PortalCollisionType out = p->collisionEnd(contact, fix2, fix1);
