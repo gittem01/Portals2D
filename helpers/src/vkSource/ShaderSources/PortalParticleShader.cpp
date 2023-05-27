@@ -26,7 +26,7 @@ void PortalParticleShader::prepareVertexData()
         { { -0.5f, -0.5f } },
         { { -0.5f, +0.5f } },
     };
-
+    
     uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(s_basicVertex);
     vertices->count = vertexBuffer.size();
 
@@ -36,7 +36,7 @@ void PortalParticleShader::prepareVertexData()
 void PortalParticleShader::prepareUniforms()
 {
     int imCount = thinDrawer->swapChain->imageCount;
-    alignedSize = thinDrawer->pad_uniform_buffer_size(sizeof(s_portalUbo));
+    alignedSize = thinDrawer->pad_uniform_buffer_size(sizeof(s_portalParticleUbo));
     uniformBuffers.resize(imCount);
 
     lastAllocationPos = 0;

@@ -18,10 +18,13 @@ include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/tiny_gltf)
 include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
 include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
+include_directories(${CMAKE_SOURCE_DIR}/external/OpenAlSoft/include)
+include_directories(${CMAKE_SOURCE_DIR}/external/AudioFile)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glfw)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/imgui)
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/OpenALSoft)
 
 file(GLOB HELPER_SOURCES    ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp
                             ${CMAKE_SOURCE_DIR}/helpers/src/vkSource/*.cpp
@@ -55,6 +58,12 @@ else()
     add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
 endif()
 
+add_custom_command(TARGET ${APP_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/external/OpenALSoft/OpenAl32.dll
+            ${CMAKE_BINARY_DIR}
+    )
+
 file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 file(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
 
@@ -65,6 +74,7 @@ target_link_libraries(${APP_NAME} PORTAL2D)
 target_link_libraries(${APP_NAME} box2d)
 target_link_libraries(${APP_NAME} glfw)
 target_link_libraries(${APP_NAME} imgui)
+target_link_libraries(${APP_NAME} OpenAL)
 
 if (APPLE)
 	target_link_libraries(${APP_NAME} libvulkan.1.3.216.dylib)

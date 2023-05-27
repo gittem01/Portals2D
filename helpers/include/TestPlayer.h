@@ -8,6 +8,7 @@
 #include "Portal.h"
 #include <SwapChain.h>
 #include "ThinDrawer.h"
+#include <Sounder.h>
 
 class TestPlayer
 {
@@ -49,6 +50,10 @@ public:
 
     b2Vec2 lastDirs[2];
 
+    ALuint jumpBuffer;
+    ALuint blueShootBuffer;
+    ALuint orangeShootBuffer;
+
     TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 1.5f)){
         this->pWorld = pWorld;
         this->wh = wh;
@@ -76,6 +81,10 @@ public:
         lastDoubleKey = -1;
 
         onAirFor = 0.0f;
+    
+        jumpBuffer = Sounder::object->bufferMap["jumpTest.wav"];
+        blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
+        orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
     }
 
     void createBody(b2Vec2 pos){
@@ -577,6 +586,8 @@ public:
 
                         if (portal)
                         {
+                            Sounder::object->playSound(blueShootBuffer);
+
                             portal->reviveAround();
                             portalA = portal;
 
@@ -637,6 +648,8 @@ public:
 
                         if (portal)
                         {
+                            Sounder::object->playSound(orangeShootBuffer);
+
                             portal->reviveAround();
                             portalB = portal;
 
@@ -962,6 +975,8 @@ public:
             (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f)))
         {
             lv.y = 10.0f * (float)pBody->size();
+
+            Sounder::object->playSound(jumpBuffer);
         }
 
         if (lv.y < -20.0f)

@@ -15,7 +15,6 @@ void ThinDrawer::createWindow()
 void ThinDrawer::initBase()
 {
     IOHelper::thinDrawer = this;
-    IOHelper::getAssetsFolder();
 
     vulkanInfo = new s_vulkanInfo;
 

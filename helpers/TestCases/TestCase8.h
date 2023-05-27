@@ -181,7 +181,8 @@ public:
 
         lastBody->SetLinearDamping(0.0f);
 
-        lastBody = createBox(startPos, b2Vec2(0.7f, 0.7f), pWorld, b2_dynamicBody);
+        startPos = b2Vec2(0.0f, 0.0f);
+        lastBody = createBox(startPos, b2Vec2(0.7f, 0.7f), pWorld, b2_dynamicBody, 0.0f);
         lastPb = pWorld->createPortalBody(lastBody);
         thinDrawer->debug_addPortalBody(lastPb);
         thinDrawer->addPortalBody(lastPb, {});

@@ -8,5 +8,3 @@ CMakeSettings.json
 /out
 *.py
 *.save
-assets/gltf
-assets/textures

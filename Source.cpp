@@ -1,7 +1,12 @@
 #include "TestCaseIncludes.h"
+#include <Sounder.h>
 
 int main(void)
 {
+    IOHelper::getAssetsFolder();
+
+    Sounder* s = new Sounder();
+
     thinDrawer = new ThinDrawer(pWorld);
 
     testCase = newTest(thinDrawer, 8);
@@ -18,6 +23,8 @@ int main(void)
         {
             thinDrawer->pDeltaTime = 0.0;
         }
+
+        s->update();
 
         testCase->imguiRender();
 

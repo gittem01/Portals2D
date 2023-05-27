@@ -10,9 +10,7 @@
 
 void Body::prepareVertexData()
 {
-    IOHelper::loadGlTF("default");
-    IOHelper::loadGlTF("pCube");
-    IOHelper::loadGlTF("sphere");
+    
 }
 
 void Body::prepareUniforms()

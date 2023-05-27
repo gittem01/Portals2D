@@ -9,6 +9,7 @@
 #include <PortalBody.h>
 #include <GameBase.h>
 #include <IOHelper.h>
+    
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {
@@ -80,6 +81,9 @@ void ThinDrawer::uniformFiller(int frameNum)
     sharedData->data.y = gameTime;
     vkUnmapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory);
 }
+
+#include <chrono>
+#include <thread>
 
 void ThinDrawer::renderLoop()
 {
@@ -231,12 +235,7 @@ void ThinDrawer::setupDescriptorSet()
     portalShader3D->setupDescriptorSet();
     bodyShader->setupDescriptorSet();
 
-    IOHelper::loadTexture("defaultTex.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_NEAREST);
-    IOHelper::loadTexture("playerTest.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-
     IOHelper::loadTexture("white.png");
-    IOHelper::loadTexture("redHood.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_NEAREST);
-    IOHelper::loadTexture("gun2.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_NEAREST);
 }
 
 void ThinDrawer::renderCommandBeginner(VkCommandBuffer& cmdBuff)
@@ -555,14 +554,14 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, bodyShader->pipeline);
 
-    double time = glfwGetTime() * 20.0;
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         bodyShader->pipelineLayout, 0, 1, &bodyShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
 
     for (s_renderGroup* renderGroup : renderGroups)
     {
+        double animVal = upUpAnim * renderGroup->imageSets.size();
         vkCmdBindDescriptorSets(frames[lastSwapChainImageIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            bodyShader->pipelineLayout, 1, 1, renderGroup->imageSets[((int)time) % renderGroup->imageSets.size()], 0, VK_NULL_HANDLE);
+            bodyShader->pipelineLayout, 1, 1, renderGroup->imageSets[((int)animVal) % renderGroup->imageSets.size()], 0, VK_NULL_HANDLE);
         for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
             int i = 0;
@@ -703,8 +702,8 @@ void ThinDrawer::renderPortals3D(VkCommandBuffer& cmdBuff)
 void ThinDrawer::animate()
 {
     gameTime += pDeltaTime;
-    upUpAnim = fmod(upUpAnim + gameTime, 1.0);
-    upDownAnim = fmod(upDownAnim + gameTime, 2.0);
+    upUpAnim = fmod(gameTime, 1.0);
+    upDownAnim = fmod(gameTime, 2.0);
     if (upDownAnim > 1.0) upDownAnim = 2.0 - upDownAnim;
 
     for (AnimGroup* animGroup = animations; ;)
@@ -924,7 +923,7 @@ void ThinDrawer::portalCreateCallback(Portal* portal)
 
         s_portalParticleUbo* ppUbo;
         vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory, particleOffset, thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-        ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+        ppUbo->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         ppUbo->portalPoints = glm::vec4(portal->points[0].x, portal->points[0].y, portal->points[1].x, portal->points[1].y);
         ppUbo->data0 = glm::vec4(0.6f, 1.0f, glfwGetTime(), 3.0f);
         vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
