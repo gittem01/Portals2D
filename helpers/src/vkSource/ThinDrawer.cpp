@@ -33,6 +33,7 @@ void ThinDrawer::surfaceRecreate()
     vkDestroyPipeline(logicalDevice, portalShader3D->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalParticleShader->pipeline, VK_NULL_HANDLE);
+    vkDestroyPipeline(logicalDevice, dualParticleShader->pipeline, VK_NULL_HANDLE);
     vkDestroyRenderPass(logicalDevice, renderPass, VK_NULL_HANDLE);
     swapChain->destroy();
     
@@ -57,6 +58,7 @@ void ThinDrawer::initExtra()
     whiteWallShader = new WhiteWall(this);
     portalShader = new PortalShader(this);
     portalParticleShader = new PortalParticleShader(this);
+    dualParticleShader = new DualParticleShader(this);
     bodyShader3D = new Body(this);
     portalShader3D = new PortalShader3D(this);
     bodyShader = new BodyShader(this);
@@ -76,7 +78,9 @@ void ThinDrawer::uniformFiller(int frameNum)
     s_sharedUniformData* sharedData;
     CHECK_RESULT_VK(vkMapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory, 0, sizeof(s_sharedUniformData), 0, (void**)&sharedData));
     sharedData->orthoMatrix = wh->cam->camMatrix;
-    sharedData->cameraPos = glm::vec4(wh->cam->pos.x, wh->cam->pos.y, 0.0f, 1.0f);
+    sharedData->cameraPos = glm::vec4(
+        wh->cam->pos.x, wh->cam->pos.y,
+        wh->cam->xSides.y - wh->cam->xSides.x, wh->cam->ySides.y - wh->cam->ySides.x);
     sharedData->data.x = wh->cam->zoom;
     sharedData->data.y = gameTime;
     vkUnmapMemory(logicalDevice, sharedOrthoUniform[frameNum]->memory);
@@ -151,6 +155,7 @@ void ThinDrawer::prepareVertices()
     whiteWallShader->prepareVertexData();
     portalShader->prepareVertexData();
     portalParticleShader->prepareVertexData();
+    dualParticleShader->prepareVertexData();
     bodyShader3D->prepareVertexData();
     portalShader3D->prepareVertexData();
     bodyShader->prepareVertexData();
@@ -172,6 +177,7 @@ void ThinDrawer::prepareUniformBuffers()
     whiteWallShader->prepareUniforms();
     portalShader->prepareUniforms();
     portalParticleShader->prepareUniforms();
+    dualParticleShader->prepareUniforms();
     bodyShader3D->prepareUniforms();
     portalShader3D->prepareUniforms();
     bodyShader->prepareUniforms();
@@ -185,6 +191,7 @@ void ThinDrawer::setupDescriptorSetLayout()
     whiteWallShader->setupDescriptorSetLayout();
     portalShader->setupDescriptorSetLayout();
     portalParticleShader->setupDescriptorSetLayout();
+    dualParticleShader->setupDescriptorSetLayout();
     bodyShader3D->setupDescriptorSetLayout();
     portalShader3D->setupDescriptorSetLayout();
     bodyShader->setupDescriptorSetLayout();
@@ -198,6 +205,7 @@ void ThinDrawer::preparePipelines()
     whiteWallShader->preparePipeline();
     portalShader->preparePipeline();
     portalParticleShader->preparePipeline();
+    dualParticleShader->preparePipeline();
     bodyShader3D->preparePipeline();
     portalShader3D->preparePipeline();
     bodyShader->preparePipeline();
@@ -231,6 +239,7 @@ void ThinDrawer::setupDescriptorSet()
     whiteWallShader->setupDescriptorSet();
     portalShader->setupDescriptorSet();
     portalParticleShader->setupDescriptorSet();
+    dualParticleShader->setupDescriptorSet();
     bodyShader3D->setupDescriptorSet();
     portalShader3D->setupDescriptorSet();
     bodyShader->setupDescriptorSet();
@@ -776,7 +785,11 @@ void ThinDrawer::buildCommandBuffers()
 
     VkDeviceSize offsets = 0;
 
-    renderWalls(cmdBuff);
+    renderBackgroundParticles(cmdBuff);
+
+    vkCmdDraw(cmdBuff, dualParticleShader->buffers[0]->count, 1000, 0, 0);
+
+    //renderWalls(cmdBuff);
 
     renderPortalBodies(cmdBuff);
 
@@ -805,6 +818,30 @@ void ThinDrawer::buildCommandBuffers()
 
     vkCmdEndRenderPass(cmdBuff);
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
+}
+
+void ThinDrawer::renderBackgroundParticles(VkCommandBuffer& cmdBuff)
+{
+    VkDeviceSize offsets = 0;
+    uint32 dynamicOffsets = 0;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, dualParticleShader->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &dualParticleShader->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        dualParticleShader->pipelineLayout, 0, 1, &dualParticleShader->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        dualParticleShader->pipelineLayout, 1, 1, &dualParticleShader->descriptorSets[1][lastSwapChainImageIndex], 1, &dynamicOffsets);
+
+    vkCmdDraw(cmdBuff, dualParticleShader->buffers[0]->count, 1000, 0, 0);
+
+    dynamicOffsets = dualParticleShader->alignedSize;
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        dualParticleShader->pipelineLayout, 1, 1, &dualParticleShader->descriptorSets[1][lastSwapChainImageIndex], 1, &dynamicOffsets);
+
+    vkCmdDraw(cmdBuff, dualParticleShader->buffers[0]->count, 1000, 0, 0);
 }
 
 void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
@@ -837,7 +874,7 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
                 pr->particleDynamicOffsets[lastSwapChainImageIndex], portalParticleShader->alignedSize, 0, (void**)&ppUbo);
             ppUbo->portalPoints = glm::vec4(p0.x, p0.y, p1.x, p1.y);
             ppUbo->data0 = glm::vec4(0.6f, 1.0f, ppUbo->data0.z, 3.0f);
-            ppUbo->data1 = glm::vec4(0.4f, 0.3f, 0.0f, 125.0f);
+            ppUbo->data1 = glm::vec4(0.4f, 0.3f, ppUbo->data1.z, 125.0f);
             vkUnmapMemory(logicalDevice, portalParticleShader->uniformBuffers[lastSwapChainImageIndex][0]->memory);
         }
     }

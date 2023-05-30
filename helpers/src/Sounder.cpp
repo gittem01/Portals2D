@@ -39,11 +39,11 @@ Sounder::Sounder()
     // load default
     ALuint src = loadSound("portalRadio.wav");
     loadSound("jumpTest.wav");
-    loadSound("wav_stereo.wav");
+    src = loadSound("wav_stereo.wav");
     loadSound("blueShoot.wav");
     loadSound("orangeShoot.wav");
 
-    playLoopingSound(src);
+    //playLoopingSound(src);
 
     // device switch
     /*bool hasReopenDeviceExtension = alcIsExtensionPresent(device, "ALC_SOFT_reopen_device");
@@ -125,7 +125,6 @@ ALuint Sounder::loadSound(std::string fileName)
     std::string path = IOHelper::assetsFolder + "sounds/" + fileName;
     
     audioFile.load(path);
-    audioFile.printSummary();
 
     if (audioFile.getNumSamplesPerChannel() == 0) return 0;
 

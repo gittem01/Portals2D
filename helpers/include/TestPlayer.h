@@ -614,12 +614,14 @@ public:
                                     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
                                         iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
                                     ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->data1.z = thinDrawer->gameTime;
                                     ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
                                     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
 
                                     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
                                         iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
                                     ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->data1.z = thinDrawer->gameTime;
                                     ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
                                     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
                                 }
@@ -676,12 +678,14 @@ public:
                                     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
                                         iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
                                     ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->data1.z = thinDrawer->gameTime;
                                     ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
                                     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
 
                                     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory,
                                         iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
                                     ppUbo->data0.z = thinDrawer->gameTime;
+                                    ppUbo->data1.z = thinDrawer->gameTime;
                                     ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
                                     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[i][0]->memory);
                                 }

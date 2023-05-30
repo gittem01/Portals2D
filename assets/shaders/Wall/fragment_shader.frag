@@ -43,8 +43,8 @@ void main()
 
     float divRat = 0.5;
 
-    grdClr.x = (grdClr.x - (1.0 - 1.0 / 5.0)) * 5.0;
-    grdClr.z = (grdClr.z - (1.0 - 1.0 / 10.0)) * 10.0;
+    grdClr.x = (grdClr.x - (1.0 - 1.0 / 2.0)) * 2.0;
+    grdClr.z = (grdClr.z - (1.0 - 1.0 / 4.0)) * 4.0;
 
     grdClr.x = max(grdClr.x, grdClr.z);
 
@@ -59,7 +59,7 @@ void main()
     {
         float ratio = (grdClr.x - divRat) / (1 - divRat);
         ratio = pow(ratio, 2.0);
-        FragColour = (bgColour * (1.0 - ratio) + vec4(0.0) * ratio);
+        FragColour = (bgColour * (1.0 - ratio) + edgeColour * ratio);
     }
     else
     {

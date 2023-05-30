@@ -60,7 +60,7 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
@@ -70,7 +70,7 @@ void WhiteWall::prepareUniforms()
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.1 + randVal22, 0.06f, 2.0f, 0.3f);
+                wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 0.3f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -87,7 +87,7 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
@@ -97,7 +97,7 @@ void WhiteWall::prepareUniforms()
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -116,7 +116,7 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
@@ -126,7 +126,7 @@ void WhiteWall::prepareUniforms()
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -143,7 +143,7 @@ void WhiteWall::prepareUniforms()
         for (int k = 0; k < y; k++)
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
-            float randVal22 = (((float)rand() / RAND_MAX)) * 0.1f;
+            float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             for (int i = 0; i < imCount; i++)
             {
                 s_wallUbo wallUbo;
@@ -152,8 +152,9 @@ void WhiteWall::prepareUniforms()
                 wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
                 wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
+                wallUbo.dotColour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0);
                 wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
-                wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
+                wallUbo.data = glm::vec4(0.05f + randVal22, 0.06f, 2.0f, 1.0f);
                 wallUbo.data2 = glm::vec4(size.x, size.y, 0.0f, 0.0f);
 
                 void* pData;
@@ -238,7 +239,7 @@ void WhiteWall::preparePipeline()
 void WhiteWall::setupDescriptorSet()
 {
     s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
-    thinDrawer->loadTexture((char*)"textures/dots.png", tex);
+    thinDrawer->loadTexture((char*)"textures/undertaleHeart.png", tex, false, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST);
     textureData.push_back(tex);
 
     s_texture* tex2 = (s_texture*)malloc(sizeof(s_texture));

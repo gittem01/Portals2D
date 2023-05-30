@@ -8,6 +8,7 @@
 #include <ShaderHeaders/Body.h>
 #include <ShaderHeaders/PortalShader.h>
 #include <ShaderHeaders/PortalParticleShader.h>
+#include <ShaderHeaders/DualParticleShader.h>
 #include <ShaderHeaders/PortalShader3D.h>
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -117,6 +118,14 @@ typedef struct s_portalParticleUbo
     glm::vec4 data0; // dist, speed, time, upSize
     glm::vec4 data1; // sizex, sizey, randomization, instanceCount
 }s_portalParticleUbo;
+
+typedef struct s_dualParticleUbo
+{
+    glm::vec4 color0;
+    glm::vec4 color1;
+    glm::vec4 data0; // none, speed, time, midCircleRadius
+    glm::vec4 data1; // sizex, sizey, randomization, none
+}s_dualParticleUbo;
 
 typedef struct
 {
@@ -262,6 +271,7 @@ public:
     WhiteWall* whiteWallShader;
     PortalShader* portalShader;
     PortalParticleShader* portalParticleShader;
+    DualParticleShader* dualParticleShader;
     Body* bodyShader3D;
     PortalShader3D* portalShader3D;
     BodyShader* bodyShader;
@@ -293,6 +303,7 @@ public:
     void debug_renderEdges(VkCommandBuffer& cmdBuff);
     void renderPortalBodies(VkCommandBuffer& cmdBuff);
     void renderPortals(VkCommandBuffer& cmdBuff);
+    void renderBackgroundParticles(VkCommandBuffer& cmdBuff);
     void renderPortalBodies3D(VkCommandBuffer& cmdBuff);
     void renderWalls(VkCommandBuffer& cmdBuff);
     void renderPortals3D(VkCommandBuffer& cmdBuff);
