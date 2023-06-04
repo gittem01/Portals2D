@@ -9,18 +9,16 @@
 #include <SwapChain.h>
 #include "ThinDrawer.h"
 #include <Sounder.h>
+#include <DefaultObject.h>
 
-class TestPlayer
+class TestPlayer : public DefaultObject
 {
-
 public:
     Portal* portalA;
     Portal* portalB;
     float lastPortalCreationTime;
 
-    std::vector<PortalBody*>* pBody;
     std::vector<PortalBody*>* gun;
-    PortalWorld* pWorld;
     WindowHandler* wh;
     b2RevoluteJoint* oldJoint;
     PortalBody* oldPortalBody;
@@ -54,7 +52,7 @@ public:
     ALuint blueShootBuffer;
     ALuint orangeShootBuffer;
 
-    TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 1.5f)){
+    TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 1.5f)) : DefaultObject(pWorld){
         this->pWorld = pWorld;
         this->wh = wh;
         this->size = size;
@@ -99,7 +97,7 @@ public:
         b2Body* body = pWorld->CreateBody(&bodyDef);
 
         b2PolygonShape boxShape;
-        boxShape.SetAsBox(size.x / 2.0f, size.y / 2.0f);
+        boxShape.SetAsBox(size.x * 0.5, size.y * 0.5 - size.x * 0.5);
 
         b2FixtureDef fDef;
         fDef.density = 1.0f;
@@ -109,11 +107,21 @@ public:
 
         body->CreateFixture(&fDef);
 
+        b2CircleShape cShape;
+        cShape.m_radius = size.x * 0.5;
+        cShape.m_p = b2Vec2(0.0, -size.y * 0.5 + size.x * 0.5);
+        b2Fixture* fix = body->CreateFixture(&cShape, 1.0);
+        fix->SetFriction(0.0f);
+
+        cShape.m_p = b2Vec2(0.0, +size.y * 0.5 - size.x * 0.5);
+        fix = body->CreateFixture(&cShape, 1.0);
+        fix->SetFriction(0.0f);
+
         PortalBody* pb = pWorld->createPortalBody(body);
 
         bodyData* bData = (bodyData*)body->GetUserData().pointer;
         g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-        physicsData->type = TEST_PLAYER;
+        physicsData->type = DEFAULT_OBJECT;
         physicsData->data = this;
         bData->extraData = physicsData;
 
@@ -147,7 +155,7 @@ public:
         jDef.bodyA = pBody->at(0)->body;
         jDef.bodyB = gun->at(0)->body;
         jDef.collideConnected = false;
-        jDef.localAnchorA = b2Vec2(0.0f, 0.35f);
+        jDef.localAnchorA = b2Vec2(0.0f, +0.35f);
         jDef.localAnchorB = b2Vec2(0.0f, -0.35f);
         jDef.calculateAnchorHelpers();
 
@@ -162,7 +170,8 @@ public:
         contact->SetRestitution(0.0f);
     }
 
-    void reportContact(b2Contact* contact, b2Body* contactingBody, b2Fixture* fix2){
+    void reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
+    {
         if (!contact->IsEnabled() || fix2->IsSensor())
         {
             return;
@@ -831,8 +840,8 @@ public:
         }
         if (left || right)
         {
-            const float groundMult = 90.0f;
-            const float airMult = 20.0f;
+            const float groundMult = 10.0f;
+            const float airMult = 10.0f;
             const float fwdGrndSlw = 5.0f;
             if (right)
             {

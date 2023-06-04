@@ -23,7 +23,7 @@ typedef enum
 
 typedef enum
 {
-    TEST_PLAYER = 0x01,
+    DEFAULT_OBJECT = 0x01,
     EDGE = 0x02,
 } g_DataType;
 

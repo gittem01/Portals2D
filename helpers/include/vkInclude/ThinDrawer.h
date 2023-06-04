@@ -10,6 +10,7 @@
 #include <ShaderHeaders/PortalParticleShader.h>
 #include <ShaderHeaders/DualParticleShader.h>
 #include <ShaderHeaders/PortalShader3D.h>
+#include <ShaderHeaders/WallLight.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
@@ -209,6 +210,7 @@ class PortalWorld;
 class ThinDrawer
 {
 public:
+    static ThinDrawer* object;
 
     PortalWorld* pWorld;
     VkDescriptorPool imguiPool;
@@ -275,6 +277,7 @@ public:
     Body* bodyShader3D;
     PortalShader3D* portalShader3D;
     BodyShader* bodyShader;
+    WallLight* wallLight;
 
     // var end
 

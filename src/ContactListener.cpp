@@ -1,6 +1,7 @@
 #include "ContactListener.h"
 #include "mouseJointHandler.h"
 #include <GameBase.h>
+#include <Sounder.h>
 
 // for mouse
 void ContactListener::endBeginHandle(ContactType type, b2Contact* contact)
@@ -133,17 +134,17 @@ void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impu
     if (bDataA && bDataA->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
-        if (physicsData->type == TEST_PLAYER)
+        if (physicsData->type == DEFAULT_OBJECT)
         {
-            ((TestPlayer*)physicsData->data)->reportContact(contact, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
+            ((DefaultObject*)physicsData->data)->reportContact(contact, impulse, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
         }
     }
     if (bDataB && bDataB->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
-        if (physicsData->type == TEST_PLAYER)
+        if (physicsData->type == DEFAULT_OBJECT)
         {
-            ((TestPlayer*)physicsData->data)->reportContact(contact, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
+            ((DefaultObject*)physicsData->data)->reportContact(contact, impulse, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
         }
     }
 }

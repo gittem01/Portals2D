@@ -50,7 +50,7 @@ void main()
     localPosCopy.x = int(localPos.x / pixeller) * pixeller;
     localPosCopy.y = int(localPos.y / pixeller) * pixeller;
 
-    float len = length(localPosCopy);
+    float len = length(localPos);
     if (len > 0.5)
     {
         FragColour = vec4(0.0);

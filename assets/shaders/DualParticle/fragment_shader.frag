@@ -25,7 +25,7 @@ void main()
     localPosCopy.x = int(localPos.x / pixeller) * pixeller;
     localPosCopy.y = int(localPos.y / pixeller) * pixeller;
 
-    vec2 absPos = abs(localPosCopy);
+    vec2 absPos = abs(localPos);
     vec2 sideCirclePos = vec2(size.x * 0.5 - size.y * 0.5, 0.0);
     float hyp = size.y * 0.5 + circleRadius;
     float bot = size.x * 0.5 - size.y * 0.5;
@@ -50,7 +50,7 @@ void main()
             val = length(absPos - sideCirclePos);
         }
     
-        float xRatio = localPosCopy.x / size.x;
+        float xRatio = localPos.x / size.x;
         xRatio = xRatio / 0.1 + 0.5;
         vec3 clr = xRatio * color0 + (1.0 - xRatio) * color1;
         float colorVal = 1.0 - val / (size.y * 1.0);

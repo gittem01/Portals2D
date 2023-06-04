@@ -2,7 +2,7 @@
 
 #include <helpers.h>
 
-#define ENABLE_TESTPLAYER 0
+#define ENABLE_TESTPLAYER 1
 
 #if ENABLE_TESTPLAYER
     TestPlayer* tp;
@@ -149,9 +149,9 @@ public:
         thinDrawer->debug_addPortalBody(tp->pBody->at(0));
         thinDrawer->debug_addPortalBody(tp->gun->at(0));
 
-        thinDrawer->addPortalBody(tp->gun->at(0), { "gun2.png" });
-        thinDrawer->addPortalBody(tp->pBody->at(0), { "redHood.png" });
-        
+        thinDrawer->addPortalBody(tp->gun->at(0), { "piskGun.png" });
+        thinDrawer->addPortalBody(tp->pBody->at(0), { "robot.png" });
+
         std::vector<std::pair<std::string, std::string>> empty;
         thinDrawer->addPortalBody_3d(tp->pBody->at(0), empty);
         thinDrawer->addPortalBody_3d(tp->gun->at(0), empty);

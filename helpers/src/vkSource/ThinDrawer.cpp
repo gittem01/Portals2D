@@ -10,6 +10,7 @@
 #include <GameBase.h>
 #include <IOHelper.h>
 
+ThinDrawer* ThinDrawer::object = nullptr;
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {
@@ -18,6 +19,8 @@ ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 
     initBase();
     initExtra();
+
+    ThinDrawer::object = this;
 }
 
 void ThinDrawer::surfaceRecreate()
@@ -30,6 +33,7 @@ void ThinDrawer::surfaceRecreate()
     vkDestroyPipeline(logicalDevice, whiteWallShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, bodyShader3D->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, bodyShader->pipeline, VK_NULL_HANDLE);
+    vkDestroyPipeline(logicalDevice, wallLight->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalShader3D->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalParticleShader->pipeline, VK_NULL_HANDLE);
@@ -62,6 +66,7 @@ void ThinDrawer::initExtra()
     bodyShader3D = new Body(this);
     portalShader3D = new PortalShader3D(this);
     bodyShader = new BodyShader(this);
+    wallLight = new WallLight(this);
 
     prepareVertices();
     prepareUniformBuffers();
@@ -159,6 +164,7 @@ void ThinDrawer::prepareVertices()
     bodyShader3D->prepareVertexData();
     portalShader3D->prepareVertexData();
     bodyShader->prepareVertexData();
+    wallLight->prepareVertexData();
 }
 
 void ThinDrawer::prepareUniformBuffers()
@@ -181,6 +187,7 @@ void ThinDrawer::prepareUniformBuffers()
     bodyShader3D->prepareUniforms();
     portalShader3D->prepareUniforms();
     bodyShader->prepareUniforms();
+    wallLight->prepareUniforms();
 }
 
 void ThinDrawer::setupDescriptorSetLayout()
@@ -195,6 +202,7 @@ void ThinDrawer::setupDescriptorSetLayout()
     bodyShader3D->setupDescriptorSetLayout();
     portalShader3D->setupDescriptorSetLayout();
     bodyShader->setupDescriptorSetLayout();
+    wallLight->setupDescriptorSetLayout();
 }
 
 void ThinDrawer::preparePipelines()
@@ -209,6 +217,7 @@ void ThinDrawer::preparePipelines()
     bodyShader3D->preparePipeline();
     portalShader3D->preparePipeline();
     bodyShader->preparePipeline();
+    wallLight->preparePipeline();
 }
 
 void ThinDrawer::setupDescriptorPool()
@@ -243,6 +252,7 @@ void ThinDrawer::setupDescriptorSet()
     bodyShader3D->setupDescriptorSet();
     portalShader3D->setupDescriptorSet();
     bodyShader->setupDescriptorSet();
+    wallLight->setupDescriptorSet();
 
     IOHelper::loadTexture("white.png");
 }
@@ -493,6 +503,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 {
     const VkDeviceSize offsets = 0;
 
+
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, whiteWallShader->pipeline);
 
     vkCmdBindVertexBuffers(cmdBuff, 0, 1, &whiteWallShader->buffers[0]->buffer, &offsets);
@@ -507,6 +518,24 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         whiteWallShader->pipelineLayout, 2, 1, &whiteWallShader->textureData[0]->set, 0, VK_NULL_HANDLE);
 
     vkCmdDraw(cmdBuff, whiteWallShader->buffers[0]->count, whiteWallShader->wallCount, 0, 0);
+
+    {
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, wallLight->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            wallLight->pipelineLayout, 0, 1, &wallLight->descriptorSets[0][lastSwapChainImageIndex], 0, VK_NULL_HANDLE);
+        for (int i = 0; i < 41; i++)
+        {
+            uint32_t dynamicOffset = i * wallLight->alignedSize;
+
+            vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                wallLight->pipelineLayout, 1, 1, &wallLight->descriptorSets[1][lastSwapChainImageIndex], 1, &dynamicOffset);
+
+            vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 1, 0, 0);
+        }
+    }
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
@@ -787,9 +816,7 @@ void ThinDrawer::buildCommandBuffers()
 
     renderBackgroundParticles(cmdBuff);
 
-    vkCmdDraw(cmdBuff, dualParticleShader->buffers[0]->count, 1000, 0, 0);
-
-    //renderWalls(cmdBuff);
+    renderWalls(cmdBuff);
 
     renderPortalBodies(cmdBuff);
 
@@ -1335,7 +1362,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
             {
                 minPoint.x = centerPos.x - r;
             }
-            else if (centerPos.x + r > maxPoint.x)
+            if (centerPos.x + r > maxPoint.x)
             {
                 maxPoint.x = centerPos.x + r;
             }
@@ -1343,7 +1370,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
             {
                 minPoint.y = centerPos.y - r;
             }
-            else if (centerPos.y + r > maxPoint.y)
+            if (centerPos.y + r > maxPoint.y)
             {
                 maxPoint.y = centerPos.y + r;
             }

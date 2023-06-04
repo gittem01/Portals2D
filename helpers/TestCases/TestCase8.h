@@ -1,5 +1,6 @@
 #include <BaseTestCase.h>
 #include <GameBase.h>
+#include <DefaultObjects/DefaultCube.h>
 
 class TestCase8 : public BaseTestCase
 {
@@ -204,6 +205,8 @@ public:
         PortalBody* pbx = pWorld->createPortalBody(bodyX);
 
         thinDrawer->debug_addPortalBody(pbx);
+
+        new DefaultCube(pWorld);
     }
 
     void onUpdate()

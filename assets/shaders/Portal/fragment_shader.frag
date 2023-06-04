@@ -41,8 +41,8 @@ void main()
     float pixeller = ubo.data0.y;
 
     vec2 pixelledPos = localPos;
-    pixelledPos.x = int(pixelledPos.x / pixeller) * pixeller;
-    pixelledPos.y = int(pixelledPos.y / pixeller) * pixeller;
+//    pixelledPos.x = int(pixelledPos.x / pixeller) * pixeller;
+//    pixelledPos.y = int(pixelledPos.y / pixeller) * pixeller;
 
     // ySize plus
     float midThick = ubo.data0.z;
