@@ -26,10 +26,7 @@ layout (std140, set = 1, binding = 0) uniform UBO
 
 float editorFunc(float val)
 {
-    float lastMult;
-    if (val < 0.0) lastMult = -1.0f;
-    else lastMult = 1.0f;
-    return pow(val, 5.0);
+    return pow(val, 3.0);
 }
 
 float lineRel(vec2 a, vec2 b, vec2 c)

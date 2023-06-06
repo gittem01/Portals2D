@@ -7,8 +7,8 @@
 #include <map>
 #include <string>
 
-#define NUM_ONETIME_SOURCES 128
 #define NUM_LOOPING_SOURCES 32
+#define NUM_ONETIME_SOURCES 256 - NUM_LOOPING_SOURCES
 
 typedef struct s_sourceInUse
 {

@@ -23,10 +23,7 @@ layout (std140, set = 1, binding = 0) uniform UBO
 
 float editorFunc(float val)
 {
-    float lastMult;
-    if (val < 0.0) lastMult = -1.0f;
-    else lastMult = 1.0f;
-    return pow(val, 0.8) * 2.9 * lastMult;
+    return pow(val, 5.0) * 4.0;
 }
 
 void main()

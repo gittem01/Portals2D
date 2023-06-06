@@ -5,6 +5,7 @@
 #include <ShaderHeaders/DebugLine.h>
 #include <ShaderHeaders/DebugPolygon.h>
 #include <ShaderHeaders/WhiteWall.h>
+#include <ShaderHeaders/BlackWall.h>
 #include <ShaderHeaders/Body.h>
 #include <ShaderHeaders/PortalShader.h>
 #include <ShaderHeaders/PortalParticleShader.h>
@@ -133,6 +134,7 @@ public:
     ShaderBase* debugLineShader;
     ShaderBase* debugPolygonShader;
     WhiteWall* whiteWallShader;
+    BlackWall* blackWallShader;;
     PortalShader* portalShader;
     PortalParticleShader* portalParticleShader;
     DualParticleShader* dualParticleShader;

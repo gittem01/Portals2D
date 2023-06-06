@@ -175,7 +175,6 @@ public:
         int requiredIters = fmax(deltaTime / requestedDtPerStep, 1);
         double requiredDt = deltaTime / requiredIters;
         requiredIters = fmin(requiredIters, 10);
-
 #if ENABLE_TESTPLAYER
         tp->camHandle();
 #endif
