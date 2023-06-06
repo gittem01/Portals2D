@@ -1,5 +1,4 @@
 #include <ShaderHeaders/BodyShader.h>
-#include <SwapChain.h>
 #include <ThinDrawer.h>
 #include <Camera.h>
 #include <Shader.h>
@@ -36,8 +35,6 @@ void BodyShader::prepareVertexData()
 void BodyShader::prepareUniforms()
 {
     const int bufferSize = 2;
-    int imCount = thinDrawer->swapChain->imageCount;
-    uniformBuffers.resize(imCount);
 
     alignedSize_body = thinDrawer->pad_uniform_buffer_size(sizeof(s_renderBodyUbo));
     alignedSize_fixture = thinDrawer->pad_uniform_buffer_size(sizeof(s_renderFixtureUbo));
@@ -54,21 +51,18 @@ void BodyShader::prepareUniforms()
         availableOffsets_fixture[i] = i * alignedSize_fixture;
     }
 
-    for (int i = 0; i < imCount; i++)
+    uniformBuffers.resize(bufferSize);
+
+    for (int j = 0; j < bufferSize; j++)
     {
-        uniformBuffers[i].resize(bufferSize);
-
-        for (int j = 0; j < bufferSize; j++)
-        {
-            uniformBuffers[i][j] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-        }
-
-        s_uniformBuffer* uniformBufferVS = uniformBuffers[i][0];
-        s_uniformBuffer* uniformBufferFS1 = uniformBuffers[i][1];
-
-        thinDrawer->uniformHelper(alignedSize_body * UNIFORM_ALLOC_COUNT_BODY, uniformBuffers[i][0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_BODY);
-        thinDrawer->uniformHelper(alignedSize_fixture * UNIFORM_ALLOC_COUNT_FIXTURE, uniformBuffers[i][1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_FIXTURE);
+        uniformBuffers[j] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
     }
+
+    s_uniformBuffer* uniformBufferVS = uniformBuffers[0];
+    s_uniformBuffer* uniformBufferFS1 = uniformBuffers[1];
+
+    thinDrawer->uniformHelper(alignedSize_body * UNIFORM_ALLOC_COUNT_BODY, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_BODY);
+    thinDrawer->uniformHelper(alignedSize_fixture * UNIFORM_ALLOC_COUNT_FIXTURE, uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_FIXTURE);
 }
 
 void BodyShader::setupDescriptorSetLayout()
@@ -76,9 +70,7 @@ void BodyShader::setupDescriptorSetLayout()
     const int descriptorSetLayoutCount = 3;
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
-
-    VkDescriptorSetLayoutBinding layoutBinding0 =
-            vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 0);
+    descriptorSetLayouts[0] = ShaderBase::sharedLayout;
 
     VkDescriptorSetLayoutBinding layoutBinding1 =
         vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1, 0);
@@ -86,11 +78,7 @@ void BodyShader::setupDescriptorSetLayout()
     VkDescriptorSetLayoutBinding layoutBinding2 =
         vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1);
 
-    VkDescriptorSetLayoutBinding bindings[] = { layoutBinding0 };
     VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding1, layoutBinding2 };
-
-    VkDescriptorSetLayoutCreateInfo descriptorLayout = vkinit::descriptorSetLayoutCreateInfo(bindings, sizeof(bindings) / sizeof(bindings[0]));
-    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout, VK_NULL_HANDLE, &descriptorSetLayouts[0]));
 
     VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
@@ -158,41 +146,26 @@ void BodyShader::preparePipeline()
 
 void BodyShader::setupDescriptorSet()
 {
-    int imCount = thinDrawer->swapChain->imageCount;
     descriptorSets.resize(2);
 
-    for (int i = 0; i < imCount; i++)
+    VkDescriptorSetAllocateInfo allocInfo;
+
+    VkWriteDescriptorSet writeDescriptorSet = { };
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.dstBinding = 0;
+
+    allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[2], 1);
+    CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
+
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+
+    for (int j = 0; j < uniformBuffers.size(); j++)
     {
-        descriptorSets[0].resize(imCount);
-        descriptorSets[1].resize(imCount);
+        writeDescriptorSet.dstSet = descriptorSets[1];
+        writeDescriptorSet.pBufferInfo = &uniformBuffers[j]->descriptor;
+        writeDescriptorSet.dstBinding = j;
 
-        VkDescriptorSetAllocateInfo allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[0], 1);
-        CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[0][i]));
-
-        VkWriteDescriptorSet writeDescriptorSet = { };
-
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.dstSet = descriptorSets[0][i];
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-        writeDescriptorSet.pBufferInfo = &thinDrawer->sharedOrthoUniform[i]->descriptor;
-        writeDescriptorSet.dstBinding = 0;
         vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
-        if (uniformBuffers.size() == 0) continue;
-
-        allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[2], 1);
-        CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1][i]));
-
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-
-        for (int j = 0; j < uniformBuffers[i].size(); j++)
-        {
-            writeDescriptorSet.dstSet = descriptorSets[1][i];
-            writeDescriptorSet.pBufferInfo = &uniformBuffers[i][j]->descriptor;
-            writeDescriptorSet.dstBinding = j;
-
-            vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
-        }
     }
 }

@@ -19,7 +19,7 @@ private:
     WallLight(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     int alignedSize;
-    int wallCount;
+    int lightCount;
 
     void prepareUniforms();
     void setupDescriptorSetLayout();

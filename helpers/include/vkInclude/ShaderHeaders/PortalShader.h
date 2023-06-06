@@ -5,6 +5,13 @@
 
 #define UNIFORM_ALLOC_COUNT 256
 
+typedef struct s_portalUbo
+{
+    glm::vec4 posSize; // pos.x, pos.y, size.x, size.y
+    glm::vec4 color;
+    glm::vec4 data0; // dirAngle, pixeler, midThick, xDropSize
+} s_portalUbo;
+
 class PortalShader : public ShaderBase
 {
     friend class ThinDrawer;

@@ -5,6 +5,18 @@
 #define UNIFORM_ALLOC_COUNT_BODY_3D 1000
 #define UNIFORM_ALLOC_COUNT_FIXTURE_3D UNIFORM_ALLOC_COUNT_BODY_3D * 4
 
+typedef struct
+{
+    glm::mat4 modelMatrix;
+    glm::mat4 rotationMatrix;
+} s_bodyUbo;
+
+typedef struct
+{
+    glm::vec4 portals[4];
+    glm::vec4 data; // numPortals, unused, unused, unused
+} s_fixUbo;
+
 class Body : public ShaderBase
 {
     friend class ThinDrawer;

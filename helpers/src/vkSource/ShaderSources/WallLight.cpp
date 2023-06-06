@@ -1,5 +1,4 @@
 #include <ShaderHeaders/WallLight.h>
-#include <SwapChain.h>
 #include <ThinDrawer.h>
 #include <Camera.h>
 #include <Shader.h>
@@ -35,45 +34,42 @@ void WallLight::prepareVertexData()
 
 void WallLight::prepareUniforms()
 {
-    int imCount = thinDrawer->swapChain->imageCount;
-    alignedSize = thinDrawer->pad_uniform_buffer_size(sizeof(s_walLightlUbo));
-    uniformBuffers.resize(imCount);
+    alignedSize = sizeof(s_walLightlUbo);
 
-    wallCount = 0;
+    lightCount = 0;
 
-    for (int i = 0; i < imCount; i++)
+    uniformBuffers.resize(1);
+
+    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
+
+    thinDrawer->uniformHelper(alignedSize * 1000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    int num = 40;
+    float v = 0.0;
+    for (int j = 0; j < num; j++)
     {
-        uniformBuffers[i].resize(1);
-
-        uniformBuffers[i][0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
-        thinDrawer->uniformHelper(alignedSize * 1000, uniformBuffers[i][0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 1000);
-
-        int num = 40;
-        float v = 0.0;
-        for (int j = 0; j < num; j++)
-        {
-            float ang = 0.5 * b2_pi;
-            glm::vec2 pos = glm::vec2(j * 2.5f - 71.25 * 0.5, 15.0);
-
-            s_walLightlUbo* pData;
-            vkMapMemory(logicalDevice, uniformBuffers[i][0]->memory, j * alignedSize, alignedSize, 0, (void**)&pData);
-            pData->color = glm::vec4(1.0, 1.0, 1.0, 1.0);
-            pData->posSize = glm::vec4(pos.x, pos.y, 5.0, 1.25);
-            pData->data = glm::vec4(4.0, 1.0, 0.3, -2.0);
-            pData->data2.x = ang;
-            vkUnmapMemory(logicalDevice, uniformBuffers[i][0]->memory);
-        }
+        float ang = 0.5 * b2_pi;
+        glm::vec2 pos = glm::vec2(j * 2.5f - 71.25 * 0.5, 15.0);
 
         s_walLightlUbo* pData;
-        vkMapMemory(logicalDevice, uniformBuffers[i][0]->memory, num * alignedSize, alignedSize, 0, (void**)&pData);
-        pData->color = glm::vec4(1.0, 1.0, 3.0, 1.0);
-        pData->posSize = glm::vec4(0.0, 30.0, 20.0, 20.0);
-        pData->data = glm::vec4(20.0, 20.0, 1.5, -10.0);
-        pData->data2.x = 0.0;
-        pData->data2.y = 0.0;
-        vkUnmapMemory(logicalDevice, uniformBuffers[i][0]->memory);
+        vkMapMemory(logicalDevice, uniformBuffers[0]->memory, j * alignedSize, alignedSize, 0, (void**)&pData);
+        pData->color = glm::vec4(1.0, 1.0, 1.0, 1.0);
+        pData->posSize = glm::vec4(pos.x, pos.y, 5.0, 1.25);
+        pData->data = glm::vec4(4.0, 1.0, 0.3, -2.0);
+        pData->data2.x = ang;
+        vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+        lightCount++;
     }
+
+    s_walLightlUbo* pData;
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, num * alignedSize, alignedSize, 0, (void**)&pData);
+    pData->color = glm::vec4(1.0, 1.0, 5.0, 1.0);
+    pData->posSize = glm::vec4(0.0, 30.0, 20.0, 20.0);
+    pData->data = glm::vec4(20.0, 20.0, 1.5, -10.0);
+    pData->data2.x = 0.0;
+    pData->data2.y = 1.0;
+    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    lightCount++;
 }
 
 void WallLight::setupDescriptorSetLayout()
@@ -81,17 +77,12 @@ void WallLight::setupDescriptorSetLayout()
     const int descriptorSetLayoutCount = 2;
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
+    descriptorSetLayouts[0] = ShaderBase::sharedLayout;
 
-    VkDescriptorSetLayoutBinding layoutBinding0 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
-    VkDescriptorSetLayoutBinding layoutBinding10 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    VkDescriptorSetLayoutBinding layoutBinding10 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
-    VkDescriptorSetLayoutBinding bindings1[] = { layoutBinding0 };
     VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding10 };
-
-    VkDescriptorSetLayoutCreateInfo descriptorLayout = vkinit::descriptorSetLayoutCreateInfo(bindings1, sizeof(bindings1) / sizeof(bindings1[0]));
-    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout, VK_NULL_HANDLE, &descriptorSetLayouts[0]));
 
     VkDescriptorSetLayoutCreateInfo descriptorLayout2 = vkinit::descriptorSetLayoutCreateInfo(bindings2, sizeof(bindings2) / sizeof(bindings2[0]));
     CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout2, VK_NULL_HANDLE, &descriptorSetLayouts[1]));
@@ -143,36 +134,21 @@ void WallLight::preparePipeline()
 
 void WallLight::setupDescriptorSet()
 {
-    int imCount = thinDrawer->swapChain->imageCount;
-
     descriptorSets.resize(descriptorSetLayouts.size());
-    for (int i = 0; i < descriptorSets.size(); i++)
-    {
-        descriptorSets[i].resize(imCount);
-    }
 
-    for (int i = 0; i < imCount; i++)
-    {
-        VkDescriptorSetAllocateInfo allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[0], 1);
-        CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[0][i]));
+    VkDescriptorSetAllocateInfo allocInfo;
 
-        VkWriteDescriptorSet writeDescriptorSet = { };
+    VkWriteDescriptorSet writeDescriptorSet = { };
 
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.dstSet = descriptorSets[0][i];
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.dstBinding = 0;
 
-        writeDescriptorSet.pBufferInfo = &thinDrawer->sharedOrthoUniform[i]->descriptor;
-        writeDescriptorSet.dstBinding = 0;
-        vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
+    allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
+    CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
+    writeDescriptorSet.dstSet = descriptorSets[1];
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
-        allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
-        CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1][i]));
-        writeDescriptorSet.dstSet = descriptorSets[1][i];
-        writeDescriptorSet.pBufferInfo = &uniformBuffers[i][0]->descriptor;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-
-        vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
-    }
+    vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 }

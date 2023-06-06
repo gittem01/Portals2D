@@ -1,5 +1,4 @@
 #include <ShaderHeaders/DebugLine.h>
-#include <SwapChain.h>
 #include <ThinDrawer.h>
 #include <Camera.h>
 #include <Shader.h>
@@ -14,24 +13,7 @@ void DebugLine::prepareVertexData()
 
 void DebugLine::prepareUniforms()
 {
-    int imCount = thinDrawer->swapChain->imageCount;
     int alignedSizeFS = thinDrawer->pad_storage_buffer_size(sizeof(s_uboAll));
-
-    for (int i = 0; i < imCount; i++)
-    {
-        s_uboAll uboFSCircle;
-        uboFSCircle.modelMatrix = glm::mat4(1.0f);
-        uboFSCircle.color = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
-        uboFSCircle.data.y = 0.02f;
-        uboFSCircle.data.z = 0.0f;
-
-        uboFSCircle.portals[0] = glm::vec4(+2.0f, -1.0f, -1.0f, +1.0f);
-
-        void* pData;
-        CHECK_RESULT_VK(vkMapMemory(logicalDevice, commonStorageBuffers[i][0]->memory, 76 * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
-        memcpy(pData, &uboFSCircle, alignedSizeFS);
-        vkUnmapMemory(logicalDevice, commonStorageBuffers[i][0]->memory);
-    }
 }
 
 void DebugLine::setupDescriptorSetLayout()
@@ -39,14 +21,7 @@ void DebugLine::setupDescriptorSetLayout()
     const int descriptorSetLayoutCount = 1;
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
-
-    VkDescriptorSetLayoutBinding layoutBinding0 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
-
-    VkDescriptorSetLayoutBinding bindings1[] = { layoutBinding0 };
-
-    VkDescriptorSetLayoutCreateInfo descriptorLayout = vkinit::descriptorSetLayoutCreateInfo(bindings1, sizeof(bindings1) / sizeof(bindings1[0]));
-    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout, VK_NULL_HANDLE, &descriptorSetLayouts[0]));
+    descriptorSetLayouts[0] = ShaderBase::sharedLayout;
 
     VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo(descriptorSetLayouts.data(), descriptorSetLayouts.size());
 
@@ -103,28 +78,4 @@ void DebugLine::preparePipeline()
 
 void DebugLine::setupDescriptorSet()
 {
-    int imCount = thinDrawer->swapChain->imageCount;
-
-    descriptorSets.resize(descriptorSetLayouts.size());
-    for (int i = 0; i < descriptorSets.size(); i++)
-    {
-        descriptorSets[i].resize(imCount);
-    }
-
-    for (int i = 0; i < imCount; i++)
-    {
-        VkDescriptorSetAllocateInfo allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[0], 1);
-        CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[0][i]));
-
-        VkWriteDescriptorSet writeDescriptorSet = { };
-
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.dstSet = descriptorSets[0][i];
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-        writeDescriptorSet.pBufferInfo = &thinDrawer->sharedOrthoUniform[i]->descriptor;
-        writeDescriptorSet.dstBinding = 0;
-        vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
-    }
 }

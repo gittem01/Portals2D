@@ -65,143 +65,6 @@ typedef struct
     s_stagingBuffer indices;
 } s_stagingBuffers;
 
-typedef struct
-{
-    glm::mat4 orthoMatrix;
-    glm::vec4 cameraPos;
-    glm::vec4 data;
-} s_sharedUniformData;
-
-typedef struct
-{
-    glm::mat4 modelMatrix;
-    glm::vec4 portals[4];
-    glm::vec4 color;
-    glm::vec4 outerColor;
-    glm::vec4 data;
-    glm::vec4 extraData;
-} s_uboAll;
-
-typedef struct
-{
-    glm::mat4 transformMatrix;
-    glm::mat4 rotationMatrix;
-    glm::vec4 bgColour;
-    glm::vec4 dotColour;
-    glm::vec4 edgeColour;
-    glm::vec4 leftUp;
-    glm::vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
-    glm::vec4 data2; // sizeX, sizeY, unused, unused
-} s_wallUbo;
-
-typedef struct s_portalUbo3D
-{
-    glm::mat4 modelMatrix;
-    glm::vec4 data0; // a, b, abRatio, eThick
-    glm::vec4 data1; // lineLength, maxAngleInc, minAngleInc, noiseScale
-    glm::vec4 data2; // sizex, sizey, iTime, 0
-    glm::vec4 data3; // funcMult0, funcMult1, noiseMult, 0
-    glm::vec4 portalColour;
-    glm::vec4 edgeColour;
-}s_portalUbo3D;
-
-typedef struct s_portalUbo
-{
-    glm::vec4 posSize; // pos.x, pos.y, size.x, size.y
-    glm::vec4 color;
-    glm::vec4 data0; // dirAngle, pixeler, midThick, xDropSize
-}s_portalUbo;
-
-typedef struct s_portalParticleUbo
-{
-    glm::vec4 portalPoints;
-    glm::vec4 color;
-    glm::vec4 data0; // dist, speed, time, upSize
-    glm::vec4 data1; // sizex, sizey, randomization, instanceCount
-}s_portalParticleUbo;
-
-typedef struct s_dualParticleUbo
-{
-    glm::vec4 color0;
-    glm::vec4 color1;
-    glm::vec4 data0; // none, speed, time, midCircleRadius
-    glm::vec4 data1; // sizex, sizey, randomization, none
-}s_dualParticleUbo;
-
-typedef struct
-{
-    glm::mat4 modelMatrix;
-    int isMirrored;
-    int isMirrored2;
-}s_renderBodyUbo;
-
-typedef struct
-{
-    glm::vec4 portals[4];
-    int numPortals;
-}s_renderFixtureUbo;
-
-typedef struct
-{
-    glm::mat4 modelMatrix;
-    glm::mat4 rotationMatrix;
-}s_bodyUbo;
-
-typedef struct
-{
-    glm::vec4 portals[4];
-    glm::vec4 data; // numPortals, unused, unused, unused
-} s_fixUbo;
-
-typedef struct
-{
-    glm::vec4 polyPoints[4];
-    int numPolyPoints;
-} s_uboPolyData;
-
-typedef struct
-{
-    glm::vec4 positions;
-    glm::vec4 colour;
-    glm::vec4 data; // unused, lineThickness, outerSmoothThicknessRatio, unused
-} s_pushConstantLine;
-
-typedef struct
-{
-    glm::vec2 pos;
-    glm::vec2 uv;
-} s_vertex;
-
-typedef struct
-{
-    glm::vec2 pos;
-} s_basicVertex;
-
-typedef struct AverageVertex
-{
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 tc;
-
-    static void getVertexAttributeDescriptions(VkVertexInputAttributeDescription* descriptions)
-    {
-        descriptions[0].binding = 0;
-        descriptions[0].location = 0;
-        descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        descriptions[0].offset = offsetof(AverageVertex, pos);
-        
-        descriptions[1].binding = 0;
-        descriptions[1].location = 1;
-        descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        descriptions[1].offset = offsetof(AverageVertex, normal);
-
-        descriptions[2].binding = 0;
-        descriptions[2].location = 2;
-        descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        descriptions[2].offset = offsetof(AverageVertex, tc);
-    }
-} s_averageVertex;
-
 class SwapChain;
 class PortalBody;
 class Portal;
@@ -266,7 +129,6 @@ public:
     double upUpAnim = 0.0;
     double upDownAnim = 0.0;
 
-    std::vector<s_uniformBuffer*> sharedOrthoUniform;
     ShaderBase* debugCircleShader;
     ShaderBase* debugLineShader;
     ShaderBase* debugPolygonShader;
@@ -315,7 +177,7 @@ public:
     void beforeCreate();
     void afterCreate();
     
-    void uniformFiller(int frameNum);
+    void uniformFiller();
     void renderLoop();
     void animate();
 

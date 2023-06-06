@@ -4,6 +4,14 @@
 #include <PortalShader.h>
 #include <glm/glm.hpp>
 
+typedef struct s_portalParticleUbo
+{
+    glm::vec4 portalPoints;
+    glm::vec4 color;
+    glm::vec4 data0; // dist, speed, time, upSize
+    glm::vec4 data1; // sizex, sizey, randomization, instanceCount
+} s_portalParticleUbo;
+
 class PortalParticleShader : public ShaderBase
 {
     friend class ThinDrawer;
