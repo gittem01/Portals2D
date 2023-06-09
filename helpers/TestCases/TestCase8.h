@@ -150,7 +150,7 @@ public:
         std::vector<std::string> cubeNames;
         for (int i = 0; i < 6; i++)
         {
-            cubeNames.push_back("pixelCubes/cube_" + std::to_string(i) + ".png");
+            cubeNames.push_back("cube.png");
         }
         thinDrawer->addPortalBody(pb1, cubeNames);
 
@@ -185,8 +185,10 @@ public:
         startPos = b2Vec2(0.0f, 0.0f);
         lastBody = createBox(startPos, b2Vec2(0.7f, 0.7f), pWorld, b2_dynamicBody, 0.0f);
         lastPb = pWorld->createPortalBody(lastBody);
+        lastBody->SetLinearVelocity(b2Vec2(1.0, 0.0));
+        lastBody->SetLinearDamping(0.0);
         thinDrawer->debug_addPortalBody(lastPb);
-        thinDrawer->addPortalBody(lastPb, {});
+        thinDrawer->addPortalBody(lastPb, {"grad2.png"});
         names = {};
         thinDrawer->addPortalBody_3d(lastPb, names);
 

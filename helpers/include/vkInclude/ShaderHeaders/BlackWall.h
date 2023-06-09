@@ -6,7 +6,7 @@ typedef struct
 {
     glm::vec4 posSize;
     glm::vec4 colour;
-    glm::vec4 data; // isVertical, lineSize, none, none
+    glm::vec4 data; // isVertical, lineSize, camMult, none
 } s_wallUbo_b;
 
 class BlackWall : public ShaderBase

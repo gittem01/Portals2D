@@ -13,6 +13,7 @@ class BaseTestCase
 protected:
 	int refreshItem;
     const char* name;
+    bool followPlayer = false;
 
 public:
     ThinDrawer* td;
@@ -71,6 +72,11 @@ public:
         if (lastItem != testCaseItem)
         {
             shouldGetNewTest = true;
+        }
+
+        if (ImGui::RadioButton("Follow Player", followPlayer))
+        {
+            followPlayer = !followPlayer;
         }
 
         if (ImGui::RadioButton("Draw Releases", td->drawReleases))
@@ -149,8 +155,8 @@ public:
         thinDrawer->debug_addPortalBody(tp->pBody->at(0));
         thinDrawer->debug_addPortalBody(tp->gun->at(0));
 
-        thinDrawer->addPortalBody(tp->gun->at(0), { "piskGun.png" });
-        thinDrawer->addPortalBody(tp->pBody->at(0), { "robot.png" });
+        thinDrawer->addPortalBody(tp->gun->at(0), { "gun.png" });
+        thinDrawer->addPortalBody(tp->pBody->at(0), { "roboHd.png" });
 
         std::vector<std::pair<std::string, std::string>> empty;
         thinDrawer->addPortalBody_3d(tp->pBody->at(0), empty);
@@ -176,7 +182,7 @@ public:
         double requiredDt = deltaTime / requiredIters;
         requiredIters = fmin(requiredIters, 10);
 #if ENABLE_TESTPLAYER
-        tp->camHandle();
+        if (followPlayer) tp->camHandle();
 #endif
         if (!pWorld)
         {

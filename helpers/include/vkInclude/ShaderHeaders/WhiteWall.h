@@ -11,7 +11,7 @@ typedef struct
     glm::vec4 edgeColour;
     glm::vec4 leftUp;
     glm::vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
-    glm::vec4 data2; // sizeX, sizeY, unused, unused
+    glm::vec4 data2; // sizeX, sizeY, camMult, unused
 } s_wallUbo_w;
 
 class WhiteWall : public ShaderBase

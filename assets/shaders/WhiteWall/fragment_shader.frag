@@ -13,8 +13,8 @@ layout (location = 4) in InData
     vec4 dotColour;
     vec4 edgeColour;
     vec4 leftUp;
-    vec4 data;
-    vec4 data2;
+    vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
+    vec4 data2; // sizeX, sizeY, camMult, unused
 };
 
 layout (set = 0, binding = 0) uniform SharedUboData

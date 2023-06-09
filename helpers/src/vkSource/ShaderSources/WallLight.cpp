@@ -55,19 +55,26 @@ void WallLight::prepareUniforms()
         vkMapMemory(logicalDevice, uniformBuffers[0]->memory, j * alignedSize, alignedSize, 0, (void**)&pData);
         pData->color = glm::vec4(1.0, 1.0, 1.0, 1.0);
         pData->posSize = glm::vec4(pos.x, pos.y, 5.0, 1.25);
-        pData->data = glm::vec4(4.0, 1.0, 0.3, -2.0);
-        pData->data2.x = ang;
+        pData->data = glm::vec4(4.0, 0.8, 0.3, -2.0);
+        pData->data2 = glm::vec4(ang, 0.0, 1.0, 1.0);
         vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
         lightCount++;
     }
 
     s_walLightlUbo* pData;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, num * alignedSize, alignedSize, 0, (void**)&pData);
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, lightCount * alignedSize, alignedSize, 0, (void**)&pData);
     pData->color = glm::vec4(1.0, 1.0, 5.0, 1.0);
     pData->posSize = glm::vec4(0.0, 30.0, 20.0, 20.0);
     pData->data = glm::vec4(20.0, 20.0, 1.5, -10.0);
-    pData->data2.x = 0.0;
-    pData->data2.y = 1.0;
+    pData->data2 = glm::vec4(0.0, 1.0, 1.0, 5.0);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    lightCount++;
+
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, lightCount * alignedSize, alignedSize, 0, (void**)&pData);
+    pData->color = glm::vec4(1.0, 2.0, 1.0, 1.0);
+    pData->posSize = glm::vec4(9.75, -3.75, 12.0, 3.0);
+    pData->data = glm::vec4(11.0, 1.5, 0.4, -5.0);
+    pData->data2 = glm::vec4(0.0, 0.0, 0.8, 1.0);
     vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
     lightCount++;
 }

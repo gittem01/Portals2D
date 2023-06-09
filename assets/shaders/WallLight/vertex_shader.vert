@@ -18,7 +18,7 @@ struct uboData
     vec4 posSize;
     vec4 color;
     vec4 data; // lightXSize, lightYSize, upDownSize, lightDepth
-    vec4 data2; // rotation, glassRotation (added on top of rotation), none, none
+    vec4 data2; // rotation, glassRotation (added on top of rotation), camMult, lightScatterRatio
 };
 
 layout (set = 1, binding = 0) readonly buffer UBO
@@ -40,5 +40,10 @@ void main()
     localPos = vertex * ubo.data[instanceIndex].posSize.zw;
     vec4 posSize = ubo.data[instanceIndex].posSize;
     worldPos = rotatePoint(vertex * posSize.zw, ubo.data[instanceIndex].data2.x) + posSize.xy;
-    gl_Position = sharedUboData.cameraMatrix * vec4(worldPos, 0.0, 1.0);
+
+    mat4 newCameraMatrix = sharedUboData.cameraMatrix;
+    newCameraMatrix[3][0] *= ubo.data[instanceIndex].data2.z;
+    newCameraMatrix[3][1] *= ubo.data[instanceIndex].data2.z;
+
+    gl_Position = newCameraMatrix * vec4(worldPos, 0.0, 1.0);
 }

@@ -1,7 +1,7 @@
 #version 460 core
 
 #define PI 3.14159265359
-#define POW_VAL 3.0
+#define POW_VAL 2.0
 #define ETA 0.66
 
 layout (location = 0) out vec4 FragColour;
@@ -22,7 +22,7 @@ struct uboData
     vec4 posSize;
     vec4 color;
     vec4 data; // lightXSize, lightYSize, upDownSize, lightDepth
-    vec4 data2; // rotation, glassRotation (added on top of rotation), none, none
+    vec4 data2; // rotation, glassRotation (added on top of rotation), camMult, lightScatterRatio
 };
 
 layout (set = 1, binding = 0) readonly buffer UBO
@@ -66,7 +66,7 @@ void main()
     float xSize = data.data.x;
     float ySize = data.data.y;
     float lightDepth = data.data.w;
-    vec3 camPos = vec3(sharedUboData.cameraPos.x, -sharedUboData.cameraPos.y, sharedUboData.cameraPos.z);
+    vec3 camPos = vec3(sharedUboData.cameraPos.x * data.data2.z, -sharedUboData.cameraPos.y * data.data2.z, sharedUboData.cameraPos.z / data.data2.z);
     vec2 reachFrag = localPos;
     
     vec2 distVec = rotatePoint(vec2(0.0, 1.0), data.data2.y);
@@ -96,10 +96,12 @@ void main()
         {
             dist = min(dist, abs(reachFrag.y));
         }
-        float v =  1.0;
-        dist -= ySize * 0.5;
-        dist = max((v - dist) / v, 0.0);
-        dist = pow(dist, 10.0);
-        FragColour = vec4(dist) * lightColor + lightColor * vec4(sinVal) * 0.00;
+        float v = data.data2.w;
+        float dist2 = dist - ySize * 0.5;
+        dist /= ySize;
+        dist2 = max((v - dist2) / v, 0.0);
+        dist2 = pow(dist2, 10.0);
+        vec4 normLightColor = length(lightColor) > 1 ? normalize(lightColor) : lightColor;
+        FragColour = dist2 * lightColor + normLightColor * sinVal * 0.01 * pow(2.0 - dist, 2.0);
     }
 }

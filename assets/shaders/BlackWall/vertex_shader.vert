@@ -18,7 +18,7 @@ struct storageData
 {
     vec4 posSize;
     vec4 colour;
-    vec4 data; // isVertical, lineSize, none, none
+    vec4 data; // isVertical, lineSize, camMult, none
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -36,8 +36,8 @@ void main()
 
     mat4 newCameraMatrix = sharedUboData.cameraMatrix;
 
-    newCameraMatrix[3][0] *= 0.8;
-    newCameraMatrix[3][1] *= 0.8;
+    newCameraMatrix[3][0] *= data.data.z;
+    newCameraMatrix[3][1] *= data.data.z;
 
     gl_Position = newCameraMatrix * vec4(worldPos, 0.0, 1.0);
 }

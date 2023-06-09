@@ -22,18 +22,19 @@ void BlackWall::prepareUniforms()
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(alignedSizeFS * 10000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(alignedSizeFS * 242 * 242, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     const float sz = 1.5f;
-    for (int i = -30; i < 30; i++)
+    for (int i = -60; i < 60; i++)
     {
-        for (int j = -30; j < 30; j++)
+        for (int j = -60; j < 60; j++)
         {
+            float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
             s_wallUbo_b* wallUbo;
             vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
             wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
-            wallUbo->colour = glm::vec4(0.02, 0.02, 0.02, 1.0);
-            wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.0, 0.0);
+            wallUbo->colour = glm::vec4(0.03, 0.03, 0.03, 1.0) * rndVal;
+            wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 0.8, 0.0);
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
             wallCount++;
         }

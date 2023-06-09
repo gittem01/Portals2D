@@ -23,7 +23,7 @@ layout (std140, set = 1, binding = 0) uniform UBO
 
 float editorFunc(float val)
 {
-    return pow(val, 5.0) * 4.0;
+    return max(min(pow(val, 15.0) * 1.5, 1.0), 0.0);
 }
 
 void main()
@@ -52,6 +52,8 @@ void main()
     float angle = atan(x, b);
     float extraMid = cos(angle) * a;
     vec2 upCircPos = vec2(xSize * 0.5 - (a + b), x + c);
+    
+    float multVal;
     if (abs(pixelledPos.x) > xSize * 0.5 - ySize * 0.5 - extraMid)
     {
         float xDiff = abs(pixelledPos.x) - (xSize * 0.5 - ySize * 0.5);
@@ -66,27 +68,24 @@ void main()
             fullDiff = diff;
         }
         
-        float multVal = editorFunc(fullDiff);
-        FragColour = vec4(color * multVal, multVal);
-        return;
+        multVal = editorFunc(fullDiff);
     }
     else if (abs(pixelledPos.x) > xSize * 0.5 - ySize - xDropSize)
     {
         vec2 p = vec2(abs(pixelledPos.x), abs(pixelledPos.y));
         float diff = (length(upCircPos - p) - x) / (ySize * 0.5);
-        float multVal = editorFunc(diff);
-        FragColour = vec4(color * multVal, multVal);
-        return;
+        multVal = editorFunc(diff);
     }
     else if (abs(pixelledPos.y) < midThick)
     {
         float diff = ((midThick - abs(pixelledPos.y)) * (midThick / (ySize * 0.5))) / midThick;
-        float multVal = editorFunc(diff);
-        FragColour = vec4(color * multVal, multVal);
-        return;
+        multVal = editorFunc(diff);
     }
     else
     {
         FragColour = vec4(0.0, 0.0, 0.0, 0.0);
+        return;
     }
+    
+    FragColour = vec4(color * multVal, multVal);
 }

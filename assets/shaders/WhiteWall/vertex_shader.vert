@@ -36,7 +36,7 @@ struct storageData
     vec4 edgeColour;
     vec4 leftUp;
     vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
-    vec4 data2; // sizeX, sizeY, unused, unused
+    vec4 data2; // sizeX, sizeY, camMult, unused
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -55,8 +55,12 @@ void main()
     data = ubo.sData[instanceID].data;
     data2 = ubo.sData[instanceID].data2;
     
+    mat4 newCameraMatrix = sharedUboData.cameraMatrix;
+    newCameraMatrix[3][0] *= data2.z;
+    newCameraMatrix[3][1] *= data2.z;
+
     vec4 scaledVertex = vec4(vertex * vec3(ubo.sData[instanceID].data2.xy, 1.0), 1.0);
-    vec4 pos = sharedUboData.cameraMatrix * ubo.sData[instanceID].transformMatrix * ubo.sData[instanceID].rotationMatrix * scaledVertex;
+    vec4 pos = newCameraMatrix * ubo.sData[instanceID].transformMatrix * ubo.sData[instanceID].rotationMatrix * scaledVertex;
 
     out_tc = tc * vec2(data2.x / data.x, data2.y / data.x);
     outNormal = ubo.sData[instanceID].rotationMatrix * vec4(normal, 1.0);

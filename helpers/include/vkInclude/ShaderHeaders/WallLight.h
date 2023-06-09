@@ -8,7 +8,7 @@ typedef struct
     glm::vec4 posSize;
     glm::vec4 color;
     glm::vec4 data; // lightXSize, lightYSize, upDownSize, lightDepth
-    glm::vec4 data2; // rotation, none, none, none
+    glm::vec4 data2; // rotation, glass rotation, camMult, lightScatterRatio
 } s_walLightlUbo;
 
 class WallLight : public ShaderBase

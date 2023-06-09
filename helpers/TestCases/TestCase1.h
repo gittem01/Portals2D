@@ -84,7 +84,7 @@ public:
         std::vector<std::string> cubeNames;
         for (int i = 0; i < 6; i++)
         {
-            cubeNames.push_back("pixelCubes/cube_" + std::to_string(i) + ".png");
+            cubeNames.push_back("cube.png");
         }
         thinDrawer->addPortalBody(pb1, cubeNames);
 

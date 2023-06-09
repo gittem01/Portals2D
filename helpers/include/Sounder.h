@@ -49,7 +49,8 @@ public:
 	void update();
 
 	ALuint loadSound(std::string fileName);
-	ALuint playSound(ALuint buffer);
+	ALuint playSound(ALuint buffer, float volume);
+	void setSoundVolume(const ALuint source, const float volume);
 	ALuint playLoopingSound(ALuint buffer);
 	void stopSound(ALuint source);
 	void stopLoopingSound(ALuint source);

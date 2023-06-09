@@ -147,7 +147,7 @@ ALuint Sounder::loadSound(std::string fileName)
     return buffer;
 }
 
-ALuint Sounder::playSound(ALuint buffer)
+ALuint Sounder::playSound(ALuint buffer, float volume)
 {
     if (lastAvailableOnetimeSource >= NUM_ONETIME_SOURCES)
     {
@@ -160,6 +160,7 @@ ALuint Sounder::playSound(ALuint buffer)
 
     alSourcei(source, AL_BUFFER, buffer);
     alSourcePlay(source);
+    alSourcef(source, AL_GAIN, volume);
 
     newSource->source = source;
     newSource->next = sourcesInUse;
@@ -170,6 +171,11 @@ ALuint Sounder::playSound(ALuint buffer)
     sourcesInUse = newSource;
 
     return source;
+}
+
+void Sounder::setSoundVolume(ALuint source, float volume)
+{
+    alSourcef(source, AL_GAIN, volume);
 }
 
 ALuint Sounder::playLoopingSound(ALuint buffer)

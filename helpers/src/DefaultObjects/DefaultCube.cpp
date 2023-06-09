@@ -70,14 +70,16 @@ DefaultCube::DefaultCube(PortalWorld* portalWorld) : DefaultObject(portalWorld)
     
     this->pBody = &portalBody->worldIndex->pbIndices;
 
-    ThinDrawer::object->addPortalBody(portalBody, {"cube2.png"});
+    ThinDrawer::object->addPortalBody(portalBody, {"cube.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
 void DefaultCube::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
-    if (impulse->normalImpulses[0] > 3.0)
+    if (impulse->normalImpulses[0] > 3.0 &&
+        (contactingBody->GetLinearVelocity().Length() > 1.0 || contactingBody->GetAngularVelocity() > 0.5) && ThinDrawer::object->gameTime - lastSoundTime > 0.1)
     {
-        Sounder::object->playSound(onHitSoundBuffers[0]);
+        lastSoundTime = ThinDrawer::object->gameTime;
+        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], impulse->normalImpulses[0] * 0.01);
     }
 }

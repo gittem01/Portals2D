@@ -23,7 +23,7 @@ struct storageData
 {
     vec4 posSize;
     vec4 colour;
-    vec4 data; // isVertical, lineSize, none, none
+    vec4 data; // isVertical, lineSize, camMult, none
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -51,7 +51,7 @@ void main()
 {
     storageData data = ubo.sData[instanceIndex];
 
-    vec3 camPos = vec3(sharedUboData.cameraPos.x * 0.8, -sharedUboData.cameraPos.y * 0.8, sharedUboData.cameraPos.z / 0.8);
+    vec3 camPos = vec3(sharedUboData.cameraPos.x * data.data.z, -sharedUboData.cameraPos.y * data.data.z, sharedUboData.cameraPos.z / data.data.z);
     vec4 color = data.colour;
     float lineSize = data.data.y;
     vec4 borderColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -82,7 +82,7 @@ void main()
         val01 = (localPos.y * 2.0 * PI) / lineSize;
     }
     
-    float range = camPos.z * 0.02;
+    float range = camPos.z * 0.003 / lineSize;
     float mult = integralBtw(val01 - range, val01 + range) / (range * 2.0);
 
     vec2 normVec = cosDer(val01, range * 5.0);

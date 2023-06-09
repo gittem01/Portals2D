@@ -52,7 +52,7 @@ public:
     ALuint blueShootBuffer;
     ALuint orangeShootBuffer;
 
-    TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.8f, 1.5f)) : DefaultObject(pWorld){
+    TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.75f, 1.5f)) : DefaultObject(pWorld){
         this->pWorld = pWorld;
         this->wh = wh;
         this->size = size;
@@ -127,7 +127,7 @@ public:
 
         pBody = &pb->worldIndex->pbIndices;
 
-        glm::vec2 gunSize(0.3f, 1.1f);
+        glm::vec2 gunSize(0.25f, 1.0f);
 
         bodyDef.type = b2_dynamicBody;
         bodyDef.position = pos;
@@ -205,10 +205,10 @@ public:
             {
                 contactType = fix2->GetBody()->GetType();
                 contactBody = fix2->GetBody();
-                if (fix2->GetBody()->GetType() == b2_dynamicBody)
+                if (contactType == b2_dynamicBody)
                 {
                     if (fix2->GetDensity() == 0.0f &&
-                        (contact->GetFixtureA() == pBody->at(0)->body->GetFixtureList() || contact->GetFixtureB() == pBody->at(0)->body->GetFixtureList()))
+                        (contact->GetFixtureA()->GetBody() == pBody->at(0)->body || contact->GetFixtureB()->GetBody() == pBody->at(0)->body))
                     {
                         onPlatform = true;
                         platformBody = fix2->GetBody();
@@ -595,7 +595,7 @@ public:
 
                         if (portal)
                         {
-                            Sounder::object->playSound(blueShootBuffer);
+                            Sounder::object->playSound(blueShootBuffer, 1.0);
 
                             portal->reviveAround();
                             portalA = portal;
@@ -659,7 +659,7 @@ public:
 
                         if (portal)
                         {
-                            Sounder::object->playSound(orangeShootBuffer);
+                            Sounder::object->playSound(orangeShootBuffer, 1.0);
 
                             portal->reviveAround();
                             portalB = portal;
@@ -989,7 +989,7 @@ public:
         {
             lv.y = 10.0f * (float)pBody->size();
 
-            Sounder::object->playSound(jumpBuffer);
+            Sounder::object->playSound(jumpBuffer, 1.0);
         }
 
         if (lv.y < -20.0f)

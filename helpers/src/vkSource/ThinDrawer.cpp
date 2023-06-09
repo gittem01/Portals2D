@@ -35,6 +35,7 @@ void ThinDrawer::surfaceRecreate()
     vkDestroyPipeline(logicalDevice, bodyShader3D->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, bodyShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, wallLight->pipeline, VK_NULL_HANDLE);
+    vkDestroyPipeline(logicalDevice, laserShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalShader3D->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalShader->pipeline, VK_NULL_HANDLE);
     vkDestroyPipeline(logicalDevice, portalParticleShader->pipeline, VK_NULL_HANDLE);
@@ -69,6 +70,7 @@ void ThinDrawer::initExtra()
     portalShader3D = new PortalShader3D(this);
     bodyShader = new BodyShader(this);
     wallLight = new WallLight(this);
+    laserShader = new LaserShader(this);
 
     prepareVertices();
     prepareUniformBuffers();
@@ -171,6 +173,7 @@ void ThinDrawer::prepareVertices()
     portalShader3D->prepareVertexData();
     bodyShader->prepareVertexData();
     wallLight->prepareVertexData();
+    laserShader->prepareVertexData();
 }
 
 void ThinDrawer::prepareUniformBuffers()
@@ -189,6 +192,7 @@ void ThinDrawer::prepareUniformBuffers()
     portalShader3D->prepareUniforms();
     bodyShader->prepareUniforms();
     wallLight->prepareUniforms();
+    laserShader->prepareUniforms();
 }
 
 void ThinDrawer::setupDescriptorSetLayout()
@@ -207,6 +211,7 @@ void ThinDrawer::setupDescriptorSetLayout()
     portalShader3D->setupDescriptorSetLayout();
     bodyShader->setupDescriptorSetLayout();
     wallLight->setupDescriptorSetLayout();
+    laserShader->setupDescriptorSetLayout();
 }
 
 void ThinDrawer::preparePipelines()
@@ -223,6 +228,7 @@ void ThinDrawer::preparePipelines()
     portalShader3D->preparePipeline();
     bodyShader->preparePipeline();
     wallLight->preparePipeline();
+    laserShader->preparePipeline();
 }
 
 void ThinDrawer::setupDescriptorPool()
@@ -261,6 +267,7 @@ void ThinDrawer::setupDescriptorSet()
     portalShader3D->setupDescriptorSet();
     bodyShader->setupDescriptorSet();
     wallLight->setupDescriptorSet();
+    laserShader->setupDescriptorSet();
 
     IOHelper::loadTexture("white.png");
 }
@@ -561,6 +568,21 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
         vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, wallLight->lightCount, 0, 0);
     }
+
+    // Laser
+    {
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, laserShader->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            laserShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            laserShader->pipelineLayout, 1, 1, &laserShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 2, 0, 0);
+    }
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
@@ -835,7 +857,7 @@ void ThinDrawer::buildCommandBuffers()
 
     VkDeviceSize offsets = 0;
 
-    renderBackgroundParticles(cmdBuff);
+    //renderBackgroundParticles(cmdBuff);
 
     renderWalls(cmdBuff);
 
@@ -919,15 +941,15 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
 
         if (portal->connections[0].size() > 0)
         {
-            b2Vec2 p0 = portal->pos + fmax(pr->scale.x * 0.5, 0.01) * portal->rotDir;
-            b2Vec2 p1 = portal->pos - fmax(pr->scale.x * 0.5, 0.01) * portal->rotDir;
+            b2Vec2 p0 = portal->pos + fmax(pr->scale.x * 0.5 - 2.0, 0.01) * portal->rotDir;
+            b2Vec2 p1 = portal->pos - fmax(pr->scale.x * 0.5 - 2.0, 0.01) * portal->rotDir;
          
             s_portalParticleUbo* ppUbo;
             vkMapMemory(logicalDevice, portalParticleShader->uniformBuffers[0]->memory,
                 pr->particleDynamicOffsets[lastSwapChainImageIndex], portalParticleShader->alignedSize, 0, (void**)&ppUbo);
             ppUbo->portalPoints = glm::vec4(p0.x, p0.y, p1.x, p1.y);
             ppUbo->data0 = glm::vec4(0.6f, 1.0f, ppUbo->data0.z, 3.0f);
-            ppUbo->data1 = glm::vec4(0.4f, 0.3f, ppUbo->data1.z, 125.0f);
+            ppUbo->data1 = glm::vec4(0.2f, 0.2f, ppUbo->data1.z, 100.0f);
             vkUnmapMemory(logicalDevice, portalParticleShader->uniformBuffers[0]->memory);
         }
     }
@@ -946,7 +968,7 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
             vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 portalParticleShader->pipelineLayout, 1, 1, &portalParticleShader->descriptorSets[1], 1, &pair.second.particleDynamicOffsets[lastSwapChainImageIndex]);
 
-            vkCmdDraw(cmdBuff, portalParticleShader->buffers[0]->count, 125, 0, 0);
+            vkCmdDraw(cmdBuff, portalParticleShader->buffers[0]->count, 100, 0, 0);
         }
     }
 
@@ -975,20 +997,20 @@ void ThinDrawer::portalCreateCallback(Portal* portal)
     pr->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
     pr->particleDynamicOffsets.resize(thinDrawer->swapChain->imageCount);
     pr->data0 = glm::vec4(portal->dirAngle, 0.0001f, 0.06f, 0.0);
-    pr->scale = glm::vec2(0.0f, 0.1f);
+    pr->scale = glm::vec2(0.0f, 3.0f);
 
     AnimGroup* ag = new AnimGroup(3);
 
     pr->animGroup = ag;
     ag->toNull = &pr->animGroup;
 
-    AnimStruct* animStruct = ag->createAnimation(&pr->scale.x, 4.0f, 0.0f, portal->size * 2.0f);
+    AnimStruct* animStruct = ag->createAnimation(&pr->scale.x, 4.0f, 0.0f, portal->size * 2.0f + 4.0);
     animStruct->registeredFunction = AnimStruct::linearFunc;
 
-    AnimStruct* animStruct3 = ag->createChainedAnimation(animStruct, &pr->scale.y, 4.0f, 0.1f, 0.2f);
+    AnimStruct* animStruct3 = ag->createChainedAnimation(animStruct, &pr->scale.y, 4.0f, 3.0f, 4.0f);
     animStruct3->registeredFunction = AnimStruct::linearFunc;
 
-    animStruct = ag->createChainedAnimation(animStruct, &pr->data0.w, 4.0f, 0.0f, portal->size * 0.3);
+    animStruct = ag->createChainedAnimation(animStruct, &pr->data0.w, 4.0f, 0.0f, portal->size * 1.5);
     animStruct->registeredFunction = AnimStruct::linearFunc;
 
     ag->next = thinDrawer->animations;
@@ -1315,7 +1337,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
         {
             try
             {
-                IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_NEAREST);
+                IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR);
                 renderGroup->imageSets.push_back(&(IOHelper::textureMap[textures[i]]->set));
             }
             catch (const std::exception& ex)
