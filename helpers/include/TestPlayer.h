@@ -26,6 +26,7 @@ public:
 
     bool haveContact;
     bool onPlatform;
+    b2Fixture* tireFixture;
     b2Body* contactBody;
     b2Body* platformBody;
     b2BodyType contactType;
@@ -45,6 +46,10 @@ public:
     int lastDoubleKey;
 
     float onAirFor;
+    float avgNormalX;
+    int numNormals;
+    float normXToWalk;
+    bool setFriction;
 
     b2Vec2 lastDirs[2];
 
@@ -79,7 +84,11 @@ public:
         lastDoubleKey = -1;
 
         onAirFor = 0.0f;
-    
+        avgNormalX = 0.0;
+        numNormals = 0;
+        normXToWalk = 0.6;
+        setFriction = false;
+
         jumpBuffer = Sounder::object->bufferMap["jumpTest.wav"];
         blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
         orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
@@ -110,11 +119,11 @@ public:
         b2CircleShape cShape;
         cShape.m_radius = size.x * 0.5;
         cShape.m_p = b2Vec2(0.0, -size.y * 0.5 + size.x * 0.5);
-        b2Fixture* fix = body->CreateFixture(&cShape, 1.0);
-        fix->SetFriction(0.0f);
+        tireFixture = body->CreateFixture(&cShape, 1.0);
+        tireFixture->SetFriction(0.0f);
 
         cShape.m_p = b2Vec2(0.0, +size.y * 0.5 - size.x * 0.5);
-        fix = body->CreateFixture(&cShape, 1.0);
+        b2Fixture* fix = body->CreateFixture(&cShape, 1.0);
         fix->SetFriction(0.0f);
 
         PortalBody* pb = pWorld->createPortalBody(body);
@@ -162,11 +171,33 @@ public:
         pWorld->CreateJoint(&jDef);
     }
 
-    void handleForces(b2Contact* contact, b2Fixture* fix2){
+    void preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
+    {
         b2WorldManifold wManifold;
         contact->GetWorldManifold(&wManifold);
         b2Vec2 normal = wManifold.normal;
 
+        PortalBody* contactingPBody = (PortalBody*)((bodyData*)thisBody->GetUserData().pointer)->data;
+        float tHold = 0.2f;
+        b2Vec2 bodyPos = contactingPBody->body->GetPosition();
+        b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
+        botVector = pWorld->rotateVec(botVector, contactingPBody->offsetAngle + thisBody->GetAngle());
+
+        float botY = bodyPos.y + (size.y / 2.0f) * botVector.y;
+        if (wManifold.points[0].y < botY + tHold && wManifold.points[0].y > botY - tHold)
+        {
+            if (abs(normal.x) <= normXToWalk)
+            {
+                if (setFriction)
+                {
+                    contact->SetFriction(2.0);
+                }
+                else
+                {
+                    contact->SetFriction(0.0);
+                }
+            }
+        }
         contact->SetRestitution(0.0f);
     }
 
@@ -185,6 +216,10 @@ public:
         contact->GetWorldManifold(&wManifold);
         b2Vec2 normal = wManifold.normal;
 
+        numNormals++;
+        avgNormalX += normal.x;
+
+
         b2Vec2 cPos = wManifold.points[0];
 
         if (contact->GetManifold()->pointCount > 1)
@@ -193,7 +228,7 @@ public:
             cPos *= 0.5f;
         }
 
-        float tHold = 0.1f;
+        float tHold = 0.2f;
         b2Vec2 bodyPos = contactingPBody->body->GetPosition();
         b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
         botVector = pWorld->rotateVec(botVector, contactingPBody->offsetAngle + contactingBody->GetAngle());
@@ -201,7 +236,7 @@ public:
         float botY = bodyPos.y + (size.y / 2.0f) * botVector.y;
         if (cPos.y < botY + tHold && cPos.y > botY - tHold)
         {
-            if (abs(normal.x) <= 0.6f)
+            if (abs(normal.x) <= normXToWalk)
             {
                 contactType = fix2->GetBody()->GetType();
                 contactBody = fix2->GetBody();
@@ -215,7 +250,7 @@ public:
                     }
                 }
             }
-            else if (normal.x > 0.6f)
+            else if (normal.x > normXToWalk)
             {
                 leftCollisionType = fix2->GetBody()->GetType();
             }
@@ -710,6 +745,8 @@ public:
 
     void updateReset()
     {
+        avgNormalX = 0.0;
+        numNormals = 0;
         haveContact = false;
         onPlatform = false;
         contactBody = nullptr;
@@ -726,6 +763,8 @@ public:
     {
         const float maxSpeed = 5.0f;
         float speedOffset = 0.0f;
+        avgNormalX /= numNormals;
+        setFriction = false;
         PortalBody* pb = pBody->at(0);
 
         if (pb != lastBody && lastBody != nullptr)
@@ -832,15 +871,18 @@ public:
 
         lastKey = -1;
         b2Vec2 lv = pb->body->GetLinearVelocity();
-        //printf("%f, %f\n", lv.x, lv.y);
+
         if (!left && !right && onPlatform)
         {
+            printf("1\n");
             float diff = platformBody->GetLinearVelocity().x - lv.x;
             lv.x += diff * dt * 15.0f * pBody->size();
+            setFriction = true;
         }
         if (left || right)
         {
-            const float groundMult = 10.0f;
+            printf("2\n");
+            const float groundMult = 20.0f;
             const float airMult = 10.0f;
             const float fwdGrndSlw = 5.0f;
             if (right)
@@ -857,6 +899,7 @@ public:
                 else
                 {
                     addition = 0.0f;
+                    setFriction = true;
                 }
 
                 if (addition != 0.0f)
@@ -918,6 +961,7 @@ public:
                 else
                 {
                     subtraction = 0.0f;
+                    setFriction = true;
                 }
 
                 if (subtraction != 0.0f)
@@ -969,22 +1013,29 @@ public:
         }
         else if (!haveContact)
         {
+            printf("3\n");
             lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 0.5f);
+            setFriction = true;
         }
         else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
         {
+            printf("4\n");
             // kinematic body
-            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
+            //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
+            setFriction = true;
         }
         else if (contactBody && contactType != b2_dynamicBody && onAirFor == 0.0f)
         {
-            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
+            printf("5\n");
+            //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
+            setFriction = true;
         }
 
         if (!contactBody) onAirFor += dt;
         else onAirFor = 0.0f;
 
-        if (wh->keyData[GLFW_KEY_W] == 2 && ((contactBody && lv.y <= 5.0f) ||
+        if (wh->keyData[GLFW_KEY_W] == 2 &&
+            (((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) ||
             (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f)))
         {
             lv.y = 10.0f * (float)pBody->size();
@@ -992,10 +1043,8 @@ public:
             Sounder::object->playSound(jumpBuffer, 1.0);
         }
 
-        if (lv.y < -20.0f)
-        {
-            lv.y = -20.0f;
-        }
+        lv.y = std::fmax(lv.y, -20.0);
+
         pb->body->SetLinearVelocity(lv);
 
         handleBodyRotation();

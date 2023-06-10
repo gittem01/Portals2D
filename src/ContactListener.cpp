@@ -115,14 +115,22 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
         PortalBody* p = (PortalBody*)bDataB->data;
         p->preCollision(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
-    
+
     if (bDataA && bDataA->extraData)
     {
-        ((TestPlayer*)bDataA->extraData)->handleForces(contact, contact->GetFixtureB());
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
+        if (physicsData->type == DEFAULT_OBJECT)
+        {
+            ((DefaultObject*)physicsData->data)->preSolve(contact, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
+        }
     }
     if (bDataB && bDataB->extraData)
     {
-        ((TestPlayer*)bDataB->extraData)->handleForces(contact, contact->GetFixtureA());
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
+        if (physicsData->type == DEFAULT_OBJECT)
+        {
+            ((DefaultObject*)physicsData->data)->preSolve(contact, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
+        }
     }
 }
 

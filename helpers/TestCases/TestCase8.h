@@ -182,10 +182,10 @@ public:
 
         lastBody->SetLinearDamping(0.0f);
 
-        startPos = b2Vec2(0.0f, 0.0f);
-        lastBody = createBox(startPos, b2Vec2(0.7f, 0.7f), pWorld, b2_dynamicBody, 0.0f);
+        startPos = b2Vec2(0.0f, -9.0f);
+        lastBody = createBox(startPos, b2Vec2(6.7f, 0.2f), pWorld, b2_dynamicBody, 0.0f);
         lastPb = pWorld->createPortalBody(lastBody);
-        lastBody->SetLinearVelocity(b2Vec2(1.0, 0.0));
+        lastBody->SetLinearVelocity(b2Vec2(2.0, 0.0));
         lastBody->SetLinearDamping(0.0);
         thinDrawer->debug_addPortalBody(lastPb);
         thinDrawer->addPortalBody(lastPb, {"grad2.png"});

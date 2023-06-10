@@ -133,7 +133,7 @@ void SwapChain::createSwapChain()
         presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
 
-    presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+    //presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
     extent = chooseSwapExtent();
 
