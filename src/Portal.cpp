@@ -111,6 +111,7 @@ Portal::~Portal(){
             free(connections[i][0]);
             continue;
         }
+
         for (int j = 0; j < connections[i].size(); j++)
         {
             Portal* otherPortal = connections[i][j]->portal2;
@@ -119,6 +120,7 @@ Portal::~Portal(){
                 free(connections[i][j]);
                 break;
             }
+
             int connectionSide2 = connections[i][j]->side2;
             for (int k = 0; k < otherPortal->connections[connectionSide2].size(); k++)
             {

@@ -49,7 +49,7 @@ public:
     float avgNormalX;
     int numNormals;
     float normXToWalk;
-    bool setFriction;
+    float setFriction;
 
     b2Vec2 lastDirs[2];
 
@@ -87,7 +87,7 @@ public:
         avgNormalX = 0.0;
         numNormals = 0;
         normXToWalk = 0.6;
-        setFriction = false;
+        setFriction = 0.0;
 
         jumpBuffer = Sounder::object->bufferMap["jumpTest.wav"];
         blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
@@ -188,14 +188,7 @@ public:
         {
             if (abs(normal.x) <= normXToWalk)
             {
-                if (setFriction)
-                {
-                    contact->SetFriction(2.0);
-                }
-                else
-                {
-                    contact->SetFriction(0.0);
-                }
+                contact->SetFriction(setFriction);
             }
         }
         contact->SetRestitution(0.0f);
@@ -764,7 +757,7 @@ public:
         const float maxSpeed = 5.0f;
         float speedOffset = 0.0f;
         avgNormalX /= numNormals;
-        setFriction = false;
+        setFriction = 0.0;
         PortalBody* pb = pBody->at(0);
 
         if (pb != lastBody && lastBody != nullptr)
@@ -877,7 +870,7 @@ public:
             printf("1\n");
             float diff = platformBody->GetLinearVelocity().x - lv.x;
             lv.x += diff * dt * 15.0f * pBody->size();
-            setFriction = true;
+            setFriction = 2.0;
         }
         if (left || right)
         {
@@ -895,11 +888,15 @@ public:
                 else if (rightCollisionType == b2_dynamicBody)
                 {
                     addition = airMult * dt * pBody->size() * mult;
+                    if (lv.x < -maxSpeed * 2.0)
+                    {
+                        addition = 0.0;
+                    }
                 }
                 else
                 {
                     addition = 0.0f;
-                    setFriction = true;
+                    setFriction = 2.0;
                 }
 
                 if (addition != 0.0f)
@@ -944,7 +941,7 @@ public:
                         }
                     }
                 }
-                
+
                 lastKey = GLFW_KEY_D;
             }
             if (left)
@@ -957,11 +954,15 @@ public:
                 else if (leftCollisionType == b2_dynamicBody)
                 {
                     subtraction = airMult * dt * pBody->size() * mult;
+                    if (lv.x > maxSpeed * 2.0)
+                    {
+                        subtraction = 0.0;
+                    }
                 }
                 else
                 {
                     subtraction = 0.0f;
-                    setFriction = true;
+                    setFriction = 2.0;
                 }
 
                 if (subtraction != 0.0f)
@@ -1014,21 +1015,21 @@ public:
         else if (!haveContact)
         {
             printf("3\n");
-            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 0.5f);
-            setFriction = true;
+            //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 0.5f);
+            setFriction = 0.0;
         }
         else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
         {
             printf("4\n");
             // kinematic body
             //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
-            setFriction = true;
+            setFriction = 2.0;
         }
         else if (contactBody && contactType != b2_dynamicBody && onAirFor == 0.0f)
         {
             printf("5\n");
             //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
-            setFriction = true;
+            setFriction = 2.0;
         }
 
         if (!contactBody) onAirFor += dt;

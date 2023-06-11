@@ -59,7 +59,7 @@ DefaultCube::DefaultCube(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
 	onHitSoundBuffers.push_back(onHitSoundBuffer);
 
-	b2Body* body = createPortalCube2(b2Vec2(0.0, 0.0), b2Vec2(1.0, 1.0), pWorld, b2_dynamicBody);
+	b2Body* body = createPortalCube2(b2Vec2(0.0, 0.0), b2Vec2(0.5, 0.5), pWorld, b2_dynamicBody);
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;

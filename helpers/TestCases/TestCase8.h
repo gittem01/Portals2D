@@ -11,9 +11,6 @@ public:
 
     float t = 0.0f;
 
-    std::vector<PortalBody*>* pbi1;
-    std::vector<PortalBody*>* pbi2;
-
     TestCase8(ThinDrawer* td) : BaseTestCase(td)
     {
         testCaseItem = 7;
@@ -135,27 +132,6 @@ public:
 
         b2Vec2 p = b2Vec2(1.0f, -3.0f);
         b2Vec2 s = b2Vec2(0.4f, 0.4f);
-        b2Body* body1 = createPortalCube(p, s, pWorld, b2_dynamicBody);
-        //b2Body* body1 = createBox(p, s, pWorld, b2_dynamicBody);
-
-        p.y = +3.0f;
-        b2Body* body2 = createPortalCube(p, s, pWorld, b2_dynamicBody);
-
-        body1->SetLinearDamping(0.0f);
-        body2->SetLinearDamping(0.0f);
-
-        PortalBody* pb1 = pWorld->createPortalBody(body1);
-        PortalBody* pb2 = pWorld->createPortalBody(body2);
-
-        std::vector<std::string> cubeNames;
-        for (int i = 0; i < 6; i++)
-        {
-            cubeNames.push_back("cube.png");
-        }
-        thinDrawer->addPortalBody(pb1, cubeNames);
-
-        thinDrawer->debug_addPortalBody(pb1);
-        thinDrawer->debug_addPortalBody(pb2);
 
         std::vector<std::pair<std::string, std::string>> names =
         {
@@ -166,16 +142,12 @@ public:
             {"pCube.body",  "body.png" }
         };
 
-        thinDrawer->addPortalBody_3d(pb1, names);
-        thinDrawer->addPortalBody_3d(pb2, names);
-
-        pbi1 = &pb1->worldIndex->pbIndices;
-        pbi2 = &pb2->worldIndex->pbIndices;
-
         startPos = b2Vec2(10.0f, 4.0f);
         lastBody = createCircle(startPos, 0.5f, pWorld, b2_dynamicBody);
         PortalBody* lastPb = pWorld->createPortalBody(lastBody);
         thinDrawer->debug_addPortalBody(lastPb);
+
+        thinDrawer->addPortalBody(lastPb, {"circle.png"});
 
         names = { {"sphere.sphere", "sphere.png"} };
         thinDrawer->addPortalBody_3d(lastPb, names);
@@ -207,8 +179,11 @@ public:
         PortalBody* pbx = pWorld->createPortalBody(bodyX);
 
         thinDrawer->debug_addPortalBody(pbx);
+        thinDrawer->addPortalBody(pbx, {});
 
-        new DefaultCube(pWorld);
+        DefaultCube* dc1 = new DefaultCube(pWorld);
+        DefaultCube* dc2 = new DefaultCube(pWorld);
+        dc2->pBody->at(0)->body->SetTransform(b2Vec2(5.0, 0.0), 0.0);
     }
 
     void onUpdate()

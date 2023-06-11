@@ -371,12 +371,14 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         npb->baseDensities = pBody->baseDensities;
         npb->isMirrored = pBody->isMirrored ^ c->isReversed;
 
-        if (c->isReversed){
+        if (c->isReversed)
+        {
             float pAngle = calcAngle2(portal2->dir);
             float angleRes = (pAngle - (angleRot + body2->GetAngle())) * 2.0f;
             npb->offsetAngle = angleRes + angleRot - b2_pi - pBody->offsetAngle;
         }
-        else{
+        else
+        {
             npb->offsetAngle = angleRot + pBody->offsetAngle;
         }
 
@@ -537,8 +539,10 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         bodyCollisionStatus* bcs = new bodyCollisionStatus;
         bcs->body = pBody;
 
-        for (portalConnection* conn : portal2->connections[c->side2]){
-            if (conn->portal2 == collPortal && conn->side2 == c->side1){
+        for (portalConnection* conn : portal2->connections[c->side2])
+        {
+            if (conn->portal2 == collPortal && conn->side2 == c->side1)
+            {
                 bcs->connection = conn;
                 conn->portal1->collidingBodies[conn->side1].insert(npb);
                 break;
@@ -552,14 +556,16 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
         bool allOut = true;
         int fixMargin = 0;
-        for (int i = pBody->fixtures.size() - 1; i > -1; i--){
+        for (int i = pBody->fixtures.size() - 1; i > -1; i--)
+        {
             b2Fixture* fix = pBody->fixtures.at(i);
             b2Fixture* f;
             b2FixtureDef fDef;
             fDef.density = fix->GetDensity();
             fDef.restitution = fix->GetRestitution();
             fDef.friction = fix->GetFriction();
-            if (fix->GetType() == b2Shape::Type::e_polygon){
+            if (fix->GetType() == b2Shape::Type::e_polygon)
+            {
                 b2PolygonShape* polyShape = (b2PolygonShape*)fix->GetShape();
                 
                 b2PolygonShape newShape;
@@ -568,8 +574,10 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                 newShape.m_count = polyShape->m_count;
                 b2Vec2* vertices = (b2Vec2*)malloc(sizeof(b2Vec2) * polyShape->m_count);
 
-                for (int j = 0; j < polyShape->m_count; j++){
-                    if (c->isReversed){
+                for (int j = 0; j < polyShape->m_count; j++)
+                {
+                    if (c->isReversed)
+                    {
                         b2Vec2 v = rotateVec(polyShape->m_vertices[j], angleRot + body2->GetAngle());
                         v = mirror(portal2->dir, v);
                         v = rotateVec(v, -body2->GetAngle());
@@ -584,7 +592,8 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                 f = body2->CreateFixture(&fDef);
                 free(vertices);
             }
-            else{
+            else
+            {
                 b2CircleShape* circleShape = (b2CircleShape*)fix->GetShape();
                 b2CircleShape newShape;
                 fDef.shape = &newShape;
@@ -592,12 +601,14 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                 newShape.m_radius = circleShape->m_radius;
 
                 b2Vec2 v;
-                if (c->isReversed){
+                if (c->isReversed)
+                {
                     v = rotateVec(circleShape->m_p, angleRot + body2->GetAngle());
                     v = mirror(portal2->dir, v);
                     v = rotateVec(v, -body2->GetAngle());
                 }
-                else{
+                else
+                {
                     v = rotateVec(circleShape->m_p, angleRot);
                 }
                 newShape.m_p = v;

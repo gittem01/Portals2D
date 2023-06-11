@@ -86,7 +86,7 @@ public:
 
     bool drawReleases = false;
     bool drawDebugBodies = false;
-    bool drawDebugEdges = false;
+    bool drawDebugEdges = true;
     bool drawDebugPortals = false;
 
     void initImgui();

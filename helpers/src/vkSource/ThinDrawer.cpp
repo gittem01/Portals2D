@@ -14,7 +14,6 @@ ThinDrawer* ThinDrawer::object = nullptr;
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {
-    drawReleases = true;
     this->pWorld = pWorld;
 
     initBase();
