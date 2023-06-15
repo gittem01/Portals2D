@@ -8,6 +8,11 @@ public:
     Portal* portal1;
     Portal* portal2;
     b2Body* bodyToMove;
+    b2Body* rbdy;
+    std::vector<PortalBody*>* platform;
+    std::vector<glm::vec4> outerEdges;
+    std::vector<point> outerVertices;
+    std::vector <float> angles;
 
     float t = 0.0f;
 
@@ -18,6 +23,47 @@ public:
         beforeCreate();
         onCreate();
         afterCreate();
+    }
+
+    b2Body* randomBody()
+    {
+        b2BodyDef bDef;
+        bDef.type = b2_dynamicBody;
+        bDef.position = b2Vec2(20.0, 0.0);
+        b2Body* body = pWorld->CreateBody(&bDef);
+
+        const int polyCount = 20;
+        const int circleCount = 20;
+
+        for (int i = 0; i < polyCount; i++)
+        {
+            b2Vec2 randPos = b2Vec2(getRand() * 5.0, getRand() * 5.0);
+            b2PolygonShape pShape;
+
+            float startAngle = getRand() * b2_pi;
+            float r0 = b2_pi * 0.7;
+            float r1 = b2_pi * 0.7;
+
+            b2Vec2 points[3] = {
+                randPos + 0.3f * b2Vec2(sin(startAngle), cos(startAngle)),
+                randPos + 0.3f * b2Vec2(sin(startAngle + r0), cos(startAngle + r0)),
+                randPos + 0.3f * b2Vec2(sin(startAngle + r0 + r1), cos(startAngle + r0 + r1)) };
+
+            pShape.Set(points, 3);
+
+            body->CreateFixture(&pShape, 1.0);
+        }
+
+        for (int i = 0; i < circleCount; i++)
+        {
+            b2CircleShape cShape;
+            cShape.m_p = b2Vec2(getRand() * 5.0, getRand() * 5.0);
+            cShape.m_radius = getRand() * 0.3 + 0.2;
+
+            body->CreateFixture(&cShape, 1.0);
+        }
+
+        return body;
     }
 
     void makePortalDynamic(Portal* portal)
@@ -38,6 +84,7 @@ public:
     void onCreate()
     {
         srand(2);
+        srand(glfwGetTime() * 1000);
         pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
         pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
 
@@ -147,22 +194,29 @@ public:
         PortalBody* lastPb = pWorld->createPortalBody(lastBody);
         thinDrawer->debug_addPortalBody(lastPb);
 
-        thinDrawer->addPortalBody(lastPb, {"circle.png"});
+        rbdy = tp->pBody->at(0)->body;
+        angles = tp->pBody->at(0)->worldIndex->angles;
+        outerEdges = tp->pBody->at(0)->worldIndex->outerEdges;
+        outerVertices = tp->pBody->at(0)->worldIndex->outerVertices;
 
-        names = { {"sphere.sphere", "sphere.png"} };
-        thinDrawer->addPortalBody_3d(lastPb, names);
+        thinDrawer->addPortalBody(lastPb, {"circle.png"});
 
         lastBody->SetLinearDamping(0.0f);
 
         startPos = b2Vec2(0.0f, -9.0f);
         lastBody = createBox(startPos, b2Vec2(6.7f, 0.2f), pWorld, b2_dynamicBody, 0.0f);
         lastPb = pWorld->createPortalBody(lastBody);
+        platform = &lastPb->worldIndex->pbIndices;
         lastBody->SetLinearVelocity(b2Vec2(2.0, 0.0));
         lastBody->SetLinearDamping(0.0);
         thinDrawer->debug_addPortalBody(lastPb);
         thinDrawer->addPortalBody(lastPb, {"grad2.png"});
         names = {};
         thinDrawer->addPortalBody_3d(lastPb, names);
+
+        b2Body* bdy = randomBody();
+        lastPb = pWorld->createPortalBody(bdy);
+        thinDrawer->debug_addPortalBody(lastPb);
 
         b2PolygonShape pShape;
         b2Vec2 points[] = {
@@ -189,6 +243,47 @@ public:
     void onUpdate()
     {
         BaseTestCase::onUpdate();
+
+        /*for (auto ps : outerEdges)
+        {
+            b2Vec2 b2P1 = rbdy->GetWorldPoint(b2Vec2(ps.x, ps.y));
+            b2Vec2 b2P2 = rbdy->GetWorldPoint(b2Vec2(ps.z, ps.w));
+            thinDrawer->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P2.x, b2P2.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.03, 0.5);
+            thinDrawer->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P1.x, b2P1.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.15, 0.5);
+        }
+
+        glm::vec2 mc = thinDrawer->wh->cam->getMouseCoords();
+        b2Vec2 diff = b2Vec2(mc.x, mc.y) - rbdy->GetPosition();
+        diff = PortalWorld::rotateVec(diff, -rbdy->GetAngle());
+        diff.Normalize();
+        float diffAng = PortalWorld::calcAngle2(diff);
+
+        int s = 0;
+        int e = angles.size() - 1;
+        for ( ; e - s > 1; )
+        {
+            int p = (e - s) / 2 + s;
+            if (angles[p] < diffAng)
+            {
+                s = p;
+            }
+            else
+            {
+                e = p;
+            }
+        }
+
+        if (angles[0] > diffAng) e = 0;
+        if (angles[angles.size() - 1] < diffAng) e = 0;
+
+        b2Vec2 rotDiff = PortalWorld::rotateVec(diff, b2_pi * 0.5);
+        float vDist = PortalWorld::getRealDist(b2Vec2(0.0, 0.0), rotDiff, b2Vec2(outerVertices[e].pos.x, outerVertices[e].pos.y)) + outerVertices[e].r;
+        diff = PortalWorld::rotateVec(diff, rbdy->GetAngle());
+        rotDiff = PortalWorld::rotateVec(diff, b2_pi * 0.5);
+        b2Vec2 farPos = rbdy->GetPosition() + vDist * diff;
+        b2Vec2 fp1 = farPos - 100.0 * rotDiff;
+        b2Vec2 fp2 = farPos + 100.0 * rotDiff;
+        thinDrawer->registerDebugLine(glm::vec4(fp1.x, fp1.y, fp2.x, fp2.y), glm::vec4(0.0, 0.0, 1.0, 1.0), 0.06, 0.5);*/
 
         const float speedAddition = 1.5f;
         const float angSpeedAddition = 0.51f;
@@ -217,5 +312,14 @@ public:
 
         bodyToMove->SetLinearVelocity(setSpeed);
         bodyToMove->SetAngularVelocity(setAngle);
+
+        if (td->wh->keyData[GLFW_KEY_Z] == 2)
+        {
+            platform->at(0)->body->SetLinearVelocity(b2Vec2(-2.0, 0.0));
+        }
+        if (td->wh->keyData[GLFW_KEY_X] == 2)
+        {
+            platform->at(0)->body->SetLinearVelocity(b2Vec2(+2.0, 0.0));
+        }
     }
 };

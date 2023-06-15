@@ -13,25 +13,32 @@ void DebugLine::prepareVertexData()
 
 void DebugLine::prepareUniforms()
 {
-    int alignedSizeFS = thinDrawer->pad_storage_buffer_size(sizeof(s_uboAll));
+    int alignedSizeFS = sizeof(s_debugLineUbo);
+    uniformBuffers.resize(1);
+
+    uniformBuffers.resize(1);
+
+    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
+
+    thinDrawer->uniformHelper(alignedSizeFS * 1000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void DebugLine::setupDescriptorSetLayout()
 {
-    const int descriptorSetLayoutCount = 1;
+    const int descriptorSetLayoutCount = 2;
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
     descriptorSetLayouts[0] = ShaderBase::sharedLayout;
 
+    VkDescriptorSetLayoutBinding layoutBinding10 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
+
+    VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding10 };
+
+    VkDescriptorSetLayoutCreateInfo descriptorLayout2 = vkinit::descriptorSetLayoutCreateInfo(bindings2, sizeof(bindings2) / sizeof(bindings2[0]));
+    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout2, VK_NULL_HANDLE, &descriptorSetLayouts[1]));
+
     VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo(descriptorSetLayouts.data(), descriptorSetLayouts.size());
-
-    VkPushConstantRange pushConstant;
-    pushConstant.offset = 0;
-    pushConstant.size = sizeof(s_pushConstantLine);
-    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    pPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-    pPipelineLayoutCreateInfo.pPushConstantRanges = &pushConstant;
-
     CHECK_RESULT_VK(vkCreatePipelineLayout(logicalDevice, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &pipelineLayout));
 }
 
@@ -69,8 +76,6 @@ void DebugLine::preparePipeline()
     pipelineCreateInfo->pStages = shader.shaderStages.data();
     pipelineCreateInfo->pVertexInputState = &vertexInputState;
 
-    ((VkPipelineDepthStencilStateCreateInfo*)pipelineCreateInfo->pDepthStencilState)->depthTestEnable = VK_FALSE;
-
     CHECK_RESULT_VK(vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, pipelineCreateInfo, VK_NULL_HANDLE, &pipeline));
 
     ThinDrawer::freePipelineData(pipelineCreateInfo);
@@ -78,4 +83,22 @@ void DebugLine::preparePipeline()
 
 void DebugLine::setupDescriptorSet()
 {
+    int bindingCount = 2;
+
+    descriptorSets.resize(descriptorSetLayouts.size());
+
+    VkDescriptorSetAllocateInfo allocInfo;
+
+    VkWriteDescriptorSet writeDescriptorSet = { };
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.dstBinding = 0;
+
+    allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
+    CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
+    writeDescriptorSet.dstSet = descriptorSets[1];
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+    vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 }

@@ -39,9 +39,7 @@ Portal::~Portal(){
 
             for (bodyCollisionStatus* bcs : *pb->bodyMaps)
             {
-                b2MassData mData;
-                bcs->body->body->GetMassData(&mData);
-                b2Vec2 center = bcs->body->body->GetWorldPoint(mData.center);
+                b2Vec2 center = bcs->body->getWorldCenterOfMass();
                 if (bcs->connection->portal2->getPointSide(center) == bcs->connection->side2)
                 {
                     leftOutBody = bcs->body;
@@ -63,7 +61,12 @@ Portal::~Portal(){
                 posChangeDir = -outPortal->dir;
             }
 
-            leftOutBody->body->SetTransform(leftOutBody->body->GetPosition() + 0.5f * posChangeDir, leftOutBody->body->GetAngle());
+            float d = PortalWorld::getDistanceFromPortal(outPortal, leftOutBody);
+
+            if (d > 0.0)
+            {
+                leftOutBody->body->SetTransform(leftOutBody->body->GetPosition() + d * posChangeDir, leftOutBody->body->GetAngle());
+            }
         }
 
         for (PortalBody* leftOutBody : leftOutBodies)
@@ -75,24 +78,18 @@ Portal::~Portal(){
                 pbfData->pCollisions.clear();
             }
 
-            for (int j = leftOutBody->bodyMaps->size() - 1; j >= 0; j--)
+            for (int j = leftOutBody->worldIndex->pbIndices.size() - 1; j > -1; j--)
             {
-                bodyCollisionStatus* deleteStat = leftOutBody->bodyMaps->at(j);
-                for (int k = 0; k < pWorld->portalBodies.size(); k++)
+                PortalBody* deleteStat = leftOutBody->worldIndex->pbIndices.at(j);
+
+                if (deleteStat == leftOutBody) continue;
+
+                for (auto pair : deleteStat->worldIndex->destroyCallbacks)
                 {
-                    if (pWorld->portalBodies.at(k) == deleteStat->body)
-                    {
-                        pWorld->portalBodies.erase(pWorld->portalBodies.begin() + k);
-                        break;
-                    }
+                    pair.first(deleteStat, pair.second);
                 }
 
-                for (auto pair : deleteStat->body->worldIndex->destroyCallbacks)
-                {
-                    pair.first(deleteStat->body, pair.second);
-                }
-                
-                delete deleteStat->body;
+                delete deleteStat;
             }
 
             for (int i = 0; i < 2; i++)

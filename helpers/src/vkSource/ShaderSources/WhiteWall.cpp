@@ -34,6 +34,7 @@ void WhiteWall::prepareVertexData()
 
 void WhiteWall::prepareUniforms()
 {
+    wallCount = 0;
     // offset is not used no need for alignment
     int alignedSizeFS = sizeof(s_wallUbo_w);
     uniformBuffers.resize(1);
@@ -242,7 +243,7 @@ void WhiteWall::preparePipeline()
 void WhiteWall::setupDescriptorSet()
 {
     s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
-    thinDrawer->loadTexture((char*)"textures/undertaleHeart.png", tex, false, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST);
+    thinDrawer->loadTexture((char*)"textures/dots.png", tex, false, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST);
     textureData.push_back(tex);
 
     s_texture* tex2 = (s_texture*)malloc(sizeof(s_texture));

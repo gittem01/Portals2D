@@ -135,8 +135,11 @@ public:
 
     b2Body* body;
     int numFixtures;
-    float offsetAngle;
     bool isMirrored;
+
+    b2Vec2 getWorldCenterOfMass();
+
+    static void getBodyOut(pbWorldData* worldData);
 
 private:
     PortalBody(b2Body* body, PortalWorld* pWorld);
@@ -165,7 +168,7 @@ private:
 
     void postHandle();
     void applyPartialGravity(b2Fixture* fixture);
-    
+
     static b2Vec2 findPolygonCentroid(b2Vec2* vertices, int numVertices);
     static float findPolygonArea(b2Vec2* vertices, int numVertices);
     static float calculateAngleThold(b2Fixture* fix);

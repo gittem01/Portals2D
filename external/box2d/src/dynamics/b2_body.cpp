@@ -162,7 +162,7 @@ void b2Body::SetType(b2BodyType type)
 	}
 }
 
-b2Fixture* b2Body::CreateFixture(const b2FixtureDef* def)
+b2Fixture* b2Body::CreateFixture(const b2FixtureDef* def, const bool shouldClone)
 {
 	b2Assert(m_world->IsLocked() == false);
 	if (m_world->IsLocked() == true)
@@ -174,7 +174,7 @@ b2Fixture* b2Body::CreateFixture(const b2FixtureDef* def)
 
 	void* memory = allocator->Allocate(sizeof(b2Fixture));
 	b2Fixture* fixture = new (memory) b2Fixture;
-	fixture->Create(allocator, this, def);
+	fixture->Create(allocator, this, def, shouldClone);
 
 	if (m_flags & e_enabledFlag)
 	{

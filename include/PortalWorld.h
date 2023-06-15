@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <glm/glm.hpp>
 
 struct portalConnection;
 struct RotationJointDef;
@@ -52,9 +53,30 @@ typedef struct
     int side;
 } bodyStruct;
 
+typedef struct point
+{
+    glm::vec2 pos;
+    float r;
+} point;
+
 typedef struct
 {
     std::vector<PortalBody*> pbIndices;
+    
+    std::vector<b2Shape*> shapes;
+    std::vector<b2Shape*> mirroredShapes;
+
+    std::vector<point> outerVertices;
+    std::vector<glm::vec4> outerEdges;
+    std::vector <float> angles;
+
+    std::vector<point> mirroredOuterVertices;
+    std::vector<glm::vec4> mirroredOuterEdges;
+    std::vector <float> mirroredAngles;
+
+    b2Vec2 massCenter;
+    b2Vec2 mirroredMassCenter;
+
     std::vector<std::pair<void (*) (PortalBody*, void*), void*>> createCallbacks;
     std::vector<std::pair<void (*) (PortalBody*, void*), void*>> destroyCallbacks;
 } pbWorldData;
@@ -133,6 +155,7 @@ friend class PositionJointDef;
 friend class RotationJoint;
 friend class RotationJointDef;
 friend class ThinDrawer;
+friend class TestCase8;
 
 public:
     std::vector<pbWorldData*> bodyIndices;
@@ -159,7 +182,6 @@ private:
 
     Portal* createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Vec2 dir, float size);
 
-    std::vector<PortalBody*> portalBodies;
     std::set<PortalBody*> destroyBodies;
     std::set<pbWorldData*> handledBodies;
 
@@ -175,18 +197,24 @@ private:
     static void normalize(b2Vec2* vec);
     static b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
 
+    //world and local
     static b2Vec2 getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect);
     static b2Vec2 getRelativePortalPositionReverse_W(b2Vec2 point, portalConnection* pConnect);
     static b2Vec2 getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect);
     static b2Vec2 getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect);
 
+    static glm::vec4 tangenter(point p1, point p2, float mult);
+    static void calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<point>& outerVertices, std::vector<glm::vec4>& outerEdges, std::vector<float>& angles);
+    static float getDistanceFromPortal(Portal* portal, PortalBody* portalBody);
+
     void globalPostHandle();
 
     bool createCloneBody(Portal* collPortal, int side, PortalBody* pBody);
-    void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection, int side);
+    void connectBodies(PortalBody* body1, PortalBody* body2, portalConnection* connection);
 
     // baseBody should not be NULL if isNew is false
-    void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody, bool isNew);
+    void createNewPortalBody_i(PortalBody* pBody);
+    void createPortalBody_i(PortalBody* pBody, PortalBody* baseBody);
 
     void CreateRotationJoint(RotationJointDef* def, PortalBody* pb1, PortalBody* pb2);
     void DestroyCustomJoint(b2Joint* cj);

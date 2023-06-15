@@ -1,0 +1,509 @@
+#include "PortalBody.h"
+#include "Portal.h"
+#include <RotationJoint.h>
+#include <PositionJoint.h>
+#include <GameBase.h>
+
+void PortalRay::prepareRaySend() {
+    for (rayData* rd : rayResult)
+    {
+        delete rd;
+    }
+    rayResult.clear();
+
+    closestFixture = NULL;
+    closestPortalFixture = NULL;
+}
+
+void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal) {
+    prepareRaySend();
+
+    sendRay_i(rayStart, dirVec, rayLength, rayIndex, rayOutPortal);
+}
+
+void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal) {
+    if (rayIndex >= maxRayCount || rayLength < 0.0001f) {
+        return;
+    }
+    pWorld->normalize(&dirVec);
+    b2Vec2 rayEnd = rayStart + rayLength * dirVec;
+    b2Vec2 diff = rayEnd - rayStart;
+
+    reset();
+
+    // change this
+    if (rayOutPortal && false) {
+        rayData* rd = new rayData;
+        rd->endPos = rayStart;
+        rd->dir = dirVec;
+
+        rayResult.push_back(rd);
+        return;
+    }
+
+    pWorld->RayCast(this, rayStart, rayEnd);
+
+    endHandle();
+
+    float minFrac = minFraction;
+
+    diff = minFrac * diff;
+    b2Vec2 collPoint = rayStart + diff;
+
+    if (closestFixture != NULL)
+    {
+        if (closestFixture == closestPortalFixture)
+        {
+            fixtureData* fData = (fixtureData*)closestFixture->GetUserData().pointer;
+            Portal* p = (Portal*)fData->data;
+            b2Vec2 posDiff = p->pos - collPoint;
+            int raySide = p->getPointSide(rayStart);
+            b2Vec2 p1Dir = raySide ? -p->dir : p->dir;
+
+            for (portalConnection* conn : p->connections[raySide])
+            {
+                b2Vec2 p2Dir = conn->side2 ? -conn->portal2->dir : conn->portal2->dir;
+
+                float angleRot = -pWorld->calcAngle2(p1Dir) + pWorld->calcAngle2(-p2Dir);
+
+                b2Vec2 localPos = PortalWorld::rotateVec(posDiff, angleRot + b2_pi);
+                if (conn->isReversed)
+                {
+                    localPos = pWorld->mirror(p2Dir, localPos);
+                }
+
+                b2Vec2 ray2Pos = conn->portal2->pos + localPos;
+
+                b2Vec2 dir2 = PortalWorld::rotateVec(dirVec, angleRot);
+
+                sendRay_i(ray2Pos, dir2, rayLength - minFrac * rayLength, rayIndex + 1, conn->portal2);
+            }
+        }
+        else
+        {
+            rayData* rd = new rayData;
+            rd->endPos = collPoint;
+            rd->dir = dirVec;
+
+            rayResult.push_back(rd);
+        }
+    }
+}
+
+b2Vec2 PortalWorld::getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect) {
+    Portal* portal1 = pConnect->portal1;
+    Portal* portal2 = pConnect->portal2;
+    int side1 = pConnect->side1;
+    int side2 = pConnect->side2;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(point, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    return pos;
+}
+
+b2Vec2 PortalWorld::getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect) {
+    Portal* portal1 = pConnect->portal2;
+    Portal* portal2 = pConnect->portal1;
+    int side1 = pConnect->side2;
+    int side2 = pConnect->side1;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(point, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    return pos;
+}
+
+b2Vec2 PortalWorld::getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect) {
+    Portal* portal1 = pConnect->portal1;
+    Portal* portal2 = pConnect->portal2;
+    int side1 = pConnect->side1;
+    int side2 = pConnect->side2;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    b2Vec2 posDiff = portal1->pos - point;
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(posDiff, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    pos += portal2->pos;
+
+    return pos;
+}
+
+b2Vec2 PortalWorld::getRelativePortalPositionReverse_W(b2Vec2 point, portalConnection* pConnect)
+{
+    Portal* portal1 = pConnect->portal2;
+    Portal* portal2 = pConnect->portal1;
+    int side1 = pConnect->side2;
+    int side2 = pConnect->side1;
+    bool reversed = pConnect->isReversed;
+
+    b2Vec2 dir1 = side1 ? -portal1->dir : portal1->dir;
+    b2Vec2 dir2 = side2 ? -portal2->dir : portal2->dir;
+
+    b2Vec2 posDiff = portal1->pos - point;
+    float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
+    b2Vec2 pos = rotateVec(posDiff, angleRot + b2_pi);
+    if (reversed)
+        pos = mirror(dir2, pos);
+
+    pos += portal2->pos;
+
+    return pos;
+}
+
+glm::vec4 PortalWorld::tangenter(point p1, point p2, float mult)
+{
+    if (p1.r == 0.0 && p2.r == 0.0)
+    {
+        return glm::vec4(p2.pos.x, p2.pos.y, p1.pos.x, p1.pos.y);
+    }
+
+    float mult0;
+    if (p1.pos.x < p2.pos.x) mult0 = -1.0;
+    else mult0 = 1.0f;
+
+    if (p1.pos.x < p2.pos.x) mult *= -1.0;
+
+    point bp;
+    point sp;
+
+    if (p1.r > p2.r)
+    {
+        bp = p1;
+        sp = p2;
+    }
+    else
+    {
+        bp = p2;
+        sp = p1;
+    }
+
+    bp = p1;
+    sp = p2;
+
+    float gamma = -atan((bp.pos.y - sp.pos.y) / (bp.pos.x - sp.pos.x));
+    float beta = asin((bp.r - sp.r) / sqrt(pow(bp.pos.x - sp.pos.x, 2.0) + pow(bp.pos.y - sp.pos.y, 2.0))) * mult0 * mult;
+    float alpha = gamma - beta;
+
+    glm::vec2 v1 = glm::vec2(sp.pos.x + sp.r * sin(alpha) * mult, sp.pos.y + sp.r * cos(alpha) * mult);
+    glm::vec2 v2 = glm::vec2(bp.pos.x + bp.r * sin(alpha) * mult, bp.pos.y + bp.r * cos(alpha) * mult);
+
+    return glm::vec4(v1.x, v1.y, v2.x, v2.y);
+}
+
+void PortalWorld::calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<point>& outerVertices, std::vector<glm::vec4>& outerEdges, std::vector<float>& angles)
+{
+    if (shapes.size() == 1 && shapes[0]->GetType() == b2Shape::e_circle)
+    {
+        b2CircleShape* cShape = (b2CircleShape*)shapes[0];
+        angles.push_back(0);
+        outerEdges.push_back(glm::vec4(cShape->m_p.x, cShape->m_p.y, cShape->m_p.x, cShape->m_p.y));
+        outerVertices.push_back({ { cShape->m_p.x, cShape->m_p.y }, cShape->m_radius });
+
+        return;
+    }
+
+    std::vector<point> allPoints;
+    for (b2Shape* shape : shapes)
+    {
+        if (shape->GetType() == b2Shape::e_polygon)
+        {
+            b2PolygonShape* pShape = (b2PolygonShape*)shape;
+            for (int i = 0; i < pShape->m_count; i++)
+            {
+                allPoints.push_back({ { pShape->m_vertices[i].x, pShape->m_vertices[i].y }, 0.0});
+            }
+        }
+        else
+        {
+            b2CircleShape* cShape = (b2CircleShape*)shape;
+            allPoints.push_back({ { cShape->m_p.x, cShape->m_p.y }, cShape->m_radius });
+        }
+    }
+
+    float maxX = -1e38;
+    point startPoint;
+    for (point p : allPoints)
+    {
+        if (p.pos.x + p.r > maxX)
+        {
+            maxX = p.pos.x + p.r;
+            startPoint = p;
+        }
+        else if (abs(p.pos.x + p.r - maxX) < 1e-6 && p.pos.y - p.r < startPoint.pos.y - startPoint.r)
+        {
+            startPoint = p;
+        }
+    }
+    outerVertices.push_back(startPoint);
+    b2Vec2 lastVec = b2Vec2(0.0, 1.0);
+
+    for (;;)
+    {
+        float minAngle = b2_pi * 2.345763;
+        point addVertex;
+        b2Vec2 addVec;
+        float addAngle;
+        glm::vec4 addRes;
+        for (point p : allPoints)
+        {
+            if (startPoint.pos.x == p.pos.x && startPoint.pos.y == p.pos.y)
+            {
+                continue;
+            }
+
+            glm::vec4 res = tangenter(startPoint, p, 1.0);
+            b2Vec2 vec = b2Vec2(res.x - res.z, res.y - res.w);
+            float len = vec.Normalize();
+
+            float ang1 = PortalWorld::calcAngle2(vec);
+            float ang2 = PortalWorld::calcAngle2(lastVec);
+            float angle = ang1 - ang2;
+            if (angle < 0.0) angle += b2_pi * 2.0;
+            if (angle < b2_pi + 1e-6 && len > 0.0)
+            {
+                if (angle < minAngle)
+                {
+                    minAngle = angle;
+                    addVertex = p;
+                    addVec = vec;
+                    addRes = res;
+                    addAngle = ang1;
+                }
+                else if (abs(angle - minAngle) < 1e-6 && glm::length(p.pos - startPoint.pos) + p.r > glm::length(addVertex.pos - startPoint.pos) + addVertex.r)
+                {
+                    minAngle = angle;
+                    addVertex = p;
+                    addVec = vec;
+                    addRes = res;
+                    addAngle = ang1;
+                }
+            }
+        }
+
+        if (outerEdges.size() > 0 && outerEdges[0].x == addRes.x && outerEdges[0].y == addRes.y)
+        {
+            break;
+        }
+
+        startPoint = addVertex;
+        lastVec = addVec;
+
+        outerVertices.push_back(addVertex);
+        outerEdges.push_back(addRes);
+
+        addAngle -= b2_pi * 0.5f;
+        if (angles.size() > 0 && addAngle < angles[angles.size() - 1])
+        {
+            addAngle += 2.0f * b2_pi;
+        }
+        angles.push_back(fmax(addAngle, 0.0));
+    }
+
+    outerVertices.erase(outerVertices.end() - 1);
+
+    assert(angles[0] >= 0.0);
+}
+
+float PortalWorld::getDistanceFromPortal(Portal* portal, PortalBody* portalBody)
+{
+    float dirAng = PortalWorld::calcAngle2(PortalWorld::rotateVec(-portal->dir, -portalBody->body->GetAngle()));
+    std::vector<float> angles;
+    std::vector<point> outerVertices;
+    if (portalBody->isMirrored)
+    {
+        angles = portalBody->worldIndex->mirroredAngles;
+        outerVertices = portalBody->worldIndex->mirroredOuterVertices;
+    }
+    else
+    {
+        angles = portalBody->worldIndex->angles;
+        outerVertices = portalBody->worldIndex->outerVertices;
+    }
+
+    int s = 0;
+    int e = angles.size() - 1;
+    for (; e - s > 1; )
+    {
+        int p = (e - s) / 2 + s;
+        if (angles[p] < dirAng)
+        {
+            s = p;
+        }
+        else
+        {
+            e = p;
+        }
+    }
+
+    if (angles[0] > dirAng) e = 0;
+    if (angles[angles.size() - 1] < dirAng) e = 0;
+
+    b2Vec2 worldPos = portalBody->body->GetWorldPoint(b2Vec2(outerVertices[e].pos.x, outerVertices[e].pos.y));
+
+    return PortalWorld::getRealDist(portal->points[0], portal->points[1], worldPos) + outerVertices[e].r;
+}
+
+PortalRay::PortalRay(PortalWorld* pWorld)
+{
+    this->pWorld = pWorld;
+}
+
+float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction) {
+    if (fixture->IsSensor()) return 1.0f;
+
+    bool isPortal = false;
+    fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
+    if (fData) {
+        if (fData->type == F_PORTAL) {
+            Portal* p = (Portal*)fData->data;
+            int side = p->getPointSide(point + normal);
+            if (p->connections[side].size() != 0) {
+                isPortal = true;
+            }
+        }
+        else if (fData->type == F_PORTAL_BODY) {
+            bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
+            PortalBody* pb = (PortalBody*)bData->data;
+            PBFixtureData* pbfData = (PBFixtureData*)fData->data;
+            std::vector<portalCollision*> collidingPortals = pbfData->pCollisions;
+            for (portalCollision* pc : collidingPortals) {
+                if (!pc->status || pc->portal->getPointSide(point) == (pc->side ^ 1)) {
+                    return 1.0f;
+                }
+            }
+        }
+    }
+
+    if (fraction > this->portalThold) {
+        if (isPortal && fraction < this->portalFraction) {
+            this->portalFraction = fraction;
+            this->closestPortalFixture = fixture;
+        }
+        if (fraction <= this->minFraction) {
+            this->minFraction = fraction;
+            this->closestFixture = fixture;
+        }
+    }
+
+    return 1.0f;
+}
+
+void PortalRay::reset() {
+    this->minFraction = 1.0f;
+    this->portalFraction = 1.0f;
+
+    this->closestFixture = NULL;
+    this->closestPortalFixture = NULL;
+}
+
+void PortalRay::endHandle() {
+    if (this->minFraction > this->portalFraction - this->portalThold) {
+        this->closestFixture = this->closestPortalFixture;
+        this->minFraction = this->portalFraction;
+    }
+}
+
+
+b2Vec2 PortalWorld::rotateVec(b2Vec2 vec, float angle)
+{
+    float x = cos(angle) * vec.x - sin(angle) * vec.y;
+    float y = sin(angle) * vec.x + cos(angle) * vec.y;
+
+    return { x, y };
+}
+
+// it checks for left (really)
+bool PortalWorld::isLeft(b2Vec2 a, b2Vec2 b, b2Vec2 c, const float t)
+{
+    return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) >= t;
+}
+
+float PortalWorld::vecAngle(b2Vec2 v1, b2Vec2 v2)
+{
+    return abs(calcAngle2(v1) - calcAngle2(v2));
+}
+
+// left side gives positive values
+float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c)
+{
+    return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+}
+
+float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c) {
+    float v1 = (b.x - a.x) * (a.y - c.y);
+    float v2 = (a.x - c.x) * (b.y - a.y);
+    float top = v1 - v2;
+
+    v1 = pow(b.x - a.x, 2);
+    v2 = pow(b.y - a.y, 2);
+    float bot = sqrt(v1 + v2);
+
+    return top / bot;
+}
+
+// project a on b
+b2Vec2 PortalWorld::project(b2Vec2 a, b2Vec2 b)
+{
+    if (b.x == 0.0f && b.y == 0.0f) return b2Vec2(0.0f, 0.0f);
+    return (b2Dot(a, b) / b2Dot(b, b)) * b;
+}
+
+float PortalWorld::calcAngle2(b2Vec2 vec) {
+    float angle = atan2(vec.y, vec.x);
+    if (angle < 0) angle += b2_pi * 2.0f;
+
+    return angle;
+}
+
+void PortalWorld::normalize(b2Vec2* vec) {
+    float length = vec->Length();
+    if (length == 0) { return; }
+
+    vec->x /= length;
+    vec->y /= length;
+}
+
+b2Vec2 PortalWorld::mirror(b2Vec2 mirror, b2Vec2 vec) {
+    float angle1 = calcAngle2(mirror);
+    float angle2 = calcAngle2(vec);
+    return rotateVec(vec, 2 * (angle1 - angle2));
+}
+
+// normalize angle between -pi and pi
+float PortalWorld::normalizeAngle(float angle)
+{
+    angle = fmod(angle, 2 * b2_pi);
+    if (angle < -b2_pi)
+        angle += 2 * b2_pi;
+    else if (angle > b2_pi)
+        angle -= 2 * b2_pi;
+
+    return angle;
+}
+
+b2Vec2 PortalWorld::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4) {
+    float d = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+    float up1 = (p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x);
+    float up2 = (p1.x * p2.y - p1.y * p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x * p4.y - p3.y * p4.x);
+
+    return b2Vec2(up1 / d, up2 / d);
+}

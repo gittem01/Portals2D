@@ -12,6 +12,8 @@ void BlackWall::prepareVertexData()
 
 void BlackWall::prepareUniforms()
 {
+    wallCount = 0;
+
     // offset is not used no need for alignment
     int alignedSizeFS = sizeof(s_wallUbo_b);
     uniformBuffers.resize(1);

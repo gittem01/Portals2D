@@ -42,7 +42,6 @@ void PortalParticleShader::prepareUniforms()
         availableOffsets[i] = i * alignedSize;
     }
 
-
     uniformBuffers.resize(1);
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
     thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);

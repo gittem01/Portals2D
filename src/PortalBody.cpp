@@ -12,7 +12,6 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld)
     this->bodyMaps = new std::vector<bodyCollisionStatus*>();
 
     this->body->SetGravityScale(0.0f);
-    this->offsetAngle = 0;
 
     bodyData* bd = (bodyData*)malloc(sizeof(bodyData));
     bd->data = this;
@@ -39,21 +38,27 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld)
 
 PortalBody::~PortalBody(){
     pWorld->handledBodies.insert(worldIndex);
-    for (int i = 0; i < worldIndex->pbIndices.size(); i++){
-        if (worldIndex->pbIndices.at(i) == this) {
+    for (int i = 0; i < worldIndex->pbIndices.size(); i++)
+    {
+        if (worldIndex->pbIndices.at(i) == this)
+        {
             worldIndex->pbIndices.erase(worldIndex->pbIndices.begin() + i);
             break;
         }
     }
-    if (worldIndex->pbIndices.size() == 0){
+    if (worldIndex->pbIndices.size() == 0)
+    {
         delete baseDensities;
     }
 
-    for (int i = 0; i < bodyMaps->size(); i++){
+    for (int i = 0; i < bodyMaps->size(); i++)
+    {
         bodyCollisionStatus* bodyCollStatus = bodyMaps->at(i);
-		for (int j = 0; j < bodyCollStatus->body->bodyMaps->size(); j++) {
+		for (int j = 0; j < bodyCollStatus->body->bodyMaps->size(); j++)
+        {
 			bodyCollisionStatus* bcs = bodyCollStatus->body->bodyMaps->at(j);
-			if (bcs->body == this) {
+			if (bcs->body == this)
+            {
 				bodyCollStatus->body->bodyMaps->erase(bodyCollStatus->body->bodyMaps->begin() + j);
                 bcs->connection->portal1->collidingBodies[bcs->connection->side1].erase(bodyCollStatus->body);
                 bcs->connection->portal2->collidingBodies[bcs->connection->side2].erase(this);
@@ -610,6 +615,93 @@ void PortalBody::destroyCheck(b2Fixture* f, Portal* portal, PortalCollisionType 
     {
         createDestroyMap[side][portal]--;
     }
+}
+
+b2Vec2 PortalBody::getWorldCenterOfMass()
+{
+    b2Vec2 localCenter;
+    if (isMirrored)
+    {
+        localCenter = worldIndex->mirroredMassCenter;
+    }
+    else
+    {
+        localCenter = worldIndex->massCenter;
+    }
+
+    return body->GetWorldPoint(localCenter);
+}
+
+void PortalBody::getBodyOut(pbWorldData* worldData)
+{
+    PortalBody* leftOutBody;
+    Portal* outPortal;
+    int side;
+
+    PortalBody* pb = worldData->pbIndices[0];
+
+    if (pb->bodyMaps->size() == 0) return;
+
+    bodyCollisionStatus* bcs = pb->bodyMaps->at(0);
+
+    b2Vec2 center = pb->getWorldCenterOfMass();
+    if (bcs->connection->portal1->getPointSide(center) == bcs->connection->side1)
+    {
+        leftOutBody = pb;
+        outPortal = bcs->connection->portal1;
+        side = bcs->connection->side1;
+    }
+    else
+    {
+        leftOutBody = bcs->body;
+        outPortal = bcs->connection->portal2;
+        side = bcs->connection->side2;
+    }
+
+    b2Vec2 posChangeDir;
+    if (side == 0)
+    {
+        posChangeDir = outPortal->dir;
+    }
+    else
+    {
+        posChangeDir = -outPortal->dir;
+    }
+
+    float d = PortalWorld::getDistanceFromPortal(outPortal, leftOutBody);
+
+    if (d > 0.0)
+    {
+        leftOutBody->body->SetTransform(leftOutBody->body->GetPosition() + d * posChangeDir, leftOutBody->body->GetAngle());
+    }
+
+    for (b2Fixture* fix : leftOutBody->fixtures)
+    {
+        fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+        PBFixtureData* pbfData = (PBFixtureData*)fixData->data;
+        pbfData->pCollisions.clear();
+    }
+
+    for (int j = worldData->pbIndices.size() - 1; j > -1; j--)
+    {
+        PortalBody* deleteStat = worldData->pbIndices.at(j);
+
+        if (deleteStat == leftOutBody) continue;
+
+        for (auto pair : deleteStat->worldIndex->destroyCallbacks)
+        {
+            pair.first(deleteStat, pair.second);
+        }
+
+        delete deleteStat;
+    }
+
+    for (int i = 0; i < 2; i++)
+    {
+        leftOutBody->outFixtures[i].clear();
+        leftOutBody->createDestroyMap[i].clear();
+    }
+    leftOutBody->bodyMaps->clear();
 }
 
 float PortalBody::findPolygonArea(b2Vec2* vertices, int numVertices){

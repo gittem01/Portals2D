@@ -17,7 +17,15 @@ struct RotationJointDef : public b2JointDef
         this->bodyA = bA;
         this->bodyB = bB;
         this->pc = pc;
-	    this->referenceAngle = bodyB->GetAngle() - bodyA->GetAngle();
+
+        if (pc->isReversed)
+        {
+            this->referenceAngle = bodyB->GetAngle() + bodyA->GetAngle();
+        }
+        else
+        {
+            this->referenceAngle = bodyB->GetAngle() - bodyA->GetAngle();
+        }
     }
 };
 
@@ -56,16 +64,7 @@ private:
         portalAStartAngle = pc->portal1->body->GetAngle();
         portalBStartAngle = pc->portal2->body->GetAngle();
 
-        if (pc->isReversed)
-        {
-            float angle1 = pb1->body->GetAngle();
-            float angle2 = pb2->body->GetAngle();
-            m_referenceAngle = angle2 + angle1;
-        }
-        else
-        {
-            m_referenceAngle = def->referenceAngle;
-        }
+        m_referenceAngle = def->referenceAngle;
     }
 
     void InitVelocityConstraints(const b2SolverData& data) override

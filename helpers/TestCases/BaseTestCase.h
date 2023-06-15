@@ -136,6 +136,8 @@ public:
 
     void beforeCreate()
     {
+        thinDrawer->debugLineRegistry.clear();
+
         if (!contactListener)
         {
             contactListener = new ContactListener();
@@ -173,6 +175,8 @@ public:
 
     virtual void onUpdate()
     {
+        thinDrawer->debugLineRegistry.clear();
+
         deltaTime = glfwGetTime() - lastTime;
         lastTime = glfwGetTime();
 
@@ -192,10 +196,10 @@ public:
         {
 			// speeded up 2x times
             float dt = requiredDt * 2.0;
-            mjh->mouseHandler(frame, totalIter);
+            mjh->mouseHandler(frame, requiredIters);
             pWorld->PortalStep(dt, 8, 3);
 #if ENABLE_TESTPLAYER
-            tp->update(dt, totalIter);
+            tp->update(dt, requiredIters);
 #endif
         }
     }

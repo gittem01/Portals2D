@@ -221,7 +221,7 @@ protected:
 
 	// We need separation create/destroy functions from the constructor/destructor because
 	// the destructor cannot access the allocator (no destructor arguments allowed by C++).
-	void Create(b2BlockAllocator* allocator, b2Body* body, const b2FixtureDef* def);
+	void Create(b2BlockAllocator* allocator, b2Body* body, const b2FixtureDef* def, const bool shouldClone=true);
 	void Destroy(b2BlockAllocator* allocator);
 
 	// These support body activation/deactivation.
@@ -247,6 +247,8 @@ protected:
 	b2Filter m_filter;
 
 	bool m_isSensor;
+
+	bool m_shapeCloned;
 
 	b2FixtureUserData m_userData;
 };

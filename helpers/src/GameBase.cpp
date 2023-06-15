@@ -27,9 +27,9 @@ g_EdgeData* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2Body* body)
 
     b2Vec2 dir = v1 - v2;
     b2EdgeShape shape;
-    shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
+    //shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
     
-    //shape.SetTwoSided(v1, v2);
+    shape.SetTwoSided(v1, v2);
 
     fixtureData* fData;
     g_EdgeData* eData;
@@ -53,9 +53,9 @@ g_EdgeData* createEdge(createDestrData* cdData)
     
     b2Vec2 dir = v1 - v2;
     b2EdgeShape shape;
-    shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
+    //shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
     
-    //shape.SetTwoSided(v1, v2);
+    shape.SetTwoSided(v1, v2);
 
     fixtureData* fData;
     g_EdgeData* eData;

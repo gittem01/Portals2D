@@ -22,7 +22,9 @@ public:
     WindowHandler* wh;
     b2RevoluteJoint* oldJoint;
     PortalBody* oldPortalBody;
-    b2Vec2 size;
+    
+    b2Vec2 bodySize;
+    b2Vec2 gunSize;
 
     bool haveContact;
     bool onPlatform;
@@ -57,10 +59,11 @@ public:
     ALuint blueShootBuffer;
     ALuint orangeShootBuffer;
 
-    TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.75f, 1.5f)) : DefaultObject(pWorld){
+    TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.75f, 1.5f)) : DefaultObject(pWorld)
+    {
         this->pWorld = pWorld;
         this->wh = wh;
-        this->size = size;
+        this->bodySize = size;
         createBody(pos);
 
         portalA = nullptr;
@@ -94,7 +97,8 @@ public:
         orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
     }
 
-    void createBody(b2Vec2 pos){
+    void createBody(b2Vec2 pos)
+    {
         b2BodyDef bodyDef;
         bodyDef.type = b2_dynamicBody;
         bodyDef.position = pos;
@@ -106,7 +110,7 @@ public:
         b2Body* body = pWorld->CreateBody(&bodyDef);
 
         b2PolygonShape boxShape;
-        boxShape.SetAsBox(size.x * 0.5, size.y * 0.5 - size.x * 0.5);
+        boxShape.SetAsBox(bodySize.x * 0.5, bodySize.y * 0.5 - bodySize.x * 0.5);
 
         b2FixtureDef fDef;
         fDef.density = 1.0f;
@@ -117,12 +121,12 @@ public:
         body->CreateFixture(&fDef);
 
         b2CircleShape cShape;
-        cShape.m_radius = size.x * 0.5;
-        cShape.m_p = b2Vec2(0.0, -size.y * 0.5 + size.x * 0.5);
+        cShape.m_radius = bodySize.x * 0.5;
+        cShape.m_p = b2Vec2(0.0, -bodySize.y * 0.5 + bodySize.x * 0.5);
         tireFixture = body->CreateFixture(&cShape, 1.0);
         tireFixture->SetFriction(0.0f);
 
-        cShape.m_p = b2Vec2(0.0, +size.y * 0.5 - size.x * 0.5);
+        cShape.m_p = b2Vec2(0.0, +bodySize.y * 0.5 - bodySize.x * 0.5);
         b2Fixture* fix = body->CreateFixture(&cShape, 1.0);
         fix->SetFriction(0.0f);
 
@@ -136,8 +140,6 @@ public:
 
         pBody = &pb->worldIndex->pbIndices;
 
-        glm::vec2 gunSize(0.25f, 1.0f);
-
         bodyDef.type = b2_dynamicBody;
         bodyDef.position = pos;
         bodyDef.fixedRotation = false;
@@ -146,6 +148,8 @@ public:
         bodyDef.allowSleep = false;
 
         body = pWorld->CreateBody(&bodyDef);
+
+        gunSize = b2Vec2(0.25f, 1.0f);
 
         boxShape.SetAsBox(gunSize.x / 2.0f, gunSize.y / 2.0f);
 
@@ -181,9 +185,9 @@ public:
         float tHold = 0.2f;
         b2Vec2 bodyPos = contactingPBody->body->GetPosition();
         b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
-        botVector = pWorld->rotateVec(botVector, contactingPBody->offsetAngle + thisBody->GetAngle());
+        botVector = pWorld->rotateVec(botVector, thisBody->GetAngle());
 
-        float botY = bodyPos.y + (size.y / 2.0f) * botVector.y;
+        float botY = bodyPos.y + (bodySize.y / 2.0f) * botVector.y;
         if (wManifold.points[0].y < botY + tHold && wManifold.points[0].y > botY - tHold)
         {
             if (abs(normal.x) <= normXToWalk)
@@ -224,9 +228,9 @@ public:
         float tHold = 0.2f;
         b2Vec2 bodyPos = contactingPBody->body->GetPosition();
         b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
-        botVector = pWorld->rotateVec(botVector, contactingPBody->offsetAngle + contactingBody->GetAngle());
+        botVector = pWorld->rotateVec(botVector, contactingBody->GetAngle());
 
-        float botY = bodyPos.y + (size.y / 2.0f) * botVector.y;
+        float botY = bodyPos.y + (bodySize.y / 2.0f) * botVector.y;
         if (cPos.y < botY + tHold && cPos.y > botY - tHold)
         {
             if (abs(normal.x) <= normXToWalk)
@@ -281,7 +285,7 @@ public:
     void handleBodyRotation()
     {
         PortalBody* pb = pBody->at(0);
-        float ang = PortalWorld::normalizeAngle(pb->offsetAngle + pb->body->GetAngle());
+        float ang = PortalWorld::normalizeAngle(pb->body->GetAngle());
         if (ang > 0.03f)
         {
             for (PortalBody* l_portalBody : *pBody)
@@ -341,7 +345,7 @@ public:
                 glm::vec2 mousePos = wh->cam->getMouseCoords();
                 b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
                 
-                ang = gunBody->offsetAngle + gunBody->body->GetAngle() - PortalWorld::calcAngle2(diff) + b2_pi * 0.5f;
+                ang = gunBody->body->GetAngle() - PortalWorld::calcAngle2(diff) + b2_pi * 0.5f;
                 ang = PortalWorld::normalizeAngle(ang);
 
                 playerBody = pb;
@@ -396,7 +400,7 @@ public:
                     b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
                     b2Vec2 relPos = PortalWorld::getRelativePortalPosition_L(diff, pConnection);
                     
-                    ang = gunBody->offsetAngle + gunBody->body->GetAngle() - PortalWorld::calcAngle2(relPos) - b2_pi * 0.5f;
+                    ang = gunBody->body->GetAngle() - PortalWorld::calcAngle2(relPos) - b2_pi * 0.5f;
                     ang = PortalWorld::normalizeAngle(ang);
 
                     rj = jointFound;
@@ -411,7 +415,7 @@ public:
             rj->EnableMotor(true);
             rj->SetMaxMotorTorque(300.0f * gunBody->body->GetMass());
 
-            if (playerBody->isMirrored)
+            if (gunBody->isMirrored || playerBody->isMirrored)
             {
                 mult = -1.0f;
             }
@@ -581,6 +585,40 @@ public:
         return true;
     }
 
+    void getBodyOut()
+    {
+        PortalBody::getBodyOut(pBody->at(0)->worldIndex);
+        PortalBody::getBodyOut(gun->at(0)->worldIndex);
+
+        b2Body* playerBody = pBody->at(0)->body;
+        b2Body* gunBody = gun->at(0)->body;
+
+        bool jointFound = false;
+        for (b2JointEdge* edge = gunBody->GetJointList(); edge; edge = edge->next)
+        {
+            if (edge->joint->GetBodyA() == playerBody || edge->joint->GetBodyB() == playerBody)
+            {
+                jointFound = true;
+                break;
+            }
+        }
+
+        if (!jointFound)
+        {
+            gunBody->SetTransform(playerBody->GetPosition(), b2_pi + playerBody->GetAngle());
+
+            b2RevoluteJointDef jDef;
+            jDef.bodyA = playerBody;
+            jDef.bodyB = gunBody;
+            jDef.collideConnected = false;
+            jDef.localAnchorA = b2Vec2(0.0f, +0.35f);
+            jDef.localAnchorB = b2Vec2(0.0f, -0.35f);
+            jDef.calculateAnchorHelpers();
+
+            pWorld->CreateJoint(&jDef);
+        }
+    }
+
     void handlePortalCD()
     {
         extern ThinDrawer* thinDrawer;
@@ -590,7 +628,7 @@ public:
         PortalBody* portalGun = gun->at(0);
         float vecAngle = b2_pi * 0.5f;
 
-        vecAngle += portalGun->body->GetAngle() + portalGun->offsetAngle;
+        vecAngle += portalGun->body->GetAngle();
         b2Vec2 vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
         b2Vec2 unitVec = b2Vec2(cos(vecAngle), sin(vecAngle));
 
@@ -611,6 +649,7 @@ public:
                         b2Body* fixBody = rayCaster.edgeFix->GetBody();
                         if (portalA)
                         {
+                            getBodyOut();
                             pWorld->destroyPortal(portalA);
                             b2Vec2 dir = rayPoint2 - rayPoint1;
                             dir.Normalize();
@@ -640,7 +679,7 @@ public:
 
                             if (portalB)
                             {
-                                portalA->connect(portalB);
+                                portalA->connect(portalB, true);
                                 portalB->reviveAround();
 
                                 auto iter2 = thinDrawer->renderPortalData.find(portalB);
@@ -675,6 +714,7 @@ public:
                         b2Body* fixBody = rayCaster.edgeFix->GetBody();
                         if (portalB)
                         {
+                            getBodyOut();
                             pWorld->destroyPortal(portalB);
                             b2Vec2 dir = rayPoint2 - rayPoint1;
                             dir.Normalize();

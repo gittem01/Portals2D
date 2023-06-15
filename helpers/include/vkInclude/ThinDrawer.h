@@ -85,7 +85,7 @@ public:
     ThinDrawer(PortalWorld* pWorld);
 
     bool drawReleases = false;
-    bool drawDebugBodies = false;
+    bool drawDebugBodies = true;
     bool drawDebugEdges = true;
     bool drawDebugPortals = false;
 
@@ -123,17 +123,18 @@ public:
     std::vector<s_renderGroup*> renderGroups;
     std::map<Portal*, s_portalRender> renderPortalData;
     std::vector<s_renderGroup3D*> renderGroups3D;
-
     std::map<Portal*, s_portalRender3D> portalsToRender3D;
+
+    std::vector<s_debugLineUbo> debugLineRegistry;
 
     AnimGroup* animations = nullptr;
     double gameTime = 0.0;
     double upUpAnim = 0.0;
     double upDownAnim = 0.0;
 
-    ShaderBase* debugCircleShader;
-    ShaderBase* debugLineShader;
-    ShaderBase* debugPolygonShader;
+    DebugCircle* debugCircleShader;
+    DebugLine* debugLineShader;
+    DebugPolygon* debugPolygonShader;
     WhiteWall* whiteWallShader;
     BlackWall* blackWallShader;;
     PortalShader* portalShader;
@@ -207,6 +208,9 @@ public:
     void createImage(uint32_t width, uint32_t p_height, uint32_t mipLevels,
                      VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                      VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+
+    void registerDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness);
+    void addDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness);
 
     // mesh names are hold per fixture
     void addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames);

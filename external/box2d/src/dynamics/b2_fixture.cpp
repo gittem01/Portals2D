@@ -41,7 +41,7 @@ b2Fixture::b2Fixture()
 	m_density = 0.0f;
 }
 
-void b2Fixture::Create(b2BlockAllocator* allocator, b2Body* body, const b2FixtureDef* def)
+void b2Fixture::Create(b2BlockAllocator* allocator, b2Body* body, const b2FixtureDef* def, const bool shouldClone)
 {
 	m_userData = def->userData;
 	m_friction = def->friction;
@@ -55,7 +55,16 @@ void b2Fixture::Create(b2BlockAllocator* allocator, b2Body* body, const b2Fixtur
 
 	m_isSensor = def->isSensor;
 
-	m_shape = def->shape->Clone(allocator);
+	if (shouldClone)
+	{
+		m_shape = def->shape->Clone(allocator);
+		m_shapeCloned = true;
+	}
+	else
+	{
+		m_shape = (b2Shape*)def->shape;
+		m_shapeCloned = false;
+	}
 
 	// Reserve proxy space
 	int32 childCount = m_shape->GetChildCount();
@@ -80,10 +89,12 @@ void b2Fixture::Destroy(b2BlockAllocator* allocator)
 	allocator->Free(m_proxies, childCount * sizeof(b2FixtureProxy));
 	m_proxies = nullptr;
 
-	// Free the child shape.
-	switch (m_shape->m_type)
+	if (m_shapeCloned)
 	{
-	case b2Shape::e_circle:
+		// Free the child shape.
+		switch (m_shape->m_type)
+		{
+		case b2Shape::e_circle:
 		{
 			b2CircleShape* s = (b2CircleShape*)m_shape;
 			s->~b2CircleShape();
@@ -91,7 +102,7 @@ void b2Fixture::Destroy(b2BlockAllocator* allocator)
 		}
 		break;
 
-	case b2Shape::e_edge:
+		case b2Shape::e_edge:
 		{
 			b2EdgeShape* s = (b2EdgeShape*)m_shape;
 			s->~b2EdgeShape();
@@ -99,7 +110,7 @@ void b2Fixture::Destroy(b2BlockAllocator* allocator)
 		}
 		break;
 
-	case b2Shape::e_polygon:
+		case b2Shape::e_polygon:
 		{
 			b2PolygonShape* s = (b2PolygonShape*)m_shape;
 			s->~b2PolygonShape();
@@ -107,7 +118,7 @@ void b2Fixture::Destroy(b2BlockAllocator* allocator)
 		}
 		break;
 
-	case b2Shape::e_chain:
+		case b2Shape::e_chain:
 		{
 			b2ChainShape* s = (b2ChainShape*)m_shape;
 			s->~b2ChainShape();
@@ -115,11 +126,12 @@ void b2Fixture::Destroy(b2BlockAllocator* allocator)
 		}
 		break;
 
-	default:
-		b2Assert(false);
-		break;
+		default:
+			b2Assert(false);
+			break;
+		}
 	}
-
+	
 	m_shape = nullptr;
 }
 

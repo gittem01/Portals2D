@@ -135,7 +135,7 @@ public:
 	/// Contacts are not created until the next time step.
 	/// @param def the fixture definition.
 	/// @warning This function is locked during callbacks.
-	b2Fixture* CreateFixture(const b2FixtureDef* def);
+	b2Fixture* CreateFixture(const b2FixtureDef* def, const bool shouldClone=true);
 
 	/// Creates a fixture from a shape and attach it to this body.
 	/// This is a convenience function. Use b2FixtureDef if you need to set parameters
