@@ -411,9 +411,9 @@ public:
         if (rj)
         {
             const float threshold = 0.0f;
-            const float speedMult = 30.0f;
+            const float speedMult = 20.0f;
             rj->EnableMotor(true);
-            rj->SetMaxMotorTorque(300.0f * gunBody->body->GetMass());
+            rj->SetMaxMotorTorque(600.0f * gunBody->body->GetMass());
 
             if (gunBody->isMirrored || playerBody->isMirrored)
             {
@@ -625,16 +625,61 @@ public:
 
         const float portalSize = 2.5f;
         const float rayLength = 100.0f;
-        PortalBody* portalGun = gun->at(0);
-        float vecAngle = b2_pi * 0.5f;
 
-        vecAngle += portalGun->body->GetAngle();
-        b2Vec2 vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
-        b2Vec2 unitVec = b2Vec2(cos(vecAngle), sin(vecAngle));
+        PortalBody* playerBody = pBody->at(0);
+        PortalBody* portalGun = gun->at(0);
+
+        b2Vec2 vec;
+        b2Vec2 p0 = playerBody->body->GetWorldPoint(b2Vec2(0.0, 0.35));
+
+        bool gunFound = false;
+        for (b2JointEdge* edge = playerBody->body->GetJointList(); edge; edge = edge->next)
+        {
+            if (edge->joint->GetBodyA() == portalGun->body || edge->joint->GetBodyB() == portalGun->body)
+            {
+                gunFound = true;
+                break;
+            }
+        }
+
+        if (gunFound)
+        {
+            float vecAngle = b2_pi * 0.5f;
+            vecAngle += portalGun->body->GetAngle();
+            vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
+        }
+        else
+        {
+            glm::vec2 mCrd = wh->cam->getMouseCoords();
+            float vecAngle = PortalWorld::calcAngle2(b2Vec2(mCrd.x, mCrd.y) - p0);
+            vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
+        }
+        
+        if (pBody->size() > 1 && playerBody->bodyMaps->size() > 0)
+        {
+            Portal* portal = playerBody->bodyMaps->at(0)->connection->portal1;
+            float pDist = PortalWorld::getRealDist(portal->points[1], portal->points[0], p0);
+            if (pDist < 0.0)
+            {
+                b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(portal->points[1], portal->points[0], p0, p0 + vec);
+                if ((intersectionPoint - portal->pos).Length() > portal->size * 0.2624524)
+                {
+                    vec = rayLength * -portal->dir;
+                    p0 = portal->pos + 0.1f * portal->dir;
+                }
+                else
+                {
+                    p0 = intersectionPoint - (1.0 / (rayLength * 10.0f)) * vec;
+                }
+            }
+        }
 
         PortalGunRayCast rayCaster = PortalGunRayCast(pWorld);
-        b2Vec2 rayPoint1 = portalGun->body->GetPosition();
-        b2Vec2 rayPoint2 = portalGun->body->GetPosition() + vec;
+
+        b2Vec2 rayPoint1 = p0;
+        b2Vec2 rayPoint2 = p0 + vec;
+
+        thinDrawer->registerDebugLine(glm::vec4(rayPoint1.x, rayPoint1.y, rayPoint2.x, rayPoint2.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.06, 0.5);
 
         rayCaster.cast(rayPoint1, rayPoint2);
 
