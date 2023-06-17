@@ -213,10 +213,6 @@ public:
         contact->GetWorldManifold(&wManifold);
         b2Vec2 normal = wManifold.normal;
 
-        numNormals++;
-        avgNormalX += normal.x;
-
-
         b2Vec2 cPos = wManifold.points[0];
 
         if (contact->GetManifold()->pointCount > 1)
@@ -225,14 +221,19 @@ public:
             cPos *= 0.5f;
         }
 
-        float tHold = 0.2f;
+        float tHold = 0.25f;
         b2Vec2 bodyPos = contactingPBody->body->GetPosition();
         b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
         botVector = pWorld->rotateVec(botVector, contactingBody->GetAngle());
 
-        float botY = bodyPos.y + (bodySize.y / 2.0f) * botVector.y;
-        if (cPos.y < botY + tHold && cPos.y > botY - tHold)
+        b2Vec2 botY = bodyPos + (bodySize.y / 2.0f) * botVector;
+        ThinDrawer::object->registerDebugLine(glm::vec4(botY.x, botY.y, botY.x, botY.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.07, 0.5);
+        ThinDrawer::object->registerDebugLine(glm::vec4(cPos.x, cPos.y, cPos.x, cPos.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.07, 0.5);
+        if ((cPos - botY).LengthSquared() < tHold)
         {
+            numNormals++;
+            avgNormalX += normal.x;
+
             if (abs(normal.x) <= normXToWalk)
             {
                 contactType = fix2->GetBody()->GetType();
@@ -346,6 +347,7 @@ public:
                 b2Vec2 diff = b2Vec2(mousePos.x - gunCenter.x, mousePos.y - gunCenter.y);
                 
                 ang = gunBody->body->GetAngle() - PortalWorld::calcAngle2(diff) + b2_pi * 0.5f;
+                if (gunBody->isMirrored) gunBody->body->GetAngle() - PortalWorld::calcAngle2(diff) - b2_pi * 0.5f;
                 ang = PortalWorld::normalizeAngle(ang);
 
                 playerBody = pb;
@@ -411,23 +413,16 @@ public:
         if (rj)
         {
             const float threshold = 0.0f;
-            const float speedMult = 20.0f;
+            const float speedMult = 40.0f;
             rj->EnableMotor(true);
-            rj->SetMaxMotorTorque(600.0f * gunBody->body->GetMass());
+            rj->SetMaxMotorTorque(1000.0f * gunBody->body->GetMass());
 
-            if (gunBody->isMirrored || playerBody->isMirrored)
+            if (rj->GetBodyA() == gunBody->body)
             {
                 mult = -1.0f;
             }
 
-            if (ang > threshold)
-            {
-                rj->SetMotorSpeed(-speedMult * +ang * mult);
-            }
-            else
-            {
-                rj->SetMotorSpeed(+speedMult * -ang * mult);
-            }
+            rj->SetMotorSpeed(speedMult * -ang * mult);
         }
 
         if (oldJoint != rj && oldJoint != nullptr)
@@ -646,6 +641,11 @@ public:
         {
             float vecAngle = b2_pi * 0.5f;
             vecAngle += portalGun->body->GetAngle();
+            vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
+
+            // for now
+            glm::vec2 mCrd = wh->cam->getMouseCoords();
+            vecAngle = PortalWorld::calcAngle2(b2Vec2(mCrd.x, mCrd.y) - p0);
             vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
         }
         else
