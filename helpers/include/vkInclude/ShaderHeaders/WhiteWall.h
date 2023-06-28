@@ -4,14 +4,12 @@
 
 typedef struct
 {
-    glm::mat4 transformMatrix;
-    glm::mat4 rotationMatrix;
+    glm::vec4 posSize;
     glm::vec4 bgColour;
     glm::vec4 dotColour;
     glm::vec4 edgeColour;
-    glm::vec4 leftUp;
     glm::vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
-    glm::vec4 data2; // sizeX, sizeY, camMult, unused
+    glm::vec4 data2; // unused, unused, camMult, unused
 } s_wallUbo_w;
 
 class WhiteWall : public ShaderBase

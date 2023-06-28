@@ -55,8 +55,25 @@ void main()
     vec4 color = data.colour;
     float lineSize = data.data.y;
     vec4 borderColor = vec4(0.0, 0.0, 0.0, 1.0);
-    float borderSize = 0.1;
+    float borderSize = 0.05;
     bool isVertical = data.data.x > 0.5;;
+
+    float m = 1.0;
+    if (worldPos.x > 5.0 && worldPos.x < 15.0 &&
+        worldPos.y > 3.0 && worldPos.y < 7.0 || true)
+    {
+        const float pVal = 4.0;
+        m = 0.0;
+        m += pow(max(1.0 - (worldPos.x + 5.0), 0.0), pVal);
+        m += pow(max(1.0 - (15.0 - worldPos.x), 0.0), pVal);
+        m += pow(max(1.0 - (worldPos.y - 3.0), 0.0), pVal);
+        m += pow(max(1.0 - (7.0 - worldPos.y), 0.0), pVal);
+        m = min(m, 1.0);
+
+        float adder = 0.02;
+        m += adder;
+        m *= 1.0 / (1.0 + adder);
+    }
 
     vec3 fragPos = vec3(worldPos, 0.0);
 
@@ -71,6 +88,9 @@ void main()
         float diff = abs(localPos.y) - (data.posSize.w * 0.5 - borderSize);
         ratio = max(diff / borderSize, ratio);
     }
+
+    ratio += 0.25;
+    if (ratio > 1.0) ratio = 1.0;
 
     float val01;
     if (isVertical)
@@ -97,5 +117,5 @@ void main()
     float brightness = dot(normalize(contVec), normalize(camFragVec));
     brightness = pow(brightness, 40.0) * 1.0;
     
-    FragColour = (color * (1.0 - mult) + color * brightness) * (1.0 - ratio) + borderColor * ratio;
+    FragColour = (color * (1.0 - mult) + color * brightness) * (1.0 - ratio) * m + borderColor * ratio * m;
 }

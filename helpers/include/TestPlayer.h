@@ -178,7 +178,6 @@ public:
         
         b2Vec2 diff = linVel - lastLinVel;
 
-        float force = abs(diff.y) > 1.0 ? diff.y : 0.0;
         bodyVel += diff.y;
 
         bodyVel = springMovement(bodyPos, bodyVel, 150.0, 3.0, ThinDrawer::object->pDeltaTime * 5.0);

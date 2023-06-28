@@ -16,17 +16,17 @@ void WhiteWall::prepareVertexData()
     }
     s_buffers* vertices = buffers[0];
 
-    std::vector<s_averageVertex> vertexBuffer =
+    std::vector<s_basicVertex> vertexBuffer =
     {
-            { {-0.5f, +0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f} },
-            { {+0.5f, +0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f} },
-            { {+0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f} },
-            { {+0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f} },
-            { {-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f} },
-            { {-0.5f, +0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f} },
+            { {-0.5f, +0.5f} },
+            { {+0.5f, +0.5f} },
+            { {+0.5f, -0.5f} },
+            { {+0.5f, -0.5f} },
+            { {-0.5f, -0.5f} },
+            { {-0.5f, +0.5f} },
     };
 
-    uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(s_averageVertex);
+    uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(s_basicVertex);
     vertices->count = vertexBuffer.size();
 
     thinDrawer->bufferStage(vertexBuffer.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vertices);
@@ -59,14 +59,12 @@ void WhiteWall::prepareUniforms()
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
             float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             s_wallUbo_w wallUbo;
-            wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(i * sz, j * sz, 0.0));
-            wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+            wallUbo.posSize = glm::vec4(i * sz, j * sz, sz, sz);
             wallUbo.bgColour = glm::vec4(0.4f + randVal11, 0.4f + randVal11, 0.4f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
             wallUbo.dotColour = glm::vec4(0.1f + randVal11, 0.1f + randVal11, 0.1f + randVal11, 1.0f);
-            wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * sz, -0.5f * sz, 0.0f, 1.0f);
             wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
-            wallUbo.data2 = glm::vec4(sz, sz, 0.8f, 0.0f);
+            wallUbo.data2 = glm::vec4(0.0, 0.0, 0.8f, 0.0f);
 
             void* pData;
             CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
@@ -84,14 +82,12 @@ void WhiteWall::prepareUniforms()
             float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             
             s_wallUbo_w wallUbo;
-            wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 40 - 1.25*0.5, k * size.y - (y * size.y + size.y) * 0.5, -size.x));
-            wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+            wallUbo.posSize = glm::vec4(j * size.x - 40 - 1.25*0.5, k * size.y - (y * size.y + size.y) * 0.5, size.x, size.y);
             wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
             wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
-            wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
             wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 0.3f);
-            wallUbo.data2 = glm::vec4(size.x, size.y, 1.0f, 0.0f);
+            wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
             void* pData;
             CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
@@ -108,14 +104,12 @@ void WhiteWall::prepareUniforms()
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
             float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             s_wallUbo_w wallUbo;
-            wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x + 41.25 - size.x * 0.5, k * size.y - (y * size.y + size.y) * 0.5, -size.x));
-            wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+            wallUbo.posSize = glm::vec4(j * size.x + 41.25 - size.x * 0.5, k * size.y - (y * size.y + size.y) * 0.5, size.x, size.y);
             wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
             wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
-            wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
             wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 1.0f);
-            wallUbo.data2 = glm::vec4(size.x, size.y, 1.0f, 0.0f);
+            wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
             void* pData;
             CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
@@ -134,14 +128,12 @@ void WhiteWall::prepareUniforms()
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
             float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             s_wallUbo_w wallUbo;
-            wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 8.75 - 1.25*0.5, k * size.y + 10 + size.y * 0.5, -size.x));
-            wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+            wallUbo.posSize = glm::vec4(j * size.x - 8.75 - 1.25*0.5, k * size.y + 10 + size.y * 0.5, size.x, size.y);
             wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
             wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
-            wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
             wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 1.0f);
-            wallUbo.data2 = glm::vec4(size.x, size.y, 1.0f, 0.0f);
+            wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
             void* pData;
             CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
@@ -158,14 +150,33 @@ void WhiteWall::prepareUniforms()
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
             float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             s_wallUbo_w wallUbo;
-            wallUbo.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(j * size.x - 8.75 - 1.25 * 0.5, k * size.y - size.y * y - 8.75, -size.x));
-            wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+            wallUbo.posSize = glm::vec4(j * size.x - 8.75 - 1.25 * 0.5, k * size.y - size.y * y - 8.75, size.x, size.y);
             wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
             wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
-            wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
             wallUbo.data = glm::vec4(0.05f + randVal22, 0.06f, 2.0f, 1.0f);
-            wallUbo.data2 = glm::vec4(size.x, size.y, 1.0f, 0.0f);
+            wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
+
+            void* pData;
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
+            memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
+            vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+            wallCount++;
+        }
+    }
+
+    glm::vec2 size2 = glm::vec2(2.0, 2.0);
+    for (int j = 0; j < 5; j++)
+    {
+        for (int k = 0; k < 2; k++)
+        {
+            s_wallUbo_w wallUbo;
+            wallUbo.posSize = glm::vec4(j * size2.x + 6.0, k * size2.y + 4.0, size2.x, size2.y);
+            wallUbo.bgColour = glm::vec4(0.7f, 0.7f, 0.7f, 1.0f);
+            wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            wallUbo.dotColour = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+            wallUbo.data = glm::vec4(0.05f, 0.06f, 2.0f, 1.0f);
+            wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
             void* pData;
             CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
@@ -211,10 +222,13 @@ void WhiteWall::preparePipeline()
     VkVertexInputBindingDescription vertexInputBinding = { };
     vertexInputBinding.binding = 0;
     vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    vertexInputBinding.stride = sizeof(s_averageVertex);
+    vertexInputBinding.stride = sizeof(s_basicVertex);
 
-    VkVertexInputAttributeDescription attributeDescriptions[3];
-    s_averageVertex::getVertexAttributeDescriptions(attributeDescriptions);
+    VkVertexInputAttributeDescription attributeDescriptions[1];
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].offset = 0;
 
     VkPipelineVertexInputStateCreateInfo vertexInputState = { };
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -234,6 +248,8 @@ void WhiteWall::preparePipeline()
     pipelineCreateInfo->stageCount = shader2.shaderStages.size();
     pipelineCreateInfo->pStages = shader2.shaderStages.data();
     pipelineCreateInfo->pVertexInputState = &vertexInputState;
+
+    ((VkPipelineColorBlendAttachmentState*)pipelineCreateInfo->pColorBlendState->pAttachments)->blendEnable = VK_FALSE;
 
     CHECK_RESULT_VK(vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, pipelineCreateInfo, VK_NULL_HANDLE, &pipeline));
 

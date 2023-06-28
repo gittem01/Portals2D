@@ -41,6 +41,22 @@ void BlackWall::prepareUniforms()
             wallCount++;
         }
     }
+
+    const float sz2 = 2.0f;
+    for (int i = 0; i < 5; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
+            s_wallUbo_b* wallUbo;
+            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
+            wallUbo->posSize = glm::vec4(i * sz2 + -4.0, j * sz2 + 4.0, sz2, sz2);
+            wallUbo->colour = glm::vec4(0.2, 0.2, 0.2, 1.0) * rndVal;
+            wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 1.0, 0.0);
+            vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+            wallCount++;
+        }
+    }
 }
 
 void BlackWall::setupDescriptorSetLayout()
