@@ -14,6 +14,8 @@
 class TestPlayer : public DefaultObject
 {
 public:
+    PlayerShader* playerShader;
+
     Portal* portalA;
     Portal* portalB;
     float lastPortalCreationTime;
@@ -26,11 +28,13 @@ public:
     b2Vec2 bodySize;
     b2Vec2 gunSize;
 
-    bool haveContact;
-    bool onPlatform;
+    bool grounded;
     b2Fixture* tireFixture;
     b2Body* contactBody;
     b2Body* platformBody;
+    b2Body* l_contactBody;
+    b2Body* l_platformBody;
+
     b2BodyType contactType;
     b2BodyType rightCollisionType = b2_dynamicBody;
     b2BodyType leftCollisionType = b2_dynamicBody;
@@ -53,6 +57,9 @@ public:
     float normXToWalk;
     float setFriction;
 
+    float legAng;
+    float rotSpeed;
+
     b2Vec2 lastDirs[2];
 
     ALuint jumpBuffer;
@@ -63,17 +70,20 @@ public:
     {
         this->pWorld = pWorld;
         this->wh = wh;
-        this->bodySize = size;
+        bodySize = size;
         createBody(pos);
+
+        playerShader = ThinDrawer::object->playerShader;
 
         portalA = nullptr;
         portalB = nullptr;
         lastPortalCreationTime = -1.0f;
 
-        haveContact = false;
-        onPlatform = false;
+        grounded = false;
         contactBody = nullptr;
         platformBody = nullptr;
+        l_contactBody = nullptr;
+        l_platformBody = nullptr;
         oldJoint = nullptr;
         contactType = (b2BodyType)INT_MAX;
 
@@ -92,9 +102,228 @@ public:
         normXToWalk = 0.6;
         setFriction = 0.0;
 
+        legAng = 0.0;
+        rotSpeed = 0.0;
+
         jumpBuffer = Sounder::object->bufferMap["jumpTest.wav"];
         blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
         orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
+    
+        renderInit();
+    }
+
+    static float springMovement(float value, float vel, float springFactor, float dampingFactor, float deltaTime)
+    {
+        float force = value * springFactor;
+
+        vel -= (force + dampingFactor * vel) * deltaTime;
+
+        return vel;
+    }
+
+    static void memMap(void* ptr)
+    {
+        static b2Vec2 lastLinVel = b2Vec2(0.0, 0.0);
+        static float aimedRatio = 0.5;
+        static float bodyPos = 0.0;
+        static float bodyVel = 0.0;
+
+        TestPlayer* tp = (TestPlayer*)ptr;
+        
+        int i = 0;
+        for (PortalBody* pb : *tp->pBody)
+        {
+            b2Body* body = pb->body;
+
+            s_dRenderPlayerUbo* ru2;
+            vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0]->memory, tp->playerShader->alignedSize * i, tp->playerShader->alignedSize, 0, (void**)&ru2);
+
+            b2Vec2 pos = body->GetPosition();
+            ru2->posRotD = glm::vec4(pos.x, pos.y, body->GetAngle(), 0.0);
+
+            std::set<portalCollision*> pcs;
+            for (b2Fixture* f : pb->fixtures)
+            {
+                fixtureData* fixData = (fixtureData*)f->GetUserData().pointer;
+                PBFixtureData* data = (PBFixtureData*)fixData->data;
+                for (portalCollision* pc : data->pCollisions)
+                {
+                    pcs.insert(pc);
+                }
+            }
+
+            int j = 0;
+            for (portalCollision* pc : pcs)
+            {
+                ru2->portals[j] = glm::vec4(pc->portal->points[1 ^ pc->side].x, pc->portal->points[1 ^ pc->side].y,
+                    pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+                j += 1;
+            }
+            ru2->numPortals = j;
+
+            vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0]->memory);
+            
+            i += 1;
+        }
+
+        const float maxSpeed = 100.0f;
+        PortalBody* pb0 = tp->pBody->at(0);
+
+        b2Body* body = pb0->body;
+        b2Vec2 linVel = body->GetLinearVelocity();
+        if (tp->l_platformBody)
+        {
+            linVel -= tp->l_platformBody->GetLinearVelocity();
+        }
+        
+        b2Vec2 diff = linVel - lastLinVel;
+
+        float force = abs(diff.y) > 1.0 ? diff.y : 0.0;
+        bodyVel += diff.y;
+
+        bodyVel = springMovement(bodyPos, bodyVel, 150.0, 3.0, ThinDrawer::object->pDeltaTime * 5.0);
+        bodyPos += bodyVel * ThinDrawer::object->pDeltaTime;
+
+        lastLinVel = linVel;
+
+        if (tp->grounded)
+        {
+
+            float sign = (linVel.x > 0) ? -1 : +1;
+            float len = linVel.Length();
+            tp->rotSpeed += len * ThinDrawer::object->pDeltaTime * 10.0 * sign;
+            tp->rotSpeed = fmin(tp->rotSpeed, +len * 2.0 * b2_pi * 0.75);
+            tp->rotSpeed = fmax(tp->rotSpeed, -len * 2.0 * b2_pi * 0.75);
+        }
+
+        if ((diff.Length() > 0.2 || linVel.Length() > 1.0) && tp->grounded)
+        {
+            aimedRatio = 0.5;
+        }
+        else
+        {
+            const float m = 0.1;
+            aimedRatio = 0.25;
+            float roundedAngle = fmod(tp->legAng, 2.0 * b2_pi);
+            if (roundedAngle < 0.0) roundedAngle += 2.0 * b2_pi;
+
+            if (roundedAngle < b2_pi * 0.5)
+            {
+                // to 0.0
+                tp->rotSpeed = -maxSpeed * roundedAngle * m;
+            }
+            else if (roundedAngle < b2_pi)
+            {
+                // to pi
+                tp->rotSpeed = maxSpeed * (b2_pi - roundedAngle) * m;
+            }
+            else if (roundedAngle > b2_pi * 1.5f)
+            {
+                // to 2.0 * pi
+                tp->rotSpeed = maxSpeed * (2.0 * b2_pi - roundedAngle) * m;
+            }
+            else if (roundedAngle > b2_pi)
+            {
+                // to pi
+                tp->rotSpeed = -maxSpeed * (roundedAngle - b2_pi) * m;
+            }
+        }
+
+        tp->legAng += tp->rotSpeed * ThinDrawer::object->pDeltaTime;
+        tp->legAng = fmod(tp->legAng, 2.0 * b2_pi);
+        if (tp->legAng < 0.0) tp->legAng += 2.0 * b2_pi;
+
+        s_renderPlayerUbo* ru;
+        vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory, 0, tp->playerShader->alignedSize2, 0, (void**)&ru);
+
+        float extraMult = 1.0;
+        if (abs(linVel.x) > 10.0) extraMult = abs(linVel.x) * 10.0;
+
+        ru->legRatio += (aimedRatio - ru->legRatio) * ThinDrawer::object->pDeltaTime * 3.0;
+        ru->bodyRatio = fmax((1.0 - abs(bodyPos)) - ru->headRatio - ru->legRatio, 0.2);
+        float marginLeft = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio);
+        if (bodyPos > 0.0)
+        {
+            ru->margin1 = marginLeft;
+            ru->margin2 = 0.0;
+        }
+        else
+        {
+            ru->margin1 = 0.0;
+            ru->margin2 = marginLeft;
+        }
+
+        float ratio01 = 1.0 - (ru->legRatio - 0.25) / 0.25;
+        ratio01 = pow(ratio01, 15.0);
+
+        ru->ld.legThick = 0.1;
+        ru->ld.circR = ru->legRatio * 0.5 * (1.0 - ratio01) + 10.0 * ratio01;
+        ru->ld.legLen = ru->legRatio * 0.5;
+        ru->ld.legOuterCircAng = tp->legAng;
+        ru->ld.legAngle = tp->legAng;
+
+        vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory);
+    }
+
+    static void draw(VkCommandBuffer cmdBuff, void* ptr)
+    {
+        TestPlayer* tp = (TestPlayer*)ptr;
+
+        VkDeviceSize offsets = 0;
+
+        const uint32_t camOffset = ShaderBase::alignedSharedSize * ThinDrawer::object->lastSwapChainImageIndex;
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, tp->playerShader->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &tp->playerShader->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            tp->playerShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        int i = 0;
+        for (PortalBody* pb : *tp->pBody)
+        {
+            uint32_t dynOff = tp->playerShader->alignedSize * i;
+            vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                tp->playerShader->pipelineLayout, 1, 1, &tp->playerShader->descriptorSets[1], 1, &dynOff);
+
+            vkCmdDraw(cmdBuff, tp->playerShader->buffers[0]->count, 1, 0, 0);
+
+            i += 1;
+        }
+    }
+
+    void renderInit()
+    {
+        ThinDrawer::object->memMapFuncs.push_back({ memMap, this});
+        ThinDrawer::object->drawFuncs.push_back({ draw, this });
+
+        s_renderPlayerUbo* ru;
+        vkMapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory, 0, playerShader->alignedSize2, 0, (void**)&ru);
+        ru->edgeColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+        ru->bodyColour1 = glm::vec4(0.0, 0.0, 0.0, 1.0);
+        ru->bodyColour2 = glm::vec4(0.04, 0.04, 0.04, 1.0);
+
+        ru->topMargin = 0.0;
+        ru->headRatio = 0.25;
+        ru->bodyRatio = 0.4;
+        ru->legRatio = 0.25;
+        ru->margin1 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
+        ru->margin2 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
+        ru->lineSize = 0.025;
+        ru->headCircles = glm::vec2(0.07, 0.07);
+        ru->bodyCircles = 0.1;
+
+        ru->ld.legThick = 0.1;
+        ru->ld.circR = ru->legRatio * 1000.5;
+        ru->ld.legLen = 0.25 * 0.5;
+        ru->ld.legOuterCircAng = 0.0;
+        ru->ld.legAngle = ru->ld.legOuterCircAng;
+        ru->ld.legCircleSize = 0.025;
+
+        ru->size = glm::vec2(0.75, 1.5);
+
+        vkUnmapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory);
     }
 
     void createBody(b2Vec2 pos)
@@ -149,7 +378,7 @@ public:
 
         body = pWorld->CreateBody(&bodyDef);
 
-        gunSize = b2Vec2(0.25f, 1.0f);
+        gunSize = b2Vec2(0.15f, 0.8f);
 
         boxShape.SetAsBox(gunSize.x / 2.0f, gunSize.y / 2.0f);
 
@@ -207,8 +436,6 @@ public:
 
         PortalBody* contactingPBody = (PortalBody*)((bodyData*)contactingBody->GetUserData().pointer)->data;
 
-        haveContact = true;
-
         b2WorldManifold wManifold;
         contact->GetWorldManifold(&wManifold);
         b2Vec2 normal = wManifold.normal;
@@ -243,7 +470,6 @@ public:
                     if (fix2->GetDensity() == 0.0f &&
                         (contact->GetFixtureA()->GetBody() == pBody->at(0)->body || contact->GetFixtureB()->GetBody() == pBody->at(0)->body))
                     {
-                        onPlatform = true;
                         platformBody = fix2->GetBody();
                     }
                 }
@@ -287,7 +513,7 @@ public:
     {
         PortalBody* pb = pBody->at(0);
         float ang = PortalWorld::normalizeAngle(pb->body->GetAngle());
-        if (ang > 0.03f)
+        if (ang > 0.0f)
         {
             for (PortalBody* l_portalBody : *pBody)
             {
@@ -295,18 +521,13 @@ public:
             }
             pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
         }
-        else if (ang < -0.03f)
+        else
         {
             for (PortalBody* l_portalBody : *pBody)
             {
                 l_portalBody->body->SetAngularVelocity(0.0f);
             }
             pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
-        }
-        else
-        {
-            pb->body->SetTransform(pb->body->GetPosition(), pb->body->GetAngle() - ang);
-            pb->body->SetAngularVelocity(0.0f);
         }
     }
 
@@ -707,7 +928,9 @@ public:
 
                         if (portal)
                         {
-                            Sounder::object->playSound(blueShootBuffer, 1.0);
+                            ALuint source = Sounder::object->playSound(blueShootBuffer, 1.0);
+                            b2Vec2 pPos = playerBody->body->GetPosition();
+                            Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
 
                             portal->reviveAround();
                             portalA = portal;
@@ -772,7 +995,9 @@ public:
 
                         if (portal)
                         {
-                            Sounder::object->playSound(orangeShootBuffer, 1.0);
+                            ALuint source = Sounder::object->playSound(orangeShootBuffer, 1.0);
+                            b2Vec2 pPos = playerBody->body->GetPosition();
+                            Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
 
                             portal->reviveAround();
                             portalB = portal;
@@ -823,10 +1048,11 @@ public:
 
     void updateReset()
     {
+        l_contactBody = contactBody;
+        l_platformBody = platformBody;
+
         avgNormalX = 0.0;
         numNormals = 0;
-        haveContact = false;
-        onPlatform = false;
         contactBody = nullptr;
         platformBody = nullptr;
         right = false;
@@ -861,7 +1087,7 @@ public:
             }
         }
 
-        if (onPlatform)
+        if (platformBody)
         {
             speedOffset = platformBody->GetLinearVelocity().x;
         }
@@ -950,16 +1176,16 @@ public:
         lastKey = -1;
         b2Vec2 lv = pb->body->GetLinearVelocity();
 
-        if (!left && !right && onPlatform)
+        if (!left && !right && platformBody)
         {
-            printf("1\n");
+            //printf("1\n");
             float diff = platformBody->GetLinearVelocity().x - lv.x;
             lv.x += diff * dt * 15.0f * pBody->size();
             setFriction = 2.0;
         }
         if (left || right)
         {
-            printf("2\n");
+            //printf("2\n");
             const float groundMult = 20.0f;
             const float airMult = 10.0f;
             const float fwdGrndSlw = 5.0f;
@@ -1097,22 +1323,22 @@ public:
                 lastKey = GLFW_KEY_A;
             }
         }
-        else if (!haveContact)
+        else if (!contactBody)
         {
-            printf("3\n");
+            //printf("3\n");
             //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 0.5f);
             setFriction = 0.0;
         }
         else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
         {
-            printf("4\n");
+            //printf("4\n");
             // kinematic body
             //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
             setFriction = 2.0;
         }
         else if (contactBody && contactType != b2_dynamicBody && onAirFor == 0.0f)
         {
-            printf("5\n");
+            //printf("5\n");
             //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
             setFriction = 2.0;
         }
@@ -1120,13 +1346,14 @@ public:
         if (!contactBody) onAirFor += dt;
         else onAirFor = 0.0f;
 
-        if (wh->keyData[GLFW_KEY_W] == 2 &&
-            (((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) ||
-            (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f)))
+        grounded = ((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) || (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f);
+        if (wh->keyData[GLFW_KEY_W] == 2 && grounded)
         {
             lv.y = 10.0f * (float)pBody->size();
 
-            Sounder::object->playSound(jumpBuffer, 1.0);
+            ALuint source = Sounder::object->playSound(jumpBuffer, 1.0);
+            b2Vec2 pPos = pb->body->GetPosition();
+            Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
         }
 
         lv.y = std::fmax(lv.y, -20.0);

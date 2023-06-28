@@ -6,6 +6,7 @@
 #include <AudioFile.h>
 #include <map>
 #include <string>
+#include <glm/glm.hpp>
 
 #define NUM_LOOPING_SOURCES 32
 #define NUM_ONETIME_SOURCES 256 - NUM_LOOPING_SOURCES
@@ -43,6 +44,8 @@ public:
 	ALCcontext* context;
 	std::map<std::string, ALuint> bufferMap;
 
+	glm::vec3 listenerPos = glm::vec3(0.0, 0.0, 0.0);
+
 	Sounder();
 	~Sounder();
 
@@ -51,6 +54,7 @@ public:
 	ALuint loadSound(std::string fileName);
 	ALuint playSound(ALuint buffer, float volume);
 	void setSoundVolume(const ALuint source, const float volume);
+	void setSoundPosition(const ALuint source, glm::vec3 pos);
 	ALuint playLoopingSound(ALuint buffer);
 	void stopSound(ALuint source);
 	void stopLoopingSound(ALuint source);

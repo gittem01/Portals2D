@@ -70,6 +70,7 @@ void ThinDrawer::initExtra()
     bodyShader = new BodyShader(this);
     wallLight = new WallLight(this);
     laserShader = new LaserShader(this);
+    playerShader = new PlayerShader(this);
 
     prepareVertices();
     prepareUniformBuffers();
@@ -113,6 +114,11 @@ void ThinDrawer::renderLoop()
                           currentFrame.presentSemaphore, VK_NULL_HANDLE, &lastSwapChainImageIndex);
 
     animate();
+
+    for (auto& f : memMapFuncs)
+    {
+        f.first(f.second);
+    }
 
     uniformFiller();
 
@@ -170,6 +176,7 @@ void ThinDrawer::prepareVertices()
     bodyShader->prepareVertexData();
     wallLight->prepareVertexData();
     laserShader->prepareVertexData();
+    playerShader->prepareVertexData();
 }
 
 void ThinDrawer::prepareUniformBuffers()
@@ -189,6 +196,7 @@ void ThinDrawer::prepareUniformBuffers()
     bodyShader->prepareUniforms();
     wallLight->prepareUniforms();
     laserShader->prepareUniforms();
+    playerShader->prepareUniforms();
 }
 
 void ThinDrawer::setupDescriptorSetLayout()
@@ -208,6 +216,7 @@ void ThinDrawer::setupDescriptorSetLayout()
     bodyShader->setupDescriptorSetLayout();
     wallLight->setupDescriptorSetLayout();
     laserShader->setupDescriptorSetLayout();
+    playerShader->setupDescriptorSetLayout();
 }
 
 void ThinDrawer::preparePipelines()
@@ -225,6 +234,7 @@ void ThinDrawer::preparePipelines()
     bodyShader->preparePipeline();
     wallLight->preparePipeline();
     laserShader->preparePipeline();
+    playerShader->preparePipeline();
 }
 
 void ThinDrawer::setupDescriptorPool()
@@ -264,6 +274,7 @@ void ThinDrawer::setupDescriptorSet()
     bodyShader->setupDescriptorSet();
     wallLight->setupDescriptorSet();
     laserShader->setupDescriptorSet();
+    playerShader->setupDescriptorSet();
 
     IOHelper::loadTexture("white.png");
 }
@@ -834,6 +845,11 @@ void ThinDrawer::buildCommandBuffers()
     renderWalls(cmdBuff);
 
     renderPortalBodies(cmdBuff);
+
+    for (auto& f : drawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
 
     renderPortals(cmdBuff);
 
@@ -1862,6 +1878,9 @@ void ThinDrawer::debug_portalBodyDestroyCallback(PortalBody* portalBody, void* d
 
 void ThinDrawer::releaseRenderResources()
 {
+    memMapFuncs.clear();
+    drawFuncs.clear();
+
     vkDeviceWaitIdle(logicalDevice);
 
     for (s_debug_renderGroup* renderGroup : debug_renderGroups)

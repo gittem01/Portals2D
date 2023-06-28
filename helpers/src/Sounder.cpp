@@ -63,6 +63,8 @@ void Sounder::update()
     //const ALCchar* defaultDeviceSpecifier = alcGetString(device2, ALC_ALL_DEVICES_SPECIFIER);
     //printf("%s\n", defaultDeviceSpecifier);
 
+    alListenerfv(AL_POSITION, &listenerPos.x);
+
     if (sourceToCheck)
     {
         s_sourceInUse* src;
@@ -82,7 +84,11 @@ void Sounder::update()
         alGetSourcei(src->source, AL_SOURCE_STATE, &sourceState);
 
         if (sourceState == AL_STOPPED)
-        {            
+        {
+            alSourceStop(src->source);
+            alSourcef(src->source, AL_GAIN, 1.0);
+            alSource3f(src->source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+
             if (!prevSrc)
             {
                 sourcesInUse = src->next;
@@ -159,8 +165,8 @@ ALuint Sounder::playSound(ALuint buffer, float volume)
     lastAvailableOnetimeSource++;
 
     alSourcei(source, AL_BUFFER, buffer);
-    alSourcePlay(source);
     alSourcef(source, AL_GAIN, volume);
+    alSourcePlay(source);
 
     newSource->source = source;
     newSource->next = sourcesInUse;
@@ -178,11 +184,16 @@ void Sounder::setSoundVolume(ALuint source, float volume)
     alSourcef(source, AL_GAIN, volume);
 }
 
+void Sounder::setSoundPosition(ALuint source, glm::vec3 pos)
+{
+    alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z);
+}
+
 ALuint Sounder::playLoopingSound(ALuint buffer)
 {
     ALuint source = loopingSources[lastAvailableLoopingSource++];
     alSourcei(source, AL_BUFFER, buffer);
-    alSourcei(source, AL_LOOPING, AL_TRUE);
+    //alSourcei(source, AL_LOOPING, AL_TRUE);
     alSourcePlay(source);
 
     return source;

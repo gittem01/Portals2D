@@ -162,7 +162,7 @@ void WhiteWall::prepareUniforms()
             wallUbo.rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0));
             wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            wallUbo.dotColour = glm::vec4(0.8f + randVal11, 0.0f + randVal11, 0.0f + randVal11, 1.0f);
+            wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
             wallUbo.leftUp = wallUbo.transformMatrix * glm::vec4(-0.5f * size.x, -0.5f * size.y, 0.0f, 1.0f);
             wallUbo.data = glm::vec4(0.05f + randVal22, 0.06f, 2.0f, 1.0f);
             wallUbo.data2 = glm::vec4(size.x, size.y, 1.0f, 0.0f);

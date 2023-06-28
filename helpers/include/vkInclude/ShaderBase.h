@@ -90,6 +90,7 @@ class ThinDrawer;
 class ShaderBase
 {
     friend class ThinDrawer;
+    friend class TestPlayer;
 
 protected:
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;

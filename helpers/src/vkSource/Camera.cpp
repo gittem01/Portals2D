@@ -1,5 +1,6 @@
 #include <Camera.h>
 #include <WindowHandler.h>
+#include <Sounder.h>
 
 Camera::Camera(glm::vec2 pos, WindowHandler* wh)
 {
@@ -80,6 +81,9 @@ void Camera::update()
 		this->changeZoom(this->zoomInc * this->neededZoom);
 		this->neededZoom -= zoomInc * this->neededZoom;
 	}
+	
+
+	Sounder::object->listenerPos = glm::vec3(pos.x, pos.y, 4.0f / (zoom * zoom));
 
 	updateOrtho();
 }

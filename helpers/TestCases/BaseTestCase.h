@@ -158,7 +158,6 @@ public:
         thinDrawer->debug_addPortalBody(tp->gun->at(0));
 
         thinDrawer->addPortalBody(tp->gun->at(0), { "gun.png" });
-        thinDrawer->addPortalBody(tp->pBody->at(0), { "roboHd.png" });
 
         std::vector<std::pair<std::string, std::string>> empty;
         thinDrawer->addPortalBody_3d(tp->pBody->at(0), empty);

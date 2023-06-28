@@ -13,6 +13,7 @@
 #include <ShaderHeaders/PortalShader3D.h>
 #include <ShaderHeaders/WallLight.h>
 #include <ShaderHeaders/LaserShader.h>
+#include <ShaderHeaders/PlayerShader.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
@@ -117,6 +118,9 @@ public:
 
     VkDescriptorPool descriptorPool;
 
+    std::vector<std::pair<void (*) (void*), void*>> memMapFuncs;
+    std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> drawFuncs;
+
     // Diff var start
 
     std::vector<s_debug_renderGroup*> debug_renderGroups;
@@ -145,6 +149,7 @@ public:
     BodyShader* bodyShader;
     WallLight* wallLight;
     LaserShader* laserShader;
+    PlayerShader* playerShader;
 
     // var end
 

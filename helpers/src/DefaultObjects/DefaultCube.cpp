@@ -80,6 +80,7 @@ void DefaultCube::reportContact(b2Contact* contact, const b2ContactImpulse* impu
         (contactingBody->GetLinearVelocity().Length() > 1.0 || contactingBody->GetAngularVelocity() > 0.5) && ThinDrawer::object->gameTime - lastSoundTime > 0.1)
     {
         lastSoundTime = ThinDrawer::object->gameTime;
-        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], impulse->normalImpulses[0] * 0.01);
+        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], fmax(impulse->normalImpulses[0] * 0.03, 0.2));
+        Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
     }
 }
