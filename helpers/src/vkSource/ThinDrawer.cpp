@@ -575,18 +575,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
         vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 2, 0, 0);
     }
-
-    // Gun Effect
-    {
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, gunEffect->pipeline);
-
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            gunEffect->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 1, 0, 0);
-    }
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

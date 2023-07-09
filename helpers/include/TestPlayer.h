@@ -17,6 +17,8 @@ public:
     static TestPlayer* object;
 
     PlayerShader* playerShader;
+    std::vector<s_gunData> shootDatas;
+    s_gunData gData;
 
     Portal* portalA;
     Portal* portalB;
@@ -102,6 +104,8 @@ public:
         holdColliding = false;
 
         playerShader = ThinDrawer::object->playerShader;
+        gData.positions = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+        gData.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
         portalA = nullptr;
         portalB = nullptr;
@@ -312,8 +316,7 @@ public:
     {
         TestPlayer* tp = (TestPlayer*)ptr;
 
-        VkDeviceSize offsets = 0;
-
+        const VkDeviceSize offsets = 0;
         const uint32_t camOffset = ShaderBase::alignedSharedSize * ThinDrawer::object->lastSwapChainImageIndex;
 
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, tp->playerShader->pipeline);
@@ -330,9 +333,44 @@ public:
             vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 tp->playerShader->pipelineLayout, 1, 1, &tp->playerShader->descriptorSets[1], 1, &dynOff);
 
-            vkCmdDraw(cmdBuff, tp->playerShader->buffers[0]->count, 1, 0, 0);
+            vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
             i += 1;
+        }
+    }
+
+    static void drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
+    {
+        TestPlayer* tp = (TestPlayer*)ptr;
+
+        GunEffect* gunEffectShader = ThinDrawer::object->gunEffect;
+
+        const VkDeviceSize offsets = 0;
+        const uint32_t camOffset = ShaderBase::alignedSharedSize * ThinDrawer::object->lastSwapChainImageIndex;
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, gunEffectShader->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &tp->playerShader->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            gunEffectShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)&tp->gData);
+
+        vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+        for (int i = tp->shootDatas.size() - 1; i > -1; i--)
+        {
+            s_gunData* shootData = &tp->shootDatas.at(i);
+            shootData->color.w -= ThinDrawer::object->pDeltaTime * 5.0f;
+            if (shootData->color.w <= 0.0)
+            {
+                tp->shootDatas.erase(tp->shootDatas.begin() + i);
+                continue;
+            }
+
+            vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)shootData);
+            vkCmdDraw(cmdBuff, 6, 1, 0, 0);
         }
     }
 
@@ -340,6 +378,8 @@ public:
     {
         ThinDrawer::object->memMapFuncs.push_back({ memMap, this});
         ThinDrawer::object->drawFuncs.push_back({ draw, this });
+        
+        ThinDrawer::object->drawFuncs.push_back({ drawGunEffect, this });
 
         s_renderPlayerUbo* ru;
         vkMapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory, 0, playerShader->alignedSize2, 0, (void**)&ru);
@@ -934,6 +974,19 @@ public:
 
         if (rayCaster.found && !wh->keyData[GLFW_KEY_LEFT_CONTROL])
         {
+            glm::vec2 np1 = glm::vec2(rayCaster.rayPoint.x, rayCaster.rayPoint.y);
+            gData.positions.z = np1.x;
+            gData.positions.w = np1.y;
+
+            glm::vec2 diff = np1 - glm::vec2(p0.x, p0.y);
+            float minLen = (rayCaster.rayPoint - p0).Length();
+            float len = glm::length(diff);
+            len = fmin(fmax(minLen, len), 1.0f);
+            glm::vec2 np0 = np1 - glm::normalize(diff) * len;
+
+            gData.positions.x = np0.x;
+            gData.positions.y = np0.y;
+
             if (wh->mouseData[2] > 0 && glfwGetTime() - lastPortalCreationTimeA > 0.4f)
             {
                 if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA))
@@ -951,6 +1004,8 @@ public:
                     }
 
                     Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+
+                    shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 0.0, 0.5f, 1.0f, 1.0f } });
 
                     if (portal)
                     {
@@ -1018,6 +1073,8 @@ public:
                     }
 
                     Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+
+                    shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 1.0, 0.5f, 0.0f, 1.0f } });
 
                     if (portal)
                     {
@@ -1314,7 +1371,7 @@ public:
                 }
 
                 dir.Normalize();
-                b2Vec2 desiredPos = pos + 1.0f * dir;
+                b2Vec2 desiredPos = pos + 1.25f * dir;
                 if (holdConnection)
                 {
                     desiredPos = pWorld->getRelativePortalPosition_W(desiredPos, holdConnection);

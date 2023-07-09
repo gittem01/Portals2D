@@ -6,6 +6,7 @@ layout (location = 0) in vec2 vertex;
 
 layout (location = 0) out vec2 localPos;
 layout (location = 1) flat out vec2 size;
+layout (location = 2) flat out vec4 colour;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -13,6 +14,12 @@ layout (set = 0, binding = 0) uniform SharedUboData
     vec4 cameraPos;
     vec4 data; // zoom, unused, unused, unused
 } sharedUboData;
+
+layout (push_constant) uniform UBO
+{
+    vec4 positions;
+    vec4 colour;
+} ubo;
 
 vec2 rotateAroundOrigin(vec2 point, float angle)
 {
@@ -29,7 +36,16 @@ vec2 rotateAroundOrigin(vec2 point, float angle)
 
 void main()
 {
-    size = vec2(100.0 + sharedUboData.data.y * 3.0f, 30.0);
+    vec2 p1 = ubo.positions.xy;
+    vec2 p2 = ubo.positions.zw;
+    vec2 diff = p2 - p1;
+
+    size = vec2(length(p2 - p1) * 20.0f, 20.0f);
     localPos = (vertex + 0.5) * size;
-    gl_Position = sharedUboData.orthoMatrix * vec4(vertex * size * 0.02, 0.0, 1.0);
+    colour = ubo.colour;
+
+    float rot = atan(diff.y, diff.x);
+    vec2 mid = p1 + diff * 0.5;
+    vec2 newVertex = rotateAroundOrigin(vertex * size * 0.05, rot) + mid;
+    gl_Position = sharedUboData.orthoMatrix * vec4(newVertex, 0.0, 1.0);
 }
