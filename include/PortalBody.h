@@ -137,6 +137,8 @@ public:
     int numFixtures;
     bool isMirrored;
 
+    float* gravityScale;
+
     b2Vec2 getWorldCenterOfMass();
 
     static void getBodyOut(pbWorldData* worldData);

@@ -70,6 +70,7 @@ void ThinDrawer::initExtra()
     bodyShader = new BodyShader(this);
     wallLight = new WallLight(this);
     laserShader = new LaserShader(this);
+    gunEffect = new GunEffect(this);
     playerShader = new PlayerShader(this);
 
     prepareVertices();
@@ -176,6 +177,7 @@ void ThinDrawer::prepareVertices()
     bodyShader->prepareVertexData();
     wallLight->prepareVertexData();
     laserShader->prepareVertexData();
+    gunEffect->prepareVertexData();
     playerShader->prepareVertexData();
 }
 
@@ -196,6 +198,7 @@ void ThinDrawer::prepareUniformBuffers()
     bodyShader->prepareUniforms();
     wallLight->prepareUniforms();
     laserShader->prepareUniforms();
+    gunEffect->prepareUniforms();
     playerShader->prepareUniforms();
 }
 
@@ -216,6 +219,7 @@ void ThinDrawer::setupDescriptorSetLayout()
     bodyShader->setupDescriptorSetLayout();
     wallLight->setupDescriptorSetLayout();
     laserShader->setupDescriptorSetLayout();
+    gunEffect->setupDescriptorSetLayout();
     playerShader->setupDescriptorSetLayout();
 }
 
@@ -234,6 +238,7 @@ void ThinDrawer::preparePipelines()
     bodyShader->preparePipeline();
     wallLight->preparePipeline();
     laserShader->preparePipeline();
+    gunEffect->preparePipeline();
     playerShader->preparePipeline();
 }
 
@@ -274,6 +279,7 @@ void ThinDrawer::setupDescriptorSet()
     bodyShader->setupDescriptorSet();
     wallLight->setupDescriptorSet();
     laserShader->setupDescriptorSet();
+    gunEffect->setupDescriptorSet();
     playerShader->setupDescriptorSet();
 
     IOHelper::loadTexture("white.png");
@@ -568,6 +574,18 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
             laserShader->pipelineLayout, 1, 1, &laserShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
         vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 2, 0, 0);
+    }
+
+    // Gun Effect
+    {
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, gunEffect->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            gunEffect->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 1, 0, 0);
     }
 }
 
@@ -1148,7 +1166,7 @@ void ThinDrawer::addDebugLine(const glm::vec4 positions, const glm::vec4 color, 
 
 void ThinDrawer::registerDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
 {
-    debugLineRegistry.push_back({positions, color, {0.0, thickness, smoothness, 0.0}});
+    debugLineRegistry.push_back({positions, color, { 0.0, thickness, smoothness, 0.0 }});
 }
 
 void ThinDrawer::addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames)

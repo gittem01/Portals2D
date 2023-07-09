@@ -35,8 +35,11 @@ enum BodyDataType
 
 typedef struct rayData
 {
+    b2Fixture* fix;
+    b2Vec2 startPos;
     b2Vec2 endPos;
     b2Vec2 dir;
+    Portal* portal;
 } rayData;
 
 typedef struct bodyData
@@ -105,10 +108,7 @@ public:
 
 class PortalRay : public b2RayCastCallback
 {
-
-friend class PortalWorld;
-
-private:
+public:
     PortalRay(PortalWorld* pWorld);
     
     void sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal);
@@ -121,18 +121,16 @@ private:
 
     // ray fraction of the portal midFixture (collision point on the midFixture)
     float portalFraction = 1.0f;
+    float leftLength = 0.0;
 
-    b2Fixture* closestFixture{};
-    b2Fixture* closestPortalFixture{};
+    Portal* closestPortal;
+    b2Fixture* closestFixture;
+    b2Fixture* closestPortalFixture;
+    void* filterBody;
 
-    std::vector<rayData*> rayResult;
+    std::vector<rayData> rayResult;
 
-    // portals can be on top of static bodies, and this
-    // should resolve portal ray hitting issue in that case
-    // if smallestFraction + portalThold < portalFraction then portal hit
-    float portalThold = 0.0001f;
-    
-    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex=0, Portal* rayOutPortal=NULL);
+    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody=nullptr, int rayIndex=0, Portal* rayOutPortal=nullptr);
 
     void reset();
     void endHandle();

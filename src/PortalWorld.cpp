@@ -103,6 +103,7 @@ void PortalWorld::createNewPortalBody_i(PortalBody* pBody)
 
     std::vector<float>* baseDensities = new std::vector<float>();
     pBody->baseDensities = baseDensities;
+    pBody->gravityScale = new float(1.0);
 
     for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext())
     {
@@ -183,8 +184,8 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
         p->calculatePoints();
     }
 
-    rayHandler->sendRay(b2Vec2(-10, 10.0f), b2Vec2(1, -1), 10.0f);
-  
+    b2Vec2 sp = b2Vec2(0.0f, 3.0f);
+    rayHandler->sendRay(sp, b2Vec2(-1, 0.2), 100.0f);
 
     globalPostHandle();
 }
@@ -273,6 +274,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         extraDataFiller->extraData = extraData0;
 
         npb->baseDensities = pBody->baseDensities;
+        npb->gravityScale = pBody->gravityScale;
         npb->isMirrored = pBody->isMirrored ^ c->isReversed;
 
         for (b2JointEdge* edge = body1->GetJointList(); edge != NULL; edge = edge->next)

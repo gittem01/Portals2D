@@ -58,10 +58,12 @@ void main()
     vCopy.y *= data.data.y / (zoom * zoom);
 
     // rotate
-    if (diffVec.x == 0){
+    if (diffVec.x == 0)
+    {
         angle = PI / 2;
     }
-    else{
+    else
+    {
         angle = atan(diffVec.y / diffVec.x);
     }
 

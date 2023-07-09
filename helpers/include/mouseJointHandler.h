@@ -134,7 +134,7 @@ public:
         b2AABB aabb = { lowerBound, upperBound };
         world->QueryAABB(queryCallback, aabb);
 
-        if (wh->mouseData[3] == 2 && !wh->mouseData[2] && frame != lastFrame){
+        if (wh->keyData[GLFW_KEY_LEFT_CONTROL] && wh->mouseData[3] == 2 && !wh->mouseData[2] && frame != lastFrame){
             clicks[1] = clicks[0];
             clicks[0] = new glm::vec2(mp.x, mp.y);
         }
@@ -191,7 +191,7 @@ public:
             jointDiffs.erase(mouseJoint);
         }
 
-        if (wh->mouseData[2] == 2) {
+        if (wh->keyData[GLFW_KEY_LEFT_CONTROL] && wh->mouseData[2] == 2) {
             jointHandler(mp, world);
         }
         else if (wh->mouseData[2] == 0 && mouseJoints.size() > 0) {
@@ -208,7 +208,7 @@ public:
             mouseBodies.clear();
             selectedBodies.clear();
         }
-        else if (wh->mouseData[2] == 1 && (wh->mouseData[3] == 2 || wh->keyData[GLFW_KEY_F])) {
+        else if (wh->keyData[GLFW_KEY_LEFT_CONTROL] && wh->mouseData[2] == 1 && (wh->mouseData[3] == 2 || wh->keyData[GLFW_KEY_F])) {
             mouseJoints.clear();
             jointDiffs.clear();
             mouseBodies.clear();

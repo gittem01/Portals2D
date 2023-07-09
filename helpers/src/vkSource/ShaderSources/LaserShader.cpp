@@ -97,8 +97,6 @@ void LaserShader::preparePipeline()
 
 void LaserShader::setupDescriptorSet()
 {
-    int bindingCount = 2;
-
     descriptorSets.resize(descriptorSetLayouts.size());
 
     VkDescriptorSetAllocateInfo allocInfo;

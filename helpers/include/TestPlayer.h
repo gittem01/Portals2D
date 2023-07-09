@@ -9,16 +9,32 @@
 #include <SwapChain.h>
 #include "ThinDrawer.h"
 #include <Sounder.h>
-#include <DefaultObject.h>
+#include <DefaultObjects/Gun.h>
 
 class TestPlayer : public DefaultObject
 {
 public:
+    static TestPlayer* object;
+
     PlayerShader* playerShader;
 
     Portal* portalA;
     Portal* portalB;
-    float lastPortalCreationTime;
+    float lastPortalCreationTimeA;
+    float lastPortalCreationTimeB;
+
+    PortalBody* holdBody;
+    PortalBody* holdGun;
+    Portal* destrPortal;
+    b2Vec2 lastHoldPos;
+    portalConnection* holdConnection;
+    std::vector<float> holdRestitutions;
+    std::vector<float> holdFrictions;
+    float lastBodyHoldTime;
+    float releaseRequestTime;
+    float holdERequestTime;
+    bool shouldRelease;
+    bool holdColliding;
 
     std::vector<PortalBody*>* gun;
     WindowHandler* wh;
@@ -68,16 +84,29 @@ public:
 
     TestPlayer(PortalWorld* pWorld, WindowHandler* wh, b2Vec2 pos=b2Vec2(0, 0), b2Vec2 size=b2Vec2(0.75f, 1.5f)) : DefaultObject(pWorld)
     {
+        TestPlayer::object = this;
+
         this->pWorld = pWorld;
         this->wh = wh;
         bodySize = size;
         createBody(pos);
 
+        holdBody = nullptr;
+        holdGun = nullptr;
+        destrPortal = nullptr;
+        holdConnection = nullptr;
+        lastBodyHoldTime = 0.0f;
+        releaseRequestTime = -1.0f;
+        holdERequestTime = -1.0f;
+        shouldRelease = false;
+        holdColliding = false;
+
         playerShader = ThinDrawer::object->playerShader;
 
         portalA = nullptr;
         portalB = nullptr;
-        lastPortalCreationTime = -1.0f;
+        lastPortalCreationTimeA = -1.0f;
+        lastPortalCreationTimeB = -1.0f;
 
         grounded = false;
         contactBody = nullptr;
@@ -109,7 +138,18 @@ public:
         blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
         orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
     
+        pWorld->portalDestroyCallbacks.push_back(portalDestrCallBack);
+
         renderInit();
+    }
+
+    static void portalDestrCallBack(Portal* portal)
+    {
+        object->destrPortal = portal;
+        if (object->holdConnection && (object->holdConnection->portal1 == portal || object->holdConnection->portal2 == portal))
+        {
+            object->releaseB();
+        }
     }
 
     static float springMovement(float value, float vel, float springFactor, float dampingFactor, float deltaTime)
@@ -174,6 +214,10 @@ public:
         if (tp->l_platformBody)
         {
             linVel -= tp->l_platformBody->GetLinearVelocity();
+        }
+        else if (tp->grounded && tp->l_contactBody && tp->l_contactBody->GetType() == b2_dynamicBody)
+        {
+            linVel -= tp->l_contactBody->GetLinearVelocity();
         }
         
         b2Vec2 diff = linVel - lastLinVel;
@@ -359,6 +403,7 @@ public:
         fix->SetFriction(0.0f);
 
         PortalBody* pb = pWorld->createPortalBody(body);
+        ThinDrawer::object->debug_addPortalBody(pb);
 
         bodyData* bData = (bodyData*)body->GetUserData().pointer;
         g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
@@ -368,29 +413,10 @@ public:
 
         pBody = &pb->worldIndex->pbIndices;
 
-        bodyDef.type = b2_dynamicBody;
-        bodyDef.position = pos;
-        bodyDef.fixedRotation = false;
-        bodyDef.linearDamping = 0.0f;
-        bodyDef.bullet = true;
-        bodyDef.allowSleep = false;
-
-        body = pWorld->CreateBody(&bodyDef);
-
         gunSize = b2Vec2(0.15f, 0.8f);
-
-        boxShape.SetAsBox(gunSize.x / 2.0f, gunSize.y / 2.0f);
-
-        fDef.density = 0.1f;
-        fDef.shape = &boxShape;
-        fDef.friction = 0.0f;
-        fDef.restitution = 0.0f;
-
-        body->CreateFixture(&fDef);
-
-        pb = pWorld->createPortalBody(body);
-
-        gun = &pb->worldIndex->pbIndices;
+        Gun* dGun = new Gun(pWorld, pos, gunSize);
+        
+        this->gun = dGun->pBody;
 
         b2RevoluteJointDef jDef;
         jDef.bodyA = pBody->at(0)->body;
@@ -405,6 +431,21 @@ public:
 
     void preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
     {
+        if (holdBody)
+        {
+            bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+            if (bData && bData->type == B_PORTAL_BODY)
+            {
+                PortalBody* pb = (PortalBody*)bData->data;
+                if (pb->worldIndex == holdBody->worldIndex)
+                {
+                    contact->SetEnabled(false);
+                    holdColliding = true;
+                    return;
+                }
+            }
+        }
+
         b2WorldManifold wManifold;
         contact->GetWorldManifold(&wManifold);
         b2Vec2 normal = wManifold.normal;
@@ -834,214 +875,498 @@ public:
         }
     }
 
-    void handlePortalCD()
+    PortalBody* getOuterGun()
+    {
+        PortalBody* portalGun = gun->at(0);
+        for (PortalBody* gb : *gun)
+        {
+            bool ok = true;
+            b2Vec2 p = gb->body->GetWorldPoint(b2Vec2(0.0, -0.35));
+            for (bodyCollisionStatus* bcs : *gb->bodyMaps)
+            {
+                if (bcs->connection->portal1->getPointSide(p) != bcs->connection->side1)
+                {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok)
+            {
+                portalGun = gb;
+                break;
+            }
+        }
+
+        return portalGun;
+    }
+
+    void handlePortalCD(float dt)
     {
         extern ThinDrawer* thinDrawer;
 
         const float portalSize = 2.5f;
         const float rayLength = 100.0f;
 
-        PortalBody* playerBody = pBody->at(0);
-        PortalBody* portalGun = gun->at(0);
+        PortalBody* portalGun = getOuterGun();
+        b2Vec2 p0 = portalGun->body->GetWorldPoint(b2Vec2(0.0, -0.35));
 
         b2Vec2 vec;
-        b2Vec2 p0 = playerBody->body->GetWorldPoint(b2Vec2(0.0, 0.35));
 
-        bool gunFound = false;
-        for (b2JointEdge* edge = playerBody->body->GetJointList(); edge; edge = edge->next)
-        {
-            if (edge->joint->GetBodyA() == portalGun->body || edge->joint->GetBodyB() == portalGun->body)
-            {
-                gunFound = true;
-                break;
-            }
-        }
-
-        if (gunFound)
-        {
-            float vecAngle = b2_pi * 0.5f;
-            vecAngle += portalGun->body->GetAngle();
-            vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
-
-            // for now
-            glm::vec2 mCrd = wh->cam->getMouseCoords();
-            vecAngle = PortalWorld::calcAngle2(b2Vec2(mCrd.x, mCrd.y) - p0);
-            vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
-        }
-        else
-        {
-            glm::vec2 mCrd = wh->cam->getMouseCoords();
-            float vecAngle = PortalWorld::calcAngle2(b2Vec2(mCrd.x, mCrd.y) - p0);
-            vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
-        }
-        
-        if (pBody->size() > 1 && playerBody->bodyMaps->size() > 0)
-        {
-            Portal* portal = playerBody->bodyMaps->at(0)->connection->portal1;
-            float pDist = PortalWorld::getRealDist(portal->points[1], portal->points[0], p0);
-            if (pDist < 0.0)
-            {
-                b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(portal->points[1], portal->points[0], p0, p0 + vec);
-                if ((intersectionPoint - portal->pos).Length() > portal->size * 0.2624524)
-                {
-                    vec = rayLength * -portal->dir;
-                    p0 = portal->pos + 0.1f * portal->dir;
-                }
-                else
-                {
-                    p0 = intersectionPoint - (1.0 / (rayLength * 10.0f)) * vec;
-                }
-            }
-        }
+        float vecAngle = b2_pi * 0.5f;
+        vecAngle += portalGun->body->GetAngle();
+        vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
 
         PortalGunRayCast rayCaster = PortalGunRayCast(pWorld);
 
         b2Vec2 rayPoint1 = p0;
         b2Vec2 rayPoint2 = p0 + vec;
 
-        thinDrawer->registerDebugLine(glm::vec4(rayPoint1.x, rayPoint1.y, rayPoint2.x, rayPoint2.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.06, 0.5);
+        handleObjectHold(portalGun, p0, vec, dt);
+        if (holdBody)
+        {
+            return;
+        }
+
+        thinDrawer->registerDebugLine(glm::vec4(rayPoint1.x, rayPoint1.y, rayPoint2.x, rayPoint2.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.03, 0.5);
 
         rayCaster.cast(rayPoint1, rayPoint2);
 
-        if (rayCaster.found)
+        if (rayCaster.found && !wh->keyData[GLFW_KEY_LEFT_CONTROL])
         {
-            if (glfwGetTime() - lastPortalCreationTime > 0.2f)
+            if (wh->mouseData[2] > 0 && glfwGetTime() - lastPortalCreationTimeA > 0.4f)
             {
-                if (wh->keyData[GLFW_KEY_Q] == 2.0f)
+                if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA))
                 {
-                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA))
+                    b2Body* fixBody = rayCaster.edgeFix->GetBody();
+                    if (portalA)
                     {
-                        b2Body* fixBody = rayCaster.edgeFix->GetBody();
-                        if (portalA)
-                        {
-                            getBodyOut();
-                            pWorld->destroyPortal(portalA);
-                            b2Vec2 dir = rayPoint2 - rayPoint1;
-                            dir.Normalize();
-                            dir *= 0.1f;
-                            rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
-                            portalA = nullptr;
-                        }
-
-                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
-
-                        if (portal)
-                        {
-                            ALuint source = Sounder::object->playSound(blueShootBuffer, 1.0);
-                            b2Vec2 pPos = playerBody->body->GetPosition();
-                            Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
-
-                            portal->reviveAround();
-                            portalA = portal;
-
-                            auto iter = thinDrawer->renderPortalData.find(portal);
-                            for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-                            {
-                                s_portalUbo* pUbo;
-                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
-                                    iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-                                pUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
-                            }
-
-                            if (portalB)
-                            {
-                                portalA->connect(portalB, true);
-                                portalB->reviveAround();
-
-                                auto iter2 = thinDrawer->renderPortalData.find(portalB);
-
-                                for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-                                {
-                                    s_portalParticleUbo* ppUbo;
-                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                        iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                                    ppUbo->data0.z = thinDrawer->gameTime;
-                                    ppUbo->data1.z = thinDrawer->gameTime;
-                                    ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
-
-                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                        iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                                    ppUbo->data0.z = thinDrawer->gameTime;
-                                    ppUbo->data1.z = thinDrawer->gameTime;
-                                    ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
-                                }
-                            }
-                        }
+                        getBodyOut();
+                        pWorld->destroyPortal(portalA);
+                        b2Vec2 dir = rayPoint2 - rayPoint1;
+                        dir.Normalize();
+                        dir *= 0.1f;
+                        rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
+                        portalA = nullptr;
                     }
 
-                    lastPortalCreationTime = glfwGetTime();
-                }
-                else if (wh->keyData[GLFW_KEY_E] == 1.0f)
-                {
-                    if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB))
+                    Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+
+                    if (portal)
                     {
-                        b2Body* fixBody = rayCaster.edgeFix->GetBody();
+                        ALuint source = Sounder::object->playSound(blueShootBuffer, 1.0);
+                        b2Vec2 pPos = rayCaster.rayPoint;
+                        Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+                        portal->reviveAround();
+                        portalA = portal;
+
+                        auto iter = thinDrawer->renderPortalData.find(portal);
+                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                        {
+                            s_portalUbo* pUbo;
+                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
+                                iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                            pUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
+                        }
+
                         if (portalB)
                         {
-                            getBodyOut();
-                            pWorld->destroyPortal(portalB);
-                            b2Vec2 dir = rayPoint2 - rayPoint1;
-                            dir.Normalize();
-                            dir *= 0.1f;
-                            rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
-                            portalB = nullptr;
-                        }
+                            portalA->connect(portalB, true);
+                            portalB->reviveAround();
 
-                        Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+                            auto iter2 = thinDrawer->renderPortalData.find(portalB);
 
-                        if (portal)
-                        {
-                            ALuint source = Sounder::object->playSound(orangeShootBuffer, 1.0);
-                            b2Vec2 pPos = playerBody->body->GetPosition();
-                            Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
-
-                            portal->reviveAround();
-                            portalB = portal;
-
-                            auto iter = thinDrawer->renderPortalData.find(portal);
                             for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
                             {
-                                s_portalUbo* pUbo;
-                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
-                                    iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-                                pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
+                                s_portalParticleUbo* ppUbo;
+                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                                    iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                ppUbo->data0.z = thinDrawer->gameTime;
+                                ppUbo->data1.z = thinDrawer->gameTime;
+                                ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
+
+                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                                    iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                ppUbo->data0.z = thinDrawer->gameTime;
+                                ppUbo->data1.z = thinDrawer->gameTime;
+                                ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
                             }
+                        }
+                    }
+                }
 
-                            if (portalA)
+                lastPortalCreationTimeA = glfwGetTime();
+            }
+            else if (wh->mouseData[3] > 0 && glfwGetTime() - lastPortalCreationTimeB > 0.4f)
+            {
+                if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB))
+                {
+                    b2Body* fixBody = rayCaster.edgeFix->GetBody();
+                    if (portalB)
+                    {
+                        getBodyOut();
+                        pWorld->destroyPortal(portalB);
+                        b2Vec2 dir = rayPoint2 - rayPoint1;
+                        dir.Normalize();
+                        dir *= 0.1f;
+                        rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
+                        portalB = nullptr;
+                    }
+
+                    Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+
+                    if (portal)
+                    {
+                        ALuint source = Sounder::object->playSound(orangeShootBuffer, 1.0);
+                        b2Vec2 pPos = rayCaster.rayPoint;
+                        Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+                        portal->reviveAround();
+                        portalB = portal;
+
+                        auto iter = thinDrawer->renderPortalData.find(portal);
+                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
+                        {
+                            s_portalUbo* pUbo;
+                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
+                                iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                            pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
+                        }
+
+                        if (portalA)
+                        {
+                            portalB->connect(portalA);
+                            portalA->reviveAround();
+
+                            auto iter2 = thinDrawer->renderPortalData.find(portalA);
+
+                            for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
                             {
-                                portalB->connect(portalA);
-                                portalA->reviveAround();
+                                s_portalParticleUbo* ppUbo;
+                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                                    iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                ppUbo->data0.z = thinDrawer->gameTime;
+                                ppUbo->data1.z = thinDrawer->gameTime;
+                                ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
 
-                                auto iter2 = thinDrawer->renderPortalData.find(portalA);
+                                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                                    iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                                ppUbo->data0.z = thinDrawer->gameTime;
+                                ppUbo->data1.z = thinDrawer->gameTime;
+                                ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
+                            }
+                        }
+                    }
+                }
 
-                                for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-                                {
-                                    s_portalParticleUbo* ppUbo;
-                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                        iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                                    ppUbo->data0.z = thinDrawer->gameTime;
-                                    ppUbo->data1.z = thinDrawer->gameTime;
-                                    ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
+                lastPortalCreationTimeB = glfwGetTime();
+            }
+        }
+    }
 
-                                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                        iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                                    ppUbo->data0.z = thinDrawer->gameTime;
-                                    ppUbo->data1.z = thinDrawer->gameTime;
-                                    ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-                                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
-                                }
+    static void gunDestrCallback(PortalBody* gb, void* ptr)
+    {
+        TestPlayer* tp = (TestPlayer*)ptr;
+        
+        if (gb != tp->holdGun)
+        {
+            return;
+        }
+
+        bodyCollisionStatus* bcs = gb->bodyMaps->at(0);
+        tp->holdGun = bcs->body;
+
+        if (tp->holdConnection == nullptr)
+        {
+            tp->holdConnection = bcs->connection;
+        }
+        else if (tp->holdConnection->portal1 == bcs->connection->portal1 || tp->holdConnection->portal2 == bcs->connection->portal1)
+        {
+            tp->holdConnection = nullptr;
+        }
+        else
+        {
+            tp->shouldRelease = true;
+        }
+    }
+
+    static void objectDestrCallback(PortalBody* pb, void* ptr)
+    {
+        TestPlayer* tp = (TestPlayer*)ptr;
+        
+        if (pb != tp->holdBody)
+        {
+            return;
+        }
+
+        bodyCollisionStatus* bcs = pb->bodyMaps->at(0);
+        tp->holdBody = bcs->body;
+        if (bcs->connection->portal1 == tp->destrPortal || bcs->connection->portal2 == tp->destrPortal)
+        {
+            tp->shouldRelease = true;
+            return;
+        }
+
+        if (tp->holdConnection == nullptr)
+        {
+            tp->holdConnection = bcs->connection;
+        }
+        else if (tp->holdConnection->portal1 == bcs->connection->portal1 || tp->holdConnection->portal2 == bcs->connection->portal1)
+        {
+            tp->holdConnection = nullptr;
+        }
+        else
+        {
+            tp->shouldRelease = true;
+        }
+    }
+
+    void holdB(PortalBody* pb, PortalBody* gunBody)
+    {
+        *pb->gravityScale = 0.0f;
+        holdBody = pb;
+        holdGun = gunBody;
+        lastHoldPos = pb->body->GetPosition();
+
+        holdBody->worldIndex->destroyCallbacks.push_back(std::make_pair(objectDestrCallback, (void*)this));
+        holdGun->worldIndex->destroyCallbacks.push_back(std::make_pair(gunDestrCallback, (void*)this));
+
+        shouldRelease = false;
+
+        int i = 0;
+        holdRestitutions.resize(pb->numFixtures);
+        holdFrictions.resize(pb->numFixtures);
+        for (b2Fixture* fix : pb->fixtures)
+        {
+            holdRestitutions[i] = fix->GetRestitution();
+            holdFrictions[i++] = fix->GetFriction();
+        }
+
+        for (PortalBody* pbA : pb->worldIndex->pbIndices)
+        {
+            for (b2ContactEdge* edge = pbA->body->GetContactList(); edge; edge = edge->next)
+            {
+                edge->contact->SetRestitution(0.0f);
+                edge->contact->SetFriction(0.0f);
+            }
+
+            for (b2Fixture* fix : pbA->fixtures)
+            {
+                fix->SetRestitution(0.0f);
+                fix->SetFriction(0.0f);
+            }
+        }
+
+        holdERequestTime = -1.0f;
+    }
+
+    void releaseB()
+    {
+        pbWorldData* indx = holdBody->worldIndex;
+        for (auto iter = indx->destroyCallbacks.rbegin(); iter != indx->destroyCallbacks.rend(); iter++)
+        {
+            if ((*iter).first == objectDestrCallback)
+            {
+                indx->destroyCallbacks.erase(iter.base() - 1);
+                break;
+            }
+        }
+
+        indx = holdGun->worldIndex;
+        for (auto iter = indx->destroyCallbacks.rbegin(); iter != indx->destroyCallbacks.rend(); iter++)
+        {
+            if ((*iter).first == gunDestrCallback)
+            {
+                indx->destroyCallbacks.erase(iter.base() - 1);
+                break;
+            }
+        }
+
+        for (PortalBody* pbA : holdBody->worldIndex->pbIndices)
+        {
+            for (b2ContactEdge* edge = pbA->body->GetContactList(); edge; edge = edge->next)
+            {
+                edge->contact->SetRestitution(holdRestitutions[0]);
+                edge->contact->SetFriction(holdFrictions[0]);
+            }
+
+            int i = 0;
+            for (b2Fixture* fix : pbA->fixtures)
+            {
+                fix->SetRestitution(holdRestitutions[i]);
+                fix->SetFriction(holdFrictions[i++]);
+            }
+        }
+        holdRestitutions.clear();
+        holdFrictions.clear();
+
+        *holdBody->gravityScale = 1.0f;
+        holdBody = nullptr;
+        holdGun = nullptr;
+        holdConnection = nullptr;
+        releaseRequestTime = -1.0f;
+        holdERequestTime = -1.0f;
+    }
+
+    void handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, float dt)
+    {
+        object->destrPortal = nullptr;
+
+        if (holdERequestTime < 0.0f && wh->keyData[GLFW_KEY_E] == 2 && glfwGetTime() - lastBodyHoldTime > 0.3)
+        {
+            holdERequestTime = glfwGetTime();
+            lastBodyHoldTime = glfwGetTime();
+        }
+        else if (holdERequestTime > 0.0f && glfwGetTime() - holdERequestTime > 0.3f)
+        {
+            holdERequestTime = -1.0f;
+        }
+
+        if (holdERequestTime > 0.0f && glfwGetTime() - holdERequestTime < 0.3f)
+        {
+            if (holdBody)
+            {
+                if (!holdColliding)
+                {
+                    releaseB();
+                }
+            }
+            else
+            {
+                pWorld->rayHandler->sendRay(pos, dir, 1.5f, pBody);
+                if (pWorld->rayHandler->rayResult.size() < 3 && pWorld->rayHandler->closestFixture)
+                {
+                    bodyData* bData = (bodyData*)pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
+                    bodyData* bData2;
+                    if (contactBody)
+                    {
+                        bData2 = (bodyData*)contactBody->GetUserData().pointer;
+                    }
+                    else
+                    {
+                        bData2 = nullptr;
+                    }
+
+                    if (bData && bData->extraData && bData->type == B_PORTAL_BODY && bData2 != bData)
+                    {
+                        g_PhysicsData* pData = (g_PhysicsData*)bData->extraData;
+                        if (pData && pData->type == DEFAULT_OBJECT)
+                        {   
+                            PortalBody* pb = (PortalBody*)bData->data;
+                            holdB(pb, gunBody);
+
+                            if (pWorld->rayHandler->rayResult.size() == 2 && pWorld->rayHandler->rayResult[0].portal)
+                            {
+                                portalConnection* revConnection = pWorld->rayHandler->rayResult[0].portal->connections[0][0];
+                                holdConnection = revConnection->portal2->connections[0][0];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (holdBody)
+        {
+            if (shouldRelease)
+            {
+                releaseB();
+                return;
+            }
+            else if (releaseRequestTime > 0.0f && glfwGetTime() - releaseRequestTime > 0.25f)
+            {
+                releaseB();
+                return;
+            }
+            else
+            {
+                if (holdGun != gunBody)
+                {
+                    if (gunBody->bodyMaps->size() == 0)
+                    {
+                        releaseB();
+                        return;
+                    }
+
+                    portalConnection* newConnection = gunBody->bodyMaps->at(0)->connection;
+                    if (holdConnection == nullptr)
+                    {
+                        holdConnection = newConnection;
+                    }
+                    else if (holdConnection->portal1 == newConnection->portal1 || holdConnection->portal2 == newConnection->portal1)
+                    {
+                        holdConnection = nullptr;
+                    }
+                    else
+                    {
+                        releaseB();
+                        return;
+                    }
+
+                    holdGun = gunBody;
+                }
+
+                dir.Normalize();
+                b2Vec2 desiredPos = pos + 1.0f * dir;
+                if (holdConnection)
+                {
+                    desiredPos = pWorld->getRelativePortalPosition_W(desiredPos, holdConnection);
+                }                
+
+                ThinDrawer::object->registerDebugLine(glm::vec4(pos.x, pos.y, desiredPos.x, desiredPos.y), glm::vec4(1.0, 0.0, 1.0, 1.0), 0.15, 0.5);
+                b2Vec2 diff = desiredPos - holdBody->body->GetPosition();
+                float diffLen = diff.Length();
+                diffLen = pow(diffLen, 0.7f) * 1.4f;
+                diffLen = fmin(diffLen, 4.0f);
+
+                diff.Normalize();
+                diff = diffLen * diff;
+
+                b2Vec2 normVel = holdBody->body->GetLinearVelocity(); normVel.Normalize();
+                if (b2Dot(normVel, diff) < 0.0f || (lastHoldPos - holdBody->body->GetPosition()).Length() < 3.0f * dt || holdConnection)
+                {
+                    pWorld->rayHandler->sendRay(pos, dir, 1.5f, pBody);
+                    bool rel = true;
+                    if (pWorld->rayHandler->closestFixture)
+                    {
+                        bodyData* bData = (bodyData*)pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
+                        if (bData && bData->data && bData->type == B_PORTAL_BODY)
+                        {
+                            if (holdBody->worldIndex == ((PortalBody*)bData->data)->worldIndex)
+                            {
+                                rel = false;
                             }
                         }
                     }
 
-                    lastPortalCreationTime = glfwGetTime();
+                    if (rel && releaseRequestTime < 0.0f)
+                    {
+                        releaseRequestTime = glfwGetTime();
+                    }
+                    else if (!rel)
+                    {
+                        releaseRequestTime = -1.0f;
+                    }
                 }
+                else
+                {
+                    releaseRequestTime = -1.0f;
+                }
+
+                holdBody->body->SetLinearVelocity(10.0f * diff);
+                
+                float rotRatio = 1.0f - dt * 0.8f;
+                holdBody->body->SetAngularVelocity(fmin(holdBody->body->GetAngularVelocity() * rotRatio, b2_pi));
             }
+
+            lastHoldPos = holdBody->body->GetPosition();
         }
     }
 
@@ -1060,6 +1385,7 @@ public:
         rightCollisionType = b2_dynamicBody;
         leftCollisionType = b2_dynamicBody;
         lastBody = pBody->at(0);
+        holdColliding = false;
     }
 
     void update(float dt, int totalIter)
@@ -1363,7 +1689,7 @@ public:
 
         handleGunRotation();
 
-        handlePortalCD();
+        handlePortalCD(dt);
 
         updateReset();
     }

@@ -64,6 +64,8 @@ struct B2_API b2MouseJointDef : public b2JointDef
 /// use the mouse joint, look at the testbed.
 class B2_API b2MouseJoint : public b2Joint
 {
+	friend class TestPlayer;
+
 public:
 
 	/// Implements b2Joint.

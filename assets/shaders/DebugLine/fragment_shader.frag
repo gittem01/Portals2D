@@ -33,33 +33,26 @@ void main()
     float perctDist = 1.0f;
     vec2 p1 = vec2(size.x - size.y, 0.0f);
     vec2 p2 = vec2(-size.x + size.y, 0.0f);
-    if (localPos.x < p2.x && length(localPos - p2) > size.y || localPos.x > p1.x && length(localPos - p1) > size.y){
-        color = vec4(0, 0, 0.0f, 0.0f);
+    if (localPos.x < p2.x && length(localPos - p2) > size.y || localPos.x > p1.x && length(localPos - p1) > size.y)
+    {
+        color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
         return;
     }
     else
     {
         if (localPos.x < p2.x)
         {
-            perctDist = length(localPos - p2) / (size.y / (zoom * zoom));
+            perctDist = length(localPos - p2) / size.y;
         }
         else if (localPos.x > p1.x)
         {
-            perctDist = length(localPos  - p1) / (size.y / (zoom * zoom));
+            perctDist = length(localPos - p1) / size.y;
         }
         else
         {
-            perctDist = abs(localPos.y / (size.y / (zoom * zoom)));
+            perctDist = abs(localPos.y / size.y);
         }
     }
 
-    perctDist /= zoom * zoom;
-    if (perctDist > data.data.z)
-    {
-        color = vec4(data.colour.xyz, (1.0f - perctDist) * (1.0f / (1.0f - data.data.z)));
-    }
-    else
-    {
-        color = data.colour;
-    }
+    color = vec4(data.colour.xyz, (1.0f - perctDist) * (1.0f / (1.0f - data.data.z)));
 }

@@ -4,93 +4,8 @@
 #include <PositionJoint.h>
 #include <GameBase.h>
 
-void PortalRay::prepareRaySend() {
-    for (rayData* rd : rayResult)
-    {
-        delete rd;
-    }
-    rayResult.clear();
-
-    closestFixture = NULL;
-    closestPortalFixture = NULL;
-}
-
-void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal) {
-    prepareRaySend();
-
-    sendRay_i(rayStart, dirVec, rayLength, rayIndex, rayOutPortal);
-}
-
-void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal) {
-    if (rayIndex >= maxRayCount || rayLength < 0.0001f) {
-        return;
-    }
-    pWorld->normalize(&dirVec);
-    b2Vec2 rayEnd = rayStart + rayLength * dirVec;
-    b2Vec2 diff = rayEnd - rayStart;
-
-    reset();
-
-    // change this
-    if (rayOutPortal && false) {
-        rayData* rd = new rayData;
-        rd->endPos = rayStart;
-        rd->dir = dirVec;
-
-        rayResult.push_back(rd);
-        return;
-    }
-
-    pWorld->RayCast(this, rayStart, rayEnd);
-
-    endHandle();
-
-    float minFrac = minFraction;
-
-    diff = minFrac * diff;
-    b2Vec2 collPoint = rayStart + diff;
-
-    if (closestFixture != NULL)
-    {
-        if (closestFixture == closestPortalFixture)
-        {
-            fixtureData* fData = (fixtureData*)closestFixture->GetUserData().pointer;
-            Portal* p = (Portal*)fData->data;
-            b2Vec2 posDiff = p->pos - collPoint;
-            int raySide = p->getPointSide(rayStart);
-            b2Vec2 p1Dir = raySide ? -p->dir : p->dir;
-
-            for (portalConnection* conn : p->connections[raySide])
-            {
-                b2Vec2 p2Dir = conn->side2 ? -conn->portal2->dir : conn->portal2->dir;
-
-                float angleRot = -pWorld->calcAngle2(p1Dir) + pWorld->calcAngle2(-p2Dir);
-
-                b2Vec2 localPos = PortalWorld::rotateVec(posDiff, angleRot + b2_pi);
-                if (conn->isReversed)
-                {
-                    localPos = pWorld->mirror(p2Dir, localPos);
-                }
-
-                b2Vec2 ray2Pos = conn->portal2->pos + localPos;
-
-                b2Vec2 dir2 = PortalWorld::rotateVec(dirVec, angleRot);
-
-                sendRay_i(ray2Pos, dir2, rayLength - minFrac * rayLength, rayIndex + 1, conn->portal2);
-            }
-        }
-        else
-        {
-            rayData* rd = new rayData;
-            rd->endPos = collPoint;
-            rd->dir = dirVec;
-
-            rayResult.push_back(rd);
-        }
-    }
-}
-
-b2Vec2 PortalWorld::getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect) {
+b2Vec2 PortalWorld::getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect)
+{
     Portal* portal1 = pConnect->portal1;
     Portal* portal2 = pConnect->portal2;
     int side1 = pConnect->side1;
@@ -103,12 +18,15 @@ b2Vec2 PortalWorld::getRelativePortalPosition_L(b2Vec2 point, portalConnection* 
     float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
     b2Vec2 pos = rotateVec(point, angleRot + b2_pi);
     if (reversed)
+    {
         pos = mirror(dir2, pos);
+    }
 
     return pos;
 }
 
-b2Vec2 PortalWorld::getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect) {
+b2Vec2 PortalWorld::getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect)
+{
     Portal* portal1 = pConnect->portal2;
     Portal* portal2 = pConnect->portal1;
     int side1 = pConnect->side2;
@@ -121,12 +39,15 @@ b2Vec2 PortalWorld::getRelativePortalPositionReverse_L(b2Vec2 point, portalConne
     float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
     b2Vec2 pos = rotateVec(point, angleRot + b2_pi);
     if (reversed)
+    {
         pos = mirror(dir2, pos);
+    }
 
     return pos;
 }
 
-b2Vec2 PortalWorld::getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect) {
+b2Vec2 PortalWorld::getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect)
+{
     Portal* portal1 = pConnect->portal1;
     Portal* portal2 = pConnect->portal2;
     int side1 = pConnect->side1;
@@ -140,7 +61,9 @@ b2Vec2 PortalWorld::getRelativePortalPosition_W(b2Vec2 point, portalConnection* 
     float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
     b2Vec2 pos = rotateVec(posDiff, angleRot + b2_pi);
     if (reversed)
+    {
         pos = mirror(dir2, pos);
+    }
 
     pos += portal2->pos;
 
@@ -162,7 +85,9 @@ b2Vec2 PortalWorld::getRelativePortalPositionReverse_W(b2Vec2 point, portalConne
     float angleRot = -calcAngle2(dir1) + calcAngle2(-dir2);
     b2Vec2 pos = rotateVec(posDiff, angleRot + b2_pi);
     if (reversed)
+    {
         pos = mirror(dir2, pos);
+    }
 
     pos += portal2->pos;
 
@@ -253,6 +178,7 @@ void PortalWorld::calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<
             startPoint = p;
         }
     }
+
     outerVertices.push_back(startPoint);
     b2Vec2 lastVec = b2Vec2(0.0, 1.0);
 
@@ -367,47 +293,143 @@ PortalRay::PortalRay(PortalWorld* pWorld)
     this->pWorld = pWorld;
 }
 
-float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction) {
+void PortalRay::prepareRaySend()
+{
+    rayResult.clear();
+
+    closestPortal = nullptr;
+    closestFixture = nullptr;
+    closestPortalFixture = nullptr;
+    filterBody = nullptr;
+}
+
+#include <ThinDrawer.h>
+void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody, int rayIndex, Portal* rayOutPortal)
+{
+    prepareRaySend();
+    this->filterBody = filterBody;
+
+    sendRay_i(rayStart, dirVec, rayLength, rayIndex, rayOutPortal);
+
+    for (int i = 0; i < rayResult.size(); i++)
+    {
+        rayData res = rayResult[i];
+        ThinDrawer::object->registerDebugLine(glm::vec4(res.startPos.x, res.startPos.y, res.endPos.x, res.endPos.y), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f, 0.5f);
+    }
+}
+
+void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal)
+{
+    if (rayIndex >= maxRayCount || rayLength < 0.0001019f)
+    {
+        return;
+    }
+
+    PortalWorld::normalize(&dirVec);
+    b2Vec2 rayEnd = rayStart + rayLength * dirVec;
+    b2Vec2 diff = rayEnd - rayStart;
+
+    reset();
+
+    pWorld->RayCast(this, rayStart, rayEnd);
+
+    endHandle();
+
+    float minFrac = minFraction;
+
+    diff = minFrac * diff;
+    b2Vec2 collPoint = rayStart + diff;
+
+    if (closestFixture != NULL)
+    {
+        if (closestFixture == closestPortalFixture)
+        {
+            fixtureData* fData = (fixtureData*)closestFixture->GetUserData().pointer;
+            Portal* p = (Portal*)fData->data;
+            int raySide = p->getPointSide(rayStart);
+
+            for (portalConnection* conn : p->connections[raySide])
+            {
+                b2Vec2 ray2Pos = pWorld->getRelativePortalPosition_W(collPoint, conn);
+
+                b2Vec2 dir2 = -pWorld->getRelativePortalPosition_L(dirVec, conn);
+
+                ray2Pos -= 0.01f * dir2;
+
+                sendRay_i(ray2Pos, dir2, rayLength - minFrac * rayLength, rayIndex + 1, conn->portal2);
+            }
+        }
+
+        rayResult.push_back({ closestFixture, rayStart, collPoint, dirVec, rayOutPortal });
+    }
+    else
+    {   
+        rayResult.push_back({ closestFixture, rayStart, collPoint, dirVec, rayOutPortal });
+    }
+
+    leftLength = rayLength;
+}
+
+float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction)
+{
     if (fixture->IsSensor()) return 1.0f;
 
     bool isPortal = false;
     fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
-    if (fData) {
-        if (fData->type == F_PORTAL) {
+    if (fData)
+    {
+        if (fData->type == F_PORTAL)
+        {
             Portal* p = (Portal*)fData->data;
             int side = p->getPointSide(point + normal);
-            if (p->connections[side].size() != 0) {
+            if (p->connections[side].size() != 0)
+            {
                 isPortal = true;
             }
+            else if (p->connections[side ^ 1].size() != 0)
+            {
+                return 1.0f;
+            }
         }
-        else if (fData->type == F_PORTAL_BODY) {
+
+        else if (fData->type == F_PORTAL_BODY)
+        {
             bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
             PortalBody* pb = (PortalBody*)bData->data;
+
+            if (&pb->worldIndex->pbIndices == filterBody) return 1.0f;
+
             PBFixtureData* pbfData = (PBFixtureData*)fData->data;
             std::vector<portalCollision*> collidingPortals = pbfData->pCollisions;
-            for (portalCollision* pc : collidingPortals) {
-                if (!pc->status || pc->portal->getPointSide(point) == (pc->side ^ 1)) {
+            for (portalCollision* pc : collidingPortals)
+            {
+                if (pc->status < 1 || PortalWorld::isLeft(pc->portal->points[1], pc->portal->points[0], point, 0.000001f) == (pc->side ^ 1))
+                {
                     return 1.0f;
                 }
             }
         }
     }
 
-    if (fraction > this->portalThold) {
-        if (isPortal && fraction < this->portalFraction) {
-            this->portalFraction = fraction;
-            this->closestPortalFixture = fixture;
-        }
-        if (fraction <= this->minFraction) {
-            this->minFraction = fraction;
-            this->closestFixture = fixture;
-        }
+    if (isPortal && fraction < portalFraction)
+    {
+        portalFraction = fraction;
+        closestPortalFixture = fixture;
+
+        fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
+        closestPortal = (Portal*)fData->data;
+    }
+    if (fraction <= minFraction)
+    {
+        minFraction = fraction;
+        closestFixture = fixture;
     }
 
     return 1.0f;
 }
 
-void PortalRay::reset() {
+void PortalRay::reset()
+{
     this->minFraction = 1.0f;
     this->portalFraction = 1.0f;
 
@@ -415,13 +437,14 @@ void PortalRay::reset() {
     this->closestPortalFixture = NULL;
 }
 
-void PortalRay::endHandle() {
-    if (this->minFraction > this->portalFraction - this->portalThold) {
+void PortalRay::endHandle()
+{
+    if (this->minFraction > this->portalFraction)
+    {
         this->closestFixture = this->closestPortalFixture;
         this->minFraction = this->portalFraction;
     }
 }
-
 
 b2Vec2 PortalWorld::rotateVec(b2Vec2 vec, float angle)
 {
@@ -448,7 +471,8 @@ float PortalWorld::getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c)
     return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
 }
 
-float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c) {
+float PortalWorld::getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c)
+{
     float v1 = (b.x - a.x) * (a.y - c.y);
     float v2 = (a.x - c.x) * (b.y - a.y);
     float top = v1 - v2;
@@ -482,7 +506,8 @@ void PortalWorld::normalize(b2Vec2* vec) {
     vec->y /= length;
 }
 
-b2Vec2 PortalWorld::mirror(b2Vec2 mirror, b2Vec2 vec) {
+b2Vec2 PortalWorld::mirror(b2Vec2 mirror, b2Vec2 vec)
+{
     float angle1 = calcAngle2(mirror);
     float angle2 = calcAngle2(vec);
     return rotateVec(vec, 2 * (angle1 - angle2));
@@ -500,7 +525,8 @@ float PortalWorld::normalizeAngle(float angle)
     return angle;
 }
 
-b2Vec2 PortalWorld::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4) {
+b2Vec2 PortalWorld::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4)
+{
     float d = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
     float up1 = (p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x);
     float up2 = (p1.x * p2.y - p1.y * p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x * p4.y - p3.y * p4.x);

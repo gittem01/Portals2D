@@ -12,6 +12,7 @@
 #include <ShaderHeaders/DualParticleShader.h>
 #include <ShaderHeaders/PortalShader3D.h>
 #include <ShaderHeaders/WallLight.h>
+#include <ShaderHeaders/GunEffect.h>
 #include <ShaderHeaders/LaserShader.h>
 #include <ShaderHeaders/PlayerShader.h>
 #include <WindowHandler.h>
@@ -149,6 +150,7 @@ public:
     BodyShader* bodyShader;
     WallLight* wallLight;
     LaserShader* laserShader;
+    GunEffect* gunEffect;
     PlayerShader* playerShader;
 
     // var end

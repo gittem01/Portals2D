@@ -18,8 +18,8 @@ b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType ty
     b2FixtureDef fDef1;
     fDef1.shape = &boxShape;
     fDef1.density = density;
-    fDef1.restitution = 0.2f;
-    fDef1.friction = 0.2f;
+    fDef1.restitution = 0.0f;
+    fDef1.friction = 0.1f;
 
     b2BodyDef def;
     def.type = type;
@@ -46,7 +46,7 @@ b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType ty
         fDef2.shape = &cornerShape;
         fDef2.density = density;
         fDef2.restitution = 0.2f;
-        fDef2.friction = 0.2f;
+        fDef2.friction = 5.0f;
         body->CreateFixture(&fDef2);
     }
 
@@ -59,7 +59,7 @@ DefaultCube::DefaultCube(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
 	onHitSoundBuffers.push_back(onHitSoundBuffer);
 
-	b2Body* body = createPortalCube2(b2Vec2(0.0, 0.0), b2Vec2(0.5, 0.5), pWorld, b2_dynamicBody);
+	b2Body* body = createPortalCube2(b2Vec2(0.0, 0.0), b2Vec2(0.4, 0.4), pWorld, b2_dynamicBody);
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;

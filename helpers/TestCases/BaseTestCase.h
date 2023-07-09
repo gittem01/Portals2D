@@ -154,14 +154,6 @@ public:
 
     #if ENABLE_TESTPLAYER
         tp = new TestPlayer(pWorld, td->wh);
-        thinDrawer->debug_addPortalBody(tp->pBody->at(0));
-        thinDrawer->debug_addPortalBody(tp->gun->at(0));
-
-        thinDrawer->addPortalBody(tp->gun->at(0), { "gun.png" });
-
-        std::vector<std::pair<std::string, std::string>> empty;
-        thinDrawer->addPortalBody_3d(tp->pBody->at(0), empty);
-        thinDrawer->addPortalBody_3d(tp->gun->at(0), empty);
     #endif
     }
 

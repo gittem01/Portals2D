@@ -214,9 +214,9 @@ public:
         names = {};
         thinDrawer->addPortalBody_3d(lastPb, names);
 
-        b2Body* bdy = randomBody();
+        /*b2Body* bdy = randomBody();
         lastPb = pWorld->createPortalBody(bdy);
-        thinDrawer->debug_addPortalBody(lastPb);
+        thinDrawer->debug_addPortalBody(lastPb);*/
 
         b2PolygonShape pShape;
         b2Vec2 points[] = {
@@ -226,6 +226,7 @@ public:
         };
         pShape.Set(points, std::size(points));
         b2BodyDef bDefX;
+        bDefX.position = b2Vec2(10.0f, 0.0f);
         bDefX.type = b2_dynamicBody;
         b2Body* bodyX = pWorld->CreateBody(&bDefX);
         bodyX->CreateFixture(&pShape, 1.0f);

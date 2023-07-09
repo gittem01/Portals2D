@@ -524,9 +524,19 @@ void PortalBody::postHandle()
         }
     }
 #else
-    for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
+    if (body->IsAwake() && *gravityScale > 0.0)
     {
-        applyPartialGravity(fix);
+        if (bodyMaps->size() > 0)
+        {
+            for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
+            {
+                applyPartialGravity(fix);
+            }
+        }
+        else
+        {
+            body->ApplyForceToCenter(*gravityScale * body->GetMass() * pWorld->GetGravity(), true);
+        }
     }
 #endif
 }
@@ -761,7 +771,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         }
 
         b2Vec2 force = area * fixture->GetDensity() * pWorld->GetGravity();
-        body->ApplyForce(force, center, false);
+        body->ApplyForce(*gravityScale * force, center, false);
 
         return;
     }
@@ -858,7 +868,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         // validity check for loopCenterOfMass is probably extra
         // just to be sure program does not crash
         if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-            body->ApplyForce(((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
+            body->ApplyForce(*gravityScale * ((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
         }
     }
     else{
@@ -924,7 +934,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
 
                 b2Vec2 force = loopArea * fixture->GetDensity() * pWorld->GetGravity();
                 if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-                    body->ApplyForce(((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
+                    body->ApplyForce(*gravityScale * ((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
                 }
             }
         }
