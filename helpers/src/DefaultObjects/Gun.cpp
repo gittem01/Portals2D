@@ -38,7 +38,7 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     bData->extraData = physicsData;
 
     ThinDrawer::object->debug_addPortalBody(pb);
-    ThinDrawer::object->addPortalBody(pb, { "gun.png" });
+    ThinDrawer::object->addPortalBody(pb, { "gun2.png" });
 }
 
 void Gun::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)

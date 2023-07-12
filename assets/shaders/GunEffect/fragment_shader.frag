@@ -5,6 +5,8 @@ layout (location = 0) out vec4 FragColour;
 layout (location = 0) in vec2 localPos;
 layout (location = 1) flat in vec2 size;
 layout (location = 2) flat in vec4 wavColor;
+layout (location = 3) flat in vec4 portal;
+layout (location = 4) in vec2 worldPos;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -18,11 +20,9 @@ float funcHelper(float val)
     float mult2 = pow(val / size.x, 2.5) + 0.1f;
     val = (val / size.x) * 30.0f;
 
-    const float m = 5.0f * (3.0f / 10.0f);
-    float v = (30.0f - val) / m;
-    v = pow(v, 0.5f);
-    
-    return val * v * mult2 * 0.15;
+    float v = pow((30.0f - val) / 1.5f, 0.5f);
+
+    return val * v * mult2 * 0.0075 * size.y;
 }
 
 float func1(float val, float secondVal, float thirdVal)
@@ -55,8 +55,19 @@ float func3(float val, float secondVal, float thirdVal)
     return retVal * funcHelper(val);
 }
 
+float lineRel(vec2 a, vec2 b, vec2 c)
+{
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
 void main()
 {
+    if (!isnan(portal.x) && lineRel(portal.xy, portal.zw, worldPos) > 0.0)
+    {
+        FragColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+        return;
+    }
+
     vec2 uv = localPos;
     float iTime = sharedUboData.data.y;
 

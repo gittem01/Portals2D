@@ -299,7 +299,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     }
 
     VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
-    
+
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
 
@@ -312,7 +312,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
 
     texture->width = width;
     texture->height = height;
-    texture->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+    texture->mipLevels = (uint32_t)std::floor(std::log2(std::max(width, height))) + 1;
 
     VkMemoryAllocateInfo memAllocInfo = { };
     memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -405,7 +405,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     sampler.maxLod = VK_LOD_CLAMP_NONE;
     sampler.maxAnisotropy = 16.0;
     sampler.anisotropyEnable = (VkBool32)enableAnisotropy;
-    sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+    sampler.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     
     CHECK_RESULT_VK(vkCreateSampler(logicalDevice, &sampler, VK_NULL_HANDLE, &texture->sampler));
 

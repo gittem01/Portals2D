@@ -106,6 +106,8 @@ public:
         playerShader = ThinDrawer::object->playerShader;
         gData.positions = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
         gData.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        gData.portal.x = NAN;
+        gData.data.x = 0.4f;
 
         portalA = nullptr;
         portalB = nullptr;
@@ -355,14 +357,60 @@ public:
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             gunEffectShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-        vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)&tp->gData);
+        if (!tp->holdGun)
+        {
+            vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)&tp->gData);
 
-        vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+            vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+        }
+        else
+        {
+            b2Vec2 startPos = tp->holdGun->body->GetWorldPoint(b2Vec2(0.0f, 0.0f));
+            b2Vec2 endPos = tp->holdGun->body->GetWorldPoint(b2Vec2(0.0f, 0.9f));
+
+            s_gunData gData2 = { { startPos.x, startPos.y, endPos.x, endPos.y }, { 1.0f, 1.0f, 1.0f, 1.0f },
+                                 { NAN, 0.0f, 0.0f, 0.0f },                      { 2.5f, 0.0f, 0.0f, 0.0f } };
+            
+            portalConnection* pc = nullptr;
+            if (tp->holdConnection)
+            {
+                pc = tp->holdConnection;
+            }
+            else if (tp->holdBody->bodyMaps->size() > 0)
+            {
+                pc = tp->holdBody->bodyMaps->at(0)->connection;
+            }
+
+            if (pc)
+            {
+                b2Vec2 p0 = pc->portal1->points[pc->side1 ^ 1];
+                b2Vec2 p1 = pc->portal1->points[pc->side1];
+                gData2.portal = glm::vec4(p0.x, p0.y, p1.x, p1.y);
+
+                vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)&gData2);
+                vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+                startPos = PortalWorld::getRelativePortalPosition_W(startPos, pc);
+                endPos = PortalWorld::getRelativePortalPosition_W(endPos, pc);
+                gData2.positions = glm::vec4(startPos.x, startPos.y, endPos.x, endPos.y);
+                p0 = pc->portal2->points[pc->side2 ^ 1];
+                p1 = pc->portal2->points[pc->side2];
+                gData2.portal = glm::vec4(p0.x, p0.y, p1.x, p1.y);
+
+                vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)&gData2);
+                vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+            }
+            else
+            {
+                vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)&gData2);
+                vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+            }
+        }
 
         for (int i = tp->shootDatas.size() - 1; i > -1; i--)
         {
             s_gunData* shootData = &tp->shootDatas.at(i);
-            shootData->color.w -= ThinDrawer::object->pDeltaTime * 5.0f;
+            shootData->color.w -= ThinDrawer::object->pDeltaTime * 3.0f;
             if (shootData->color.w <= 0.0)
             {
                 tp->shootDatas.erase(tp->shootDatas.begin() + i);
@@ -453,7 +501,7 @@ public:
 
         pBody = &pb->worldIndex->pbIndices;
 
-        gunSize = b2Vec2(0.15f, 0.8f);
+        gunSize = b2Vec2(0.3f, 0.8f);
         Gun* dGun = new Gun(pWorld, pos, gunSize);
         
         this->gun = dGun->pBody;
@@ -716,7 +764,7 @@ public:
             const float threshold = 0.0f;
             const float speedMult = 40.0f;
             rj->EnableMotor(true);
-            rj->SetMaxMotorTorque(1000.0f * gunBody->body->GetMass());
+            rj->SetMaxMotorTorque(300.0f * gunBody->body->GetMass());
 
             if (rj->GetBodyA() == gunBody->body)
             {
@@ -1005,7 +1053,8 @@ public:
 
                     Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
-                    shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 0.0, 0.5f, 1.0f, 1.0f } });
+                    shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 0.0, 0.5f, 1.0f, 1.0f },
+                                           { NAN, 0.0f, 0.0f, 0.0f },                      { 1.0f, 0.0f, 0.0f, 0.0f } });
 
                     if (portal)
                     {
@@ -1074,7 +1123,8 @@ public:
 
                     Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
-                    shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 1.0, 0.5f, 0.0f, 1.0f } });
+                    shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 1.0, 0.5f, 0.0f, 1.0f },
+                                           { NAN, 0.0f, 0.0f, 0.0f },                    { 1.0f, 0.0f, 0.0f, 0.0f } });
 
                     if (portal)
                     {
@@ -1380,8 +1430,7 @@ public:
                 ThinDrawer::object->registerDebugLine(glm::vec4(pos.x, pos.y, desiredPos.x, desiredPos.y), glm::vec4(1.0, 0.0, 1.0, 1.0), 0.15, 0.5);
                 b2Vec2 diff = desiredPos - holdBody->body->GetPosition();
                 float diffLen = diff.Length();
-                diffLen = pow(diffLen, 0.7f) * 1.4f;
-                diffLen = fmin(diffLen, 4.0f);
+                diffLen = fmin(diffLen, 5.0f);
 
                 diff.Normalize();
                 diff = diffLen * diff;
@@ -1417,7 +1466,12 @@ public:
                     releaseRequestTime = -1.0f;
                 }
 
-                holdBody->body->SetLinearVelocity(10.0f * diff);
+                b2Vec2 relVel = gunBody->body->GetLinearVelocity();
+                if (holdConnection)
+                {
+                    relVel = -pWorld->getRelativePortalPosition_L(relVel, holdConnection);
+                }
+                holdBody->body->SetLinearVelocity(3.0f * diff + relVel);
                 
                 float rotRatio = 1.0f - dt * 0.8f;
                 holdBody->body->SetAngularVelocity(fmin(holdBody->body->GetAngularVelocity() * rotRatio, b2_pi));
