@@ -175,14 +175,16 @@ public:
         static float bodyVel = 0.0;
 
         TestPlayer* tp = (TestPlayer*)ptr;
-        
+        uint32_t imNum = ThinDrawer::object->lastSwapChainImageIndex;
+
         int i = 0;
         for (PortalBody* pb : *tp->pBody)
         {
             b2Body* body = pb->body;
 
             s_dRenderPlayerUbo* ru2;
-            vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0]->memory, tp->playerShader->alignedSize * i, tp->playerShader->alignedSize, 0, (void**)&ru2);
+            vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0]->memory, tp->playerShader->alignedSize * (i + imNum * 8),
+                        tp->playerShader->alignedSize, 0, (void**)&ru2);
 
             b2Vec2 pos = body->GetPosition();
             ru2->posRotD = glm::vec4(pos.x, pos.y, body->GetAngle(), 0.0);
@@ -283,7 +285,8 @@ public:
         if (tp->legAng < 0.0) tp->legAng += 2.0 * b2_pi;
 
         s_renderPlayerUbo* ru;
-        vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory, 0, tp->playerShader->alignedSize2, 0, (void**)&ru);
+        vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory, tp->playerShader->alignedSize2 * imNum,
+                    tp->playerShader->alignedSize2, 0, (void**)&ru);
 
         float extraMult = 1.0;
         if (abs(linVel.x) > 10.0) extraMult = abs(linVel.x) * 10.0;
@@ -318,8 +321,10 @@ public:
     {
         TestPlayer* tp = (TestPlayer*)ptr;
 
+        uint32_t imNum = ThinDrawer::object->lastSwapChainImageIndex;
         const VkDeviceSize offsets = 0;
-        const uint32_t camOffset = ShaderBase::alignedSharedSize * ThinDrawer::object->lastSwapChainImageIndex;
+        const uint32_t camOffset = ShaderBase::alignedSharedSize * imNum;
+        uint32_t dynOff2 = tp->playerShader->alignedSize2 * imNum;
 
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, tp->playerShader->pipeline);
 
@@ -331,9 +336,10 @@ public:
         int i = 0;
         for (PortalBody* pb : *tp->pBody)
         {
-            uint32_t dynOff = tp->playerShader->alignedSize * i;
+            uint32_t dynOff1 = tp->playerShader->alignedSize * (i + imNum * 8);
+            uint32_t dynOffsets[] = { dynOff1, dynOff2 };
             vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                tp->playerShader->pipelineLayout, 1, 1, &tp->playerShader->descriptorSets[1], 1, &dynOff);
+                tp->playerShader->pipelineLayout, 1, 1, &tp->playerShader->descriptorSets[1], 2, dynOffsets);
 
             vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
@@ -430,31 +436,34 @@ public:
         ThinDrawer::object->drawFuncs.push_back({ drawGunEffect, this });
 
         s_renderPlayerUbo* ru;
-        vkMapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory, 0, playerShader->alignedSize2, 0, (void**)&ru);
-        ru->edgeColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
-        ru->bodyColour1 = glm::vec4(0.0, 0.0, 0.0, 1.0);
-        ru->bodyColour2 = glm::vec4(0.04, 0.04, 0.04, 1.0);
+        for (int i = 0; i < 8; i++)
+        {
+            vkMapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory, i * playerShader->alignedSize2, playerShader->alignedSize2, 0, (void**)&ru);
+            ru->edgeColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+            ru->bodyColour1 = glm::vec4(0.0, 0.0, 0.0, 1.0);
+            ru->bodyColour2 = glm::vec4(0.04, 0.04, 0.04, 1.0);
 
-        ru->topMargin = 0.0;
-        ru->headRatio = 0.25;
-        ru->bodyRatio = 0.4;
-        ru->legRatio = 0.25;
-        ru->margin1 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
-        ru->margin2 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
-        ru->lineSize = 0.025;
-        ru->headCircles = glm::vec2(0.07, 0.07);
-        ru->bodyCircles = 0.1;
+            ru->topMargin = 0.0;
+            ru->headRatio = 0.25;
+            ru->bodyRatio = 0.4;
+            ru->legRatio = 0.25;
+            ru->margin1 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
+            ru->margin2 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
+            ru->lineSize = 0.025;
+            ru->headCircles = glm::vec2(0.07, 0.07);
+            ru->bodyCircles = 0.1;
 
-        ru->ld.legThick = 0.1;
-        ru->ld.circR = ru->legRatio * 1000.5;
-        ru->ld.legLen = 0.25 * 0.5;
-        ru->ld.legOuterCircAng = 0.0;
-        ru->ld.legAngle = ru->ld.legOuterCircAng;
-        ru->ld.legCircleSize = 0.025;
+            ru->ld.legThick = 0.1;
+            ru->ld.circR = ru->legRatio * 1000.5;
+            ru->ld.legLen = 0.25 * 0.5;
+            ru->ld.legOuterCircAng = 0.0;
+            ru->ld.legAngle = ru->ld.legOuterCircAng;
+            ru->ld.legCircleSize = 0.025;
 
-        ru->size = glm::vec2(0.75, 1.5);
+            ru->size = glm::vec2(0.75, 1.5);
 
-        vkUnmapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory);
+            vkUnmapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory);
+        }
     }
 
     void createBody(b2Vec2 pos)

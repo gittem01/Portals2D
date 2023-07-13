@@ -39,13 +39,6 @@ void PlayerShader::prepareUniforms()
     alignedSize = thinDrawer->pad_uniform_buffer_size(sizeof(s_dRenderPlayerUbo));
     alignedSize2 = thinDrawer->pad_uniform_buffer_size(sizeof(s_renderPlayerUbo));
 
-    lastAllocationPos = 0;
-
-    for (int i = 0; i < UNIFORM_ALLOC_COUNT_PLAYER; i++)
-    {
-        availableOffsets[i] = i * alignedSize;
-    }
-
     uniformBuffers.resize(bufferSize);
 
     for (int j = 0; j < bufferSize; j++)
@@ -54,7 +47,7 @@ void PlayerShader::prepareUniforms()
     }
 
     thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT_PLAYER, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_PLAYER);
-    thinDrawer->uniformHelper(alignedSize2, uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    thinDrawer->uniformHelper(alignedSize2 * UNIFORM_ALLOC_COUNT_PLAYER_2, uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_PLAYER_2);
 }
 
 void PlayerShader::setupDescriptorSetLayout()
@@ -68,7 +61,7 @@ void PlayerShader::setupDescriptorSetLayout()
         vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
     VkDescriptorSetLayoutBinding layoutBinding2 =
-        vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1);
+        vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1);
 
     VkDescriptorSetLayoutBinding bindings[] = { layoutBinding, layoutBinding2 };
 
@@ -141,7 +134,6 @@ void PlayerShader::setupDescriptorSet()
     writeDescriptorSet.dstBinding = 0;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 
-    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     writeDescriptorSet.pBufferInfo = &uniformBuffers[1]->descriptor;
     writeDescriptorSet.dstBinding = 1;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

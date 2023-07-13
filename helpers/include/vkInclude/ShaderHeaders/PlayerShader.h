@@ -2,7 +2,8 @@
 
 #include <ShaderBase.h>
 
-#define UNIFORM_ALLOC_COUNT_PLAYER 64
+#define UNIFORM_ALLOC_COUNT_PLAYER 256
+#define UNIFORM_ALLOC_COUNT_PLAYER_2 8
 
 
 typedef struct legData
@@ -49,10 +50,8 @@ class PlayerShader : public ShaderBase
 private:
     PlayerShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
-    int lastAllocationPos;
     int alignedSize;
     int alignedSize2;
-    uint32_t availableOffsets[UNIFORM_ALLOC_COUNT_PLAYER];
 
     void prepareVertexData();
     void prepareUniforms();
