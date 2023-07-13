@@ -83,7 +83,7 @@ void Camera::update()
 	}
 	
 
-	Sounder::object->listenerPos = glm::vec3(pos.x, pos.y, 4.0f / (zoom * zoom));
+	Sounder::object->listenerPos = glm::vec3(pos.x, pos.y, 16.0f / (zoom * zoom));
 
 	updateOrtho();
 }

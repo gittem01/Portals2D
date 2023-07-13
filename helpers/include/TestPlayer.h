@@ -35,6 +35,8 @@ public:
     float lastBodyHoldTime;
     float releaseRequestTime;
     float holdERequestTime;
+    float holdAngle;
+    float angVal;
     bool shouldRelease;
     bool holdColliding;
 
@@ -100,6 +102,8 @@ public:
         lastBodyHoldTime = 0.0f;
         releaseRequestTime = -1.0f;
         holdERequestTime = -1.0f;
+        holdAngle = 0.0f;
+        angVal = b2_pi * 0.1f;
         shouldRelease = false;
         holdColliding = false;
 
@@ -998,6 +1002,26 @@ public:
         return portalGun;
     }
 
+    void setXColor(bool canBlue, bool canRed)
+    {
+        if (canBlue && canRed)
+        {
+            gData.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        else if (canBlue)
+        {
+            gData.color = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
+        }
+        else if (canRed)
+        {
+            gData.color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+        }
+        else
+        {
+            gData.color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+    }
+
     void handlePortalCD(float dt)
     {
         extern ThinDrawer* thinDrawer;
@@ -1031,6 +1055,11 @@ public:
 
         if (rayCaster.found && !wh->keyData[GLFW_KEY_LEFT_CONTROL])
         {
+            bool canCreateBlue = canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA);
+            bool canCreateRed =  canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB);
+
+            setXColor(canCreateBlue, canCreateRed);
+
             glm::vec2 np1 = glm::vec2(rayCaster.rayPoint.x, rayCaster.rayPoint.y);
             gData.positions.z = np1.x;
             gData.positions.w = np1.y;
@@ -1046,7 +1075,7 @@ public:
 
             if (wh->mouseData[2] > 0 && glfwGetTime() - lastPortalCreationTimeA > 0.4f)
             {
-                if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA))
+                if (canCreateBlue)
                 {
                     b2Body* fixBody = rayCaster.edgeFix->GetBody();
                     if (portalA)
@@ -1116,7 +1145,7 @@ public:
             }
             else if (wh->mouseData[3] > 0 && glfwGetTime() - lastPortalCreationTimeB > 0.4f)
             {
-                if (canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB))
+                if (canCreateRed)
                 {
                     b2Body* fixBody = rayCaster.edgeFix->GetBody();
                     if (portalB)
@@ -1295,6 +1324,16 @@ public:
             }
         }
 
+        for (PortalBody* pb : indx->pbIndices)
+        {
+            b2Vec2 vel = pb->body->GetLinearVelocity();
+            if (vel.Length() > 10.0f)
+            {
+                vel.Normalize();
+                pb->body->SetLinearVelocity(10.0f * vel);
+            }
+        }
+
         indx = holdGun->worldIndex;
         for (auto iter = indx->destroyCallbacks.rbegin(); iter != indx->destroyCallbacks.rend(); iter++)
         {
@@ -1396,7 +1435,7 @@ public:
                 releaseB();
                 return;
             }
-            else if (releaseRequestTime > 0.0f && glfwGetTime() - releaseRequestTime > 0.25f)
+            else if (releaseRequestTime > 0.0f && glfwGetTime() - releaseRequestTime > 0.15f)
             {
                 releaseB();
                 return;
@@ -1439,35 +1478,46 @@ public:
                 ThinDrawer::object->registerDebugLine(glm::vec4(pos.x, pos.y, desiredPos.x, desiredPos.y), glm::vec4(1.0, 0.0, 1.0, 1.0), 0.15, 0.5);
                 b2Vec2 diff = desiredPos - holdBody->body->GetPosition();
                 float diffLen = diff.Length();
+                diffLen = pow(diffLen, 2.0f);
                 diffLen = fmin(diffLen, 5.0f);
 
                 diff.Normalize();
                 diff = diffLen * diff;
 
-                b2Vec2 normVel = holdBody->body->GetLinearVelocity(); normVel.Normalize();
-                if (b2Dot(normVel, diff) < 0.0f || (lastHoldPos - holdBody->body->GetPosition()).Length() < 3.0f * dt || holdConnection)
+                holdAngle += angVal;
+                if (holdAngle > b2_pi / 8.0f)       angVal = -b2_pi * 0.02f;
+                else if (holdAngle < -b2_pi / 8.0f) angVal = +b2_pi * 0.02f;
+
+
+                if (!holdColliding)
                 {
-                    pWorld->rayHandler->sendRay(pos, dir, 1.5f, pBody);
-                    bool rel = true;
+                    b2Vec2 newDir = PortalWorld::rotateVec(dir, holdAngle);
+                    pWorld->rayHandler->sendRay(pos, newDir, 1.5f, pBody);
                     if (pWorld->rayHandler->closestFixture)
                     {
+                        bool rel = true;
                         bodyData* bData = (bodyData*)pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
-                        if (bData && bData->data && bData->type == B_PORTAL_BODY)
+                        if (bData && bData->extraData && bData->type == B_PORTAL_BODY)
                         {
-                            if (holdBody->worldIndex == ((PortalBody*)bData->data)->worldIndex)
+                            PortalBody* pb = (PortalBody*)bData->data;
+                            if (pb->worldIndex == holdBody->worldIndex)
                             {
                                 rel = false;
                             }
                         }
-                    }
 
-                    if (rel && releaseRequestTime < 0.0f)
-                    {
-                        releaseRequestTime = glfwGetTime();
+                        if (rel)
+                        {
+                            if (releaseRequestTime < 0.0) releaseRequestTime = glfwGetTime();
+                        }
+                        else
+                        {
+                            releaseRequestTime = -1.0f;
+                        }
                     }
-                    else if (!rel)
+                    else
                     {
-                        releaseRequestTime = -1.0f;
+                        if (releaseRequestTime < 0.0) releaseRequestTime = glfwGetTime();
                     }
                 }
                 else
@@ -1480,7 +1530,14 @@ public:
                 {
                     relVel = -pWorld->getRelativePortalPosition_L(relVel, holdConnection);
                 }
-                holdBody->body->SetLinearVelocity(3.0f * diff + relVel);
+                
+                b2Vec2 vv = holdBody->body->GetLinearVelocity();
+                float vvLen = vv.Length();
+                float m = 0.9f;
+                b2Vec2 newVel = m * vv + 1.0f * diff + dt * 30.0f * relVel;
+                //newVel = PortalWorld::project(newVel, diff);
+
+                holdBody->body->SetLinearVelocity(newVel);
                 
                 float rotRatio = 1.0f - dt * 0.8f;
                 holdBody->body->SetAngularVelocity(fmin(holdBody->body->GetAngularVelocity() * rotRatio, b2_pi));
@@ -1771,20 +1828,17 @@ public:
         else if (!contactBody)
         {
             //printf("3\n");
-            //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 0.5f);
             setFriction = 0.0;
         }
         else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
         {
             //printf("4\n");
             // kinematic body
-            //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
             setFriction = 2.0;
         }
         else if (contactBody && contactType != b2_dynamicBody && onAirFor == 0.0f)
         {
             //printf("5\n");
-            //lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 15.0f);
             setFriction = 2.0;
         }
 
