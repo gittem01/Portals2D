@@ -15,14 +15,13 @@ layout (set = 2, binding = 0) uniform UBO
 {
 	mat4 modelMatrix;
 	int isMirrored;
-	int isMirrored2;
 } ubo;
 
 void main() 
 {
 	o_texCoord = i_texCoord;
 	vec2 pos = inPos.xy;
-	if ((ubo.isMirrored ^ ubo.isMirrored2) == 1)
+	if (ubo.isMirrored == 1)
 	{
 		pos.x *= -1.0;;
 	}

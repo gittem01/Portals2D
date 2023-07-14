@@ -9,7 +9,6 @@ typedef struct
 {
     glm::mat4 modelMatrix;
     int isMirrored;
-    int isMirrored2;
 } s_renderBodyUbo;
 
 typedef struct

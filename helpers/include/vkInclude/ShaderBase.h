@@ -94,11 +94,10 @@ class ShaderBase
 
 protected:
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    std::vector<VkDescriptorSet> descriptorSets;
     std::vector<s_texture*> textureData;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
-    
-    std::vector<VkDescriptorSet> descriptorSets;
 
     std::vector<s_buffers*> buffers;
     std::vector<s_uniformBuffer*> uniformBuffers;

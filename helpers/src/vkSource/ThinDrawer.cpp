@@ -76,9 +76,9 @@ void ThinDrawer::initExtra()
 
     setupDescriptorPool();
 
-    IOHelper::loadTexture("white.png");
-
     ShaderBase::init(this);
+    ShaderBase::setSharedLayout(this);
+    ShaderBase::writeSharedDescriptors(this);
 
     debugCircleShader->init();
     debugLineShader->init();
@@ -95,6 +95,8 @@ void ThinDrawer::initExtra()
     laserShader->init();
     gunEffect->init();
     playerShader->init();
+
+    IOHelper::loadTexture("white.png");
 
     initImgui();
 }
@@ -524,13 +526,12 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
             uboVS->isMirrored = renderBody->portalBody->isMirrored;
             vkUnmapMemory(logicalDevice, bodyShader->uniformBuffers[0]->memory);
 
-            int fixNum = 0;
             for (s_renderStruct* renderStruct : renderBody->renderFixtures)
             {
                 renderStruct->renderDisabled = false;
                 s_renderFixtureUbo* fixUbo;
                 CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader->uniformBuffers[1]->memory,
-                    renderBody->renderFixtures[fixNum]->dynamicOffsets[lastSwapChainImageIndex].fixtureOffsets, bodyShader->alignedSize_fixture, 0, (void**)&fixUbo));
+                    renderStruct->dynamicOffsets[lastSwapChainImageIndex].fixtureOffsets, bodyShader->alignedSize_fixture, 0, (void**)&fixUbo));
                 if (renderStruct->pbfData->pCollisions.size() > 0)
                 {
                     for (int i = 0; i < renderStruct->pbfData->pCollisions.size(); i++)
@@ -553,8 +554,6 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
                     fixUbo->numPortals = 0;
                 }
                 vkUnmapMemory(logicalDevice, bodyShader->uniformBuffers[1]->memory);
-
-                fixNum++;
             }
         }
     }
@@ -962,6 +961,7 @@ void ThinDrawer::portalCreateCallback(Portal* portal)
         ppUbo->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         ppUbo->portalPoints = glm::vec4(portal->points[0].x, portal->points[0].y, portal->points[1].x, portal->points[1].y);
         ppUbo->data0 = glm::vec4(0.6f, 1.0f, glfwGetTime(), 3.0f);
+        ppUbo->data1.z = thinDrawer->gameTime;
         vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
     }
 }
