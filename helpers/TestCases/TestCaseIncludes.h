@@ -7,26 +7,26 @@
 #include <TestCase7.h>
 #include <TestCase8.h>
 
-BaseTestCase* newTest(ThinDrawer* td, int testCaseNum)
+BaseTestCase* newTest(Game* game, int testCaseNum)
 {
     switch (testCaseNum)
     {
         case 1:
-            return new TestCase1(td);
+            return new TestCase1(game);
         case 2:
-            return new TestCase2(td);
+            return new TestCase2(game);
         case 3:
-            return new TestCase3(td);
+            return new TestCase3(game);
         case 4:
-            return new TestCase4(td);
+            return new TestCase4(game);
         case 5:
-            return new TestCase5(td);
+            return new TestCase5(game);
         case 6:
-            return new TestCase6(td);
+            return new TestCase6(game);
         case 7:
-            return new TestCase7(td);
+            return new TestCase7(game);
         case 8:
-            return new TestCase8(td);
+            return new TestCase8(game);
         default:
             return nullptr;
     }

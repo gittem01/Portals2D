@@ -16,7 +16,7 @@ public:
 
     float t = 0.0f;
 
-    TestCase8(ThinDrawer* td) : BaseTestCase(td)
+    TestCase8(Game* game) : BaseTestCase(game)
     {
         testCaseItem = 7;
 
@@ -30,7 +30,7 @@ public:
         b2BodyDef bDef;
         bDef.type = b2_dynamicBody;
         bDef.position = b2Vec2(20.0, 0.0);
-        b2Body* body = pWorld->CreateBody(&bDef);
+        b2Body* body = g->pWorld->CreateBody(&bDef);
 
         const int polyCount = 20;
         const int circleCount = 20;
@@ -85,8 +85,8 @@ public:
     {
         srand(2);
         srand(glfwGetTime() * 1000);
-        pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
-        pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
+        g->pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
+        g->pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
 
@@ -97,7 +97,7 @@ public:
         for (int i = 0; i < n; i++)
         {
             float inc = 0.1f + getRand() * 0.2f + 0.08f;
-            body = createEdge(startPos + b2Vec2(inc, 0.0f), startPos, pWorld, b2_staticBody, true);
+            body = createEdge(startPos + b2Vec2(inc, 0.0f), startPos, g->pWorld, b2_staticBody, true);
             startPos.x += inc;
             fixtureData* fixData;
             g_EdgeData* edgeData;
@@ -120,15 +120,15 @@ public:
             lastData = edgeData;
         }
 
-        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), pWorld, b2_staticBody, true);
-        createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), pWorld, b2_staticBody, true);
-        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(-10.0f, -10.0f), pWorld, b2_staticBody, true);
-        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), g->pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), g->pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(-10.0f, -10.0f), g->pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), g->pWorld, b2_staticBody, true);
 
-        body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), pWorld, b2_kinematicBody, true);
+        body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), g->pWorld, b2_kinematicBody, true);
         body->SetTransform(b2Vec2(6.0f, 0.0f), -b2_pi * 0.0f);
 
-        createEdge(b2Vec2(12.0f, +3.0f), b2Vec2(6.0f, +3.0f), pWorld, b2_kinematicBody, true);
+        createEdge(b2Vec2(12.0f, +3.0f), b2Vec2(6.0f, +3.0f), g->pWorld, b2_kinematicBody, true);
 
         bodyToMove = body;
         /*body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
@@ -141,20 +141,20 @@ public:
         edgeData->fix = body->GetFixtureList();
         edgeData->fix->GetUserData().pointer = (uintptr_t)fixData;
 
-        portal1 = pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
-        portal2 = pWorld->createPortal(b2Vec2(-2.0f, -3.0f), portal1->dir, portal1->size);
+        portal1 = g->pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
+        portal2 = g->pWorld->createPortal(b2Vec2(-2.0f, -3.0f), portal1->dir, portal1->size);
 
         portal1->connect(portal2, true, 0, 0);
 
         /*
-        Portal* portal3 = pWorld->createPortal(b2Vec2(-0.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
-        Portal* portal4 = pWorld->createPortal(b2Vec2(-0.0f, -3.0f), portal1->dir, portal1->size);
+        Portal* portal3 = g->pWorld->createPortal(b2Vec2(-0.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
+        Portal* portal4 = g->pWorld->createPortal(b2Vec2(-0.0f, -3.0f), portal1->dir, portal1->size);
 
-        Portal* portal5 = pWorld->createPortal(b2Vec2(+2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
-        Portal* portal6 = pWorld->createPortal(b2Vec2(+2.0f, -3.0f), portal1->dir, portal1->size);
+        Portal* portal5 = g->pWorld->createPortal(b2Vec2(+2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
+        Portal* portal6 = g->pWorld->createPortal(b2Vec2(+2.0f, -3.0f), portal1->dir, portal1->size);
 
-        Portal* portal7 = pWorld->createPortal(b2Vec2(+4.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
-        Portal* portal8 = pWorld->createPortal(b2Vec2(+4.0f, -3.0f), portal1->dir, portal1->size);
+        Portal* portal7 = g->pWorld->createPortal(b2Vec2(+4.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
+        Portal* portal8 = g->pWorld->createPortal(b2Vec2(+4.0f, -3.0f), portal1->dir, portal1->size);
 
         portal1->connect(portal2, true, 0, 0);
         portal1->connect(portal2, false, 1, 1);
@@ -190,33 +190,33 @@ public:
         };
 
         startPos = b2Vec2(10.0f, 4.0f);
-        lastBody = createCircle(startPos, 0.5f, pWorld, b2_dynamicBody);
-        PortalBody* lastPb = pWorld->createPortalBody(lastBody);
-        thinDrawer->debug_addPortalBody(lastPb);
+        lastBody = createCircle(startPos, 0.5f, g->pWorld, b2_dynamicBody);
+        PortalBody* lastPb = g->pWorld->createPortalBody(lastBody);
+        td->debug_addPortalBody(lastPb);
 
         rbdy = tp->pBody->at(0)->body;
         angles = tp->pBody->at(0)->worldIndex->angles;
         outerEdges = tp->pBody->at(0)->worldIndex->outerEdges;
         outerVertices = tp->pBody->at(0)->worldIndex->outerVertices;
 
-        thinDrawer->addPortalBody(lastPb, {"circle.png"});
+        td->addPortalBody(lastPb, {"circle.png"});
 
         lastBody->SetLinearDamping(0.0f);
 
         startPos = b2Vec2(0.0f, -9.0f);
-        lastBody = createBox(startPos, b2Vec2(6.7f, 0.2f), pWorld, b2_dynamicBody, 0.0f);
-        lastPb = pWorld->createPortalBody(lastBody);
+        lastBody = createBox(startPos, b2Vec2(6.7f, 0.2f), g->pWorld, b2_dynamicBody, 0.0f);
+        lastPb = g->pWorld->createPortalBody(lastBody);
         platform = &lastPb->worldIndex->pbIndices;
         lastBody->SetLinearVelocity(b2Vec2(2.0, 0.0));
         lastBody->SetLinearDamping(0.0);
-        thinDrawer->debug_addPortalBody(lastPb);
-        thinDrawer->addPortalBody(lastPb, {"grad2.png"});
+        td->debug_addPortalBody(lastPb);
+        td->addPortalBody(lastPb, {"grad2.png"});
         names = {};
-        thinDrawer->addPortalBody_3d(lastPb, names);
+        td->addPortalBody_3d(lastPb, names);
 
         /*b2Body* bdy = randomBody();
-        lastPb = pWorld->createPortalBody(bdy);
-        thinDrawer->debug_addPortalBody(lastPb);*/
+        lastPb = g->pWorld->createPortalBody(bdy);
+        td->debug_addPortalBody(lastPb);*/
 
         b2PolygonShape pShape;
         b2Vec2 points[] = {
@@ -228,16 +228,16 @@ public:
         b2BodyDef bDefX;
         bDefX.position = b2Vec2(10.0f, 0.0f);
         bDefX.type = b2_dynamicBody;
-        b2Body* bodyX = pWorld->CreateBody(&bDefX);
+        b2Body* bodyX = g->pWorld->CreateBody(&bDefX);
         bodyX->CreateFixture(&pShape, 1.0f);
 
-        PortalBody* pbx = pWorld->createPortalBody(bodyX);
+        PortalBody* pbx = g->pWorld->createPortalBody(bodyX);
 
-        thinDrawer->debug_addPortalBody(pbx);
-        thinDrawer->addPortalBody(pbx, {});
+        td->debug_addPortalBody(pbx);
+        td->addPortalBody(pbx, {});
 
-        DefaultCube* dc1 = new DefaultCube(pWorld);
-        DefaultCube* dc2 = new DefaultCube(pWorld);
+        DefaultCube* dc1 = new DefaultCube(g->pWorld);
+        DefaultCube* dc2 = new DefaultCube(g->pWorld);
         dc2->pBody->at(0)->body->SetTransform(b2Vec2(5.0, 0.0), 0.0);
     }
 
@@ -249,11 +249,11 @@ public:
         {
             b2Vec2 b2P1 = rbdy->GetWorldPoint(b2Vec2(ps.x, ps.y));
             b2Vec2 b2P2 = rbdy->GetWorldPoint(b2Vec2(ps.z, ps.w));
-            thinDrawer->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P2.x, b2P2.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.03, 0.5);
-            thinDrawer->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P1.x, b2P1.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.15, 0.5);
+            td->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P2.x, b2P2.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.03, 0.5);
+            td->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P1.x, b2P1.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.15, 0.5);
         }
 
-        glm::vec2 mc = thinDrawer->wh->cam->getMouseCoords();
+        glm::vec2 mc = td->wh->cam->getMouseCoords();
         b2Vec2 diff = b2Vec2(mc.x, mc.y) - rbdy->GetPosition();
         diff = PortalWorld::rotateVec(diff, -rbdy->GetAngle());
         diff.Normalize();
@@ -284,7 +284,7 @@ public:
         b2Vec2 farPos = rbdy->GetPosition() + vDist * diff;
         b2Vec2 fp1 = farPos - 100.0 * rotDiff;
         b2Vec2 fp2 = farPos + 100.0 * rotDiff;
-        thinDrawer->registerDebugLine(glm::vec4(fp1.x, fp1.y, fp2.x, fp2.y), glm::vec4(0.0, 0.0, 1.0, 1.0), 0.06, 0.5);*/
+        td->registerDebugLine(glm::vec4(fp1.x, fp1.y, fp2.x, fp2.y), glm::vec4(0.0, 0.0, 1.0, 1.0), 0.06, 0.5);*/
 
         const float speedAddition = 1.5f;
         const float angSpeedAddition = 0.51f;

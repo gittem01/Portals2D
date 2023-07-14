@@ -1,6 +1,7 @@
 #pragma once
 
 #include <helpers.h>
+#include <Game.h>
 
 #define ENABLE_TESTPLAYER 1
 
@@ -16,30 +17,30 @@ protected:
     bool followPlayer = false;
 
 public:
+    Game* g;
     ThinDrawer* td;
     bool shouldGetNewTest;
     int testCaseItem;
     
-    double lastTime = 0.0;
     double requestedDtPerStep = 0.0015;
-    double deltaTime;
 
     void destroy()
     {
         td->releaseRenderResources();
 
-        delete mjh;
-        delete pWorld;
+        delete g->mjh;
+        delete g->pWorld;
     #if ENABLE_TESTPLAYER
         delete tp;
     #endif
 
-        pWorld = NULL;
+        g->pWorld = NULL;
     }
 
-    BaseTestCase(ThinDrawer* td, const char* name="Test Debug Window")
+    BaseTestCase(Game* game, const char* name="Test Debug Window")
     {
-        this->td = td;
+        this->g = game;
+        this->td = game->thinDrawer;
         this->name = name;
 		refreshItem = 0;
         shouldGetNewTest = false;
@@ -99,32 +100,32 @@ public:
             td->drawDebugPortals = !td->drawDebugPortals;
         }
 
-        if (isPaused)
+        if (g->isPaused)
         {
             if (ImGui::Button("Resume"))
             {
-                isPaused = false;
+                g->isPaused = false;
             }
         }
         else
         {
             if (ImGui::Button("Stop"))
             {
-                isPaused = true;
+                g->isPaused = true;
             }
         }
         ImGui::SameLine();
         if (ImGui::Button("Tick"))
         {
-            isPaused = true;
-            tick = true;
+            g->isPaused = true;
+            g->tick = true;
         }
 
-        float oldVal = mjh->bodyRadius;
-        ImGui::SliderFloat("MouseSelectionArea", &mjh->bodyRadius, mjh->radiusLimits[0], mjh->radiusLimits[1], "%.2f", 1);
-        if (oldVal != mjh->bodyRadius)
+        float oldVal = g->mjh->bodyRadius;
+        ImGui::SliderFloat("MouseSelectionArea", &g->mjh->bodyRadius, g->mjh->radiusLimits[0], g->mjh->radiusLimits[1], "%.2f", 1);
+        if (oldVal != g->mjh->bodyRadius)
         {
-            mjh->createMouseBody();
+            g->mjh->createMouseBody();
         }
 
         ImGui::End();
@@ -136,50 +137,43 @@ public:
 
     void beforeCreate()
     {
-        thinDrawer->debugLineRegistry.clear();
+        td->debugLineRegistry.clear();
 
-        if (!contactListener)
+        if (!g->contactListener)
         {
-            contactListener = new ContactListener();
+            g->contactListener = new ContactListener();
         }
-        pWorld = new PortalWorld();
-        pWorld->SetContactListener(contactListener);
+        g->pWorld = new PortalWorld();
+        g->pWorld->SetContactListener(g->contactListener);
         b2Vec2 gravity(0.0f, -10.0f);
-        pWorld->SetGravity(gravity);
+        g->pWorld->SetGravity(gravity);
 
-        mjh = new mouseJointHandler(pWorld, td->wh);
+        g->mjh = new mouseJointHandler(g->pWorld, td->wh);
 
-        thinDrawer->pWorld = pWorld;
-        thinDrawer->beforeCreate();
+        td->pWorld = g->pWorld;
+        td->beforeCreate();
 
     #if ENABLE_TESTPLAYER
-        tp = new TestPlayer(pWorld, td->wh);
+        tp = new TestPlayer(g);
     #endif
     }
 
     void afterCreate()
     {
-        thinDrawer->afterCreate();
-
-        lastTime = glfwGetTime();
+        td->afterCreate();
     }
 
     virtual void onUpdate()
     {
-        thinDrawer->debugLineRegistry.clear();
+        td->debugLineRegistry.clear();
 
-        deltaTime = glfwGetTime() - lastTime;
-        lastTime = glfwGetTime();
-
-        thinDrawer->pDeltaTime = deltaTime;
-
-        int requiredIters = fmax(deltaTime / requestedDtPerStep, 1);
-        double requiredDt = deltaTime / requiredIters;
+        int requiredIters = fmax(g->deltaTime / requestedDtPerStep, 1);
+        double requiredDt = g->deltaTime / requiredIters;
         requiredIters = fmin(requiredIters, 10);
 #if ENABLE_TESTPLAYER
         if (followPlayer) tp->camHandle();
 #endif
-        if (!pWorld)
+        if (!g->pWorld)
         {
             return;
         }
@@ -187,8 +181,8 @@ public:
         {
 			// speeded up 2x times
             float dt = requiredDt * 2.0;
-            mjh->mouseHandler(frame, requiredIters);
-            pWorld->PortalStep(dt, 8, 3);
+            g->mjh->mouseHandler(g->frame, requiredIters);
+            g->pWorld->PortalStep(dt, 8, 3);
 #if ENABLE_TESTPLAYER
             tp->update(dt, requiredIters);
 #endif
@@ -199,21 +193,19 @@ public:
     {
         extern BaseTestCase* testCase;
 
-        tick = false;
+        g->tick = false;
         if (wh->keyData[GLFW_KEY_P] == 2)
         {
-            isPaused = !isPaused;
-            lastTime = glfwGetTime() - 0.01;
+            g->isPaused = !g->isPaused;
         }
         else if (wh->keyData[GLFW_KEY_O] == 2)
         {
-            isPaused = true;
-            tick = true;
-            lastTime = glfwGetTime() - 0.01;
+            g->isPaused = true;
+            g->tick = true;
         }
         if (wh->keyData[GLFW_KEY_S] == 2)
         {
-            thinDrawer->drawReleases ^= 1;
+            td->drawReleases ^= 1;
         }
     }
 

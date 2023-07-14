@@ -3,7 +3,7 @@
 class TestCase3 : public BaseTestCase
 {
 public:
-    TestCase3(ThinDrawer* td) : BaseTestCase(td)
+    TestCase3(Game* game) : BaseTestCase(game)
     {
         testCaseItem = 2;
         
@@ -16,8 +16,8 @@ public:
     {
         srand(7);
         b2Vec2 gravity(0.0f, -9.81f);
-        pWorld->SetGravity(gravity);
-        //pWorld->SetContinuousPhysics(false);
+        g->pWorld->SetGravity(gravity);
+        //g->pWorld->SetContinuousPhysics(false);
         float r = 10.0f;
         const int n = 15; // n * 2 portals will be created
         float anglePlus = glm::radians(0.0f);
@@ -31,7 +31,7 @@ public:
             b2Vec2 p2 = b2Vec2(sin(angle2) * r, cos(angle2) * r);
             float l = (p1 - p2).Length();
             b2Vec2 pos = 0.5f * (p1 + p2);
-            Portal* portal = pWorld->createPortal(pos, -pos, l / 2.0f);
+            Portal* portal = g->pWorld->createPortal(pos, -pos, l / 2.0f);
             circlePortals[i] = portal;
         }
         for (int i = 0; i < n; i++)
@@ -46,15 +46,15 @@ public:
             b2Vec2 size = b2Vec2(sizeM + sizeM * (rand() / (float)RAND_MAX), sizeM + sizeM * (rand() / (float)RAND_MAX));
             float r = sizeM + 2.0f * sizeM * (rand() / (float)RAND_MAX);
 
-            b2Body* body1 = createBox(b2Vec2(0, 0), size, pWorld, b2_dynamicBody);
-            b2Body* body2 = createCircle(b2Vec2(rand() % 5 + r, rand() % 5), r, pWorld, b2_dynamicBody);
+            b2Body* body1 = createBox(b2Vec2(0, 0), size, g->pWorld, b2_dynamicBody);
+            b2Body* body2 = createCircle(b2Vec2(rand() % 5 + r, rand() % 5), r, g->pWorld, b2_dynamicBody);
             body1->SetLinearVelocity(b2Vec2(0.0f, 1000.0f));
 
-            PortalBody* pb1 = pWorld->createPortalBody(body1);
-            PortalBody* pb2 = pWorld->createPortalBody(body2);
+            PortalBody* pb1 = g->pWorld->createPortalBody(body1);
+            PortalBody* pb2 = g->pWorld->createPortalBody(body2);
 
-            thinDrawer->debug_addPortalBody(pb1);
-            thinDrawer->debug_addPortalBody(pb2);
+            td->debug_addPortalBody(pb1);
+            td->debug_addPortalBody(pb2);
         }
     }
 };

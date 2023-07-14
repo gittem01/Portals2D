@@ -3,7 +3,8 @@
 class TestCase4 : public BaseTestCase
 {
 public:
-    TestCase4(ThinDrawer* td) : BaseTestCase(td) {
+    TestCase4(Game* game) : BaseTestCase(game)
+    {
         testCaseItem = 3;
         
         beforeCreate();
@@ -13,7 +14,7 @@ public:
 
     void onCreate(){
         b2Vec2 gravity(0.0f, 0.0f);
-        pWorld->SetGravity(gravity);
+        g->pWorld->SetGravity(gravity);
 
         float yPos = -4.0f;
         float portalSize = 3.0f;
@@ -23,13 +24,13 @@ public:
 
         Portal* linePortals[n];
 
-        createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-100.0f, yPos - portalSize), b2Vec2(+100.0f, yPos - portalSize), g->pWorld, b2_staticBody);
 
         //b2Body* body2 = createCircle(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), 1, pWorld, b2_dynamicBody);
         //b2Body* body3 = createCircle(b2Vec2(2.0f + bias, yPos + 1.5f), 1, pWorld, b2_dynamicBody);
 
-        b2Body* body2 = createPortalCube(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
-        b2Body* body3 = createPortalCube(b2Vec2(2.0f + bias, yPos + 1.5f), b2Vec2(1, 1), pWorld, b2_dynamicBody);
+        b2Body* body2 = createPortalCube(b2Vec2(-n * d - 2.0f + bias, yPos - 1.5f), b2Vec2(1, 1), g->pWorld, b2_dynamicBody);
+        b2Body* body3 = createPortalCube(b2Vec2(2.0f + bias, yPos + 1.5f), b2Vec2(1, 1), g->pWorld, b2_dynamicBody);
 
         body2->SetLinearDamping(0.0f);
         body3->SetLinearDamping(0.0f);
@@ -37,15 +38,15 @@ public:
         b2Vec2 vel(3, 0);
         body2->SetLinearVelocity(vel);
 
-        PortalBody* pb2 = pWorld->createPortalBody(body2);
-        PortalBody* pb3 = pWorld->createPortalBody(body3);
+        PortalBody* pb2 = g->pWorld->createPortalBody(body2);
+        PortalBody* pb3 = g->pWorld->createPortalBody(body3);
 
-        thinDrawer->debug_addPortalBody(pb2);
-        thinDrawer->debug_addPortalBody(pb3);
+        td->debug_addPortalBody(pb2);
+        td->debug_addPortalBody(pb3);
 
         float p = -n * d + bias;
         for (int i = 0; i < n; i++){
-            Portal* portal = pWorld->createPortal(b2Vec2(p, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
+            Portal* portal = g->pWorld->createPortal(b2Vec2(p, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
             linePortals[i] = portal;
             p += d;
         }
@@ -58,14 +59,14 @@ public:
             linePortals[i]->connect(linePortals[i + 1], true, 1, 0);
         }
         
-        createEdge(b2Vec2(p + d, yPos + portalSize), b2Vec2((-n - 2) * d + bias, yPos + portalSize), pWorld, b2_staticBody);
+        createEdge(b2Vec2(p + d, yPos + portalSize), b2Vec2((-n - 2) * d + bias, yPos + portalSize), g->pWorld, b2_staticBody);
 
         const int iter = 120;
         for (int i = 0; i < iter; i++){
-            pWorld->PortalStep(1.0f / iter, 8, 3);
+            g->pWorld->PortalStep(1.0f / iter, 8, 3);
         }
-        Portal* endPortal1 = pWorld->createPortal(b2Vec2(p, yPos), b2Vec2(-1.0f, +0.0f), portalSize);
-        Portal* endPortal2 = pWorld->createPortal(b2Vec2((-n - 1) * d + bias, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
+        Portal* endPortal1 = g->pWorld->createPortal(b2Vec2(p, yPos), b2Vec2(-1.0f, +0.0f), portalSize);
+        Portal* endPortal2 = g->pWorld->createPortal(b2Vec2((-n - 1) * d + bias, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
 
         endPortal1->connect(endPortal2);
         
@@ -77,14 +78,14 @@ public:
             portalBody->body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
         }
         for (int i = 0; i < iter; i++){
-            pWorld->PortalStep(1.0f / iter, 8, 3);
+            g->pWorld->PortalStep(1.0f / iter, 8, 3);
         }
         for (PortalBody* portalBody : pb2->worldIndex->pbIndices){
             portalBody->body->SetLinearVelocity(vel);
         }
         
-        Portal* endPortal3 = pWorld->createPortal(b2Vec2(p + d, yPos), b2Vec2(-1.0f, +0.0f), portalSize);
-        Portal* endPortal4 = pWorld->createPortal(b2Vec2((-n - 2) * d + bias, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
+        Portal* endPortal3 = g->pWorld->createPortal(b2Vec2(p + d, yPos), b2Vec2(-1.0f, +0.0f), portalSize);
+        Portal* endPortal4 = g->pWorld->createPortal(b2Vec2((-n - 2) * d + bias, yPos), b2Vec2(+1.0f, +0.0f), portalSize);
         endPortal3->connect(endPortal4);
     }
 };

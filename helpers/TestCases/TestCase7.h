@@ -3,7 +3,8 @@
 class TestCase7 : public BaseTestCase
 {
 public:
-    TestCase7(ThinDrawer* td) : BaseTestCase(td) {
+    TestCase7(Game* game) : BaseTestCase(game)
+    {
         testCaseItem = 6;
         
         beforeCreate();
@@ -13,7 +14,7 @@ public:
 
     void onCreate(){
         b2Vec2 gravity(0.0f, -40.00f);
-        pWorld->SetGravity(gravity);
+        g->pWorld->SetGravity(gravity);
 
         float roomWidth = 10.0f;
         float roomHeight = 20.0f;
@@ -22,42 +23,42 @@ public:
         int numOfCircles = 100;
 
         // bottom portals
-        Portal* portal1 = pWorld->createPortal(b2Vec2(-roomWidth - 1.0f, bottomPos), b2Vec2(0.0f, +1.0f), roomWidth);
-        Portal* portal2 = pWorld->createPortal(b2Vec2(+roomWidth + 1.0f, bottomPos), b2Vec2(0.0f, +1.0f), roomWidth);
+        Portal* portal1 = g->pWorld->createPortal(b2Vec2(-roomWidth - 1.0f, bottomPos), b2Vec2(0.0f, +1.0f), roomWidth);
+        Portal* portal2 = g->pWorld->createPortal(b2Vec2(+roomWidth + 1.0f, bottomPos), b2Vec2(0.0f, +1.0f), roomWidth);
 
         // top portals
-        Portal* portal3 = pWorld->createPortal(b2Vec2(-roomWidth - 1.0f, bottomPos + roomHeight), b2Vec2(0.0f, -1.0f), roomWidth);
-        Portal* portal4 = pWorld->createPortal(b2Vec2(+roomWidth + 1.0f, bottomPos + roomHeight), b2Vec2(0.0f, -1.0f), roomWidth);
+        Portal* portal3 = g->pWorld->createPortal(b2Vec2(-roomWidth - 1.0f, bottomPos + roomHeight), b2Vec2(0.0f, -1.0f), roomWidth);
+        Portal* portal4 = g->pWorld->createPortal(b2Vec2(+roomWidth + 1.0f, bottomPos + roomHeight), b2Vec2(0.0f, -1.0f), roomWidth);
 
         portal1->connect(portal2);
         portal3->connect(portal4);
 
-        createEdge(b2Vec2(-roomWidth * 2 - 1, bottomPos), b2Vec2(-roomWidth * 2 - 1, roomHeight + bottomPos), pWorld, b2_staticBody);
-        createEdge(b2Vec2(-1, bottomPos), b2Vec2(-1, roomHeight + bottomPos), pWorld, b2_staticBody);
+        createEdge(b2Vec2(-roomWidth * 2 - 1, bottomPos), b2Vec2(-roomWidth * 2 - 1, roomHeight + bottomPos), g->pWorld, b2_staticBody);
+        createEdge(b2Vec2(-1, bottomPos), b2Vec2(-1, roomHeight + bottomPos), g->pWorld, b2_staticBody);
 
-        createEdge(b2Vec2(+roomWidth * 2 + 1, bottomPos), b2Vec2(+roomWidth * 2 + 1, roomHeight + bottomPos), pWorld, b2_staticBody);
-        createEdge(b2Vec2(+1, bottomPos), b2Vec2(+1, roomHeight + bottomPos), pWorld, b2_staticBody);
+        createEdge(b2Vec2(+roomWidth * 2 + 1, bottomPos), b2Vec2(+roomWidth * 2 + 1, roomHeight + bottomPos), g->pWorld, b2_staticBody);
+        createEdge(b2Vec2(+1, bottomPos), b2Vec2(+1, roomHeight + bottomPos), g->pWorld, b2_staticBody);
 
         for (int i = 0; i < numOfCubes; i++){
             float sizex = getRand() * 0.5f + 0.8f;
             float sizey = getRand() * 0.5f + 0.8f;
-            b2Body* b = createBox(b2Vec2(-roomWidth - 1, 0.0f), b2Vec2(sizex, sizey), pWorld, b2_dynamicBody);
-            PortalBody* pb = pWorld->createPortalBody(b);
-            thinDrawer->debug_addPortalBody(pb);
+            b2Body* b = createBox(b2Vec2(-roomWidth - 1, 0.0f), b2Vec2(sizex, sizey), g->pWorld, b2_dynamicBody);
+            PortalBody* pb = g->pWorld->createPortalBody(b);
+            td->debug_addPortalBody(pb);
         }
 
         for (int i = 0; i < numOfCircles; i++){
             float size = getRand() * 0.5f + 0.8f;
-            b2Body* b = createCircle(b2Vec2(-roomWidth - 1, 0.0f), size, pWorld, b2_dynamicBody);
-            PortalBody* pb = pWorld->createPortalBody(b);
-            thinDrawer->debug_addPortalBody(pb);
+            b2Body* b = createCircle(b2Vec2(-roomWidth - 1, 0.0f), size, g->pWorld, b2_dynamicBody);
+            PortalBody* pb = g->pWorld->createPortalBody(b);
+            td->debug_addPortalBody(pb);
         }
 
         b2Vec2 p = b2Vec2(roomWidth + 1.0f, +9.4f);
         b2Vec2 s = b2Vec2(roomWidth * 0.75f, 0.3f);
-        b2Body* body4 = createBox(p, s, pWorld, b2_dynamicBody, 0.0f);
-        PortalBody* pb = pWorld->createPortalBody(body4);
-        thinDrawer->debug_addPortalBody(pb);
+        b2Body* body4 = createBox(p, s, g->pWorld, b2_dynamicBody, 0.0f);
+        PortalBody* pb = g->pWorld->createPortalBody(body4);
+        td->debug_addPortalBody(pb);
         b2Vec2 vel(0.0f, 0.0f);
         body4->SetLinearVelocity(vel);
         body4->SetAngularVelocity(2.0f);

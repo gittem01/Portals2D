@@ -15,6 +15,8 @@ ShaderBase::ShaderBase(ThinDrawer* thinDrawer)
 void ShaderBase::init(ThinDrawer* thinDrawer)
 {
     createCommonStorageBuffers(thinDrawer);
+    setSharedLayout(thinDrawer);
+    writeSharedDescriptors(thinDrawer);
 }
 
 void ShaderBase::setSharedLayout(ThinDrawer* thinDrawer)
@@ -92,6 +94,15 @@ void ShaderBase::createCommonStorageBuffers(ThinDrawer* thinDrawer)
         thinDrawer->uniformHelper(alignedSizeFS * initialAllocationSizes[j],
             commonStorageBuffers[j], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, initialAllocationSizes[j]);
     }
+}
+
+void ShaderBase::init()
+{
+    prepareVertexData();
+    prepareUniforms();
+    setupDescriptorSetLayout();
+    preparePipeline();
+    setupDescriptorSet();
 }
 
 VkDescriptorSetLayout ShaderBase::sharedLayout;

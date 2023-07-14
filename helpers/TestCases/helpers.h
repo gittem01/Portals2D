@@ -28,15 +28,6 @@ float getRand()
     return ((double)rand() / RAND_MAX) - 0.5f;
 }
 
-bool isPaused = false;
-bool tick = false;
-int frame = 0;
-PortalWorld* pWorld = nullptr;
-mouseJointHandler* mjh = nullptr;
-ContactListener* contactListener = nullptr;
-ThinDrawer* thinDrawer;
-int totalIter = 2;
-
 // O shaped body
 b2Body* createObody(b2World* world, b2Vec2 bodyPos=b2Vec2(0, 0), float degree=270.0f, int n=20, float thickness=0.3f, float rOut=1.2f, float fd=0.0f, float isMixed=false) {
     b2BodyDef bodyDef;

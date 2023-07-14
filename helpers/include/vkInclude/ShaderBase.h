@@ -129,4 +129,6 @@ protected:
     virtual void setupDescriptorSetLayout() = 0;
     virtual void preparePipeline() = 0;
     virtual void setupDescriptorSet() = 0;
+
+    void init();
 };

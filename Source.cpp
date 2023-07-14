@@ -1,45 +1,10 @@
-#include "TestCaseIncludes.h"
-#include <Sounder.h>
+#include <Game.h>
 
 int main(void)
 {
-    IOHelper::getAssetsFolder();
+    Game* game = new Game();
 
-    thinDrawer = new ThinDrawer(pWorld);
-
-    Sounder* s = new Sounder();
-
-    testCase = newTest(thinDrawer, 8);
-
-    while (!glfwWindowShouldClose(thinDrawer->wh->window))
-    {
-        frame++;
-
-        if (!isPaused || tick)
-        {
-            testCase->onUpdate();
-        }
-        else
-        {
-            thinDrawer->pDeltaTime = 0.0;
-        }
-
-        s->update();
-
-        testCase->imguiRender();
-
-        thinDrawer->renderLoop();
-
-        testCase->keyHandler(thinDrawer->wh);
-
-        if (testCase->shouldGetNewTest)
-        {
-            testCase->destroy();
-            int nextTestCase = testCase->testCaseItem + 1;
-            delete testCase;
-            testCase = newTest(thinDrawer, nextTestCase);
-        }
-    }
+    game->loop();
 
     return 0;
 }

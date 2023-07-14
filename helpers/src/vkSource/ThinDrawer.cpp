@@ -9,6 +9,7 @@
 #include <PortalBody.h>
 #include <GameBase.h>
 #include <IOHelper.h>
+#include <Game.h>
 
 ThinDrawer* ThinDrawer::object = nullptr;
 
@@ -73,12 +74,27 @@ void ThinDrawer::initExtra()
     gunEffect = new GunEffect(this);
     playerShader = new PlayerShader(this);
 
-    prepareVertices();
-    prepareUniformBuffers();
-    setupDescriptorSetLayout();
-    preparePipelines();
     setupDescriptorPool();
-    setupDescriptorSet();
+
+    IOHelper::loadTexture("white.png");
+
+    ShaderBase::init(this);
+
+    debugCircleShader->init();
+    debugLineShader->init();
+    debugPolygonShader->init();
+    whiteWallShader->init();
+    blackWallShader->init();
+    portalShader->init();
+    portalParticleShader->init();
+    dualParticleShader->init();
+    bodyShader3D->init();
+    portalShader3D->init();
+    bodyShader->init();
+    wallLight->init();
+    laserShader->init();
+    gunEffect->init();
+    playerShader->init();
 
     initImgui();
 }
@@ -162,67 +178,6 @@ void ThinDrawer::renderLoop()
     frameNumber++;
 }
 
-void ThinDrawer::prepareVertices()
-{
-    debugCircleShader->prepareVertexData();
-    debugLineShader->prepareVertexData();
-    debugPolygonShader->prepareVertexData();
-    whiteWallShader->prepareVertexData();
-    blackWallShader->prepareVertexData();
-    portalShader->prepareVertexData();
-    portalParticleShader->prepareVertexData();
-    dualParticleShader->prepareVertexData();
-    bodyShader3D->prepareVertexData();
-    portalShader3D->prepareVertexData();
-    bodyShader->prepareVertexData();
-    wallLight->prepareVertexData();
-    laserShader->prepareVertexData();
-    gunEffect->prepareVertexData();
-    playerShader->prepareVertexData();
-}
-
-void ThinDrawer::prepareUniformBuffers()
-{
-    ShaderBase::init(this);
-
-    debugCircleShader->prepareUniforms();
-    debugLineShader->prepareUniforms();
-    debugPolygonShader->prepareUniforms();
-    whiteWallShader->prepareUniforms();
-    blackWallShader->prepareUniforms();
-    portalShader->prepareUniforms();
-    portalParticleShader->prepareUniforms();
-    dualParticleShader->prepareUniforms();
-    bodyShader3D->prepareUniforms();
-    portalShader3D->prepareUniforms();
-    bodyShader->prepareUniforms();
-    wallLight->prepareUniforms();
-    laserShader->prepareUniforms();
-    gunEffect->prepareUniforms();
-    playerShader->prepareUniforms();
-}
-
-void ThinDrawer::setupDescriptorSetLayout()
-{
-    ShaderBase::setSharedLayout(this);
-
-    debugCircleShader->setupDescriptorSetLayout();
-    debugLineShader->setupDescriptorSetLayout();
-    debugPolygonShader->setupDescriptorSetLayout();
-    whiteWallShader->setupDescriptorSetLayout();
-    blackWallShader->setupDescriptorSetLayout();
-    portalShader->setupDescriptorSetLayout();
-    portalParticleShader->setupDescriptorSetLayout();
-    dualParticleShader->setupDescriptorSetLayout();
-    bodyShader3D->setupDescriptorSetLayout();
-    portalShader3D->setupDescriptorSetLayout();
-    bodyShader->setupDescriptorSetLayout();
-    wallLight->setupDescriptorSetLayout();
-    laserShader->setupDescriptorSetLayout();
-    gunEffect->setupDescriptorSetLayout();
-    playerShader->setupDescriptorSetLayout();
-}
-
 void ThinDrawer::preparePipelines()
 {
     debugCircleShader->preparePipeline();
@@ -260,29 +215,6 @@ void ThinDrawer::setupDescriptorPool()
     descriptorPoolInfo.maxSets = 100;
 
     CHECK_RESULT_VK(vkCreateDescriptorPool(logicalDevice, &descriptorPoolInfo, VK_NULL_HANDLE, &descriptorPool));
-}
-
-void ThinDrawer::setupDescriptorSet()
-{
-    ShaderBase::writeSharedDescriptors(this);
-
-    debugCircleShader->setupDescriptorSet();
-    debugLineShader->setupDescriptorSet();
-    debugPolygonShader->setupDescriptorSet();
-    whiteWallShader->setupDescriptorSet();
-    blackWallShader->setupDescriptorSet();
-    portalShader->setupDescriptorSet();
-    portalParticleShader->setupDescriptorSet();
-    dualParticleShader->setupDescriptorSet();
-    bodyShader3D->setupDescriptorSet();
-    portalShader3D->setupDescriptorSet();
-    bodyShader->setupDescriptorSet();
-    wallLight->setupDescriptorSet();
-    laserShader->setupDescriptorSet();
-    gunEffect->setupDescriptorSet();
-    playerShader->setupDescriptorSet();
-
-    IOHelper::loadTexture("white.png");
 }
 
 void ThinDrawer::renderCommandBeginner(VkCommandBuffer& cmdBuff)
@@ -773,10 +705,11 @@ void ThinDrawer::renderPortals3D(VkCommandBuffer& cmdBuff)
 
 void ThinDrawer::animate()
 {
-    gameTime += pDeltaTime;
     upUpAnim = fmod(gameTime, 1.0);
     upDownAnim = fmod(gameTime, 2.0);
     if (upDownAnim > 1.0) upDownAnim = 2.0 - upDownAnim;
+
+    double pDeltaTime = Game::object->deltaTime;
 
     for (AnimGroup* animGroup = animations; ;)
     {
@@ -846,7 +779,7 @@ void ThinDrawer::buildCommandBuffers()
 
     VkDeviceSize offsets = 0;
 
-    //renderBackgroundParticles(cmdBuff);
+    renderBackgroundParticles(cmdBuff);
 
     renderWalls(cmdBuff);
 
@@ -984,7 +917,7 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
 
 void ThinDrawer::portalCreateCallback(Portal* portal)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
 
     s_portalRender* pr = &thinDrawer->renderPortalData[portal];
     pr->portal = portal;
@@ -1035,7 +968,7 @@ void ThinDrawer::portalCreateCallback(Portal* portal)
 
 void ThinDrawer::portalDestroyCallback(Portal* portal)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
 
     auto iter = thinDrawer->renderPortalData.find(portal);
     s_portalRender* pr = &(*iter).second;
@@ -1067,7 +1000,7 @@ void ThinDrawer::portalDestroyCallback(Portal* portal)
 
 void ThinDrawer::portalCreateCallback_3d(Portal* portal)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
 
     s_portalRender3D* pr = &thinDrawer->portalsToRender3D[portal];
 
@@ -1113,7 +1046,7 @@ void ThinDrawer::portalCreateCallback_3d(Portal* portal)
 
 void ThinDrawer::portalDestroyCallback_3d(Portal* portal)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
 
     auto iter = thinDrawer->portalsToRender3D.find(portal);
 
@@ -1261,7 +1194,7 @@ void ThinDrawer::addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<
 
 void ThinDrawer::portalBodyCreateCallback_3d(PortalBody* portalBody, void* data)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
     s_renderGroup3D* renderGroup = (s_renderGroup3D*)data;
 
     s_renderBody3D* firstRenderBody = *renderGroup->renderBodies.begin();
@@ -1304,7 +1237,7 @@ void ThinDrawer::portalBodyCreateCallback_3d(PortalBody* portalBody, void* data)
 
 void ThinDrawer::portalBodyDestroyCallback_3d(PortalBody* portalBody, void* data)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
     s_renderGroup3D* renderGroup = (s_renderGroup3D*)data;
     
     for (auto iter = renderGroup->renderBodies.begin(); iter != renderGroup->renderBodies.end(); iter++)
@@ -1702,7 +1635,7 @@ void ThinDrawer::debug_addPortalBody(PortalBody* portalBody)
 
 void ThinDrawer::debug_portalBodyCreateCallback(PortalBody* portalBody, void* data)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
     s_debug_renderGroup* renderGroup = (s_debug_renderGroup*)data;
     
     s_debug_renderBody* renderBody = new s_debug_renderBody;
@@ -1782,7 +1715,7 @@ void ThinDrawer::debug_portalBodyCreateCallback(PortalBody* portalBody, void* da
 
 void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
     s_renderGroup* renderGroup = (s_renderGroup*)data;
 
     s_renderBody* renderBody = new s_renderBody;
@@ -1821,7 +1754,7 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
 
 void ThinDrawer::portalBodyDestroyCallback(PortalBody* portalBody, void* data)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
     s_renderGroup* renderGroup = (s_renderGroup*)data;
 
     for (auto iter = renderGroup->renderBodies.begin(); iter != renderGroup->renderBodies.end(); iter++)
@@ -1855,7 +1788,7 @@ void ThinDrawer::portalBodyDestroyCallback(PortalBody* portalBody, void* data)
 
 void ThinDrawer::debug_portalBodyDestroyCallback(PortalBody* portalBody, void* data)
 {
-    extern ThinDrawer* thinDrawer;
+    ThinDrawer* thinDrawer = ThinDrawer::object;
     s_debug_renderGroup* renderGroup = (s_debug_renderGroup*)data;
 
     for (auto iter = renderGroup->renderBodies.begin(); iter != renderGroup->renderBodies.end(); iter++)

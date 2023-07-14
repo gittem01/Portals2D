@@ -82,8 +82,6 @@ public:
     PortalWorld* pWorld;
     VkDescriptorPool imguiPool;
 
-    double pDeltaTime = 0.0;
-
     ThinDrawer(PortalWorld* pWorld);
 
     bool drawReleases = false;
@@ -167,12 +165,8 @@ public:
     void createRenderPass();
     void createLogicalDevice();
     void selectPhysicalDevice();
-    void prepareVertices();
-    void prepareUniformBuffers();
-    void setupDescriptorSetLayout();
     void preparePipelines();
     void setupDescriptorPool();
-    void setupDescriptorSet();
 
     void renderCommandBeginner(VkCommandBuffer& cmdBuff);
     void debug_renderPortalBodies(VkCommandBuffer& cmdBuff);
