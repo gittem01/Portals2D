@@ -137,7 +137,7 @@ void SwapChain::createSwapChain()
 
     extent = chooseSwapExtent();
 
-    imageCount = 3;
+    imageCount = 2;
     if (surfaceCapabilities.maxImageCount > 0 && imageCount > surfaceCapabilities.maxImageCount)
     {
         imageCount = (int)surfaceCapabilities.maxImageCount;

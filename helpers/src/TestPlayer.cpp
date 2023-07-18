@@ -696,7 +696,7 @@ void TestPlayer::handleGunRotation()
         const float threshold = 0.0f;
         const float speedMult = 40.0f;
         rj->EnableMotor(true);
-        rj->SetMaxMotorTorque(300.0f * gunBody->body->GetMass());
+        rj->SetMaxMotorTorque(600.0f * gunBody->body->GetMass());
 
         if (rj->GetBodyA() == gunBody->body)
         {

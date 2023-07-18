@@ -67,7 +67,7 @@ void WindowHandler::massInit()
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(windowSizes.x, windowSizes.y, "2D Vulkan", NULL, NULL);
+    window = glfwCreateWindow(windowSizes.x, windowSizes.y, "Portal2D", NULL, NULL);
     if (!window)
     {
         printf("Could not create window\n");

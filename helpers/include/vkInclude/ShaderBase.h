@@ -89,10 +89,7 @@ class ThinDrawer;
 
 class ShaderBase
 {
-    friend class ThinDrawer;
-    friend class TestPlayer;
-
-protected:
+public:
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<s_texture*> textureData;

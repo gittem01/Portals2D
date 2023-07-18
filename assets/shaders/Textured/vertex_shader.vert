@@ -8,7 +8,9 @@ layout (location = 1) out vec2 worldPosition;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
-	mat4 orthoMatrix;
+    mat4 orthoMatrix;
+    vec4 cameraPos;
+    vec4 data; // zoom, unused, unused, unused
 } sharedUboData;
 
 layout (set = 2, binding = 0) uniform UBO

@@ -1,6 +1,8 @@
 #include <Game.h>
 #include <TestCaseIncludes.h>
 #include <Sounder.h>
+#include <Leveler.h>
+#include <CharDrawer.h>
 
 Game* Game::object;
 
@@ -25,11 +27,37 @@ Game::Game()
 
 	sounder = new Sounder();
 
-	testCase = newTest(this, 8);
+    new CharDrawer(thinDrawer, "Japanese.ttf");
+
+    gameStater = &Game::LevelerState;
 }
 
-void Game::loop()
+void Game::LevelerState()
 {
+    leveler = new Leveler(this);
+
+    lastTime = glfwGetTime();
+    while (!glfwWindowShouldClose(thinDrawer->wh->window))
+    {
+        frame++;
+
+        deltaTime = glfwGetTime() - lastTime;
+        gameTime += deltaTime;
+        lastTime = glfwGetTime();
+
+        sounder->update();
+
+        thinDrawer->gameTime = gameTime;
+        thinDrawer->renderLoop();
+    }
+
+    gameStater = nullptr;
+}
+
+void Game::TestState()
+{
+    testCase = newTest(this, 8);
+
     lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(thinDrawer->wh->window))
     {
@@ -68,5 +96,15 @@ void Game::loop()
 
         thinDrawer->gameTime = gameTime;
         thinDrawer->renderLoop();
+    }
+    
+    gameStater = nullptr;
+}
+
+void Game::loop()
+{
+    while (gameStater)
+    {
+        (this->*gameStater)();
     }
 }

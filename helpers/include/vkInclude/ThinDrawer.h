@@ -15,6 +15,8 @@
 #include <ShaderHeaders/GunEffect.h>
 #include <ShaderHeaders/LaserShader.h>
 #include <ShaderHeaders/PlayerShader.h>
+#include <ShaderHeaders/EndlessGrid.h>
+#include <ShaderHeaders/GridSquare.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
@@ -69,6 +71,14 @@ typedef struct
     s_stagingBuffer indices;
 } s_stagingBuffers;
 
+typedef struct TextureData
+{
+    unsigned char* data;
+    int width;
+    int height;
+    int numChannels;
+} s_textureData;
+
 class SwapChain;
 class PortalBody;
 class Portal;
@@ -118,7 +128,10 @@ public:
     VkDescriptorPool descriptorPool;
 
     std::vector<std::pair<void (*) (void*), void*>> memMapFuncs;
+    
+    std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> earlyDrawFuncs;
     std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> drawFuncs;
+    std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> lateDrawFuncs;
 
     // Diff var start
 
@@ -150,6 +163,10 @@ public:
     LaserShader* laserShader;
     GunEffect* gunEffect;
     PlayerShader* playerShader;
+    EndlessGrid* endlessGrid;
+    GridSquare* gridSquare;
+
+    std::vector<ShaderBase*> shaders;
 
     // var end
 
@@ -203,8 +220,10 @@ public:
 
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin);
     void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-    void loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy=true,
-        VkSamplerAddressMode addressMode=VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filter= VK_FILTER_LINEAR);
+    void loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy = true,
+        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filter = VK_FILTER_LINEAR);
+    void loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy = true,
+        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filter = VK_FILTER_LINEAR);
     void updateImageDescriptors(s_texture* tex, VkDescriptorSetLayout& setLayout);
     void createImage(uint32_t width, uint32_t p_height, uint32_t mipLevels,
                      VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,

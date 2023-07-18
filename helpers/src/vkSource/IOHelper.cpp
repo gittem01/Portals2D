@@ -175,6 +175,13 @@ void IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMod
     s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
     thinDrawer->loadTexture(("textures/" + fileName).data(), tex, false, addressMode, filter);
 
+    updateTextureSet(tex);
+
+    textureMap[fileName] = tex;
+}
+
+void IOHelper::updateTextureSet(s_texture* tex)
+{
     VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
     VkDescriptorSetLayoutBinding texBinding[] = { textureBind };
@@ -199,6 +206,4 @@ void IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMod
     textureWrite.dstBinding = 0;
 
     vkUpdateDescriptorSets(thinDrawer->logicalDevice, 1, &textureWrite, 0, VK_NULL_HANDLE);
-
-    textureMap[fileName] = tex;
 }

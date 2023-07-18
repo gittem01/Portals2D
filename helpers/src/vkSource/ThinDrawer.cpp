@@ -15,32 +15,23 @@ ThinDrawer* ThinDrawer::object = nullptr;
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {
+    ThinDrawer::object = this;
+
     this->pWorld = pWorld;
 
     initBase();
     initExtra();
-
-    ThinDrawer::object = this;
 }
 
 void ThinDrawer::surfaceRecreate()
 {
     vkDeviceWaitIdle(logicalDevice);
 
-    vkDestroyPipeline(logicalDevice, debugCircleShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, debugLineShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, debugPolygonShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, whiteWallShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, blackWallShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, bodyShader3D->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, bodyShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, wallLight->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, laserShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, portalShader3D->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, portalShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, portalParticleShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyPipeline(logicalDevice, dualParticleShader->pipeline, VK_NULL_HANDLE);
-    vkDestroyRenderPass(logicalDevice, renderPass, VK_NULL_HANDLE);
+    for (ShaderBase* shader : shaders)
+    {
+        vkDestroyPipeline(logicalDevice, shader->pipeline, VK_NULL_HANDLE);
+    }
+
     swapChain->destroy();
     
     swapChain->creationLoop();
@@ -58,21 +49,23 @@ void ThinDrawer::surfaceRecreate()
 
 void ThinDrawer::initExtra()
 {
-    debugCircleShader = new DebugCircle(this);
-    debugLineShader = new DebugLine(this);
-    debugPolygonShader = new DebugPolygon(this);
-    whiteWallShader = new WhiteWall(this);
-    blackWallShader = new BlackWall(this);
-    portalShader = new PortalShader(this);
-    portalParticleShader = new PortalParticleShader(this);
-    dualParticleShader = new DualParticleShader(this);
-    bodyShader3D = new Body(this);
-    portalShader3D = new PortalShader3D(this);
-    bodyShader = new BodyShader(this);
-    wallLight = new WallLight(this);
-    laserShader = new LaserShader(this);
-    gunEffect = new GunEffect(this);
-    playerShader = new PlayerShader(this);
+    debugCircleShader = new DebugCircle(this); shaders.push_back(debugCircleShader);
+    debugLineShader = new DebugLine(this); shaders.push_back(debugLineShader);
+    debugPolygonShader = new DebugPolygon(this); shaders.push_back(debugPolygonShader);
+    whiteWallShader = new WhiteWall(this); shaders.push_back(whiteWallShader);
+    blackWallShader = new BlackWall(this); shaders.push_back(blackWallShader);
+    portalShader = new PortalShader(this); shaders.push_back(portalShader);
+    portalParticleShader = new PortalParticleShader(this); shaders.push_back(portalParticleShader);
+    dualParticleShader = new DualParticleShader(this); shaders.push_back(dualParticleShader);
+    bodyShader3D = new Body(this); shaders.push_back(bodyShader3D);
+    portalShader3D = new PortalShader3D(this); shaders.push_back(portalShader3D);
+    bodyShader = new BodyShader(this); shaders.push_back(bodyShader);
+    wallLight = new WallLight(this); shaders.push_back(wallLight);
+    laserShader = new LaserShader(this); shaders.push_back(laserShader);
+    gunEffect = new GunEffect(this); shaders.push_back(gunEffect);
+    playerShader = new PlayerShader(this); shaders.push_back(playerShader);
+    endlessGrid = new EndlessGrid(this); shaders.push_back(endlessGrid);
+    gridSquare = new GridSquare(this); shaders.push_back(gridSquare);
 
     setupDescriptorPool();
 
@@ -80,21 +73,10 @@ void ThinDrawer::initExtra()
     ShaderBase::setSharedLayout(this);
     ShaderBase::writeSharedDescriptors(this);
 
-    debugCircleShader->init();
-    debugLineShader->init();
-    debugPolygonShader->init();
-    whiteWallShader->init();
-    blackWallShader->init();
-    portalShader->init();
-    portalParticleShader->init();
-    dualParticleShader->init();
-    bodyShader3D->init();
-    portalShader3D->init();
-    bodyShader->init();
-    wallLight->init();
-    laserShader->init();
-    gunEffect->init();
-    playerShader->init();
+    for (ShaderBase* shader : shaders)
+    {
+        shader->init();
+    }
 
     IOHelper::loadTexture("white.png");
 
@@ -113,6 +95,11 @@ void ThinDrawer::uniformFiller()
         wh->cam->xSides.y - wh->cam->xSides.x, wh->cam->ySides.y - wh->cam->ySides.x);
     sharedData->data.x = wh->cam->zoom;
     sharedData->data.y = gameTime;
+
+    glm::vec2 worldMouse = wh->cam->getMouseCoords();
+    sharedData->data.z = worldMouse.x;
+    sharedData->data.w = worldMouse.y;
+
     
     vkUnmapMemory(logicalDevice, ShaderBase::sharedOrthoUniform->memory);
 }
@@ -182,21 +169,10 @@ void ThinDrawer::renderLoop()
 
 void ThinDrawer::preparePipelines()
 {
-    debugCircleShader->preparePipeline();
-    debugLineShader->preparePipeline();
-    debugPolygonShader->preparePipeline();
-    whiteWallShader->preparePipeline();
-    blackWallShader->preparePipeline();
-    portalShader->preparePipeline();
-    portalParticleShader->preparePipeline();
-    dualParticleShader->preparePipeline();
-    bodyShader3D->preparePipeline();
-    portalShader3D->preparePipeline();
-    bodyShader->preparePipeline();
-    wallLight->preparePipeline();
-    laserShader->preparePipeline();
-    gunEffect->preparePipeline();
-    playerShader->preparePipeline();
+    for (ShaderBase* shader : shaders)
+    {
+        shader->preparePipeline();
+    }
 }
 
 void ThinDrawer::setupDescriptorPool()
@@ -780,6 +756,11 @@ void ThinDrawer::buildCommandBuffers()
 
     renderBackgroundParticles(cmdBuff);
 
+    for (auto& f : earlyDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
+
     renderWalls(cmdBuff);
 
     renderPortalBodies(cmdBuff);
@@ -805,6 +786,11 @@ void ThinDrawer::buildCommandBuffers()
         {
             debug_renderPortals(cmdBuff);
         }
+    }
+
+    for (auto& f : lateDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
     }
 
     if (drawData)
@@ -1281,7 +1267,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
         {
             try
             {
-                IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR);
+                IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
                 renderGroup->imageSets.push_back(&(IOHelper::textureMap[textures[i]]->set));
             }
             catch (const std::exception& ex)

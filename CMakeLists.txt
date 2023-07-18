@@ -20,6 +20,8 @@ include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
 include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/OpenAlSoft/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/AudioFile)
+include_directories(${CMAKE_SOURCE_DIR}/external/stb_truetype)
+
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glfw)

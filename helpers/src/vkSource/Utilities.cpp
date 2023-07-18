@@ -290,7 +290,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     std::string finalPath = IOHelper::assetsFolder + fileName;
 
     int width, height, nChannels;
-    stbi_uc* pixels = stbi_load(finalPath.c_str(), &width, &height, &nChannels, STBI_rgb_alpha);
+    unsigned char* pixels = (unsigned char*)stbi_load(finalPath.c_str(), &width, &height, &nChannels, STBI_default);
 
     if (!pixels)
     {
@@ -298,7 +298,27 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
         exit(-1);
     }
 
-    VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+    s_textureData tData;
+    tData.data = pixels;
+    tData.width = width;
+    tData.height = height;
+    tData.numChannels = nChannels;
+    loadTextureFromMemory(&tData, texture, enableAnisotropy, addressMode, filter);
+
+    stbi_image_free(pixels);
+}
+
+void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter)
+{
+    VkFormat format;
+    if (texData->numChannels == 4)
+    {
+        format = VK_FORMAT_R8G8B8A8_SRGB;
+    }
+    else
+    {
+        format = (VkFormat)(VK_FORMAT_R8_UNORM + (texData->numChannels - 1) * 7);
+    }
 
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
@@ -308,11 +328,11 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
         format = VK_FORMAT_R8G8B8A8_UNORM;
     }
 
-    VkDeviceSize imageSize = width * height * (uint64_t)4;
+    VkDeviceSize imageSize = texData->width * texData->height * texData->numChannels;
 
-    texture->width = width;
-    texture->height = height;
-    texture->mipLevels = (uint32_t)std::floor(std::log2(std::max(width, height))) + 1;
+    texture->width = texData->width;
+    texture->height = texData->height;
+    texture->mipLevels = (uint32_t)std::floor(std::log2(std::max(texData->width, texData->height))) + 1;
 
     VkMemoryAllocateInfo memAllocInfo = { };
     memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -328,20 +348,18 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     vkGetBufferMemoryRequirements(logicalDevice, stagingBuffer, &memReqs);
     memAllocInfo.allocationSize = memReqs.size;
     memAllocInfo.memoryTypeIndex = getMemoryTypeIndex(memReqs.memoryTypeBits,
-                                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     CHECK_RESULT_VK(vkAllocateMemory(logicalDevice, &memAllocInfo, VK_NULL_HANDLE, &stagingMemory));
     CHECK_RESULT_VK(vkBindBufferMemory(logicalDevice, stagingBuffer, stagingMemory, 0));
 
-    uint8_t *data;
-    CHECK_RESULT_VK(vkMapMemory(logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **)&data));
-    memcpy(data, pixels, imageSize);
+    uint8_t* data;
+    CHECK_RESULT_VK(vkMapMemory(logicalDevice, stagingMemory, 0, memReqs.size, 0, (void**)&data));
+    memcpy(data, texData->data, imageSize);
     vkUnmapMemory(logicalDevice, stagingMemory);
 
-    stbi_image_free(pixels);
-
     VkExtent3D imageExtent;
-    imageExtent.width = static_cast<uint32_t>(width);
-    imageExtent.height = static_cast<uint32_t>(height);
+    imageExtent.width = static_cast<uint32_t>(texData->width);
+    imageExtent.height = static_cast<uint32_t>(texData->height);
     imageExtent.depth = 1;
 
     VkBufferImageCopy copyRegion = { };
@@ -356,8 +374,8 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     copyRegion.imageExtent = imageExtent;
 
     createImage(texture->width, texture->height, texture->mipLevels, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                texture->image, texture->deviceMemory);
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        texture->image, texture->deviceMemory);
 
     VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, uploadPool, true);
 
@@ -377,8 +395,8 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
     vkCmdPipelineBarrier(
-            copyCmd, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-            0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier);
+        copyCmd, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier);
 
     vkCmdCopyBufferToImage(copyCmd, stagingBuffer, texture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
@@ -387,7 +405,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     vkFreeMemory(logicalDevice, stagingMemory, VK_NULL_HANDLE);
     vkDestroyBuffer(logicalDevice, stagingBuffer, VK_NULL_HANDLE);
 
-    generateMipmaps(texture->image, format, width, height, texture->mipLevels);
+    generateMipmaps(texture->image, format, texData->width, texData->height, texture->mipLevels);
 
     texture->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -406,7 +424,7 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     sampler.maxAnisotropy = 16.0;
     sampler.anisotropyEnable = (VkBool32)enableAnisotropy;
     sampler.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-    
+
     CHECK_RESULT_VK(vkCreateSampler(logicalDevice, &sampler, VK_NULL_HANDLE, &texture->sampler));
 
     VkImageViewCreateInfo view = { };

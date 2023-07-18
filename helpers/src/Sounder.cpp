@@ -36,6 +36,8 @@ Sounder::Sounder()
 
     Sounder::object = this;
 
+    alListenerf(AL_GAIN, 20.0);
+
     // load default
     ALuint src = loadSound("portalRadio.wav");
     loadSound("jumpTest.wav");
@@ -147,7 +149,7 @@ ALuint Sounder::loadSound(std::string fileName)
     ALuint buffer;
     alGenBuffers(1, &buffer);
     alBufferData(buffer, AL_FORMAT_MONO16, audioFile.samples[0].data(), audioFile.samples[0].size() * sizeof(ALshort), audioFile.getSampleRate());
-
+    
     bufferMap[fileName] = buffer;
 
     return buffer;

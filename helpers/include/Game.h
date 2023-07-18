@@ -18,7 +18,14 @@ public:
 	class ThinDrawer* thinDrawer;
 	class Sounder* sounder;
 
+	class Leveler* leveler;
+
+	void(Game::*gameStater)(void);
+
 	Game();
 	
 	void loop();
+
+	void LevelerState();
+	void TestState();
 };
