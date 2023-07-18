@@ -27,7 +27,7 @@ Game::Game()
 
 	sounder = new Sounder();
 
-    new CharDrawer(thinDrawer, "Japanese.ttf");
+    new CharDrawer(thinDrawer, "Roboto-Regular.ttf");
 
     gameStater = &Game::LevelerState;
 }
