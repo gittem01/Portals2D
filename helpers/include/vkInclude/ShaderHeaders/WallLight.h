@@ -13,9 +13,7 @@ typedef struct
 
 class WallLight : public ShaderBase
 {
-    friend class ThinDrawer;
-
-private:
+public:
     WallLight(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     int alignedSize;
@@ -26,4 +24,6 @@ private:
     void preparePipeline();
     void setupDescriptorSet();
     void prepareVertexData();
+
+    void testFill();
 };

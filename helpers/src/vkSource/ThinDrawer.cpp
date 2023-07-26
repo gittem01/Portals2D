@@ -66,6 +66,8 @@ void ThinDrawer::initExtra()
     playerShader = new PlayerShader(this); shaders.push_back(playerShader);
     endlessGrid = new EndlessGrid(this); shaders.push_back(endlessGrid);
     gridSquare = new GridSquare(this); shaders.push_back(gridSquare);
+    arrowShader = new ArrowShader(this); shaders.push_back(arrowShader);
+    itemList = new ItemList(this); shaders.push_back(itemList);
 
     setupDescriptorPool();
 
@@ -106,9 +108,6 @@ void ThinDrawer::uniformFiller()
 
 void ThinDrawer::renderLoop()
 {
-    wh->looper();
-    wh->cam->update();
-
     int imNum = frameNumber % swapChain->imageCount;
 
     s_frameData currentFrame = frames[imNum];
@@ -183,14 +182,14 @@ void ThinDrawer::setupDescriptorPool()
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 100 },
             { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100 },
             { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 100 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
     };
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo = { };
     descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolInfo.poolSizeCount = sizes.size();
     descriptorPoolInfo.pPoolSizes = sizes.data();
-    descriptorPoolInfo.maxSets = 100;
+    descriptorPoolInfo.maxSets = 10000;
 
     CHECK_RESULT_VK(vkCreateDescriptorPool(logicalDevice, &descriptorPoolInfo, VK_NULL_HANDLE, &descriptorPool));
 }
@@ -473,7 +472,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     // Laser
     {
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, laserShader->pipeline);
+        /*vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, laserShader->pipeline);
 
         vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
 
@@ -483,7 +482,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             laserShader->pipelineLayout, 1, 1, &laserShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 2, 0, 0);
+        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 2, 0, 0);*/
     }
 }
 
@@ -754,8 +753,6 @@ void ThinDrawer::buildCommandBuffers()
 
     VkDeviceSize offsets = 0;
 
-    renderBackgroundParticles(cmdBuff);
-
     for (auto& f : earlyDrawFuncs)
     {
         f.first(cmdBuff, f.second);
@@ -802,31 +799,6 @@ void ThinDrawer::buildCommandBuffers()
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
 
     //printf("%f\n", glfwGetTime() - t0);
-}
-
-void ThinDrawer::renderBackgroundParticles(VkCommandBuffer& cmdBuff)
-{
-    VkDeviceSize offsets = 0;
-    uint32 dynamicOffsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
-
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, dualParticleShader->pipeline);
-
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &dualParticleShader->buffers[0]->buffer, &offsets);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        dualParticleShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        dualParticleShader->pipelineLayout, 1, 1, &dualParticleShader->descriptorSets[1], 1, &dynamicOffsets);
-
-    vkCmdDraw(cmdBuff, dualParticleShader->buffers[0]->count, 1000, 0, 0);
-
-    dynamicOffsets = dualParticleShader->alignedSize;
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        dualParticleShader->pipelineLayout, 1, 1, &dualParticleShader->descriptorSets[1], 1, &dynamicOffsets);
-
-    vkCmdDraw(cmdBuff, dualParticleShader->buffers[0]->count, 1000, 0, 0);
 }
 
 void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
@@ -1257,7 +1229,6 @@ void ThinDrawer::portalBodyDestroyCallback_3d(PortalBody* portalBody, void* data
 
 void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> textures)
 {
-
     s_renderGroup* renderGroup = new s_renderGroup;
     renderGroups.push_back(renderGroup);
 
@@ -1267,7 +1238,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
         {
             try
             {
-                IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+                IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
                 renderGroup->imageSets.push_back(&(IOHelper::textureMap[textures[i]]->set));
             }
             catch (const std::exception& ex)

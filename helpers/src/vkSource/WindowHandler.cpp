@@ -66,6 +66,7 @@ void WindowHandler::massInit()
         exit(1);
     }
 
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window = glfwCreateWindow(windowSizes.x, windowSizes.y, "Portal2D", NULL, NULL);
     if (!window)
@@ -169,14 +170,14 @@ void WindowHandler::windowSizeEventCallback(GLFWwindow* window, int width, int h
     thisClass->windowSizes.x = width;
     thisClass->windowSizes.y = height;
 
-    if (thisClass->cam)
+    for (Camera* cam : Camera::cameras)
     {
         float ratio = (float)height / width;
 
-        thisClass->cam->defaultYSides = glm::vec2(-thisClass->cam->baseX * ratio * 0.5f, thisClass->cam->baseX * ratio * 0.5f);
+        cam->defaultYSides = glm::vec2(-cam->baseX * ratio * 0.5f, cam->baseX * ratio * 0.5f);
 
-        thisClass->cam->xSides = thisClass->cam->defaultXSides / (thisClass->cam->zoom * thisClass->cam->zoom) + thisClass->cam->pos.x;
-        thisClass->cam->ySides = thisClass->cam->defaultYSides / (thisClass->cam->zoom * thisClass->cam->zoom) + thisClass->cam->pos.y;
-        thisClass->cam->updateOrtho();
+        cam->xSides = cam->defaultXSides / (cam->zoom * cam->zoom) + cam->pos.x;
+        cam->ySides = cam->defaultYSides / (cam->zoom * cam->zoom) + cam->pos.y;
+        cam->updateOrtho();
     }
 }

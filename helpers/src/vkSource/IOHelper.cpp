@@ -180,17 +180,20 @@ void IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMod
     textureMap[fileName] = tex;
 }
 
-void IOHelper::updateTextureSet(s_texture* tex)
+void IOHelper::updateTextureSet(s_texture* tex, bool preAllocated)
 {
-    VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
+    if (!preAllocated)
+    {
+        VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
-    VkDescriptorSetLayoutBinding texBinding[] = { textureBind };
+        VkDescriptorSetLayoutBinding texBinding[] = { textureBind };
 
-    VkDescriptorSetLayoutCreateInfo setInfo = vkinit::descriptorSetLayoutCreateInfo(texBinding, std::size(texBinding));
-    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(thinDrawer->logicalDevice, &setInfo, VK_NULL_HANDLE, &textureSetLayout));
+        VkDescriptorSetLayoutCreateInfo setInfo = vkinit::descriptorSetLayoutCreateInfo(texBinding, std::size(texBinding));
+        CHECK_RESULT_VK(vkCreateDescriptorSetLayout(thinDrawer->logicalDevice, &setInfo, VK_NULL_HANDLE, &textureSetLayout));
 
-    VkDescriptorSetAllocateInfo allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &textureSetLayout, 1);
-    vkAllocateDescriptorSets(thinDrawer->logicalDevice, &allocInfo, &tex->set);
+        VkDescriptorSetAllocateInfo allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &textureSetLayout, 1);
+        CHECK_RESULT_VK(vkAllocateDescriptorSets(thinDrawer->logicalDevice, &allocInfo, &tex->set));
+    }
 
     VkDescriptorImageInfo imageBufferInfo;
     imageBufferInfo.imageView = tex->view;

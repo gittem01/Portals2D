@@ -14,10 +14,7 @@ typedef struct s_dualParticleUbo
 
 class DualParticleShader : public ShaderBase
 {
-    friend class ThinDrawer;
-    friend class TestPlayer;
-
-private:
+public:
     int alignedSize;
     int lastAllocationPos;
     uint32_t availableOffsets[UNIFORM_ALLOC_COUNT];

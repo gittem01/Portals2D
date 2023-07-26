@@ -14,9 +14,7 @@ typedef struct
 
 class WhiteWall : public ShaderBase
 {
-    friend class ThinDrawer;
-
-private:
+public:
     WhiteWall(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     int wallCount;
@@ -26,4 +24,6 @@ private:
     void preparePipeline();
     void setupDescriptorSet();
     void prepareVertexData();
+
+    void testFill();
 };

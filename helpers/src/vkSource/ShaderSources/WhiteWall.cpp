@@ -35,21 +35,21 @@ void WhiteWall::prepareVertexData()
 void WhiteWall::prepareUniforms()
 {
     wallCount = 0;
-    // offset is not used no need for alignment
-    int alignedSizeFS = sizeof(s_wallUbo_w);
-    uniformBuffers.resize(1);
-
-    int x = 25;
-    int y = 40;
-    const int wallCountInMind = 40000;
-    wallCount = 0;
-    const glm::vec2 size = glm::vec2(1.25f, 2.5f);
 
     uniformBuffers.resize(1);
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(alignedSizeFS * wallCountInMind, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_wallUbo_w) * 1000000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+}
+
+void WhiteWall::testFill()
+{
+    int alignedSizeFS = sizeof(s_wallUbo_w);
+    int x = 25;
+    int y = 40;
+    wallCount = 0;
+    const glm::vec2 size = glm::vec2(1.25f, 2.5f);
 
     float sz = 1.5f;
     for (int i = 10; i < 20; i++)
@@ -80,9 +80,9 @@ void WhiteWall::prepareUniforms()
         {
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
             float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
-            
+
             s_wallUbo_w wallUbo;
-            wallUbo.posSize = glm::vec4(j * size.x - 40 - 1.25*0.5, k * size.y - (y * size.y + size.y) * 0.5, size.x, size.y);
+            wallUbo.posSize = glm::vec4(j * size.x - 40 - 1.25 * 0.5, k * size.y - (y * size.y + size.y) * 0.5, size.x, size.y);
             wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
             wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);
@@ -118,7 +118,7 @@ void WhiteWall::prepareUniforms()
             wallCount++;
         }
     }
-        
+
     x = 50 / 1.25;
     y = (y - 8) / 2;
     for (int j = 0; j < x; j++)
@@ -128,7 +128,7 @@ void WhiteWall::prepareUniforms()
             float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.4f;
             float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
             s_wallUbo_w wallUbo;
-            wallUbo.posSize = glm::vec4(j * size.x - 8.75 - 1.25*0.5, k * size.y + 10 + size.y * 0.5, size.x, size.y);
+            wallUbo.posSize = glm::vec4(j * size.x - 8.75 - 1.25 * 0.5, k * size.y + 10 + size.y * 0.5, size.x, size.y);
             wallUbo.bgColour = glm::vec4(0.7f + randVal11, 0.7f + randVal11, 0.7f + randVal11, 1.0f);
             wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
             wallUbo.dotColour = glm::vec4(0.2f + randVal11, 0.2f + randVal11, 0.2f + randVal11, 1.0f);

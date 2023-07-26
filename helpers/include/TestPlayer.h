@@ -80,6 +80,7 @@ public:
     float normXToWalk;
     float setFriction;
 
+    s_renderPlayerUbo renderData;
     float legAng;
     float rotSpeed;
 

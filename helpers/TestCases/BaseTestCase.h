@@ -177,15 +177,16 @@ public:
         {
             return;
         }
+
         for (int i = 0; i < requiredIters; i++)
         {
 			// speeded up 2x times
             float dt = requiredDt * 2.0;
             g->mjh->mouseHandler(g->frame, requiredIters);
-            g->pWorld->PortalStep(dt, 8, 3);
 #if ENABLE_TESTPLAYER
             tp->update(dt, requiredIters);
 #endif
+            g->pWorld->PortalStep(dt, 8, 3);
         }
     }
 

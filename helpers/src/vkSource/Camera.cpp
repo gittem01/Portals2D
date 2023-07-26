@@ -2,7 +2,33 @@
 #include <WindowHandler.h>
 #include <Sounder.h>
 
+std::vector<Camera*> Camera::cameras;
+
 Camera::Camera(glm::vec2 pos, WindowHandler* wh)
+{
+	init(pos, wh);
+
+	cameras.push_back(this);
+}
+
+Camera::Camera()
+{
+	cameras.push_back(this);
+}
+
+Camera::~Camera()
+{
+	for (auto iter = cameras.begin(); iter < cameras.end(); iter++)
+	{
+		if (*iter == this)
+		{
+			cameras.erase(iter);
+			break;
+		}
+	}
+}
+
+void Camera::init(glm::vec2 pos, WindowHandler* wh)
 {
 	this->pos = pos;
 	this->window = wh->window;

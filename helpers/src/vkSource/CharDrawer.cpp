@@ -3,6 +3,7 @@
 #include <CharDrawer.h>
 #include <ThinDrawer.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <vkInit.h>
 
 std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 {
@@ -87,7 +88,6 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
     // Convert the UTF-8 encoded bytes to Unicode code points
     std::vector<uint32_t> codePoints = utf8ToUnicode(utf8String);
 
-    // Print the Unicode code points
     for (uint32_t codepoint : codePoints)
     {
         if (codepoint == 32)
@@ -126,6 +126,7 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
         texData.numChannels = 1;
         tex = (s_texture*)malloc(sizeof(s_texture));
         thinDrawer->loadTextureFromMemory(&texData, tex, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+
         IOHelper::updateTextureSet(tex);
 
         s_charRenderData rData;
@@ -141,7 +142,7 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
     thinDrawer->shaders.push_back(fontShader);
     fontShader->init();
 
-    thinDrawer->drawFuncs.push_back({ draw, this });
+    //thinDrawer->drawFuncs.push_back({ draw, this });
 }
 
 void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
@@ -179,7 +180,7 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             cd->fontShader->pipelineLayout, 1, 1, &data.tex->set, 0, VK_NULL_HANDLE);
 
-        vkCmdDraw(cmdBuff, cd->fontShader->buffers[0]->count, 2, 0, 0);
+        vkCmdDraw(cmdBuff, cd->fontShader->buffers[0]->count, 1, 0, 0);
         prevData = data;
     }
 }

@@ -42,8 +42,11 @@ void WallLight::prepareUniforms()
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(alignedSize * 1000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(alignedSize * 10000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+}
 
+void WallLight::testFill()
+{
     int num = 40;
     float v = 0.0;
     for (int j = 0; j < num; j++)

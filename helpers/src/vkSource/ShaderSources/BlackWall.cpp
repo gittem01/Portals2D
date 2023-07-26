@@ -24,7 +24,12 @@ void BlackWall::prepareUniforms()
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(alignedSizeFS * 242 * 242, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(alignedSizeFS * 1000000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+}
+
+void BlackWall::testFill()
+{
+    int alignedSizeFS = sizeof(s_wallUbo_b);
 
     const float sz = 1.5f;
     for (int i = -60; i < 60; i++)

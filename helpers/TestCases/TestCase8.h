@@ -8,11 +8,8 @@ public:
     Portal* portal1;
     Portal* portal2;
     b2Body* bodyToMove;
-    b2Body* rbdy;
     std::vector<PortalBody*>* platform;
-    std::vector<glm::vec4> outerEdges;
-    std::vector<point> outerVertices;
-    std::vector <float> angles;
+
 
     float t = 0.0f;
 
@@ -86,7 +83,7 @@ public:
         srand(2);
         srand(glfwGetTime() * 1000);
         g->pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
-        g->pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
+        g->pWorld->SetGravity(b2Vec2(0.0f, -20.0f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
 
@@ -193,12 +190,6 @@ public:
         lastBody = createCircle(startPos, 0.5f, g->pWorld, b2_dynamicBody);
         PortalBody* lastPb = g->pWorld->createPortalBody(lastBody);
         td->debug_addPortalBody(lastPb);
-
-        rbdy = tp->pBody->at(0)->body;
-        angles = tp->pBody->at(0)->worldIndex->angles;
-        outerEdges = tp->pBody->at(0)->worldIndex->outerEdges;
-        outerVertices = tp->pBody->at(0)->worldIndex->outerVertices;
-
         td->addPortalBody(lastPb, {"circle.png"});
 
         lastBody->SetLinearDamping(0.0f);

@@ -206,36 +206,33 @@ void TestPlayer::memMap(void* ptr)
     tp->legAng = fmod(tp->legAng, 2.0 * b2_pi);
     if (tp->legAng < 0.0) tp->legAng += 2.0 * b2_pi;
 
-    s_renderPlayerUbo* ru;
-    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory, tp->playerShader->alignedSize2 * imNum,
-        tp->playerShader->alignedSize2, 0, (void**)&ru);
-
-    float extraMult = 1.0;
-    if (abs(linVel.x) > 10.0) extraMult = abs(linVel.x) * 10.0;
-
-    ru->legRatio += (aimedRatio - ru->legRatio) * Game::object->deltaTime * 3.0;
-    ru->bodyRatio = fmax((1.0 - abs(bodyPos)) - ru->headRatio - ru->legRatio, 0.2);
-    float marginLeft = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio);
+    tp->renderData.legRatio += (aimedRatio - tp->renderData.legRatio) * Game::object->deltaTime * 3.0;
+    tp->renderData.bodyRatio = fmax((1.0 - abs(bodyPos)) - tp->renderData.headRatio - tp->renderData.legRatio, 0.2);
+    float marginLeft = (1.0 - tp->renderData.headRatio - tp->renderData.bodyRatio - tp->renderData.legRatio);
     if (bodyPos > 0.0)
     {
-        ru->margin1 = marginLeft;
-        ru->margin2 = 0.0;
+        tp->renderData.margin1 = marginLeft;
+        tp->renderData.margin2 = 0.0;
     }
     else
     {
-        ru->margin1 = 0.0;
-        ru->margin2 = marginLeft;
+        tp->renderData.margin1 = 0.0;
+        tp->renderData.margin2 = marginLeft;
     }
 
-    float ratio01 = 1.0 - (ru->legRatio - 0.25) / 0.25;
+    float ratio01 = 1.0 - (tp->renderData.legRatio - 0.25) / 0.25;
     ratio01 = pow(ratio01, 15.0);
 
-    ru->ld.legThick = 0.1;
-    ru->ld.circR = ru->legRatio * 0.5 * (1.0 - ratio01) + 10.0 * ratio01;
-    ru->ld.legLen = ru->legRatio * 0.5;
-    ru->ld.legOuterCircAng = tp->legAng;
-    ru->ld.legAngle = tp->legAng;
+    tp->renderData.ld.legThick = 0.1;
+    tp->renderData.ld.circR = tp->renderData.legRatio * 0.5 * (1.0 - ratio01) + 10.0 * ratio01;
+    tp->renderData.ld.legLen = tp->renderData.legRatio * 0.5;
+    tp->renderData.ld.legOuterCircAng = tp->legAng;
+    tp->renderData.ld.legAngle = tp->legAng;
 
+    s_renderPlayerUbo* ru;
+    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory, tp->playerShader->alignedSize2 * imNum,
+        tp->playerShader->alignedSize2, 0, (void**)&ru);
+    memcpy((void*)ru, &tp->renderData, sizeof(s_renderPlayerUbo));
     vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory);
 }
 
@@ -357,35 +354,27 @@ void TestPlayer::renderInit()
 
     ThinDrawer::object->drawFuncs.push_back({ drawGunEffect, this });
 
-    s_renderPlayerUbo* ru;
-    for (int i = 0; i < 8; i++)
-    {
-        vkMapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory, i * playerShader->alignedSize2, playerShader->alignedSize2, 0, (void**)&ru);
-        ru->edgeColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
-        ru->bodyColour1 = glm::vec4(0.0, 0.0, 0.0, 1.0);
-        ru->bodyColour2 = glm::vec4(0.04, 0.04, 0.04, 1.0);
+    renderData.edgeColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+    renderData.bodyColour1 = glm::vec4(0.0, 0.0, 0.0, 1.0);
+    renderData.bodyColour2 = glm::vec4(0.04, 0.04, 0.04, 1.0);
 
-        ru->topMargin = 0.0;
-        ru->headRatio = 0.25;
-        ru->bodyRatio = 0.4;
-        ru->legRatio = 0.25;
-        ru->margin1 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
-        ru->margin2 = (1.0 - ru->headRatio - ru->bodyRatio - ru->legRatio) * 0.5;
-        ru->lineSize = 0.025;
-        ru->headCircles = glm::vec2(0.07, 0.07);
-        ru->bodyCircles = 0.1;
+    renderData.topMargin = 0.0;
+    renderData.headRatio = 0.25;
+    renderData.bodyRatio = 0.4;
+    renderData.legRatio = 0.25;
+    renderData.margin1 = (1.0 - renderData.headRatio - renderData.bodyRatio - renderData.legRatio) * 0.5;
+    renderData.margin2 = (1.0 - renderData.headRatio - renderData.bodyRatio - renderData.legRatio) * 0.5;
+    renderData.lineSize = 0.025;
+    renderData.headCircles = glm::vec2(0.07, 0.07);
+    renderData.bodyCircles = 0.1;
 
-        ru->ld.legThick = 0.1;
-        ru->ld.circR = ru->legRatio * 1000.5;
-        ru->ld.legLen = 0.25 * 0.5;
-        ru->ld.legOuterCircAng = 0.0;
-        ru->ld.legAngle = ru->ld.legOuterCircAng;
-        ru->ld.legCircleSize = 0.025;
-
-        ru->size = glm::vec2(0.75, 1.5);
-
-        vkUnmapMemory(playerShader->logicalDevice, playerShader->uniformBuffers[1]->memory);
-    }
+    renderData.ld.legThick = 0.1;
+    renderData.ld.circR = renderData.legRatio * 1000.5;
+    renderData.ld.legLen = 0.25 * 0.5;
+    renderData.ld.legOuterCircAng = 0.0;
+    renderData.ld.legAngle = renderData.ld.legOuterCircAng;
+    renderData.ld.legCircleSize = 0.025;
+    renderData.size = glm::vec2(0.75, 1.5);
 }
 
 void TestPlayer::createBody(b2Vec2 pos)
@@ -1609,7 +1598,7 @@ void TestPlayer::update(float dt, int totalIter)
     if (left || right)
     {
         //printf("2\n");
-        const float groundMult = 20.0f;
+        const float groundMult = 40.0f;
         const float airMult = 10.0f;
         const float fwdGrndSlw = 5.0f;
         if (right)

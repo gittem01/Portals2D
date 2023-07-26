@@ -17,6 +17,8 @@
 #include <ShaderHeaders/PlayerShader.h>
 #include <ShaderHeaders/EndlessGrid.h>
 #include <ShaderHeaders/GridSquare.h>
+#include <ShaderHeaders/ArrowShader.h>
+#include <ShaderHeaders/ItemList.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
@@ -165,6 +167,8 @@ public:
     PlayerShader* playerShader;
     EndlessGrid* endlessGrid;
     GridSquare* gridSquare;
+    ArrowShader* arrowShader;
+    ItemList* itemList;
 
     std::vector<ShaderBase*> shaders;
 
@@ -191,7 +195,6 @@ public:
     void debug_renderEdges(VkCommandBuffer& cmdBuff);
     void renderPortalBodies(VkCommandBuffer& cmdBuff);
     void renderPortals(VkCommandBuffer& cmdBuff);
-    void renderBackgroundParticles(VkCommandBuffer& cmdBuff);
     void renderPortalBodies3D(VkCommandBuffer& cmdBuff);
     void renderWalls(VkCommandBuffer& cmdBuff);
     void renderPortals3D(VkCommandBuffer& cmdBuff);

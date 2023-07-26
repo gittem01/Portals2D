@@ -42,7 +42,7 @@ void FontShader::setupDescriptorSetLayout()
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
     descriptorSetLayouts[0] = ShaderBase::sharedLayout;
-
+        
     VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
     VkDescriptorSetLayoutCreateInfo setInfo = vkinit::descriptorSetLayoutCreateInfo(&textureBind, 1);

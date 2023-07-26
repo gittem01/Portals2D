@@ -11,9 +11,7 @@ typedef struct
 
 class BlackWall : public ShaderBase
 {
-    friend class ThinDrawer;
-
-private:
+public:
     BlackWall(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     int wallCount;
@@ -23,4 +21,6 @@ private:
     void preparePipeline();
     void setupDescriptorSet();
     void prepareVertexData();
+
+    void testFill();
 };

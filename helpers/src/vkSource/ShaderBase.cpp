@@ -21,7 +21,7 @@ void ShaderBase::init(ThinDrawer* thinDrawer)
 
 void ShaderBase::setSharedLayout(ThinDrawer* thinDrawer)
 {
-    const int s = 16;
+    const int s = 32;
     alignedSharedSize = thinDrawer->pad_uniform_buffer_size(sizeof(s_sharedUniformData));
     sharedOrthoUniform = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
     thinDrawer->uniformHelper(alignedSharedSize * s, sharedOrthoUniform, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, s);

@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <vector>
 
 class WindowHandler;
 
@@ -35,8 +36,14 @@ public:
 	glm::vec2 dragTo = glm::vec2(0, 0);
 
 	WindowHandler* windowHandler;
+	static std::vector<Camera*> cameras;
 
 	Camera(glm::vec2 pos, WindowHandler* wh);
+	Camera();
+	Camera::~Camera();
+
+	void init(glm::vec2 pos, WindowHandler* wh);
+
 	void update();
 	glm::vec2 getCameraCoords(glm::vec2 p);
 	glm::vec2 getMouseCoords();
