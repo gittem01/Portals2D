@@ -89,7 +89,7 @@ void WindowHandler::massInit()
     glfwSetWindowFocusCallback(window, WindowHandler::glfwWindowFocusCallback);
     glfwSetKeyCallback(window, WindowHandler::glfwKeyEventCallback);
     glfwSetWindowSizeCallback(window, WindowHandler::windowSizeEventCallback);
-
+    
     mouseData[0] = windowSizes.x / 2.0f;
     mouseData[1] = windowSizes.y / 2.0f;
 }
@@ -97,22 +97,6 @@ void WindowHandler::massInit()
 void WindowHandler::mouseEventCallback(GLFWwindow* window, double xpos, double ypos)
 {
     WindowHandler* thisClass = (WindowHandler*)glfwGetWindowUserPointer(window);
-
-    if (thisClass->cursorDisabled)
-    {
-        double x0, y0;
-        x0 = xpos; y0 = ypos;
-        if (xpos > thisClass->windowSizes.x) xpos = thisClass->windowSizes.x;
-        else if (xpos < 0) xpos = 0;
-
-        if (ypos > thisClass->windowSizes.y) ypos = thisClass->windowSizes.y;
-        else if (ypos < 0) ypos = 0;
-
-        if (x0 != xpos || y0 != ypos)
-        {
-            glfwSetCursorPos(window, xpos, ypos);
-        }
-    }
 
     thisClass->mouseData[0] = (int)xpos;
     thisClass->mouseData[1] = (int)ypos;

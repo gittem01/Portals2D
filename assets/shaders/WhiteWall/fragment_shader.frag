@@ -80,6 +80,4 @@ void main()
     {
         FragColour = clr * m;
     }
-
-    return;
 }

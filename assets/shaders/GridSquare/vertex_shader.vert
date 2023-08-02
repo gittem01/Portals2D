@@ -19,7 +19,7 @@ layout (set = 0, binding = 0) uniform SharedUboData
 
 layout (push_constant) uniform PC
 {
-    int positionData[4]; // posx, posy, sizex sizey
+    int positionData[4]; // posx, posy, numIndices, sizey
     vec4 colour;
 } pc;
 

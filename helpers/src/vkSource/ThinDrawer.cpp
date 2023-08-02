@@ -68,6 +68,7 @@ void ThinDrawer::initExtra()
     gridSquare = new GridSquare(this); shaders.push_back(gridSquare);
     arrowShader = new ArrowShader(this); shaders.push_back(arrowShader);
     itemList = new ItemList(this); shaders.push_back(itemList);
+    manyTexture = new ManyTexture(this); shaders.push_back(manyTexture);
 
     setupDescriptorPool();
 
@@ -81,6 +82,7 @@ void ThinDrawer::initExtra()
     }
 
     IOHelper::loadTexture("white.png");
+    IOHelper::loadTexture("ww.png");
 
     initImgui();
 }

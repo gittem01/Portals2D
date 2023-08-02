@@ -5,7 +5,7 @@
 typedef struct ItemData
 {
     glm::vec4 posSize;
-    glm::vec4 data;
+    int data[4];
 } s_itemData;
 
 class ItemList : public ShaderBase

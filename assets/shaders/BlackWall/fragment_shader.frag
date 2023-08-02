@@ -64,7 +64,7 @@ void main()
     {
         const float pVal = 4.0;
         m = 0.0;
-        m += pow(max(1.0 - (worldPos.x + 5.0), 0.0), pVal);
+        m += pow(max(1.0 - (worldPos.x + 4.0), 0.0), pVal);
         m += pow(max(1.0 - (15.0 - worldPos.x), 0.0), pVal);
         m += pow(max(1.0 - (worldPos.y - 3.0), 0.0), pVal);
         m += pow(max(1.0 - (7.0 - worldPos.y), 0.0), pVal);

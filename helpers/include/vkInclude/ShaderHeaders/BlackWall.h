@@ -23,4 +23,6 @@ public:
     void prepareVertexData();
 
     void testFill();
+
+    void recreateUniforms(int size);
 };

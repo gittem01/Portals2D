@@ -25,5 +25,7 @@ public:
     void setupDescriptorSet();
     void prepareVertexData();
 
+    void recreateUniforms(int size);
+
     void testFill();
 };

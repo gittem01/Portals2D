@@ -170,14 +170,21 @@ void IOHelper::loadGlTF(std::string fileName)
     }
 }
 
-void IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMode, VkFilter filter)
+s_texture* IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMode, VkFilter filter)
 {
+    if (textureMap.find(fileName) != textureMap.end())
+    {
+		return textureMap[fileName];
+	}
+
     s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
     thinDrawer->loadTexture(("textures/" + fileName).data(), tex, false, addressMode, filter);
 
     updateTextureSet(tex);
 
     textureMap[fileName] = tex;
+
+    return tex;
 }
 
 void IOHelper::updateTextureSet(s_texture* tex, bool preAllocated)

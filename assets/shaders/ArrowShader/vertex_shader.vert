@@ -16,7 +16,7 @@ layout (push_constant) uniform PC
     vec4 posSize;
     vec4 color;
     vec4 data; // h1x, h2x, vx, vy
-    vec4 data2; // rot, unused, unused, unused
+    vec4 data2; // rot, cr1, cr2, cr3
 } pc;
 
 vec2 rotateAroundOrigin(vec2 point, float angle)

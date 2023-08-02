@@ -19,6 +19,7 @@
 #include <ShaderHeaders/GridSquare.h>
 #include <ShaderHeaders/ArrowShader.h>
 #include <ShaderHeaders/ItemList.h>
+#include <ShaderHeaders/ManyTexture.h>
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
@@ -169,6 +170,7 @@ public:
     GridSquare* gridSquare;
     ArrowShader* arrowShader;
     ItemList* itemList;
+    ManyTexture* manyTexture;
 
     std::vector<ShaderBase*> shaders;
 

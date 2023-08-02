@@ -89,6 +89,7 @@ void Sounder::update()
         {
             alSourceStop(src->source);
             alSourcef(src->source, AL_GAIN, 1.0);
+            alSourcei(src->source, AL_SOURCE_RELATIVE, AL_FALSE);
             alSource3f(src->source, AL_POSITION, 0.0f, 0.0f, 0.0f);
 
             if (!prevSrc)

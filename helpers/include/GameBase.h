@@ -6,7 +6,7 @@
 class Portal;
 class fixtureData;
 
-typedef enum
+typedef enum GEL_TYPE_N
 {
     NONE = 0x01,
     BLUE = 0x02,

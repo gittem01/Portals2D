@@ -3,6 +3,7 @@
 layout (location = 0) in vec2 vertex;
 
 layout (location = 0) out vec2 localPos;
+layout (location = 1) out vec2 worldPos;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -14,7 +15,7 @@ layout (set = 0, binding = 0) uniform SharedUboData
 layout (push_constant) uniform PC
 {
     vec4 posSize;
-    vec4 data;
+    int data[4];
 } pc;
 
 vec2 rotateAroundOrigin(vec2 point, float angle)
@@ -33,6 +34,6 @@ vec2 rotateAroundOrigin(vec2 point, float angle)
 void main() 
 {
     localPos = vertex * pc.posSize.zw;
-    vec2 altVec = localPos + pc.posSize.xy;
-	gl_Position = sharedUboData.orthoMatrix * vec4(altVec, 0.0, 1.0);
+    worldPos = localPos + pc.posSize.xy;
+	gl_Position = sharedUboData.orthoMatrix * vec4(worldPos, 0.0, 1.0);
 }

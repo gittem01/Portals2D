@@ -18,7 +18,7 @@ layout (push_constant) uniform PC
     vec4 posSize;
     vec4 color;
     vec4 data; // h1x, h2x, vx, vy
-    vec4 data2; // rot, unused, unused, unused
+    vec4 data2; // rot, cr1, cr2, cr3
 } pc;
 
 float normalizeAngle(float angle)
@@ -126,7 +126,7 @@ void main()
     float r, ang1, ang2;
     if (hPos1.x > vPos.x)
     {
-        circBetween(vec2(vPos.x, -vPos.y), hPos1, vPos, 0.05, p, r, ang1, ang2);
+        circBetween(vec2(vPos.x, -vPos.y), hPos1, vPos, pc.data2.w, p, r, ang1, ang2);
     
         if (angleBetween(ang2, ang1, calcAngle2(lPos - p)))
         {
@@ -149,7 +149,7 @@ void main()
         float minDist = min(min(dist0, dist2), dist3);
         FragColor = retMult(minDist) * clr;
         
-        circBetween(vec2(vPos.x, -vPos.y), hPos2, vPos, 0.25, p, r, ang1, ang2);
+        circBetween(vec2(vPos.x, -vPos.y), hPos2, vPos, pc.data2.y, p, r, ang1, ang2);
         
         if (angleBetween(ang2, ang1, calcAngle2(lPos - p)))
         {
@@ -164,7 +164,7 @@ void main()
             }
         }
         
-        circBetween(hPos2, vPos, hPos1, 0.5, p, r, ang1, ang2);
+        circBetween(hPos2, vPos, hPos1, pc.data2.z, p, r, ang1, ang2);
         if (angleBetween(ang2, ang1, calcAngle2(lPos - p)))
         {
             if (length(lPos - p) < r)
@@ -180,7 +180,7 @@ void main()
         
         if (hPos1.x < vPos.x)
         {
-            circBetween(vPos, hPos1, vec2(vPos.x, -vPos.y), 0.25, p, r, ang1, ang2);
+            circBetween(vPos, hPos1, vec2(vPos.x, -vPos.y), pc.data2.w, p, r, ang1, ang2);
 
             if (angleBetween(ang2, ang1, calcAngle2(lPos - p)))
             {
