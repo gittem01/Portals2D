@@ -426,26 +426,13 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     
     glm::vec2 camPos = wh->cam->pos;
 
-    // Black wall
-    {
-        blackWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
+    blackWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
+    whiteWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
+    wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
-        blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
-    }
-
-    // White wall
-    {
-        whiteWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
-
-        whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
-    }
-
-    // Wall light
-    {
-        wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
-
-        wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
-    }
+    blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
+    whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
+    wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
 
     // Laser
     {

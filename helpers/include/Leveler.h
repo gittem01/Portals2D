@@ -72,6 +72,12 @@ public:
 	class Overlayer* ol;
 
 	//////////////////
+	std::vector<s_gridOperation> operations;
+	int maxOperations = 3;
+	int currentOperation = 0;
+	int numOperations;
+
+	//////////////////
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_B;
 

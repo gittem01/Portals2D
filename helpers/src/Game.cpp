@@ -38,8 +38,6 @@ void Game::LevelerState()
 {
     leveler = new Leveler(this);
 
-    //thinDrawer->whiteWallShader->wallCount = 0;
-
     lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(thinDrawer->wh->window))
     {
