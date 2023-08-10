@@ -58,8 +58,8 @@ void main()
 
     float divRat = 0.5;
 
-    grdClr.x = (grdClr.x - (1.0 - 1.0 / 2.0)) * 2.0;
-    grdClr.z = (grdClr.z - (1.0 - 1.0 / 4.0)) * 4.0;
+    grdClr.x = (grdClr.x - (1.0 - 1.0 / 3.0)) * 3.0;
+    grdClr.z = (grdClr.z - (1.0 - 1.0 / 3.0)) * 3.0;
 
     grdClr.x = max(grdClr.x, grdClr.z);
 

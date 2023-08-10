@@ -59,9 +59,17 @@ inline bool operator==(const s_gridSquare lhs, const s_gridSquare rhs)
 
 typedef struct GridOperation
 {
-	operationType operationYype;
+	s_gridSquare pos;
+	operationType operationType;
 	levelObject objectType;
 } s_gridOperation;
+
+typedef struct GridOperationList
+{
+	std::vector<s_gridOperation> operations;
+	GridOperationList* next = nullptr;
+	GridOperationList* prev = nullptr;
+} s_gridOperationList;
 
 class Leveler
 {
@@ -72,10 +80,9 @@ public:
 	class Overlayer* ol;
 
 	//////////////////
-	std::vector<s_gridOperation> operations;
-	int maxOperations = 3;
-	int currentOperation = 0;
-	int numOperations;
+	s_gridOperationList* operationList;
+	s_gridOperationList* currentOperation;
+	int numOperations = 0;
 
 	//////////////////
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;
@@ -102,8 +109,10 @@ public:
 	s_levelGridData getSquare(short x, short y);
 
 	void fillGrid(short minX, short minY, short maxX, short maxY, levelObject fillType);
+	void takeBack(bool shiftPressed);
 	void addGridSquare_W(short x, short y);
 	void addGridSquare_B(short x, short y);
+	void addGridSquare(short x, short y, levelObject objectType);
 
 	void removeGridSquare(short x, short y);
 

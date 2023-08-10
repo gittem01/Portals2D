@@ -285,7 +285,7 @@ void ThinDrawer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t te
     flushCommandBuffer(commandBuffer);
 }
 
-void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter)
+void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter, float lodBias)
 {
     std::string finalPath = IOHelper::assetsFolder + fileName;
 
@@ -303,12 +303,12 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     tData.width = width;
     tData.height = height;
     tData.numChannels = nChannels;
-    loadTextureFromMemory(&tData, texture, enableAnisotropy, addressMode, filter);
+    loadTextureFromMemory(&tData, texture, enableAnisotropy, addressMode, filter, lodBias);
 
     stbi_image_free(pixels);
 }
 
-void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter)
+void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter, float lodBias)
 {
     VkFormat format;
     if (texData->numChannels == 4)
@@ -417,7 +417,7 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
     sampler.addressModeU = addressMode;
     sampler.addressModeV = addressMode;
     sampler.addressModeW = addressMode;
-    sampler.mipLodBias = 0.0f;
+    sampler.mipLodBias = lodBias;
     sampler.compareOp = VK_COMPARE_OP_NEVER;
     sampler.minLod = 0.0f;
     sampler.maxLod = VK_LOD_CLAMP_NONE;

@@ -12,6 +12,16 @@ class Camera;
 class WindowHandler
 {
 public:
+#ifdef __APPLE__
+	static const int pIndLeftCommand = GLFW_KEY_LEFT_SUPER;
+	static const int pIndRightCommand = GLFW_KEY_RIGHT_SUPER;
+#else
+	static const int pIndLeftCommand = GLFW_KEY_LEFT_CONTROL;
+	static const int pIndRightCommand = GLFW_KEY_RIGHT_CONTROL;
+#endif // APPLE
+
+
+
 	int* keyData = (int*)calloc(512, sizeof(int));
 	double* mouseData = (double*)calloc(7, sizeof(double));
 	double* trackpadData = (double*)calloc(2, sizeof(int));
