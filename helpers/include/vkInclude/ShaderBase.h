@@ -5,6 +5,19 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+typedef struct GridPositionShader
+{
+    short x;
+    short y;
+} s_gridPositionShader;
+
+typedef struct ShaderGridData
+{
+    int offsetStart;
+    int offsetEnd;
+    int numElements;
+} s_shaderGridData;
+
 typedef struct s_buffers
 {
     VkDeviceMemory memory;
@@ -110,6 +123,7 @@ public:
     static std::vector<int64_t> alignedSizes;
 
     static std::vector<s_uniformBuffer*> commonStorageBuffers;
+
     static void createCommonStorageBuffers(ThinDrawer* thinDrawer);
     static void init(ThinDrawer* thinDrawer);
     static void setSharedLayout(ThinDrawer* thinDrawer);

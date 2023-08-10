@@ -5,20 +5,11 @@
 #include <definitions.h>
 #include <vkInit.h>
 
-void BlackWall::prepareVertexData()
-{
-
-}
-
 void BlackWall::prepareUniforms()
 {
-    wallCount = 0;
-
     // offset is not used no need for alignment
     int alignedSizeFS = sizeof(s_wallUbo_b);
     uniformBuffers.resize(1);
-
-    wallCount = 0;
 
     uniformBuffers.resize(1);
 
@@ -29,7 +20,26 @@ void BlackWall::prepareUniforms()
 
 void BlackWall::testFill()
 {
-    recreateUniforms(30000);
+    renderGridUp.resize(2);
+
+    int offs = 0;
+    for (int l = 0; l < renderGridUp.size(); l++)
+    {
+        renderGridUp[l].resize(gridCount);
+        for (int i = 0; i < gridCount; i++)
+        {
+            renderGridUp[l][i].resize(gridCount);
+            for (int j = 0; j < gridCount; j++)
+            {
+                renderGridUp[l][i][j].numElements = 0;
+                renderGridUp[l][i][j].offsetStart = offs;
+                renderGridUp[l][i][j].offsetEnd = offs;
+                offs += gridDivider * gridDivider;
+            }
+        }
+    }
+
+    recreateUniforms(2000000);
 
     int alignedSizeFS = sizeof(s_wallUbo_b);
 
@@ -38,14 +48,18 @@ void BlackWall::testFill()
     {
         for (int j = -60; j < 60; j++)
         {
+            s_gridPositionShader gridPos = getGridSquare(i * sz, j * sz);
+            s_shaderGridData* gData = &renderGridUp[0][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
             s_wallUbo_b* wallUbo;
-            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
+            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
             wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
             wallUbo->colour = glm::vec4(0.03, 0.03, 0.03, 1.0) * rndVal;
             wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 0.8, 0.0);
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 
@@ -54,14 +68,18 @@ void BlackWall::testFill()
     {
         for (int j = 0; j < 2; j++)
         {
+            s_gridPositionShader gridPos = getGridSquare(i * sz2 + -4.0f, j * sz2 + 4.0f);
+            s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
             s_wallUbo_b* wallUbo;
-            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
+            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
             wallUbo->posSize = glm::vec4(i * sz2 + -4.0, j * sz2 + 4.0, sz2, sz2);
             wallUbo->colour = glm::vec4(0.2, 0.2, 0.2, 1.0) * rndVal;
             wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 1.0, 0.0);
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 }

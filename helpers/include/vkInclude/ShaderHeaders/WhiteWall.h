@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ShaderBase.h>
+#include <WallBase.h>
 
 typedef struct
 {
@@ -12,20 +12,17 @@ typedef struct
     glm::vec4 data2; // unused, unused, camMult, unused
 } s_wallUbo_w;
 
-class WhiteWall : public ShaderBase
+class WhiteWall : public WallBase
 {
 public:
-    WhiteWall(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
-
-    int wallCount;
+    WhiteWall(ThinDrawer* thinDrawer) : WallBase(thinDrawer) { }
 
     void prepareUniforms();
     void setupDescriptorSetLayout();
     void preparePipeline();
     void setupDescriptorSet();
-    void prepareVertexData();
 
+    ///////////
     void recreateUniforms(int size);
-
     void testFill();
 };

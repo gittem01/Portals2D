@@ -12,8 +12,8 @@ Leveler::Leveler(Game* game)
 
     clickStart[0] = -100000;
 
-    thinDrawer->whiteWallShader->recreateUniforms(numWhiteWall);
-    thinDrawer->blackWallShader->recreateUniforms(numBlackWall);
+    thinDrawer->whiteWallShader->recreateUniforms(numWhiteWall * 2);
+    thinDrawer->blackWallShader->recreateUniforms(numBlackWall * 2);
 
     thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
     thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
@@ -35,6 +35,28 @@ Leveler::~Leveler()
     }
 }
 
+void rupFiller(std::vector<std::vector<std::vector<s_shaderGridData>>>& renderGridUp)
+{
+    renderGridUp.resize(2);
+
+    int offs = 0;
+    for (int l = 0; l < renderGridUp.size(); l++)
+    {
+        renderGridUp[l].resize(WallBase::gridCount);
+        for (int i = 0; i < WallBase::gridCount; i++)
+        {
+            renderGridUp[l][i].resize(WallBase::gridCount);
+            for (int j = 0; j < WallBase::gridCount; j++)
+            {
+                renderGridUp[l][i][j].numElements = 0;
+                renderGridUp[l][i][j].offsetStart = offs;
+                renderGridUp[l][i][j].offsetEnd = offs;
+                offs += WallBase::gridDivider * WallBase::gridDivider;
+            }
+        }
+    }
+}
+
 void Leveler::initOffsets()
 {
     gridMap.resize(ySize);
@@ -46,6 +68,41 @@ void Leveler::initOffsets()
             gridMap[i][j] = { NONE_LO, 0 };
 		}
 	}
+
+    lastOffsetPos_W.resize(WallBase::gridCount);
+    lastOffsetPos_B.resize(WallBase::gridCount);
+    for (int i = 0; i < WallBase::gridCount; i++)
+    {
+        lastOffsetPos_W[i].resize(WallBase::gridCount);
+        lastOffsetPos_B[i].resize(WallBase::gridCount);
+    }
+
+    rupFiller(thinDrawer->whiteWallShader->renderGridUp);
+    rupFiller(thinDrawer->blackWallShader->renderGridUp);
+    rupFiller(thinDrawer->wallLight->renderGridUp);
+
+    const float sz = 2.5f;
+    for (int i = -200; i < 200; i++)
+    {
+        for (int j = -200; j < 200; j++)
+        {
+            s_gridPositionShader gridPos = thinDrawer->blackWallShader->getGridSquare(i * sz, j * sz);
+            s_shaderGridData* gData = &thinDrawer->blackWallShader->renderGridUp[0][gridPos.y][gridPos.x];
+            gData->numElements++;
+
+            float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
+            if (rndVal > 0.98f) continue;
+
+            s_wallUbo_b* wallUbo;
+            vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
+                gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
+            wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
+            wallUbo->colour = glm::vec4(0.01, 0.01, 0.01, 1.0) * rndVal;
+            wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.8, 0.0);
+            vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
+            gData->offsetEnd++;
+        }
+    }
 }
 
 void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
@@ -80,6 +137,8 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 {
     Leveler* leveler = (Leveler*)ptr;
     
+    if (leveler->ol->selectedItemIndex == -1) return;
+
     ThinDrawer* td = leveler->thinDrawer;
 
     const VkDeviceSize offsets = 0;
@@ -248,32 +307,41 @@ void Leveler::addGridSquare_W(short x, short y)
     wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
     wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
-    int offset = thinDrawer->whiteWallShader->wallCount * sizeof(s_wallUbo_w);
+    s_gridPositionShader pos = thinDrawer->whiteWallShader->getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+    s_shaderGridData* gridData = &thinDrawer->whiteWallShader->renderGridUp[1][pos.y][pos.x];
+    gridData->numElements++;
+
+    int offset = gridData->offsetEnd * sizeof(s_wallUbo_w);
+    gridData->offsetEnd++;
+
     void* pData;
     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory,
         offset, sizeof(s_wallUbo_w), 0, (void**)&pData);
     memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
-    thinDrawer->whiteWallShader->wallCount++;
 
-    lastOffsetPos_W.push_back({ x, y });
+    lastOffsetPos_W[pos.y][pos.x].push_back({x, y});
     setSquare(x, y, { WHITE_WALL, offset });
 }
 
 void Leveler::addGridSquare_B(short x, short y)
 {
+    s_gridPositionShader pos = thinDrawer->blackWallShader->getGridSquare(x + 0.5f, y + 0.5f);
+    s_shaderGridData* gridData = &thinDrawer->blackWallShader->renderGridUp[1][pos.y][pos.x];
+    gridData->numElements++;
+
     float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
     s_wallUbo_b* wallUbo;
-    int offset = thinDrawer->blackWallShader->wallCount * sizeof(s_wallUbo_b);
+    int offset = gridData->offsetEnd * sizeof(s_wallUbo_b);
+    gridData->offsetEnd++;
     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
         offset, sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
     wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
     wallUbo->colour = glm::vec4(0.03, 0.03, 0.03, 1.0) * rndVal;
-    wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 1.0, 0.0);
+    wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.06, 1.0, 0.0);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
-    thinDrawer->blackWallShader->wallCount++;
 
-    lastOffsetPos_B.push_back({ x, y });
+    lastOffsetPos_B[pos.y][pos.x].push_back({x, y});
     setSquare(x, y, { BLACK_WALL, offset });
 }
 
@@ -288,18 +356,24 @@ void Leveler::removeGridSquare(short x, short y)
     {
     case WHITE_WALL:
     {
-        s_gridSquare lastOffsetPos = lastOffsetPos_W.back();
+        s_gridPositionShader pos = thinDrawer->whiteWallShader->getGridSquare((float)x, (float)y);
+        std::vector<s_gridSquare>& lastOffsetPosVec = lastOffsetPos_W[pos.y][pos.x];
+        s_gridSquare lastOffsetPos = lastOffsetPosVec.back();
+
+        s_shaderGridData* gridData = &thinDrawer->whiteWallShader->renderGridUp[1][pos.y][pos.x];
+
         if (lastOffsetPos == s_gridSquare{ x, y })
         {
-			lastOffsetPos_W.pop_back();
-            thinDrawer->whiteWallShader->wallCount--;
+            lastOffsetPosVec.pop_back();
+            gridData->numElements--;
+            gridData->offsetEnd--;
             break;
 		}
 
-        int offsetPosIndex = gData.data.offset / sizeof(s_wallUbo_w);
+        int offsetPosIndex = gData.data.offset / sizeof(s_wallUbo_w) - gridData->offsetStart;
 
-        lastOffsetPos_W[offsetPosIndex] = lastOffsetPos;
-        lastOffsetPos_W.pop_back();
+        lastOffsetPosVec[offsetPosIndex] = lastOffsetPos;
+        lastOffsetPosVec.pop_back();
 
         s_levelGridData gridWithLastOffset = getSquare(lastOffsetPos.x, lastOffsetPos.y);
 
@@ -314,7 +388,8 @@ void Leveler::removeGridSquare(short x, short y)
         memcpy((void*)wUbo, (void*)&wUboStager, sizeof(s_wallUbo_w));
         vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
 
-        thinDrawer->whiteWallShader->wallCount--;
+        gridData->numElements--;
+        gridData->offsetEnd--;
 
         setSquare(lastOffsetPos.x, lastOffsetPos.y, { WHITE_WALL, gData.data.offset });
     }
@@ -322,18 +397,23 @@ void Leveler::removeGridSquare(short x, short y)
 
     case BLACK_WALL:
     {
-        s_gridSquare lastOffsetPos = lastOffsetPos_B.back();
+        s_gridPositionShader pos = thinDrawer->blackWallShader->getGridSquare(x, y);
+        std::vector<s_gridSquare>& lastOffsetPosVec = lastOffsetPos_B[pos.y][pos.x];
+        
+        s_gridSquare lastOffsetPos = lastOffsetPosVec.back();
+        s_shaderGridData* gridData = &thinDrawer->blackWallShader->renderGridUp[1][pos.y][pos.x];
         if (lastOffsetPos == s_gridSquare{ x, y })
         {
-            lastOffsetPos_B.pop_back();
-            thinDrawer->blackWallShader->wallCount--;
+            lastOffsetPosVec.pop_back();
+            gridData->numElements--;
+            gridData->offsetEnd--;
             break;
         }
 
-        int offsetPosIndex = gData.data.offset / sizeof(s_wallUbo_b);
+        int offsetPosIndex = gData.data.offset / sizeof(s_wallUbo_b) - gridData->offsetStart;
 
-        lastOffsetPos_B[offsetPosIndex] = lastOffsetPos;
-        lastOffsetPos_B.pop_back();
+        lastOffsetPosVec[offsetPosIndex] = lastOffsetPos;
+        lastOffsetPosVec.pop_back();
 
         s_levelGridData gridWithLastOffset = getSquare(lastOffsetPos.x, lastOffsetPos.y);
 
@@ -348,7 +428,8 @@ void Leveler::removeGridSquare(short x, short y)
         memcpy((void*)wUbo, (void*)&wUboStager, sizeof(s_wallUbo_b));
         vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
 
-        thinDrawer->blackWallShader->wallCount--;
+        gridData->numElements--;
+        gridData->offsetEnd--;
 
         setSquare(lastOffsetPos.x, lastOffsetPos.y, { BLACK_WALL, gData.data.offset });
     }

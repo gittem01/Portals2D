@@ -13,11 +13,17 @@ typedef union GridData
 
 typedef enum LevelObject
 {
-	NONE_LO = 0x0,
-	WHITE_WALL = 0x1 << 0,
-	BLACK_WALL = 0x1 << 1,
-	DEFAULT_CUBE = 0x1 << 2,
+	NONE_LO			= 0x0,
+	WHITE_WALL		= 0x1 << 0,
+	BLACK_WALL		= 0x1 << 1,
+	DEFAULT_CUBE	= 0x1 << 2,
 } levelObject;
+
+typedef enum OperationType
+{
+	ADD		= 0,
+	REMOVE	= 1,
+} operationType;
 
 typedef struct WallData
 {
@@ -51,6 +57,12 @@ inline bool operator==(const s_gridSquare lhs, const s_gridSquare rhs)
 	return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
+typedef struct GridOperation
+{
+	operationType operationYype;
+	levelObject objectType;
+} s_gridOperation;
+
 class Leveler
 {
 public:
@@ -60,17 +72,17 @@ public:
 	class Overlayer* ol;
 
 	//////////////////
-	std::vector<s_gridSquare> lastOffsetPos_W;
-	std::vector<s_gridSquare> lastOffsetPos_B;
+	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;
+	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_B;
 
 	//////////////////
 	std::vector<std::vector<s_levelGridData>> gridMap;
 	int clickStart[2];
 
-	short xSize = 1000;
-	short ySize = 1000;
-	short xSize_H = xSize / 2;
-	short ySize_H = ySize / 2;
+	const short xSize = 1000;
+	const short ySize = 1000;
+	const short xSize_H = xSize / 2;
+	const short ySize_H = ySize / 2;
 
 	int numWhiteWall = xSize * ySize;
 	int numBlackWall = xSize * ySize;

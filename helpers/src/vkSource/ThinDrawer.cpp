@@ -424,52 +424,27 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     const VkDeviceSize offsets = 0;
     const uint32_t camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
     
+    glm::vec2 camPos = wh->cam->pos;
+
     // Black wall
     {
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, blackWallShader->pipeline);
+        blackWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            blackWallShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            blackWallShader->pipelineLayout, 1, 1, &blackWallShader->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, blackWallShader->wallCount, 0, 0);
+        blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     }
 
     // White wall
     {
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, whiteWallShader->pipeline);
+        whiteWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &whiteWallShader->buffers[0]->buffer, &offsets);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            whiteWallShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            whiteWallShader->pipelineLayout, 1, 1, &whiteWallShader->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            whiteWallShader->pipelineLayout, 2, 1, &whiteWallShader->textureData[0]->set, 0, VK_NULL_HANDLE);
-
-        vkCmdDraw(cmdBuff, whiteWallShader->buffers[0]->count, whiteWallShader->wallCount, 0, 0);
+        whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     }
 
     // Wall light
     {
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, wallLight->pipeline);
+        wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            wallLight->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            wallLight->pipelineLayout, 1, 1, &wallLight->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, wallLight->lightCount, 0, 0);
+        wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
     }
 
     // Laser

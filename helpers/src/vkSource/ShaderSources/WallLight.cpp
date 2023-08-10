@@ -5,38 +5,9 @@
 #include <definitions.h>
 #include <vkInit.h>
 
-void WallLight::prepareVertexData()
-{
-    const int bufferSize = 1;
-    buffers.resize(bufferSize);
-
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
-
-    std::vector<s_basicVertex> vertexBuffer =
-    {
-        { { -0.5f, +0.5f } },
-        { { +0.5f, +0.5f } },
-        { { +0.5f, -0.5f } },
-        { { +0.5f, -0.5f } },
-        { { -0.5f, -0.5f } },
-        { { -0.5f, +0.5f } },
-    };
-
-    uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(s_basicVertex);
-    vertices->count = vertexBuffer.size();
-
-    thinDrawer->bufferStage(vertexBuffer.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vertices);
-}
-
 void WallLight::prepareUniforms()
 {
     alignedSize = sizeof(s_walLightlUbo);
-
-    lightCount = 0;
 
     uniformBuffers.resize(1);
 
@@ -47,6 +18,27 @@ void WallLight::prepareUniforms()
 
 void WallLight::testFill()
 {
+    renderGridUp.resize(2);
+
+    int offs = 0;
+    for (int l = 0; l < renderGridUp.size(); l++)
+    {
+        renderGridUp[l].resize(gridCount);
+        for (int i = 0; i < gridCount; i++)
+        {
+            renderGridUp[l][i].resize(gridCount);
+            for (int j = 0; j < gridCount; j++)
+            {
+                renderGridUp[l][i][j].numElements = 0;
+                renderGridUp[l][i][j].offsetStart = offs;
+                renderGridUp[l][i][j].offsetEnd = offs;
+                offs += gridDivider * gridDivider;
+            }
+        }
+    }
+
+    recreateUniforms(2000000);
+
     int num = 40;
     float v = 0.0;
     for (int j = 0; j < num; j++)
@@ -54,32 +46,45 @@ void WallLight::testFill()
         float ang = 0.5 * b2_pi;
         glm::vec2 pos = glm::vec2(j * 2.5f - 71.25 * 0.5, 15.0);
 
+        s_gridPositionShader gridPos = getGridSquare(pos.x, pos.y);
+        s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+        gData->numElements++;
+
         s_walLightlUbo* pData;
-        vkMapMemory(logicalDevice, uniformBuffers[0]->memory, j * alignedSize, alignedSize, 0, (void**)&pData);
+        vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSize, alignedSize, 0, (void**)&pData);
         pData->color = glm::vec4(1.0, 1.0, 1.0, 1.0);
         pData->posSize = glm::vec4(pos.x, pos.y, 5.0, 1.25);
         pData->data = glm::vec4(4.0, 0.8, 0.3, -2.0);
         pData->data2 = glm::vec4(ang, 0.0, 1.0, 1.0);
         vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-        lightCount++;
+        gData->offsetEnd++;
     }
 
+
+    s_gridPositionShader gridPos = getGridSquare(0.0f, 30.0f);
+    s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+    gData->numElements++;
+
     s_walLightlUbo* pData;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, lightCount * alignedSize, alignedSize, 0, (void**)&pData);
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSize, alignedSize, 0, (void**)&pData);
     pData->color = glm::vec4(1.0, 1.0, 5.0, 1.0);
     pData->posSize = glm::vec4(0.0, 30.0, 20.0, 20.0);
     pData->data = glm::vec4(20.0, 20.0, 1.5, -10.0);
     pData->data2 = glm::vec4(0.0, 1.0, 1.0, 5.0);
     vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-    lightCount++;
+    gData->offsetEnd++;
 
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, lightCount * alignedSize, alignedSize, 0, (void**)&pData);
+    gridPos = getGridSquare(9.75f, -3.75f);
+    gData = &renderGridUp[1][gridPos.y][gridPos.x];
+    gData->numElements++;
+
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSize, alignedSize, 0, (void**)&pData);
     pData->color = glm::vec4(1.0, 2.0, 1.0, 1.0);
     pData->posSize = glm::vec4(9.75, -3.75, 12.0, 3.0);
     pData->data = glm::vec4(11.0, 1.5, 0.4, -5.0);
     pData->data2 = glm::vec4(0.0, 0.0, 0.8, 1.0);
     vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-    lightCount++;
+    gData->offsetEnd++;
 }
 
 void WallLight::setupDescriptorSetLayout()
@@ -156,6 +161,26 @@ void WallLight::setupDescriptorSet()
 
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
+    writeDescriptorSet.dstSet = descriptorSets[1];
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+    vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
+}
+
+void WallLight::recreateUniforms(int size)
+{
+    vkDeviceWaitIdle(logicalDevice);
+
+    vkDestroyBuffer(logicalDevice, uniformBuffers[0]->buffer, VK_NULL_HANDLE);
+    vkFreeMemory(logicalDevice, uniformBuffers[0]->memory, VK_NULL_HANDLE);
+
+    thinDrawer->uniformHelper(sizeof(s_walLightlUbo) * size, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkWriteDescriptorSet writeDescriptorSet = { };
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.dstBinding = 0;
     writeDescriptorSet.dstSet = descriptorSets[1];
     writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;

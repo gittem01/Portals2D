@@ -5,37 +5,8 @@
 #include <definitions.h>
 #include <vkInit.h>
 
-void WhiteWall::prepareVertexData()
-{
-    const int bufferSize = 1;
-    buffers.resize(bufferSize);
-
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
-
-    std::vector<s_basicVertex> vertexBuffer =
-    {
-            { {-0.5f, +0.5f} },
-            { {+0.5f, +0.5f} },
-            { {+0.5f, -0.5f} },
-            { {+0.5f, -0.5f} },
-            { {-0.5f, -0.5f} },
-            { {-0.5f, +0.5f} },
-    };
-
-    uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(s_basicVertex);
-    vertices->count = vertexBuffer.size();
-
-    thinDrawer->bufferStage(vertexBuffer.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vertices);
-}
-
 void WhiteWall::prepareUniforms()
 {
-    wallCount = 0;
-
     uniformBuffers.resize(1);
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
@@ -45,12 +16,30 @@ void WhiteWall::prepareUniforms()
 
 void WhiteWall::testFill()
 {
-    recreateUniforms(10000);
+    renderGridUp.resize(2);
+    
+    int offs = 0;
+    for (int l = 0; l < renderGridUp.size(); l++)
+    {
+        renderGridUp[l].resize(gridCount);
+        for (int i = 0; i < gridCount; i++)
+        {
+            renderGridUp[l][i].resize(gridCount);
+            for (int j = 0; j < gridCount; j++)
+            {
+                renderGridUp[l][i][j].numElements = 0;
+                renderGridUp[l][i][j].offsetStart = offs;
+                renderGridUp[l][i][j].offsetEnd = offs;
+                offs += gridDivider * gridDivider;
+            }
+        }
+    }
+    
+    recreateUniforms(2000000);
 
     int alignedSizeFS = sizeof(s_wallUbo_w);
     int x = 25;
     int y = 40;
-    wallCount = 0;
     const glm::vec2 size = glm::vec2(1.25f, 2.5f);
 
     float sz = 1.5f;
@@ -68,11 +57,15 @@ void WhiteWall::testFill()
             wallUbo.data = glm::vec4(0.1f + randVal22, 0.06f, 2.0f, 1.0f);
             wallUbo.data2 = glm::vec4(0.0, 0.0, 0.8f, 0.0f);
 
+            s_gridPositionShader gridPos = getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+            s_shaderGridData* gData = &renderGridUp[0][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             void* pData;
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
             memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 
@@ -91,11 +84,15 @@ void WhiteWall::testFill()
             wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 0.3f);
             wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
+            s_gridPositionShader gridPos = getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+            s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             void* pData;
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
             memcpy(pData, &wallUbo, alignedSizeFS);
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 
@@ -113,11 +110,15 @@ void WhiteWall::testFill()
             wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 1.0f);
             wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
+            s_gridPositionShader gridPos = getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+            s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             void* pData;
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
             memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 
@@ -137,11 +138,15 @@ void WhiteWall::testFill()
             wallUbo.data = glm::vec4(0.05 + randVal22, 0.06f, 2.0f, 1.0f);
             wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
+            s_gridPositionShader gridPos = getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+            s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             void* pData;
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
             memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 
@@ -159,11 +164,15 @@ void WhiteWall::testFill()
             wallUbo.data = glm::vec4(0.05f + randVal22, 0.06f, 2.0f, 1.0f);
             wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
+            s_gridPositionShader gridPos = getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+            s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             void* pData;
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
             memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 
@@ -180,11 +189,15 @@ void WhiteWall::testFill()
             wallUbo.data = glm::vec4(0.05f, 0.06f, 2.0f, 1.0f);
             wallUbo.data2 = glm::vec4(0.0, 0.0, 1.0f, 0.0f);
 
+            s_gridPositionShader gridPos = getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+            s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
+            gData->numElements++;
+
             void* pData;
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, wallCount * alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd* alignedSizeFS, alignedSizeFS, 0, (void**)&pData));
             memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-            wallCount++;
+            gData->offsetEnd++;
         }
     }
 }

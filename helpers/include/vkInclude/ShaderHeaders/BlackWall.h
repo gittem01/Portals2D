@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ShaderBase.h>
+#include <WallBase.h>
 
 typedef struct
 {
@@ -9,20 +9,16 @@ typedef struct
     glm::vec4 data; // isVertical, lineSize, camMult, none
 } s_wallUbo_b;
 
-class BlackWall : public ShaderBase
+class BlackWall : public WallBase
 {
 public:
-    BlackWall(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
-
-    int wallCount;
+    BlackWall(ThinDrawer* thinDrawer) : WallBase(thinDrawer) { }
 
     void prepareUniforms();
     void setupDescriptorSetLayout();
     void preparePipeline();
     void setupDescriptorSet();
-    void prepareVertexData();
 
     void testFill();
-
     void recreateUniforms(int size);
 };

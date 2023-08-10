@@ -1,7 +1,6 @@
 #pragma once
 
-#include <ShaderBase.h>
-#include <glm/glm.hpp>
+#include <WallBase.h>
 
 typedef struct
 {
@@ -11,19 +10,18 @@ typedef struct
     glm::vec4 data2; // rotation, glass rotation, camMult, lightScatterRatio
 } s_walLightlUbo;
 
-class WallLight : public ShaderBase
+class WallLight : public WallBase
 {
 public:
-    WallLight(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
+    WallLight(ThinDrawer* thinDrawer) : WallBase(thinDrawer) { }
 
     int alignedSize;
-    int lightCount;
 
     void prepareUniforms();
     void setupDescriptorSetLayout();
     void preparePipeline();
     void setupDescriptorSet();
-    void prepareVertexData();
 
     void testFill();
+    void recreateUniforms(int size);
 };
