@@ -69,6 +69,7 @@ void ThinDrawer::initExtra()
     arrowShader = new ArrowShader(this); shaders.push_back(arrowShader);
     itemList = new ItemList(this); shaders.push_back(itemList);
     manyTexture = new ManyTexture(this); shaders.push_back(manyTexture);
+    diagonalLiner = new DiagonalLiner(this); shaders.push_back(diagonalLiner);
 
     setupDescriptorPool();
 
@@ -429,10 +430,12 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     blackWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     whiteWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
+    diagonalLiner->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
     blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
+    diagonalLiner->render(cmdBuff, 1, camPos.x, -camPos.y);
 
     // Laser
     {

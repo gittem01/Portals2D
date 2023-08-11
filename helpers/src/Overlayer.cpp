@@ -30,6 +30,8 @@ Overlayer::Overlayer(Game* game)
 
     addItem("PortallableWall", "ww.png", WHITE_WALL);
     addItem("N_PotallableWall", "bb.png", BLACK_WALL);
+    addItem("GlassWall", "glassWall.png", GLASS_WALL);
+    addItem("FenceWall", "fenceWall.png", FENCE_WALL);
     addItem("DefaultCube", "cube.png", DEFAULT_CUBE);
 }
 

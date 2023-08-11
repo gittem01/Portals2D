@@ -22,7 +22,7 @@ public:
 
 	float baseX = 16.0f;
 
-	glm::vec2 zoomLimits = glm::vec2(0.4, 20);
+	glm::vec2 zoomLimits = glm::vec2(0.5, 20);
 
 	glm::mat4 camMatrix;
 

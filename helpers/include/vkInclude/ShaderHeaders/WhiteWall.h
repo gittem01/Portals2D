@@ -10,6 +10,7 @@ typedef struct
     glm::vec4 edgeColour;
     glm::vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
     glm::vec4 data2; // unused, unused, camMult, unused
+    glm::ivec4 sideData;
 } s_wallUbo_w;
 
 class WhiteWall : public WallBase

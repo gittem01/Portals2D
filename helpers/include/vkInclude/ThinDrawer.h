@@ -20,6 +20,8 @@
 #include <ShaderHeaders/ArrowShader.h>
 #include <ShaderHeaders/ItemList.h>
 #include <ShaderHeaders/ManyTexture.h>
+#include <ShaderHeaders/DiagonalLiner.h>
+
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
@@ -171,6 +173,7 @@ public:
     ArrowShader* arrowShader;
     ItemList* itemList;
     ManyTexture* manyTexture;
+    DiagonalLiner* diagonalLiner;
 
     std::vector<ShaderBase*> shaders;
 

@@ -8,11 +8,12 @@ layout (location = 2) in vec2 tc;
 
 layout (location = 3) in InData
 {
-    vec4 bgColour;
-    vec4 dotColour;
-    vec4 edgeColour;
-    vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
-    vec4 data2; // sizex, sizey, camMult, unused
+    flat vec4 bgColour;
+    flat vec4 dotColour;
+    flat vec4 edgeColour;
+    flat vec4 data; // dotSize, sideMargin, sideMult, smoothRatio
+    flat vec4 data2; // sizex, sizey, camMult, unused
+    flat ivec4 sideData;
 };
 
 layout (set = 0, binding = 0) uniform SharedUboData
@@ -26,7 +27,10 @@ layout(set = 2, binding = 0) uniform sampler2D tex;
 layout(set = 2, binding = 1) uniform sampler2D gradTex;
 
 void main()
-{   
+{
+    const vec2 lineMults[4] = { vec2(0.0, -0.5), vec2(0.5, 0.0), vec2(0.0, 0.5), vec2(-0.5, 0.0) };
+    const vec2 pointMults[4] = { vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(0.5, 0.5), vec2(-0.5, 0.5) };
+
     float dotSize = data.x;
     float sideMargin = data.y * 4.0;
     float sideMult = data.z;
@@ -34,20 +38,38 @@ void main()
 
     float sizeX = data2.x;
     float sizeY = data2.y;
-
+    
+    int sd = sideData.x;
     float m = 1.0;
-    if (worldPos.x > 5.0 && worldPos.x < 15.0 &&
-        worldPos.y > 3.0 && worldPos.y < 7.0 || true)
+    if ((sd & 1) != 0)
     {
         const float pVal = 4.0;
         m = 0.0;
-        m += pow(max(1.0 - (worldPos.x + 4.0), 0.0), pVal);
-        m += pow(max(1.0 - (15.0 - worldPos.x), 0.0), pVal);
-        m += pow(max(1.0 - (worldPos.y - 3.0), 0.0), pVal);
-        m += pow(max(1.0 - (7.0 - worldPos.y), 0.0), pVal);
+        for (int i = 0; i < 4; i++)
+        {
+            sd >>= 1;
+            if ((sd & 1) == 0) continue;
+            vec2 lm = lineMults[i];
+            vec2 p = data2.xy * lm;
+            float diff = i % 2 == 0 ? abs(localPos.y - p.y) : abs(localPos.x - p.x);
+
+            m += pow(max(1.0 - diff, 0.0), pVal);
+        }
+
+        for (int i = 0; i < 4; i++)
+        {
+            sd >>= 1;
+            if ((sd & 1) == 0) continue;
+            vec2 lm = pointMults[i];
+            vec2 p = data2.xy * lm;
+            float diff = length(localPos.xy - p);
+
+            m += pow(max(1.0 - diff, 0.0), pVal);
+        }
+
         m = min(m, 1.0);
 
-        float adder = 0.02;
+        float adder = 0.03;
         m += adder;
         m *= 1.0 / (1.0 + adder);
     }

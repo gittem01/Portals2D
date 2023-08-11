@@ -11,12 +11,28 @@ typedef union GridData
 	char ext;
 } s_gridData;
 
+typedef enum SideData
+{
+	SIDE_DISABLE = 0x0,
+	SIDE_ENABLE = 0x1 << 0,
+	DOWN_LINE = 0x1 << 1,
+	RIGHT_LINE = 0x1 << 2,
+	UP_LINE = 0x1 << 3,
+	LEFT_LINE = 0x1 << 4,
+	LD_POINT = 0x1 << 5,
+	RD_POINT = 0x1 << 6,
+	RU_POINT = 0x1 << 7,
+	LU_POINT = 0x1 << 8,
+} sideData;
+
 typedef enum LevelObject
 {
 	NONE_LO			= 0x0,
 	WHITE_WALL		= 0x1 << 0,
 	BLACK_WALL		= 0x1 << 1,
-	DEFAULT_CUBE	= 0x1 << 2,
+	GLASS_WALL		= 0x1 << 2,
+	FENCE_WALL		= 0x1 << 3,
+	DEFAULT_CUBE	= 0x1 << 4,
 } levelObject;
 
 typedef enum OperationType
@@ -87,6 +103,7 @@ public:
 	//////////////////
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_B;
+	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_G;
 
 	//////////////////
 	std::vector<std::vector<s_levelGridData>> gridMap;
@@ -112,6 +129,8 @@ public:
 	void takeBack(bool shiftPressed);
 	void addGridSquare_W(short x, short y);
 	void addGridSquare_B(short x, short y);
+	void addGridSquare_G(short x, short y);
+	void addGridSquare_F(short x, short y);
 	void addGridSquare(short x, short y, levelObject objectType);
 
 	void removeGridSquare(short x, short y);
