@@ -464,7 +464,7 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
     const short botY = std::max(minY - 1, -ySize_H);
     const short topY = std::min(maxY + 1, ySize_H - 1);
     
-    const short regions[4][4] =
+    int regions[4][4] =
     {
         { leftX, rightX, botY, botY + 1 },
         { rightX - 1, rightX, botY, topY },
@@ -482,7 +482,7 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
     {
         for (int x = leftX; x <= rightX; x++)
         {
-            s_levelGridData& squareData = getSquare(x, y);
+            const s_levelGridData& squareData = getSquare(x, y);
             if ((squareData.objectType & (WHITE_WALL | BLACK_WALL)) == 0)
             {
                 continue;

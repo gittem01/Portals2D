@@ -40,7 +40,7 @@ public:
 
 	Camera(glm::vec2 pos, WindowHandler* wh);
 	Camera();
-	Camera::~Camera();
+	~Camera();
 
 	void init(glm::vec2 pos, WindowHandler* wh);
 
