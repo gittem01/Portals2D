@@ -491,7 +491,14 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
             int sideData = SIDE_ENABLE;
             for (int j = 0; j < 8; j++)
             {
-                if (!(getSquare(x + gridAdders[j].x, y + gridAdders[j].y).objectType & (WHITE_WALL | BLACK_WALL)))
+                int xPos = x + gridAdders[j].x;
+                int yPos = y + gridAdders[j].y;
+                if (xPos < -xSize_H || xPos > xSize_H - 1 || yPos < -ySize_H || yPos > ySize_H - 1)
+                {
+                    sideData |= SIDE_ENABLE | (DOWN_LINE << j);
+                    continue;
+                }
+                if (!(getSquare(xPos, yPos).objectType & (WHITE_WALL | BLACK_WALL)))
                 {
                     sideData |= SIDE_ENABLE | (DOWN_LINE << j);
 				}
