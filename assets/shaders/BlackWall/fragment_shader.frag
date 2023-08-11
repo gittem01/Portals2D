@@ -24,6 +24,7 @@ struct storageData
     vec4 posSize;
     vec4 colour;
     vec4 data; // isVertical, lineSize, camMult, none
+    ivec4 sideData;
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -49,6 +50,9 @@ vec2 cosDer(float x, float range)
 
 void main()
 {
+    const vec2 lineMults[4] = { vec2(0.0, -0.5), vec2(0.5, 0.0), vec2(0.0, 0.5), vec2(-0.5, 0.0) };
+    const vec2 pointMults[4] = { vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(0.5, 0.5), vec2(-0.5, 0.5) };
+
     storageData data = ubo.sData[instanceIndex];
 
     vec3 camPos = vec3(sharedUboData.cameraPos.x * data.data.z, -sharedUboData.cameraPos.y * data.data.z, sharedUboData.cameraPos.z / data.data.z);
@@ -58,19 +62,37 @@ void main()
     float borderSize = 0.05;
     bool isVertical = data.data.x > 0.5;;
 
+    int sd = data.sideData.x;
     float m = 1.0;
-    if (worldPos.x > 5.0 && worldPos.x < 15.0 &&
-        worldPos.y > 3.0 && worldPos.y < 7.0 || true)
+    if ((sd & 1) != 0)
     {
         const float pVal = 4.0;
         m = 0.0;
-        m += pow(max(1.0 - (worldPos.x + 4.0), 0.0), pVal);
-        m += pow(max(1.0 - (15.0 - worldPos.x), 0.0), pVal);
-        m += pow(max(1.0 - (worldPos.y - 3.0), 0.0), pVal);
-        m += pow(max(1.0 - (7.0 - worldPos.y), 0.0), pVal);
+        for (int i = 0; i < 4; i++)
+        {
+            sd >>= 1;
+            if ((sd & 1) == 0) continue;
+            vec2 lm = lineMults[i];
+            vec2 p = data.posSize.zw * lm;
+            float diff = i % 2 == 0 ? abs(localPos.y - p.y) : abs(localPos.x - p.x);
+
+            m += pow(max(1.0 - diff, 0.0), pVal);
+        }
+
+        for (int i = 0; i < 4; i++)
+        {
+            sd >>= 1;
+            if ((sd & 1) == 0) continue;
+            vec2 lm = pointMults[i];
+            vec2 p = data.posSize.zw * lm;
+            float diff = length(localPos.xy - p);
+
+            m += pow(max(1.0 - diff, 0.0), pVal);
+        }
+
         m = min(m, 1.0);
 
-        float adder = 0.02;
+        float adder = 0.1;
         m += adder;
         m *= 1.0 / (1.0 + adder);
     }

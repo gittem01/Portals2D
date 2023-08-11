@@ -33,6 +33,7 @@ Overlayer::Overlayer(Game* game)
     addItem("GlassWall", "glassWall.png", GLASS_WALL);
     addItem("FenceWall", "fenceWall.png", FENCE_WALL);
     addItem("DefaultCube", "cube.png", DEFAULT_CUBE);
+    addItem("Remove", "x.png", ERASER);
 }
 
 void Overlayer::maper(void* ptr)

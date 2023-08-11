@@ -19,6 +19,7 @@ struct storageData
     vec4 posSize;
     vec4 colour;
     vec4 data; // isVertical, lineSize, camMult, none
+    ivec4 sideData;
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO

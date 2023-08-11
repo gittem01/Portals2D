@@ -7,6 +7,7 @@ typedef struct
     glm::vec4 posSize;
     glm::vec4 colour;
     glm::vec4 data; // isVertical, lineSize, camMult, none
+    glm::ivec4 sideData;
 } s_wallUbo_b;
 
 class BlackWall : public WallBase

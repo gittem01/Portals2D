@@ -56,15 +56,7 @@ void DiagonalLiner::testFill()
             wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
             wallUbo->colour = glm::vec4(0.0, 0.0, 0.0, 1.0);
             wallUbo->bgColour = glm::vec4(0.02, 0.02, 0.02, 0.5);
-            wallUbo->data = glm::vec4(0.1, 0.4, 1.0, 1.0);
-
-            if (rndVal > 0.8)
-            {
-                wallUbo->colour = glm::vec4(0.5, 0.2, 0.0, 1.0);
-                wallUbo->bgColour = glm::vec4(0.0, 0.0, 0.0, 0.0);
-                wallUbo->data = glm::vec4(0.1, 0.8, 1.0, 0.5);
-            }
-            
+            wallUbo->data = glm::vec4(0.5, 1.5, 1.0, 1.0);
 
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
             gData->offsetEnd++;

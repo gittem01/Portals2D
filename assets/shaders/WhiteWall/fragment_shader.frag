@@ -69,7 +69,7 @@ void main()
 
         m = min(m, 1.0);
 
-        float adder = 0.03;
+        float adder = 0.05;
         m += adder;
         m *= 1.0 / (1.0 + adder);
     }

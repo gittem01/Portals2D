@@ -67,6 +67,7 @@ void Game::TestState()
     thinDrawer->whiteWallShader->testFill();
     thinDrawer->blackWallShader->testFill();
     thinDrawer->wallLight->testFill();
+    thinDrawer->diagonalLiner->testFill();
 
     lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(thinDrawer->wh->window))

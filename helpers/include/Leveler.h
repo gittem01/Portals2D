@@ -23,6 +23,7 @@ typedef enum SideData
 	RD_POINT = 0x1 << 6,
 	RU_POINT = 0x1 << 7,
 	LU_POINT = 0x1 << 8,
+	ALL_SIDES = 0x1FF,
 } sideData;
 
 typedef enum LevelObject
@@ -33,6 +34,7 @@ typedef enum LevelObject
 	GLASS_WALL		= 0x1 << 2,
 	FENCE_WALL		= 0x1 << 3,
 	DEFAULT_CUBE	= 0x1 << 4,
+	ERASER			= 0x1 << 20,
 } levelObject;
 
 typedef enum OperationType
@@ -85,6 +87,7 @@ typedef struct GridOperationList
 	std::vector<s_gridOperation> operations;
 	GridOperationList* next = nullptr;
 	GridOperationList* prev = nullptr;
+	glm::i16vec4 region;
 } s_gridOperationList;
 
 class Leveler
@@ -131,7 +134,10 @@ public:
 	void addGridSquare_B(short x, short y);
 	void addGridSquare_G(short x, short y);
 	void addGridSquare_F(short x, short y);
+	void addGridSquare_E(short x, short y);
 	void addGridSquare(short x, short y, levelObject objectType);
+
+	void sideUpdate(short minX, short maxX, short minY, short maxY);
 
 	void removeGridSquare(short x, short y);
 

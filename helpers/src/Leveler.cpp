@@ -20,7 +20,7 @@ Leveler::Leveler(Game* game)
     thinDrawer->wallLight->recreateUniforms(numWhiteWall * 2);
     thinDrawer->diagonalLiner->recreateUniforms(numWhiteWall * 2);
 
-    thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
+    //thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
     thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
 
     ol = new Overlayer(game);
@@ -142,7 +142,7 @@ void Leveler::initOffsets()
                     gData->offsetEnd * sizeof(s_walLightlUbo), sizeof(s_walLightlUbo), 0, (void**)&pData);
                 pData->color = glm::vec4(1.0 + r0, 1.0 + g0, 1.0 + b0, 1.0);
                 pData->posSize = glm::vec4(i * sz, j * sz, sz, sz);
-                pData->data = glm::vec4(sz * 0.6, sz * 0.3, 0.3, -2.0);
+                pData->data = glm::vec4(sz * 0.6, sz * 0.3, 0.3, -1.5);
                 pData->data2 = glm::vec4(ang, ang2, 0.8, 1.0);
                 vkUnmapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0]->memory);
                 gData->offsetEnd++;
@@ -340,6 +340,8 @@ void Leveler::takeBack(bool shiftPressed)
                     break;
                 }
             }
+
+            sideUpdate(currentOperation->region.x, currentOperation->region.y, currentOperation->region.z, currentOperation->region.w);
         }
     }
     else if (currentOperation->prev)
@@ -361,6 +363,8 @@ void Leveler::takeBack(bool shiftPressed)
                 break;
             }
         }
+
+        sideUpdate(currentOperation->region.x, currentOperation->region.y, currentOperation->region.z, currentOperation->region.w);
 
         currentOperation = currentOperation->prev;
     }
@@ -397,6 +401,9 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
     case FENCE_WALL:
         gridSquareAdder = &Leveler::addGridSquare_F;
 		break;
+    case ERASER:
+        gridSquareAdder = &Leveler::addGridSquare_E;
+		break;
     default:
         gridSquareAdder = &Leveler::addGridSquare_W;
         break;
@@ -421,9 +428,14 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
             }
 
             (this->*gridSquareAdder)(j, i);
-            currentOperation->next->operations.push_back({ { j, i }, ADD, fillType });
+            if (fillType != ERASER)
+            {
+                currentOperation->next->operations.push_back({ { j, i }, ADD, fillType });
+            }
         }
     }
+
+    sideUpdate(minX, maxX, minY, maxY);
 
     if (currentOperation->next->operations.size() == 0)
     {
@@ -434,12 +446,78 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
     {
         currentOperation->next->prev = currentOperation;
         currentOperation = currentOperation->next;
-       
+        currentOperation->region = { minX, maxX, minY, maxY };
+
         for (; tempNextOp;)
         {
             s_gridOperationList* del = tempNextOp;
             tempNextOp = tempNextOp->next;
             delete del;
+        }
+    }
+}
+
+void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
+{
+    const short leftX = std::max(minX - 1, -xSize_H);
+    const short rightX = std::min(maxX + 1, xSize_H - 1);
+    const short botY = std::max(minY - 1, -ySize_H);
+    const short topY = std::min(maxY + 1, ySize_H - 1);
+    
+    const short regions[4][4] =
+    {
+        { leftX, rightX, botY, botY + 1 },
+        { rightX - 1, rightX, botY, topY },
+        { leftX, rightX, topY - 1, topY },
+        { leftX, leftX + 1, botY, topY }
+    };
+
+    const glm::i8vec2 gridAdders[8] =
+    {
+        { +0, -1 }, { +1, +0 }, { +0, +1 }, { -1, +0 },
+        { -1, -1 }, { +1, -1 }, { +1, +1 }, { -1, +1 },
+    };
+
+    for (int y = botY; y <= topY; y++)
+    {
+        for (int x = leftX; x <= rightX; x++)
+        {
+            s_levelGridData& squareData = getSquare(x, y);
+            if ((squareData.objectType & (WHITE_WALL | BLACK_WALL)) == 0)
+            {
+                continue;
+            }
+
+            int sideData = SIDE_ENABLE;
+            for (int j = 0; j < 8; j++)
+            {
+                if (!(getSquare(x + gridAdders[j].x, y + gridAdders[j].y).objectType & (WHITE_WALL | BLACK_WALL)))
+                {
+                    sideData |= SIDE_ENABLE | (DOWN_LINE << j);
+				}
+			}
+            
+            if (sideData == 0)
+            {
+                sideData = SIDE_ENABLE;
+            }
+
+            if (squareData.objectType == WHITE_WALL)
+            {
+                s_wallUbo_w* wData;
+                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory,
+                    squareData.data.offset, sizeof(s_wallUbo_w), 0, (void**)&wData);
+                wData->sideData.x = sideData;
+                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
+            }
+            else if (squareData.objectType == BLACK_WALL)
+            {
+                s_wallUbo_b* wData;
+                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
+                    squareData.data.offset, sizeof(s_wallUbo_w), 0, (void**)&wData);
+                wData->sideData.x = sideData;
+                vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
+            }
         }
     }
 }
@@ -508,7 +586,7 @@ void Leveler::addGridSquare_B(short x, short y)
     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
         offset, sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
     wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
-    wallUbo->colour = glm::vec4(0.05, 0.05, 0.05, 1.0) * rndVal;
+    wallUbo->colour = glm::vec4(0.07, 0.07, 0.07, 1.0) * rndVal;
     wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.06, 1.0, 0.0);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
 
@@ -528,9 +606,9 @@ void Leveler::addGridSquare_G(short x, short y)
     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory,
         offset, sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
     wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
-    wallUbo->colour = glm::vec4(0.03, 0.03, 0.03, 1.0);
+    wallUbo->colour = glm::vec4(0.0, 0.0, 0.0, 1.0);
     wallUbo->bgColour = glm::vec4(0.02, 0.02, 0.02, 0.5);
-    wallUbo->data = glm::vec4(2.0, 0.3, 1.0, 1.0);
+    wallUbo->data = glm::vec4(2.0, 0.2, 1.0, 1.0);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
 
     lastOffsetPos_G[pos.y][pos.x].push_back({ x, y });
@@ -549,13 +627,18 @@ void Leveler::addGridSquare_F(short x, short y)
     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory,
         offset, sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
     wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
-    wallUbo->colour = glm::vec4(0.3, 0.1, 0.0, 1.0);
+    wallUbo->colour = glm::vec4(0.2, 0.05, 0.0, 1.0);
     wallUbo->bgColour = glm::vec4(0.0, 0.0, 0.0, 0.0);
-    wallUbo->data = glm::vec4(2.0, 0.6, 1.0, 0.5);
+    wallUbo->data = glm::vec4(2.0, 0.4, 1.0, 0.5);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
 
     lastOffsetPos_G[pos.y][pos.x].push_back({ x, y });
     setSquare(x, y, { FENCE_WALL, offset });
+}
+
+void Leveler::addGridSquare_E(short x, short y)
+{
+
 }
 
 void Leveler::removeGridSquare(short x, short y)
