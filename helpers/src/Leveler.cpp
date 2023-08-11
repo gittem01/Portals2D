@@ -435,8 +435,6 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
         }
     }
 
-    sideUpdate(minX, maxX, minY, maxY);
-
     if (currentOperation->next->operations.size() == 0)
     {
         delete currentOperation->next;
@@ -444,6 +442,8 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
     }
     else
     {
+        sideUpdate(minX, maxX, minY, maxY);
+
         currentOperation->next->prev = currentOperation;
         currentOperation = currentOperation->next;
         currentOperation->region = { minX, maxX, minY, maxY };
@@ -627,7 +627,7 @@ void Leveler::addGridSquare_F(short x, short y)
     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory,
         offset, sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
     wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
-    wallUbo->colour = glm::vec4(0.2, 0.05, 0.0, 1.0);
+    wallUbo->colour = glm::vec4(0.05, 0.03, 0.0, 1.0);
     wallUbo->bgColour = glm::vec4(0.0, 0.0, 0.0, 0.0);
     wallUbo->data = glm::vec4(2.0, 0.4, 1.0, 0.5);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);

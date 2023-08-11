@@ -27,7 +27,7 @@ float multFunc(float diff)
 
 void main()
 {
-    vec3 borderColour = vec3(0.1, 0.1, 0.1);
+    vec3 borderColour = vec3(0.4, 0.4, 0.4);
     float hDiff = pc.posSize.z * 0.5 - abs(localPos.x);
     float vDiff = pc.posSize.w * 0.5 - abs(localPos.y);
 
@@ -75,5 +75,5 @@ void main()
         }
     }
 
-	FragColor = vec4(borderColour * minDiff, 0.95) + (lineDiffX + lineDiffY) * 0.05 + vec4(vec3(sqDiff * 0.1), 0.0);
+	FragColor = vec4(borderColour * minDiff + (1.0 - minDiff) * 0.03, 0.9) + (lineDiffX + lineDiffY) * 0.05 + vec4(vec3(sqDiff * 0.1), 0.0);
 }
