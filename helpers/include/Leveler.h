@@ -34,8 +34,13 @@ typedef enum LevelObject
 	GLASS_WALL		= 0x1 << 2,
 	FENCE_WALL		= 0x1 << 3,
 	DEFAULT_CUBE	= 0x1 << 4,
+	DOWN_BUTTON		= 0x1 << 5,
 	ERASER			= 0x1 << 20,
 } levelObject;
+
+#define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
+#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON)
 
 typedef enum OperationType
 {
@@ -90,13 +95,22 @@ typedef struct GridOperationList
 	glm::i16vec4 region;
 } s_gridOperationList;
 
+typedef struct PerTextureData
+{
+	int offsetStart;
+	int currentOffset;
+} s_perTextureData;
+
 class Leveler
 {
 public:
+	static Leveler* object;
+
 	class Game* game;
 	class ThinDrawer* thinDrawer;
 	class WindowHandler* wh;
 	class Overlayer* ol;
+	class ManyTexture* mt;
 
 	//////////////////
 	s_gridOperationList* operationList;
@@ -110,15 +124,24 @@ public:
 
 	//////////////////
 	std::vector<std::vector<s_levelGridData>> gridMap;
-	int clickStart[2];
+	glm::ivec2 clickStart;
+	glm::ivec2 lastGrid;
+	int selectedObjectRotation = 0;
 
-	const short xSize = 1000;
-	const short ySize = 1000;
+	/////////////////
+	const short xSize = 400;
+	const short ySize = 400;
 	const short xSize_H = xSize / 2;
 	const short ySize_H = ySize / 2;
 
-	int numWhiteWall = xSize * ySize;
-	int numBlackWall = xSize * ySize;
+	const int numWhiteWall = xSize * ySize;
+	const int numBlackWall = xSize * ySize;
+
+	const int perTextureSpace = 400;
+	int textureRenderOffset;
+	std::vector<s_perTextureData> perTextureData;
+
+	int numSwapChainImages;
 
 	Leveler(Game* game);
 	~Leveler();
@@ -129,6 +152,7 @@ public:
 	s_levelGridData getSquare(short x, short y);
 
 	void fillGrid(short minX, short minY, short maxX, short maxY, levelObject fillType);
+	void putObject();
 	void takeBack(bool shiftPressed);
 	void addGridSquare_W(short x, short y);
 	void addGridSquare_B(short x, short y);
@@ -137,7 +161,13 @@ public:
 	void addGridSquare_E(short x, short y);
 	void addGridSquare(short x, short y, levelObject objectType);
 
+	short keepXInBounds(short x);
+	short keepYInBounds(short y);
+	bool isInBounds(short x, short y);
+	glm::i16vec2 keepInBounds(glm::i16vec2 pos);
+
 	void sideUpdate(short minX, short maxX, short minY, short maxY);
+	bool checkGridOccupancy(short x, short y);
 
 	void removeGridSquare(short x, short y);
 

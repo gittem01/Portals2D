@@ -34,9 +34,6 @@ void Camera::init(glm::vec2 pos, WindowHandler* wh)
 	this->window = wh->window;
 	this->windowHandler = wh;
 
-	xSides = this->defaultXSides / (this->zoom * this->zoom) + this->pos.x;
-	ySides = this->defaultYSides / (this->zoom * this->zoom) + this->pos.y;
-
 	updateOrtho();
 }
 

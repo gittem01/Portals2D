@@ -21,6 +21,7 @@ Overlayer::Overlayer(Game* game)
 
     switchSound = sounder->loadSound("switch.wav");
     clickSound = sounder->loadSound("click.wav");
+    bopSound = sounder->loadSound("boc.wav");
 
     thinDrawer->memMapFuncs.push_back({ maper, (void*)this });
 	thinDrawer->lateDrawFuncs.push_back({ draw, (void*)this });
@@ -32,7 +33,8 @@ Overlayer::Overlayer(Game* game)
     addItem("N_PotallableWall", "bb.png", BLACK_WALL);
     addItem("GlassWall", "glassWall.png", GLASS_WALL);
     addItem("FenceWall", "fenceWall.png", FENCE_WALL);
-    addItem("DefaultCube", "cube.png", DEFAULT_CUBE);
+    addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, { 1.0, 1.0 }, 1.0);
+    addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.335 }, { 2, 1 }, 2.0, true, 0);
     addItem("Remove", "x.png", ERASER);
 }
 
@@ -68,9 +70,10 @@ void Overlayer::maper(void* ptr)
             char y = i / ol->numX;
 
             s_manyTextureData* mtd;
-            vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory, (i + td->lastSwapChainImageIndex * ol->totalNum) * sizeof(s_manyTextureData),
+            vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc) * sizeof(s_manyTextureData),
                 sizeof(s_manyTextureData), 0, (void**)&mtd);
             mtd->posSize = glm::vec4(-94.5 + ol->itemRatio * 20.0 + x * 9.0, 31.5 - y * 9.0, 6.0 + item.extraScale, 6.0 + item.extraScale);
+            mtd->data.x = 0.0;
             vkUnmapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory);
 
             i++;
@@ -124,7 +127,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
             vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 ol->mt->pipelineLayout, 2, 1, &item.texSet, 0, VK_NULL_HANDLE);
 
-            vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, (i + td->lastSwapChainImageIndex * ol->totalNum));
+            vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc));
 
             i++;
         }
@@ -149,12 +152,18 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
 }
 
-void Overlayer::addItem(char* name, char* fileName, levelObject objectType)
+void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation,
+    glm::ivec2 gridScale, float gridRenderScale, bool canRotate, int requiredSideFill)
 {
     s_gridItemData itemData;
     itemData.objectType = objectType;
     itemData.name = name;
-    
+    itemData.gridRenderTranslation = gridRenderTranslation;
+    itemData.gridScale = gridScale;
+    itemData.gridRenderScale = gridRenderScale;
+    itemData.canRotate = canRotate;
+    itemData.requiredSideFill = requiredSideFill;
+
     s_texture* tex = IOHelper::loadTexture(fileName, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
     itemData.texSet = tex->set;
     itemData.extraScale = 0.0;
@@ -228,6 +237,7 @@ void Overlayer::update()
                     if (wh->mouseData[2] == 2)
                     {
                         selectedItemIndex = hoverIndex;
+                        Leveler::object->selectedObjectRotation = 0;
 
                         ALuint source = sounder->playSound(clickSound, 0.3);
                         alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);

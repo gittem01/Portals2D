@@ -16,13 +16,26 @@ layout (set = 0, binding = 0) uniform SharedUboData
 struct storageData
 {
     vec4 posSize;
-    vec4 data;
+    vec4 data; // rotation, none, none, none
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
 {
     storageData sData[];
 } ubo;
+
+vec2 rotateAroundOrigin(vec2 point, float angle)
+{
+    float s = sin(angle);
+    float c = cos(angle);
+
+    vec2 p;
+
+    p.x = point.x * c - point.y * s;
+    p.y = point.y * c + point.x * s;
+
+    return p;
+}
 
 void main()
 {
@@ -33,10 +46,12 @@ void main()
 //    newCameraMatrix[3][1] *= data2.z;
 
     vec2 scaledVertex = vertex * ubo.sData[instanceID].posSize.zw;
+    scaledVertex = rotateAroundOrigin(scaledVertex, ubo.sData[instanceID].data.x);
     worldPos = vec4(ubo.sData[instanceID].posSize.xy + scaledVertex, 0.0, 1.0);
     vec4 pos = newCameraMatrix * worldPos;
 
     out_tc = (vertex + 0.5);
+    out_tc.y  = 1.0 - out_tc.y;
 
     gl_Position = pos;
 }

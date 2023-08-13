@@ -11,6 +11,11 @@ typedef struct GridItemData
 	levelObject objectType;
 	VkDescriptorSet texSet;
 	float extraScale;
+	glm::vec2 gridRenderTranslation;
+	glm::ivec2 gridScale;
+	float gridRenderScale;
+	int requiredSideFill;
+	bool canRotate;
 } s_gridItemData;
 
 class Overlayer
@@ -40,6 +45,7 @@ public:
 	
 	unsigned int switchSound;
 	unsigned int clickSound;
+	unsigned int bopSound;
 
 	Overlayer(Game* game);
 
@@ -48,6 +54,7 @@ public:
 
 	static void windowSizeEventCallback(GLFWwindow*, int, int);
 
-	void addItem(char* name, char* fileName, levelObject objectType);
+	void addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation=glm::vec2(0.0, 0.0),
+		glm::ivec2 gridScale=glm::vec2(1.0, 1.0), float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1);
 	void update();
 };

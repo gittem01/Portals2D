@@ -5,13 +5,13 @@
 class WallBase : public ShaderBase
 {
 public:
-    static const int gridWidth = 1000;
-    static const int gridHeight = 1000;
+    static const int gridWidth = 400;
+    static const int gridHeight = 400;
     static const int minX = -gridWidth / 2;
     static const int maxX = +gridWidth / 2 - 1;
     static const int minY = -gridHeight / 2;
     static const int maxY = +gridHeight / 2 - 1;
-    static const int gridDivider = 50;
+    static const int gridDivider = 40;
     static const int gridCount = gridWidth / gridDivider;
     static const float layerMult;
 
