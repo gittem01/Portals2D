@@ -665,7 +665,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
 
 void Leveler::removeObject(short x, short y)
 {
-    s_levelGridData& lgd = getSquare(x, y);
+    const s_levelGridData& lgd = getSquare(x, y);
 
     if (!(lgd.objectType & SINGLE_DRAWS))
     {
@@ -697,7 +697,7 @@ void Leveler::removeObject(short x, short y)
         return;
     }
 
-    s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
+    const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
     s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
 
     int thisSquareOffsetIndex = objectData->offset - perTextureData[objIndex - 4].offsetStart;
