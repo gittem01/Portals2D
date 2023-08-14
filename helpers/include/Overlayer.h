@@ -3,20 +3,6 @@
 #include <vulkan/vulkan.h>
 #include <Camera.h>
 #include <Leveler.h>
-#include <string>
-
-typedef struct GridItemData
-{
-	std::string name;
-	levelObject objectType;
-	VkDescriptorSet texSet;
-	float extraScale;
-	glm::vec2 gridRenderTranslation;
-	glm::ivec2 gridScale;
-	float gridRenderScale;
-	int requiredSideFill;
-	bool canRotate;
-} s_gridItemData;
 
 class Overlayer
 {

@@ -106,6 +106,7 @@ void Leveler::initOffsets()
     mt->lastAvailablePos += numSwapChainImages;
 
     perTextureData.resize(2);
+    lastOffsetPos_M.resize(perTextureData.size());
     for (int i = 0; i < perTextureData.size(); i++)
     {
         perTextureData[i].offsetStart = mt->lastAvailablePos;
@@ -519,7 +520,30 @@ void Leveler::update()
         {
             glm::ivec2 mousePos = getMouseGrid();
 
-            putObject();
+            const s_gridItemData& item = ol->items[ol->selectedItemIndex];
+            short scaleX = item.gridScale[selectedObjectRotation % 2];
+            short scaleY = item.gridScale[(selectedObjectRotation % 2) ^ 1];
+
+            s_objectDataGrid* objectData = putObject(item, mousePos.x - scaleX / 2, mousePos.y - scaleY / 2, scaleX, scaleY, selectedObjectRotation);
+
+            if (objectData)
+            {
+                s_gridOperationList* tempNextOp = currentOperation->next;
+                currentOperation->next = new s_gridOperationList();
+                currentOperation->next->prev = currentOperation;
+                currentOperation = currentOperation->next;
+
+                for (; tempNextOp;)
+                {
+                    s_gridOperationList* del = tempNextOp;
+                    tempNextOp = tempNextOp->next;
+                    delete del;
+                }
+
+                currentOperation->objectOperation = new s_gridOperation_o();
+                currentOperation->objectOperation->operationType = ADD;
+                currentOperation->objectOperation->objData = objectData;
+            }
         }
     }
 
@@ -538,19 +562,15 @@ void Leveler::update()
     }
 }
 
-void Leveler::putObject()
+s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation)
 {
-    const s_gridItemData& item = ol->items[ol->selectedItemIndex];
-    glm::ivec2 mp = getMouseGrid();
+    glm::vec2 extraAdd = rotationMults[rotation] * item.gridRenderTranslation.y;
 
-    short scaleX = item.gridScale[selectedObjectRotation % 2];
-    short scaleY = item.gridScale[(selectedObjectRotation % 2) ^ 1];
-    glm::vec2 extraAdd = rotationMults[selectedObjectRotation] * item.gridRenderTranslation.y;
-
-    short startX = mp.x - scaleX / 2;
-    short startY = mp.y - scaleY / 2;
     short endX = startX + scaleX;
     short endY = startY + scaleY;
+
+    short centerX = startX + scaleX / 2;
+    short centerY = startY + scaleY / 2;
 
     glm::i16vec4 sideArea = { startX, endX, startY, endY };
 
@@ -560,14 +580,14 @@ void Leveler::putObject()
         {
             if (checkGridOccupancy(x, y))
             {
-                return;
+                return nullptr;
             }
         }
     }
 
     if (item.requiredSideFill != -1)
     {
-        switch (selectedObjectRotation)
+        switch (rotation)
         {
         case 0:
             sideArea.z = sideArea.z - 1;
@@ -599,7 +619,7 @@ void Leveler::putObject()
                 }
                 else
                 {
-                    return;
+                    return nullptr;
                 }
             }
         }
@@ -607,9 +627,11 @@ void Leveler::putObject()
 
     vkDeviceWaitIdle(thinDrawer->logicalDevice);
 
-    s_perTextureData* pdData = &perTextureData[ol->selectedItemIndex - 4];
+    int index = getLevelObjectIndex(item.objectType) - 4;
+    s_perTextureData* pdData = &perTextureData[index];
 
     int renderIndex = pdData->currentOffset;
+    lastOffsetPos_M[index].push_back({ startX, startY });
     s_manyTextureData* mtd;
     vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, renderIndex * sizeof(s_manyTextureData),
         sizeof(s_manyTextureData), 0, (void**)&mtd);
@@ -617,19 +639,83 @@ void Leveler::putObject()
     float hAdd = scaleX % 2 == 1 ? 0.5 : 0.0;
     float vAdd = scaleY % 2 == 1 ? 0.5 : 0.0;
 
-    mtd->posSize = glm::vec4(mp.x + hAdd + extraAdd.x, mp.y + vAdd + extraAdd.y, item.gridRenderScale, item.gridRenderScale);
-    mtd->data.x = selectedObjectRotation * b2_pi * 0.5;
+    mtd->posSize = glm::vec4(centerX + hAdd + extraAdd.x, centerY + vAdd + extraAdd.y, item.gridRenderScale, item.gridRenderScale);
+    mtd->data.x = rotation * b2_pi * 0.5;
     vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
 
+    s_objectDataGrid* objectData = new s_objectDataGrid();
+    objectData->offset = pdData->currentOffset;
+    objectData->objectType = item.objectType;
+    objectData->rotation = rotation;
+    objectData->pos = { startX, startY };
+    
     pdData->currentOffset += 1;
 
+    s_gridData uData; uData.ptr = (void*)objectData;
     for (int y = startY; y < endY; y++)
     {
         for (int x = startX; x < endX; x++)
         {
-            setSquare(x, y, { item.objectType, 0 });
+            setSquare(x, y, { item.objectType, uData });
         }
     }
+
+    return objectData;
+}
+
+void Leveler::removeObject(short x, short y)
+{
+    s_levelGridData& lgd = getSquare(x, y);
+
+    if (!(lgd.objectType & SINGLE_DRAWS))
+    {
+		return;
+	}
+
+    s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+    int objIndex = getLevelObjectIndex(objectData->objectType);
+
+    const s_gridItemData& item = ol->items[objIndex];
+    short sizeX = item.gridScale[objectData->rotation % 2];
+    short sizeY = item.gridScale[(objectData->rotation % 2) ^ 1];
+
+    for (int i = 0; i < sizeY; i++)
+    {
+        for (int j = 0; j < sizeX; j++)
+        {
+            setSquare(x + j, y + i, { NONE_LO, 0 });
+        }
+    }
+
+    auto& reqVec = lastOffsetPos_M[objIndex - 4];
+    s_gridSquare lastOffsetSquare = reqVec.back();
+
+    if (lastOffsetSquare == objectData->pos)
+    {
+        perTextureData[objIndex - 4].currentOffset--;
+        reqVec.pop_back();
+        return;
+    }
+
+    s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
+    s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
+
+    int thisSquareOffsetIndex = objectData->offset - perTextureData[objIndex - 4].offsetStart;
+    reqVec[thisSquareOffsetIndex] = reqVec.back();
+    reqVec.pop_back();
+
+    s_manyTextureData* wUbo, wUboStager;
+    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->manyTexture->uniformBuffers[0]->memory,
+        lastObjectData->offset * sizeof(s_manyTextureData), sizeof(s_manyTextureData), 0, (void**)&wUbo);
+    memcpy((void*)&wUboStager, (void*)wUbo, sizeof(s_manyTextureData));
+    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->manyTexture->uniformBuffers[0]->memory);
+
+    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->manyTexture->uniformBuffers[0]->memory,
+        objectData->offset * sizeof(s_manyTextureData), sizeof(s_manyTextureData), 0, (void**)&wUbo);
+    memcpy((void*)wUbo, (void*)&wUboStager, sizeof(s_manyTextureData));
+    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->manyTexture->uniformBuffers[0]->memory);
+
+    lastObjectData->offset = objectData->offset;
 }
 
 void Leveler::takeBack(bool shiftPressed)
@@ -640,16 +726,69 @@ void Leveler::takeBack(bool shiftPressed)
         {
             currentOperation = currentOperation->next;
 
-            for (int i = 0; i < currentOperation->operations.size(); i++)
+            if (!currentOperation->objectOperation)
+            {
+                for (int i = 0; i < currentOperation->operations.size(); i++)
+                {
+                    auto operation = currentOperation->operations[i];
+                    switch (operation.operationType)
+                    {
+                    case REMOVE:
+                        removeGridSquare(operation.pos.x, operation.pos.y);
+                        break;
+
+                    case ADD:
+                        addGridSquare(operation.pos.x, operation.pos.y, operation.objectType);
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
+
+                sideUpdate(currentOperation->region.x, currentOperation->region.y, currentOperation->region.z, currentOperation->region.w);
+            }
+            else
+            {
+                s_gridSquare sq = currentOperation->objectOperation->objData->pos;
+                switch (currentOperation->objectOperation->operationType)
+                {
+                case REMOVE:
+                    removeObject(sq.x, sq.y);
+                    break;
+
+                case ADD:
+                {
+                    s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
+                    int objIndex = getLevelObjectIndex(objectData->objectType);
+                    const s_gridItemData& item = ol->items[objIndex];
+                    short scaleX = item.gridScale[objectData->rotation % 2];
+                    short scaleY = item.gridScale[(objectData->rotation % 2) ^ 1];
+
+                    putObject(item, sq.x, sq.y, scaleX, scaleY, objectData->rotation);
+                }
+                    break;
+
+                default:
+                    break;
+                }
+            }
+        }
+    }
+    else if (currentOperation->prev)
+    {
+        if (!currentOperation->objectOperation)
+        {
+            for (int i = currentOperation->operations.size() - 1; i >= 0; i--)
             {
                 auto operation = currentOperation->operations[i];
                 switch (operation.operationType)
                 {
-                case REMOVE:
+                case ADD:
                     removeGridSquare(operation.pos.x, operation.pos.y);
                     break;
 
-                case ADD:
+                case REMOVE:
                     addGridSquare(operation.pos.x, operation.pos.y, operation.objectType);
                     break;
 
@@ -660,29 +799,32 @@ void Leveler::takeBack(bool shiftPressed)
 
             sideUpdate(currentOperation->region.x, currentOperation->region.y, currentOperation->region.z, currentOperation->region.w);
         }
-    }
-    else if (currentOperation->prev)
-    {
-        for (int i = currentOperation->operations.size() - 1; i >= 0; i--)
+        else
         {
-            auto operation = currentOperation->operations[i];
-            switch (operation.operationType)
+            s_gridSquare sq = currentOperation->objectOperation->objData->pos;
+            switch (currentOperation->objectOperation->operationType)
             {
-            case ADD:
-                removeGridSquare(operation.pos.x, operation.pos.y);
+            case REMOVE:
+            {
+                s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
+                int objIndex = getLevelObjectIndex(objectData->objectType);
+                const s_gridItemData& item = ol->items[objIndex];
+                short scaleX = item.gridScale[objectData->rotation % 2];
+                short scaleY = item.gridScale[(objectData->rotation % 2) ^ 1];
+
+                putObject(item, sq.x, sq.y, scaleX, scaleY, objectData->rotation);
+            }
                 break;
 
-            case REMOVE:
-                addGridSquare(operation.pos.x, operation.pos.y, operation.objectType);
+            case ADD:
+                removeObject(sq.x, sq.y);
                 break;
 
             default:
                 break;
             }
         }
-
-        sideUpdate(currentOperation->region.x, currentOperation->region.y, currentOperation->region.z, currentOperation->region.w);
-
+        
         currentOperation = currentOperation->prev;
     }
 }
@@ -704,6 +846,8 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
 
     void(Leveler::*gridSquareAdder)(short x, short y);
 
+    WallBase* wallBases[3] = { thinDrawer->whiteWallShader, thinDrawer->blackWallShader, thinDrawer->diagonalLiner };
+
     switch (fillType)
     {
     case WHITE_WALL:
@@ -714,7 +858,7 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
         break;
     case GLASS_WALL:
         gridSquareAdder = &Leveler::addGridSquare_G;
-		break;
+        break;
     case FENCE_WALL:
         gridSquareAdder = &Leveler::addGridSquare_F;
 		break;
@@ -727,40 +871,41 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
     }
 
     // guaranteed version
-    vkDeviceWaitIdle(thinDrawer->logicalDevice);
+    //vkDeviceWaitIdle(thinDrawer->logicalDevice);
 
     // fixes visuals but still might be problematic also call after vkmapmemory calls
-    /*VkMappedMemoryRange memoryRange = {};
-    memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    memoryRange.memory = thinDrawer->whiteWallShader->uniformBuffers[0]->memory;
-    memoryRange.offset = 0;
-    memoryRange.size = 2000000 * sizeof(s_wallUbo_w);
-    vkFlushMappedMemoryRanges(thinDrawer->logicalDevice, 1, &memoryRange);*/
+        /*VkMappedMemoryRange memoryRange = {};
+        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        memoryRange.memory = thinDrawer->whiteWallShader->uniformBuffers[0]->memory;
+        memoryRange.offset = 0;
+        memoryRange.size = 2000000 * sizeof(s_wallUbo_w);
+        vkFlushMappedMemoryRanges(thinDrawer->logicalDevice, 1, &memoryRange);*/
 
     // promising version!!!!!!!!!!!!!!!!!!!
-    //VkCommandBuffer cmd = thinDrawer->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, thinDrawer->uploadPool, true);
+    VkCommandBuffer cmd = thinDrawer->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, thinDrawer->uploadPool, true);
+    for (int i = 0; i < std::size(wallBases); i++)
+    {
+        VkBufferMemoryBarrier bufferBarrier = {};
+        bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        bufferBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Previous writes from shaders
+        bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Future reads/writes from shaders
+        bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        bufferBarrier.buffer = wallBases[i]->uniformBuffers[0]->buffer;
+        bufferBarrier.offset = 0;
+        bufferBarrier.size = VK_WHOLE_SIZE;
 
-    //VkBufferMemoryBarrier bufferBarrier = {};
-    //bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    //bufferBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Previous writes from shaders
-    //bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Future reads/writes from shaders
-    //bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    //bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    //bufferBarrier.buffer = thinDrawer->whiteWallShader->uniformBuffers[0]->buffer;
-    //bufferBarrier.offset = 0;
-    //bufferBarrier.size = VK_WHOLE_SIZE;
-
-    //vkCmdPipelineBarrier(
-    //    cmd,
-    //    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // srcStageMask
-    //    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // dstStageMask
-    //    0,
-    //    0, nullptr,
-    //    1, &bufferBarrier,
-    //    0, nullptr
-    //);
-
-    //thinDrawer->flushCommandBuffer(cmd);
+        vkCmdPipelineBarrier(
+            cmd,
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            1, &bufferBarrier,
+            0, nullptr
+        );
+    }
+    thinDrawer->flushCommandBuffer(cmd);
 
     for (short i = minY; i <= maxY; i++)
     {
@@ -768,7 +913,7 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
         {
             s_levelGridData lgData = getSquare(j, i);
 
-            if (lgData.objectType == fillType)
+            if (lgData.objectType == fillType || lgData.objectType & SINGLE_DRAWS)
             {
                 continue;
             }
@@ -928,7 +1073,8 @@ void Leveler::addGridSquare_W(short x, short y)
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
 
     lastOffsetPos_W[pos.y][pos.x].push_back({x, y});
-    setSquare(x, y, { WHITE_WALL, offset });
+    s_gridData uData; uData.offset = offset;
+    setSquare(x, y, { WHITE_WALL, uData });
 }
 
 void Leveler::addGridSquare_B(short x, short y)
@@ -949,7 +1095,8 @@ void Leveler::addGridSquare_B(short x, short y)
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
 
     lastOffsetPos_B[pos.y][pos.x].push_back({ x, y });
-    setSquare(x, y, { BLACK_WALL, offset });
+    s_gridData uData; uData.offset = offset;
+    setSquare(x, y, { BLACK_WALL, uData });
 }
 
 void Leveler::addGridSquare_G(short x, short y)
@@ -970,7 +1117,8 @@ void Leveler::addGridSquare_G(short x, short y)
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
 
     lastOffsetPos_G[pos.y][pos.x].push_back({ x, y });
-    setSquare(x, y, { GLASS_WALL, offset });
+    s_gridData uData; uData.offset = offset;
+    setSquare(x, y, { GLASS_WALL, uData });
 }
 
 void Leveler::addGridSquare_F(short x, short y)
@@ -991,7 +1139,8 @@ void Leveler::addGridSquare_F(short x, short y)
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
 
     lastOffsetPos_G[pos.y][pos.x].push_back({ x, y });
-    setSquare(x, y, { FENCE_WALL, offset });
+    s_gridData uData; uData.offset = offset;
+    setSquare(x, y, { FENCE_WALL, uData });
 }
 
 void Leveler::addGridSquare_E(short x, short y)
@@ -1045,7 +1194,8 @@ void Leveler::removeGridSquare(short x, short y)
         gridData->numElements--;
         gridData->offsetEnd--;
 
-        setSquare(lastOffsetPos.x, lastOffsetPos.y, { WHITE_WALL, gData.data.offset });
+        s_gridData uData; uData.offset = gData.data.offset;
+        setSquare(lastOffsetPos.x, lastOffsetPos.y, { WHITE_WALL, uData });
     }
     break;
 
@@ -1085,7 +1235,8 @@ void Leveler::removeGridSquare(short x, short y)
         gridData->numElements--;
         gridData->offsetEnd--;
 
-        setSquare(lastOffsetPos.x, lastOffsetPos.y, { BLACK_WALL, gData.data.offset });
+        s_gridData uData; uData.offset = gData.data.offset;
+        setSquare(lastOffsetPos.x, lastOffsetPos.y, { BLACK_WALL, uData });
     }
     break;
 
@@ -1126,7 +1277,8 @@ void Leveler::removeGridSquare(short x, short y)
         gridData->numElements--;
         gridData->offsetEnd--;
 
-        setSquare(lastOffsetPos.x, lastOffsetPos.y, { gData.objectType, gData.data.offset });
+        s_gridData uData; uData.offset = gData.data.offset;
+        setSquare(lastOffsetPos.x, lastOffsetPos.y, { gData.objectType, uData });
     }
     break;
 

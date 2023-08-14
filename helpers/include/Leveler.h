@@ -1,12 +1,13 @@
 #pragma once
 
-#include <map>
 #include <vector>
+#include <string>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
 typedef union GridData
 {
+	void* ptr;
 	int offset;
 	char ext;
 } s_gridData;
@@ -38,20 +39,36 @@ typedef enum LevelObject
 	ERASER			= 0x1 << 20,
 } levelObject;
 
+constexpr int getLevelObjectIndex(levelObject value)
+{
+	switch (value)
+	{
+		case WHITE_WALL:
+			return 0;
+		case BLACK_WALL:
+			return 1;
+		case GLASS_WALL:
+			return 2;
+		case FENCE_WALL:
+			return 3;
+		case DEFAULT_CUBE:
+			return 4;
+		case DOWN_BUTTON:
+			return 5;
+	default:
+		return -1;
+	}
+}
+
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON)
 #define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON)
 
 typedef enum OperationType
 {
-	ADD		= 0,
-	REMOVE	= 1,
+	ADD		= 1,
+	REMOVE	= 2,
 } operationType;
-
-typedef struct WallData
-{
-	int offset;
-}s_levelWallData;
 
 typedef struct GridSquare_S
 {
@@ -64,6 +81,14 @@ typedef struct GridData_S
 	levelObject objectType;
 	s_gridData data;
 } s_levelGridData;
+
+typedef struct ObjectDataGrid
+{
+	int offset;
+	s_gridSquare pos;
+	levelObject objectType;
+	int rotation;
+} s_objectDataGrid;
 
 inline bool operator<(const s_gridSquare lhs, const s_gridSquare rhs)
 {
@@ -87,9 +112,16 @@ typedef struct GridOperation
 	levelObject objectType;
 } s_gridOperation;
 
+typedef struct GridOperation_O
+{
+	s_objectDataGrid* objData;
+	operationType operationType;
+} s_gridOperation_o;
+
 typedef struct GridOperationList
 {
 	std::vector<s_gridOperation> operations;
+	s_gridOperation_o* objectOperation = nullptr;
 	GridOperationList* next = nullptr;
 	GridOperationList* prev = nullptr;
 	glm::i16vec4 region;
@@ -100,6 +132,19 @@ typedef struct PerTextureData
 	int offsetStart;
 	int currentOffset;
 } s_perTextureData;
+
+typedef struct GridItemData
+{
+	std::string name;
+	levelObject objectType;
+	VkDescriptorSet texSet;
+	float extraScale;
+	glm::vec2 gridRenderTranslation;
+	glm::ivec2 gridScale;
+	float gridRenderScale;
+	int requiredSideFill;
+	bool canRotate;
+} s_gridItemData;
 
 class Leveler
 {
@@ -121,6 +166,8 @@ public:
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_B;
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_G;
+
+	std::vector<std::vector<s_gridSquare>> lastOffsetPos_M;
 
 	//////////////////
 	std::vector<std::vector<s_levelGridData>> gridMap;
@@ -152,7 +199,8 @@ public:
 	s_levelGridData getSquare(short x, short y);
 
 	void fillGrid(short minX, short minY, short maxX, short maxY, levelObject fillType);
-	void putObject();
+	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
+	void removeObject(short x, short y);
 	void takeBack(bool shiftPressed);
 	void addGridSquare_W(short x, short y);
 	void addGridSquare_B(short x, short y);
