@@ -27,16 +27,22 @@ typedef enum SideData
 	ALL_SIDES = 0x1FF,
 } sideData;
 
-typedef enum LevelObject
+typedef enum LevelObject : long long
 {
 	NONE_LO			= 0x0,
-	WHITE_WALL		= 0x1 << 0,
-	BLACK_WALL		= 0x1 << 1,
-	GLASS_WALL		= 0x1 << 2,
-	FENCE_WALL		= 0x1 << 3,
-	DEFAULT_CUBE	= 0x1 << 4,
-	DOWN_BUTTON		= 0x1 << 5,
-	ERASER			= 0x1 << 20,
+	WHITE_WALL		= 0x1ll << 0,
+	BLACK_WALL		= 0x1ll << 1,
+	GLASS_WALL		= 0x1ll << 2,
+	FENCE_WALL		= 0x1ll << 3,
+	DEFAULT_CUBE	= 0x1ll << 4,
+	DOWN_BUTTON		= 0x1ll << 5,
+
+	DOWN_DEPENDENT	= 0x1ll << 59,
+	RIGHT_DEPENDENT	= 0x1ll << 60,
+	UP_DEPENDENT	= 0x1ll << 61,
+	LEFT_DEPENDENT	= 0x1ll << 62,
+
+	ERASER			= 0x1ll << 63,
 } levelObject;
 
 constexpr int getLevelObjectIndex(levelObject value)
@@ -61,6 +67,7 @@ constexpr int getLevelObjectIndex(levelObject value)
 }
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
+#define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
 #define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON)
 #define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON)
 
