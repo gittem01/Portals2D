@@ -930,27 +930,21 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
     // guaranteed version
     //vkDeviceWaitIdle(thinDrawer->logicalDevice);
 
-    // fixes visuals but still might be problematic also call after vkmapmemory calls
-        /*VkMappedMemoryRange memoryRange = {};
-        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-        memoryRange.memory = thinDrawer->whiteWallShader->uniformBuffers[0]->memory;
-        memoryRange.offset = 0;
-        memoryRange.size = 2000000 * sizeof(s_wallUbo_w);
-        vkFlushMappedMemoryRanges(thinDrawer->logicalDevice, 1, &memoryRange);*/
-
     // promising version!!!!!!!!!!!!!!!!!!!
     VkCommandBuffer cmd = thinDrawer->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, thinDrawer->uploadPool, true);
+
+    VkBufferMemoryBarrier bufferBarrier = {};
+    bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    bufferBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Previous writes from shaders
+    bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Future reads/writes from shaders
+    bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    bufferBarrier.offset = 0;
+    bufferBarrier.size = VK_WHOLE_SIZE;
+
     for (int i = 0; i < std::size(wallBases); i++)
     {
-        VkBufferMemoryBarrier bufferBarrier = {};
-        bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        bufferBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Previous writes from shaders
-        bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Future reads/writes from shaders
-        bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         bufferBarrier.buffer = wallBases[i]->uniformBuffers[0]->buffer;
-        bufferBarrier.offset = 0;
-        bufferBarrier.size = VK_WHOLE_SIZE;
 
         vkCmdPipelineBarrier(
             cmd,
@@ -962,6 +956,7 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
             0, nullptr
         );
     }
+
     thinDrawer->flushCommandBuffer(cmd);
 
     for (short i = minY; i <= maxY; i++)
@@ -1085,7 +1080,7 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
 
 void Leveler::addGridSquare(short x, short y, levelObject objectType)
 {
-    switch (objectType)
+    switch (objectType & GRID_DRAWS)
     {
     case WHITE_WALL:
         addGridSquare_W(x, y);
