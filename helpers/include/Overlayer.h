@@ -32,6 +32,7 @@ public:
 	unsigned int switchSound;
 	unsigned int clickSound;
 	unsigned int bopSound;
+	unsigned int removeSound;
 
 	Overlayer(Game* game);
 

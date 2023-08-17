@@ -22,6 +22,7 @@ Overlayer::Overlayer(Game* game)
     switchSound = sounder->loadSound("switch.wav");
     clickSound = sounder->loadSound("click.wav");
     bopSound = sounder->loadSound("boc.wav");
+    removeSound = sounder->loadSound("remove.wav");
 
     thinDrawer->memMapFuncs.push_back({ maper, (void*)this });
 	thinDrawer->lateDrawFuncs.push_back({ draw, (void*)this });
@@ -35,6 +36,7 @@ Overlayer::Overlayer(Game* game)
     addItem("FenceWall", "fenceWall.png", FENCE_WALL);
     addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, { 1.0, 1.0 }, 1.0, false, 0);
     addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.335 }, { 2, 1 }, 2.0, true, 0);
+    addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.07 }, { 1, 1 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
 }
 

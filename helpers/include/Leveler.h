@@ -36,6 +36,7 @@ typedef enum LevelObject : long long
 	FENCE_WALL		= 0x1ll << 3,
 	DEFAULT_CUBE	= 0x1ll << 4,
 	DOWN_BUTTON		= 0x1ll << 5,
+	LASERER			= 0x1ll << 6,
 
 	DOWN_DEPENDENT	= 0x1ll << 59,
 	RIGHT_DEPENDENT	= 0x1ll << 60,
@@ -61,6 +62,8 @@ constexpr int getLevelObjectIndex(levelObject value)
 			return 4;
 		case DOWN_BUTTON:
 			return 5;
+		case LASERER:
+			return 6;
 	default:
 		return -1;
 	}
@@ -68,7 +71,7 @@ constexpr int getLevelObjectIndex(levelObject value)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON)
+#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER)
 #define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON)
 
 typedef enum OperationType
@@ -225,7 +228,7 @@ public:
 	bool checkGridOccupancy(short x, short y);
 
 	void removeGridSquare(short x, short y);
-
+	void setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData);
 	void update();
 	glm::ivec2 getMouseGrid();
 

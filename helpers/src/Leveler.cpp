@@ -105,7 +105,7 @@ void Leveler::initOffsets()
     textureRenderOffset = mt->lastAvailablePos;
     mt->lastAvailablePos += numSwapChainImages;
 
-    perTextureData.resize(2);
+    perTextureData.resize(3);
     lastOffsetPos_M.resize(perTextureData.size());
     for (int i = 0; i < perTextureData.size(); i++)
     {
@@ -214,9 +214,8 @@ void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdDraw(cmdBuff, td->dualParticleShader->buffers[0]->count, 300, 0, 0);
 }
 
-void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
+void renderTextureds(VkCommandBuffer cmdBuff, Leveler* leveler)
 {
-    Leveler* leveler = (Leveler*)ptr;
     ManyTexture* mt = leveler->ol->mt;
     ThinDrawer* td = leveler->thinDrawer;
 
@@ -247,36 +246,86 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
         vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, data.currentOffset - data.offsetStart, 0, data.offsetStart);
     }
+}
 
-    if (leveler->ol->selectedItemIndex < 0) return;
+void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
+{
+    ManyTexture* mt = leveler->ol->mt;
+    ThinDrawer* td = leveler->thinDrawer;
+
+    const VkDeviceSize offsets = 0;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
 
     glm::ivec2 mp = leveler->getMouseGrid();
-
     const s_gridItemData& item = leveler->ol->items[leveler->ol->selectedItemIndex];
 
-    if (item.objectType & SINGLE_DRAWS)
+    int objRot = leveler->selectedObjectRotation;
+
+    short scaleX = item.gridScale[objRot % 2];
+    short scaleY = item.gridScale[(objRot % 2) ^ 1];
+    glm::vec2 extraAdd = rotationMults[objRot] * item.gridRenderTranslation.y;
+
+    short startX = mp.x - scaleX / 2;
+    short startY = mp.y - scaleY / 2;
+    short endX = startX + scaleX;
+    short endY = startY + scaleY;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    s_gridSquareData gsData;
+    gsData.positionData[2] = 1;
+    gsData.positionData[3] = 1;
+    for (int y = startY; y < endY; y++)
     {
-        int objRot = leveler->selectedObjectRotation;
+        for (int x = startX; x < endX; x++)
+        {
+            gsData.positionData[0] = x;
+            gsData.positionData[1] = y;
 
-        short scaleX = item.gridScale[objRot % 2];
-        short scaleY = item.gridScale[(objRot % 2) ^ 1];
-        glm::vec2 extraAdd = rotationMults[objRot] * item.gridRenderTranslation.y;
+            if (leveler->checkGridOccupancy(gsData.positionData[0], gsData.positionData[1]))
+            {
+                gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+            }
+            else
+            {
+                gsData.colour = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+            }
 
-        short startX = mp.x - scaleX / 2;
-        short startY = mp.y - scaleY / 2;
-        short endX = startX + scaleX;
-        short endY = startY + scaleY;
+            vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+            vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+        }
+    }
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+    if (item.requiredSideFill != -1)
+    {
+        switch ((objRot + item.requiredSideFill) % 4)
+        {
+        case 0:
+            startY = startY - 1;
+            endY = startY + 1;
+            break;
+        case 1:
+            startX = endX;
+            endX = startX + 1;
+            break;
+        case 2:
+            startY = endY;
+            endY = startY + 1;
+            break;
+        case 3:
+            startX = startX - 1;
+            endX = startX + 1;
+            break;
+        default:
+            break;
+        }
 
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-        s_gridSquareData gsData;
-        gsData.positionData[2] = 1;
-        gsData.positionData[3] = 1;
         for (int y = startY; y < endY; y++)
         {
             for (int x = startX; x < endX; x++)
@@ -284,13 +333,13 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
                 gsData.positionData[0] = x;
                 gsData.positionData[1] = y;
 
-                if (leveler->checkGridOccupancy(gsData.positionData[0], gsData.positionData[1]))
+                if (leveler->isInBounds(x, y) && leveler->getSquare(x, y).objectType & (WHITE_WALL | BLACK_WALL))
                 {
-                    gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                    gsData.colour = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
                 }
                 else
                 {
-                    gsData.colour = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+                    gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
                 }
 
                 vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
@@ -298,80 +347,57 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
                 vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
             }
         }
+    }
 
-        if (item.requiredSideFill != -1)
-        {
-            switch ((objRot + item.requiredSideFill) % 4)
-            {
-            case 0:
-                startY = startY - 1;
-                endY = startY + 1;
-                break;
-            case 1:
-                startX = endX;
-                endX = startX + 1;
-                break;
-            case 2:
-                startY = endY;
-                endY = startY + 1;
-                break;
-            case 3:
-                startX = startX - 1;
-				endX = startX + 1;
-				break;
-            default:
-                break;
-            }
+    int renderIndex = leveler->textureRenderOffset + td->lastSwapChainImageIndex;
+    s_manyTextureData* mtd;
+    vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, renderIndex * sizeof(s_manyTextureData),
+        sizeof(s_manyTextureData), 0, (void**)&mtd);
 
-            for (int y = startY; y < endY; y++)
-            {
-                for (int x = startX; x < endX; x++)
-                {
-                    gsData.positionData[0] = x;
-                    gsData.positionData[1] = y;
+    float hAdd = scaleX % 2 == 1 ? 0.5 : 0.0;
+    float vAdd = scaleY % 2 == 1 ? 0.5 : 0.0;
 
-                    if (leveler->isInBounds(x, y) && leveler->getSquare(x, y).objectType & (WHITE_WALL | BLACK_WALL))
-                    {
-                        gsData.colour = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-                    }
-                    else
-                    {
-                        gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-                    }
+    mtd->posSize = glm::vec4(mp.x + hAdd + extraAdd.x, mp.y + vAdd + extraAdd.y, item.gridRenderScale, item.gridRenderScale);
+    mtd->data.x = leveler->selectedObjectRotation * b2_pi * 0.5;
+    vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
 
-                    vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mt->pipeline);
 
-                    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
-                }
-            }
-        }
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
 
-        int renderIndex = leveler->textureRenderOffset + td->lastSwapChainImageIndex;
-        s_manyTextureData* mtd;
-        vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, renderIndex * sizeof(s_manyTextureData),
-            sizeof(s_manyTextureData), 0, (void**)&mtd);
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        mt->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-        float hAdd = scaleX % 2 == 1 ? 0.5 : 0.0;
-        float vAdd = scaleY % 2 == 1 ? 0.5 : 0.0;
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        mt->pipelineLayout, 1, 1, &mt->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-        mtd->posSize = glm::vec4(mp.x + hAdd + extraAdd.x, mp.y + vAdd + extraAdd.y, item.gridRenderScale, item.gridRenderScale);
-        mtd->data.x = leveler->selectedObjectRotation * b2_pi * 0.5;
-        vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        mt->pipelineLayout, 2, 1, &item.texSet, 0, VK_NULL_HANDLE);
 
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mt->pipeline);
+    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, renderIndex);
+}
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
+{
+    Leveler* leveler = (Leveler*)ptr;
+    ManyTexture* mt = leveler->ol->mt;
+    ThinDrawer* td = leveler->thinDrawer;
 
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            mt->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+    const VkDeviceSize offsets = 0;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
 
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            mt->pipelineLayout, 1, 1, &mt->descriptorSets[1], 0, VK_NULL_HANDLE);
+    renderTextureds(cmdBuff, leveler);
 
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            mt->pipelineLayout, 2, 1, &item.texSet, 0, VK_NULL_HANDLE);
+    if (leveler->ol->selectedItemIndex < 0) return;
 
-        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, renderIndex);
+    glm::ivec2 mp = leveler->getMouseGrid();
+
+    const s_gridItemData& item = leveler->ol->items[leveler->ol->selectedItemIndex];
+    const s_levelGridData& lgd = leveler->getSquare(mp.x, mp.y);
+
+    if (item.objectType & SINGLE_DRAWS)
+    {
+        renderSingleDrawSelection(cmdBuff, leveler);
     }
 
     // Grid
@@ -387,41 +413,77 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
     }
 
     // GridSquare
-    if (!leveler->ol->itemDir && (item.objectType & GRID_DRAWS))
+    if (!leveler->ol->itemDir)
     {
-        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
-
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-        int x0 = mp.x;
-        int y0 = mp.y;
-
-        s_gridSquareData gsData;
-        gsData.positionData[0] = x0 - 2;
-        gsData.positionData[1] = y0 - 2;
-        gsData.positionData[2] = 5;
-        gsData.positionData[3] = 0;
-        gsData.colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-        vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
-
-        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 25, 0, 0);
-
-        if (leveler->clickStart[0] > -50000)
+        if (item.objectType & GRID_DRAWS && !(lgd.objectType & SINGLE_DRAWS && item.objectType & ERASER))
         {
-            gsData.positionData[0] = leveler->clickStart[0] > x0 ? x0 : leveler->clickStart[0];
-            gsData.positionData[1] = leveler->clickStart[1] > y0 ? y0 : leveler->clickStart[1];
-            gsData.positionData[2] = abs(x0 - leveler->clickStart[0]) + 1;
-            gsData.positionData[3] = 1;
-            gsData.colour = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+            vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+
+            vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+            vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+            int x0 = mp.x;
+            int y0 = mp.y;
+
+            s_gridSquareData gsData;
+            gsData.positionData[0] = x0 - 2;
+            gsData.positionData[1] = y0 - 2;
+            gsData.positionData[2] = 5;
+            gsData.positionData[3] = 0;
+            gsData.colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
             vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-            int drawCount = (abs(x0 - leveler->clickStart[0]) + 1) * (abs(y0 - leveler->clickStart[1]) + 1);
-            vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, drawCount, 0, 0);
+            vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 25, 0, 0);
+
+            if (leveler->clickStart[0] > -50000)
+            {
+                gsData.positionData[0] = leveler->clickStart[0] > x0 ? x0 : leveler->clickStart[0];
+                gsData.positionData[1] = leveler->clickStart[1] > y0 ? y0 : leveler->clickStart[1];
+                gsData.positionData[2] = abs(x0 - leveler->clickStart[0]) + 1;
+                gsData.positionData[3] = 1;
+                gsData.colour = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+
+                vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+                int drawCount = (abs(x0 - leveler->clickStart[0]) + 1) * (abs(y0 - leveler->clickStart[1]) + 1);
+                vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, drawCount, 0, 0);
+            }
+        }
+        else if (lgd.objectType & SINGLE_DRAWS && item.objectType & ERASER)
+        {
+            s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+
+            s_gridItemData& seslectedItem = leveler->ol->items[getLevelObjectIndex(objectData->objectType)];
+
+            short scaleX = seslectedItem.gridScale[objectData->rotation % 2];
+            short scaleY = seslectedItem.gridScale[(objectData->rotation % 2) ^ 1];
+
+            vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+
+            vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+            vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+            s_gridSquareData gsData;
+            gsData.positionData[2] = 1;
+            gsData.positionData[3] = 1;
+            for (int y = 0; y < scaleY; y++)
+            {
+                for (int x = 0; x < scaleX; x++)
+                {
+                    gsData.positionData[0] = x + objectData->pos.x;
+                    gsData.positionData[1] = y + objectData->pos.y;
+                    gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+                    vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+                    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+                }
+            }
         }
     }
 }
@@ -460,6 +522,25 @@ bool Leveler::isInBounds(short x, short y)
 glm::i16vec2 Leveler::keepInBounds(glm::i16vec2 pos)
 {
     return glm::i16vec2(keepXInBounds(pos.x), keepYInBounds(pos.y));
+}
+
+void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData)
+{
+    s_gridOperationList* tempNextOp = currentOperation->next;
+    currentOperation->next = new s_gridOperationList();
+    currentOperation->next->prev = currentOperation;
+    currentOperation = currentOperation->next;
+
+    for (; tempNextOp;)
+    {
+        s_gridOperationList* del = tempNextOp;
+        tempNextOp = tempNextOp->next;
+        delete del;
+    }
+
+    currentOperation->objectOperation = new s_gridOperation_o();
+    currentOperation->objectOperation->operationType = opType;
+    currentOperation->objectOperation->objData = objectData;
 }
 
 void Leveler::update()
@@ -513,8 +594,21 @@ void Leveler::update()
         {
             glm::ivec2 mousePos = getMouseGrid();
 
-            clickStart = mousePos;
-            lastGrid = clickStart;
+            const s_levelGridData& lgd = getSquare(mousePos.x, mousePos.y);
+            if (lgd.objectType & SINGLE_DRAWS)
+            {
+                s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+                removeObject(objectData->pos.x, objectData->pos.y);
+                setObjectOperationTrack(REMOVE, objectData);
+
+                ALuint source = ol->sounder->playSound(ol->removeSound, 0.01);
+                alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+            }
+            else
+            {
+                clickStart = mousePos;
+                lastGrid = clickStart;
+            }
         }
         else if (item->objectType & SINGLE_DRAWS)
         {
@@ -528,21 +622,7 @@ void Leveler::update()
 
             if (objectData)
             {
-                s_gridOperationList* tempNextOp = currentOperation->next;
-                currentOperation->next = new s_gridOperationList();
-                currentOperation->next->prev = currentOperation;
-                currentOperation = currentOperation->next;
-
-                for (; tempNextOp;)
-                {
-                    s_gridOperationList* del = tempNextOp;
-                    tempNextOp = tempNextOp->next;
-                    delete del;
-                }
-
-                currentOperation->objectOperation = new s_gridOperation_o();
-                currentOperation->objectOperation->operationType = ADD;
-                currentOperation->objectOperation->objData = objectData;
+                setObjectOperationTrack(ADD, objectData);
             }
         }
     }
@@ -748,13 +828,14 @@ void Leveler::removeObject(short x, short y)
     auto& reqVec = lastOffsetPos_M[objIndex - 4];
     s_gridSquare lastOffsetSquare = reqVec.back();
 
+    perTextureData[objIndex - 4].currentOffset--;
+
     if (lastOffsetSquare == objectData->pos)
     {
-        perTextureData[objIndex - 4].currentOffset--;
         reqVec.pop_back();
         return;
     }
-
+    
     const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
     s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
 
