@@ -28,7 +28,7 @@ void main()
     vec2 crd = mat2(1.0, -1.0, 1.0, 1.0) * vec2(localPos.x, localPos.y * ratio);
     crd = cos((crd * PI) / (size.x * gridSize / 16.0));
 
-    float val = max(crd.x,crd.y);
+    float val = max(crd.x, crd.y);
 
     float sv = 1.0 - (lineThick * sharedUboData.cameraPos.z / 20.0);
 

@@ -11,9 +11,10 @@ typedef struct
 
 class LaserShader : public ShaderBase
 {
-    friend class ThinDrawer;
+public:
 
-private:
+    int numLasers = 0;
+
     LaserShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     void prepareUniforms();

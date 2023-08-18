@@ -135,6 +135,7 @@ public:
     std::vector<std::pair<void (*) (void*), void*>> memMapFuncs;
     
     std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> earlyDrawFuncs;
+    std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> midDrawFuncs;
     std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> drawFuncs;
     std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>> lateDrawFuncs;
 

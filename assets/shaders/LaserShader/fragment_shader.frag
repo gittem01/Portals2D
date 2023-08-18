@@ -84,7 +84,7 @@ void main()
 
             FragColour = (vec4(1.0 + f) - revClr * (1.0 - val10)) * val10;
         }
-        else if (abs(uv.x) > size.x - size.y)
+        else if (abs(uv.x) >= size.x - size.y)
         {
             float val10 = 1.0 - length(abs(uv) - vec2(size.x - size.y, 0.0)) / v;
             val10 = smoothstep(0.0, data.data.y, val10) * data.data.z;

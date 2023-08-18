@@ -432,6 +432,11 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     diagonalLiner->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
+    for (auto& f : midDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
+
     blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);

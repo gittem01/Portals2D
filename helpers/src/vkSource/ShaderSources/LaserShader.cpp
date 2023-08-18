@@ -12,22 +12,20 @@ void LaserShader::prepareVertexData()
 
 void LaserShader::prepareUniforms()
 {
-    // offset is not used no need for alignment
-    int alignedSizeFS = sizeof(s_laserUbo);
     uniformBuffers.resize(1);
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(alignedSizeFS * 1000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_laserUbo) * 80000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_laserUbo* laserUbo;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, alignedSizeFS, 0, (void**)&laserUbo);
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, sizeof(s_laserUbo), 0, (void**)&laserUbo);
     laserUbo->points = glm::vec4(-10.0, -5.0, 0.0, 10.0);
     laserUbo->colour = glm::vec4(1.0, 0.0, 0.0, 1.0);
     laserUbo->data = glm::vec4(1.5, 11.0, 36.0, 0.0);
     vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
 
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, alignedSizeFS, alignedSizeFS, 0, (void**)&laserUbo);
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
     laserUbo->points = glm::vec4(0.0, -7.0, 40.0, -7.0);
     laserUbo->colour = glm::vec4(0.0, 0.5, 1.0, 1.0);
     laserUbo->data = glm::vec4(1.0, 2.0, 4.0, 0.0);

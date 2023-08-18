@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include <string>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
@@ -72,7 +73,7 @@ constexpr int getLevelObjectIndex(levelObject value)
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
 #define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER)
 
 typedef enum OperationType
 {
@@ -94,6 +95,7 @@ typedef struct GridData_S
 
 typedef struct ObjectDataGrid
 {
+	std::vector<int> extraOffsets;
 	int offset;
 	s_gridSquare pos;
 	levelObject objectType;
@@ -178,6 +180,7 @@ public:
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_G;
 
 	std::vector<std::vector<s_gridSquare>> lastOffsetPos_M;
+	std::vector<s_gridSquare> lastOffsetPos_Laser;
 
 	//////////////////
 	std::vector<std::vector<s_levelGridData>> gridMap;
@@ -200,6 +203,8 @@ public:
 
 	int numSwapChainImages;
 
+	std::set<s_objectDataGrid*> levelObjects;
+
 	Leveler(Game* game);
 	~Leveler();
 
@@ -209,7 +214,11 @@ public:
 	s_levelGridData getSquare(short x, short y);
 
 	void fillGrid(short minX, short minY, short maxX, short maxY, levelObject fillType);
+	void putBarrierOnMemories(std::vector<class ShaderBase*> shaders);
+	void afterFillRayCheck(short minX, short minY, short maxX, short maxY);
 	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
+	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
+	void afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void removeObject(short x, short y);
 	void takeBack(bool shiftPressed);
 	void addGridSquare_W(short x, short y);
@@ -224,14 +233,19 @@ public:
 	bool isInBounds(short x, short y);
 	glm::i16vec2 keepInBounds(glm::i16vec2 pos);
 
+	void sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY,
+		float startOffset, float endOffset, levelObject objectMask,
+		glm::vec2& startPoint, glm::vec2& endPoint);
 	void sideUpdate(short minX, short maxX, short minY, short maxY);
 	bool checkGridOccupancy(short x, short y);
 
+	void moveVkMem(class ShaderBase* shader, int srcOffset, int destOffset, int size);
 	void removeGridSquare(short x, short y);
 	void setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData);
 	void update();
 	glm::ivec2 getMouseGrid();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);
+	static void renderLasers(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderGrid(VkCommandBuffer cmdBuff, void* ptr);
 };
