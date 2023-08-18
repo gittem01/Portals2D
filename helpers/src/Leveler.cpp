@@ -778,7 +778,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     {
         for (int x = startX; x < endX; x++)
         {
-            s_levelGridData& currentGridData = getSquare(x, y);
+            const s_levelGridData& currentGridData = getSquare(x, y);
             setSquare(x, y, { (levelObject)(item.objectType | currentGridData.objectType), uData });
         }
     }
@@ -787,7 +787,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     {
         for (int x = sideArea.x; x < sideArea.y; x++)
         {
-            s_levelGridData& currentGridData = getSquare(x, y);
+            const s_levelGridData& currentGridData = getSquare(x, y);
             setSquare(x, y, { (levelObject)(depType | currentGridData.objectType), currentGridData.data });
         }
     }
@@ -974,7 +974,7 @@ void Leveler::removeObject(short x, short y)
     {
         for (int j = 0; j < sizeX; j++)
         {
-            s_levelGridData& currentGridData = getSquare(x, y);
+            const s_levelGridData& currentGridData = getSquare(x, y);
             setSquare(x + j, y + i, { (LevelObject)(currentGridData.objectType & (lgd.objectType ^ -1ll)), 0});
         }
     }
@@ -983,7 +983,7 @@ void Leveler::removeObject(short x, short y)
     {
         for (int x = sideArea.x; x < sideArea.y; x++)
         {
-            s_levelGridData& currentGridData = getSquare(x, y);
+            const s_levelGridData& currentGridData = getSquare(x, y);
             setSquare(x, y, { (levelObject)(depType & currentGridData.objectType), currentGridData.data });
         }
     }
@@ -1451,7 +1451,7 @@ void Leveler::addGridSquare_W(short x, short y)
     memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
 
-    s_levelGridData& currentGridData = getSquare(x, y);
+    const s_levelGridData& currentGridData = getSquare(x, y);
 
     lastOffsetPos_W[pos.y][pos.x].push_back({x, y});
     s_gridData uData; uData.offset = offset;
@@ -1475,7 +1475,7 @@ void Leveler::addGridSquare_B(short x, short y)
     wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.06, 1.0, 0.0);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
 
-    s_levelGridData& currentGridData = getSquare(x, y);
+    const s_levelGridData& currentGridData = getSquare(x, y);
 
     lastOffsetPos_B[pos.y][pos.x].push_back({ x, y });
     s_gridData uData; uData.offset = offset;
@@ -1499,7 +1499,7 @@ void Leveler::addGridSquare_G(short x, short y)
     wallUbo->data = glm::vec4(2.0, 0.2, 1.0, 1.0);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
 
-    s_levelGridData& currentGridData = getSquare(x, y);
+    const s_levelGridData& currentGridData = getSquare(x, y);
 
     lastOffsetPos_G[pos.y][pos.x].push_back({ x, y });
     s_gridData uData; uData.offset = offset;
@@ -1523,7 +1523,7 @@ void Leveler::addGridSquare_F(short x, short y)
     wallUbo->data = glm::vec4(2.0, 0.4, 1.0, 0.5);
     vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
 
-    s_levelGridData& currentGridData = getSquare(x, y);
+    const s_levelGridData& currentGridData = getSquare(x, y);
 
     lastOffsetPos_G[pos.y][pos.x].push_back({ x, y });
     s_gridData uData; uData.offset = offset;
