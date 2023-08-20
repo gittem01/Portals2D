@@ -180,7 +180,7 @@ void Overlayer::update()
 
     const float mult = 6.0;
 
-    if (-78.0 + itemRatio * 17.0 < p.x || game->leveler->clickStart[0] != -100000)
+    if (-78.0 + itemRatio * 17.0 < p.x || game->leveler->clickStart[0] != -100000 || game->leveler->consqClickVec.size() > 0)
     {
         if (itemDir == 1)
         {
@@ -241,8 +241,8 @@ void Overlayer::update()
                     {
                         if (selectedItemIndex != hoverIndex)
                         {
-                            Leveler::object->selectedObjectRotation = 0;
-                            Leveler::object->consqClickVec.clear();
+                            game->leveler->selectedObjectRotation = 0;
+                            game->leveler->consqClickVec.clear();
                         }
 
                         selectedItemIndex = hoverIndex;

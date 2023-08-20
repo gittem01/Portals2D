@@ -106,20 +106,18 @@ typedef struct ObjectDataGrid
 {
 	std::vector<int> extraOffsets;
 	levelObject objectType;
+	levelObject extraType;
 	int offset;
 	glm::i16vec2 pos;
+	glm::i16vec2 extraPos;
 	glm::i16vec2 scale;
+	glm::i16vec2 extraScale;
 	int rotation;
 } s_objectDataGrid;
 
 inline bool operator<(const s_gridSquare lhs, const s_gridSquare rhs)
 {
-    if (lhs.y < rhs.y)
-        return true;
-    else if (lhs.y == rhs.y && lhs.x < rhs.x)
-        return true;
-    else
-        return false;
+	return (lhs.y < rhs.y) || (lhs.y == rhs.y && lhs.x < rhs.x);
 }
 
 inline bool operator==(const s_gridSquare lhs, const s_gridSquare rhs)
@@ -191,6 +189,7 @@ public:
 
 	std::vector<std::vector<s_gridSquare>> lastOffsetPos_M;
 	std::vector<s_gridSquare> lastOffsetPos_Laser;
+	std::vector<s_gridSquare> lastOffsetPos_Platform;
 
 	//////////////////
 	glm::ivec2 mouseGrid;
@@ -229,10 +228,12 @@ public:
 	void putBarrierOnMemories(std::vector<class ShaderBase*> shaders);
 	void afterFillRayCheck(short minX, short minY, short maxX, short maxY);
 	void putPlatformOnClick();
-	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
+	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation);
+	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize);
 	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void removeObject(short x, short y);
+	void removePlatform(short x, short y);
 	void takeBack(bool shiftPressed);
 	void addGridSquare_W(short x, short y);
 	void addGridSquare_B(short x, short y);

@@ -6,6 +6,9 @@
 #include <Sounder.h>
 #include <SwapChain.h>
 
+// for math things
+#include <PortalWorld.h>
+
 Leveler* Leveler::object;
 
 glm::vec2 rotationMults[4] = { {+0.0f, -1.0f}, {+1.0f, +0.0f}, {0.0f, +1.0f}, {-1.0f, 0.0f} };
@@ -439,7 +442,15 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, renderIndex);
 }
 
-void getPlatformLastStateSquares(glm::ivec2 p0, glm::ivec2 p1, glm::ivec2 mp, glm::ivec2& lp0, glm::ivec2& lp1)
+glm::vec2 rotateVec(glm::vec2 vec, float angle)
+{
+    float x = cos(angle) * vec.x - sin(angle) * vec.y;
+    float y = sin(angle) * vec.x + cos(angle) * vec.y;
+
+    return { x, y };
+}
+
+void getPlatformLastStateSquares(glm::ivec2 p0, glm::ivec2 p1, glm::ivec2 mp, glm::ivec2& lp0, glm::ivec2& lp1, glm::vec2& absStart, glm::vec2& absEnd, glm::vec2& absDown)
 {
     short downY = std::min(p0.y, p1.y); short downYDiff = downY - mp.y;
     short upY = std::max(p0.y, p1.y); short upYDiff = mp.y - upY;
@@ -451,22 +462,32 @@ void getPlatformLastStateSquares(glm::ivec2 p0, glm::ivec2 p1, glm::ivec2 mp, gl
     if (maxDiff <= 0)
     {
         lp0 = glm::ivec2(leftX, downY); lp1 = glm::ivec2(rightX, upY);
+        absStart = glm::vec2(leftX, downY); absEnd = glm::vec2(rightX + 1, upY + 1);
+        absDown = rotateVec(absEnd - absStart, glm::pi<float>() * 0.5) * 0.25f;
     }
     else if (downYDiff == maxDiff)
     {
         lp0 = glm::ivec2(leftX, downY - maxDiff); lp1 = glm::ivec2(rightX, downY - 1);
+        absStart = glm::vec2((leftX + rightX + 1.0f) * 0.5, upY + 1.0f); absEnd = glm::vec2(absStart.x, downY - maxDiff);
+        absDown = rotateVec(glm::normalize(absEnd - absStart) * 0.5f, glm::pi<float>() * 0.5) * (float)(rightX - leftX + 1);
     }
     else if (rightXDiff == maxDiff)
     {
         lp0 = glm::ivec2(rightX + 1, downY); lp1 = glm::ivec2(rightX + maxDiff, upY);
+        absStart = glm::vec2(leftX, (downY + upY + 1.0f) * 0.5); absEnd = glm::vec2(rightX + maxDiff + 1, absStart.y);
+        absDown = rotateVec(glm::normalize(absEnd - absStart) * 0.5f, glm::pi<float>() * 0.5) * (float)(upY - downY + 1);
     }
     else if (upYDiff == maxDiff)
     {
         lp0 = glm::ivec2(leftX, upY + 1); lp1 = glm::ivec2(rightX, upY + maxDiff);
+        absStart = glm::vec2((leftX + rightX + 1.0f) * 0.5, downY); absEnd = glm::vec2(absStart.x, upY + maxDiff + 1);
+        absDown = rotateVec(glm::normalize(absEnd - absStart) * 0.5f, glm::pi<float>() * 0.5) * (float)(rightX - leftX + 1);
     }
     else if (leftXDiff == maxDiff)
     {
         lp0 = glm::ivec2(leftX - maxDiff, downY); lp1 = glm::ivec2(leftX - 1, upY);
+        absStart = glm::vec2(rightX + 1, (downY + upY + 1.0f) * 0.5); absEnd = glm::vec2(leftX - maxDiff, absStart.y);
+        absDown = rotateVec(glm::normalize(absEnd - absStart) * 0.5f, glm::pi<float>() * 0.5) * (float)(upY - downY + 1);
     }
 }
 
@@ -479,6 +500,19 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
     const VkDeviceSize offsets = 0;
     const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
 
+    // lines
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->debugLineShader->pipelineLayout, 1, 1, &td->debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, td->debugLineShader->numLines, 0, 0);
+
+    // platform
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
 
     vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
@@ -545,10 +579,11 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
         float midY = (minY + maxY) * 0.5 + 0.5;
 
         s_platformRectUbo* platformUbo;
-        vkMapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory, td->platformRectangle->numPlatforms, sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
+        vkMapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory, td->platformRectangle->numPlatforms * sizeof(s_platformRectUbo),
+            sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
         platformUbo->posSize = glm::vec4(midX, midY, xSize, ySize);
-        platformUbo->inColour = glm::vec4(0.02, 0.02, 0.02, 0.9);
-        platformUbo->outColour = glm::vec4(0.0, 0.0, 0.0, 1.0);
+        platformUbo->inColour = glm::vec4(0.6, 0.6, 0.6, 0.5);
+        platformUbo->outColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
         platformUbo->data = glm::vec4(0.0, 0.1, 1.0, 1.0);
         vkUnmapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory);
 
@@ -611,6 +646,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 
         vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, td->platformRectangle->numPlatforms);
 
+
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
         vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
@@ -621,8 +657,12 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
         glm::ivec2 lp0;
         glm::ivec2 lp1;
 
-        getPlatformLastStateSquares(leveler->consqClickVec[0], leveler->consqClickVec[1], mp, lp0, lp1);
+        glm::vec2 absStart;
+        glm::vec2 absEnd;
+        glm::vec2 absDown;
 
+        getPlatformLastStateSquares(leveler->consqClickVec[0], leveler->consqClickVec[1], mp, lp0, lp1, absStart, absEnd, absDown);
+        
         s_gridSquareData gsData;
         gsData.positionData[2] = 1;
         gsData.positionData[3] = 1;
@@ -649,25 +689,35 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		}
 
         s_debugLineUbo* lineUbo;
+        s_debugLineUbo copyLine;
+        copyLine.colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+        copyLine.data.y = 0.02; copyLine.data.z = 0.25;
+        copyLine.data.x = 0.4; copyLine.data.w = 0.2;
         vkMapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory, td->debugLineShader->numLines * sizeof(s_debugLineUbo),
-            sizeof(s_debugLineUbo), 0, (void**)&lineUbo);
-        lineUbo->colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
-        lineUbo->positions = glm::vec4(-10.0, 5.0, 10.0, 0.0);
-        lineUbo->data.y = 0.05; lineUbo->data.z = 0.5;
-        lineUbo->data.x = 0.5; lineUbo->data.w = 0.3;
+            sizeof(s_debugLineUbo) * 3, 0, (void**)&lineUbo);
+        *lineUbo = copyLine;
+        lineUbo->positions = glm::vec4(absStart.x, absStart.y, absEnd.x, absEnd.y);
+
+        lineUbo++;
+        *lineUbo = copyLine;
+        lineUbo->positions = glm::vec4(absStart.x - absDown.x, absStart.y - absDown.y, absStart.x + absDown.x, absStart.y + absDown.y);
+
+        lineUbo++;
+        *lineUbo = copyLine;
+        lineUbo->positions = glm::vec4(absEnd.x - absDown.x, absEnd.y - absDown.y, absEnd.x + absDown.x, absEnd.y + absDown.y);
+
         vkUnmapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory);
 
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
         vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
 
-        const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             td->debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             td->debugLineShader->pipelineLayout, 1, 1, &td->debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-        vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, 1, 0, td->debugLineShader->numLines);
+        vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, 3, 0, td->debugLineShader->numLines);
     }
 }
 
@@ -711,7 +761,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
     // GridSquare
     if (!leveler->ol->itemDir)
     {
-        if (item.objectType & GRID_DRAWS && !(lgd.objectType & SINGLE_DRAWS && item.objectType & ERASER))
+        if (item.objectType & GRID_DRAWS && !(lgd.objectType & (SINGLE_DRAWS | PLATFORM) && item.objectType & ERASER))
         {
             vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
@@ -748,14 +798,14 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
                 vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, drawCount, 0, 0);
             }
         }
-        else if (lgd.objectType & SINGLE_DRAWS && item.objectType & ERASER)
+        else if (lgd.objectType & (SINGLE_DRAWS | PLATFORM) && item.objectType & ERASER)
         {
             s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
 
-            s_gridItemData& seslectedItem = leveler->ol->items[getLevelObjectIndex(objectData->objectType)];
+            s_gridItemData& selectedItem = leveler->ol->items[getLevelObjectIndex(objectData->objectType)];
 
-            short scaleX = seslectedItem.gridScale[objectData->rotation % 2];
-            short scaleY = seslectedItem.gridScale[(objectData->rotation % 2) ^ 1];
+            short scaleX = objectData->scale.x;
+            short scaleY = objectData->scale.y;
 
             vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
@@ -899,7 +949,7 @@ void Leveler::update()
             glm::ivec2 mousePos = getMouseGrid();
 
             const s_levelGridData& lgd = getSquare(mousePos.x, mousePos.y);
-            if (item->objectType == ERASER && lgd.objectType & SINGLE_DRAWS)
+            if (item->objectType == ERASER && lgd.objectType & (SINGLE_DRAWS | PLATFORM))
             {
                 s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
                 removeObject(objectData->pos.x, objectData->pos.y);
@@ -922,7 +972,7 @@ void Leveler::update()
             short scaleX = item.gridScale[selectedObjectRotation % 2];
             short scaleY = item.gridScale[(selectedObjectRotation % 2) ^ 1];
 
-            s_objectDataGrid* objectData = putObject(item, mousePos.x - scaleX / 2, mousePos.y - scaleY / 2, scaleX, scaleY, selectedObjectRotation);
+            s_objectDataGrid* objectData = putObject(item, mousePos.x - scaleX / 2, mousePos.y - scaleY / 2, scaleX, scaleY, selectedObjectRotation, 0);
 
             if (objectData)
             {
@@ -991,15 +1041,16 @@ void Leveler::putPlatformOnClick()
         glm::ivec2 lp0;
         glm::ivec2 lp1;
 
+        glm::vec2 absStart;
+        glm::vec2 absEnd;
+        glm::vec2 absDown;
+
         glm::ivec2 p0 = consqClickVec[0];
         glm::ivec2 p1 = consqClickVec[1];
 
-        getPlatformLastStateSquares(p0, p1, mp, lp0, lp1);
+        getPlatformLastStateSquares(p0, p1, mp, lp0, lp1, absStart, absEnd, absDown);
 
-        int s0 = abs(p0.x - p1.x) + abs(p0.y - p1.y);
-        int s1 = abs(lp0.x - lp1.x) + abs(lp0.y - lp1.y);
-
-        if (s0 == s1)
+        if (abs(absDown.x) > 0.0001f && abs(absDown.y) > 0.0001f)
         {
 			return;
 		}
@@ -1015,14 +1066,194 @@ void Leveler::putPlatformOnClick()
             }
         }
 
-        // add here
+        s_gridSquare pos, size;
+        int pSize, rotation;
+
+        short downY = std::min(p0.y, p1.y); short downYDiff = downY - mp.y;
+        short upY = std::max(p0.y, p1.y); short upYDiff = mp.y - upY;
+        short leftX = std::min(p0.x, p1.x); short leftXDiff = leftX - mp.x;
+        short rightX = std::max(p0.x, p1.x); short rightXDiff = mp.x - rightX;
+
+        short maxDiff = std::max(std::max(downYDiff, upYDiff), std::max(leftXDiff, rightXDiff));
+
+        if (downYDiff == maxDiff)
+        {
+            pos = { leftX, (short)(downY - maxDiff) }; size = { (short)(rightX - leftX + 1), (short)(maxDiff + upY - downY + 1) }; pSize = upY - downY + 1; rotation = 0;
+        }
+        else if (rightXDiff == maxDiff)
+        {
+            pos = { leftX, downY }; size = { (short)(maxDiff + rightX - leftX + 1), (short)(upY - downY + 1) }; pSize = rightX - leftX + 1; rotation = 1;
+        }
+        else if (upYDiff == maxDiff)
+        {
+            pos = { leftX, downY }; size = { (short)(rightX - leftX + 1), (short)(maxDiff + upY - downY + 1) }; pSize = upY - downY + 1; rotation = 2;
+        }
+        else if (leftXDiff == maxDiff)
+        {
+            pos = { (short)(leftX - maxDiff), downY }; size = { (short)(maxDiff + rightX - leftX + 1), (short)(upY - downY + 1) }; pSize = rightX - leftX + 1; rotation = 3;
+        }
+
+        s_objectDataGrid* objectData = putPlatform(pos, size, pSize, rotation);
+
+        setObjectOperationTrack(ADD, objectData);
 
         consqClickVec.clear();
     }
 }
 
-s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation)
+s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation)
 {
+    glm::vec2 lineStart;
+    glm::vec2 lineEnd;
+    float lineWidth;
+    glm::vec2 platformPos;
+    glm::vec2 platformSize;
+
+    switch (rotation % 4)
+    {
+    case 0:
+        lineStart = { pos.x + size.x * 0.5f, pos.y }; lineEnd = { lineStart.x, pos.y + size.y }; lineWidth = size.x;
+        platformPos = { lineEnd.x, lineEnd.y - pSize * 0.5f }; platformSize = { size.x, pSize };
+		break;
+    case 1:
+        lineStart = { pos.x, pos.y + size.y * 0.5f }; lineEnd = { pos.x + size.x, lineStart.y }; lineWidth = size.y;
+        platformPos = { pos.x + pSize * 0.5f, lineStart.y }; platformSize = { pSize, size.y };
+        break;
+    case 2:
+        lineStart = { pos.x + size.x * 0.5f, pos.y }; lineEnd = { lineStart.x, pos.y + size.y }; lineWidth = size.x;
+        platformPos = { lineStart.x, pos.y + pSize * 0.5f }; platformSize = { size.x, pSize };
+        break;
+    case 3:
+        lineStart = { pos.x, pos.y + size.y * 0.5f }; lineEnd = { pos.x + size.x, lineStart.y }; lineWidth = size.y;
+        platformPos = { lineEnd.x - pSize * 0.5f, lineStart.y }; platformSize = { pSize, size.y };
+		break;
+    }
+
+    glm::vec2 rightLine = rotateVec(glm::normalize(lineEnd - lineStart) * 0.5f, glm::pi<float>() * 0.5) * lineWidth;
+
+    putBarrierOnMemories({ thinDrawer->platformRectangle, thinDrawer->debugLineShader });
+
+    s_platformRectUbo* platformUbo;
+    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory,
+        thinDrawer->platformRectangle->numPlatforms * sizeof(s_platformRectUbo), sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
+    platformUbo->posSize = glm::vec4(platformPos.x, platformPos.y, platformSize.x, platformSize.y);
+    platformUbo->inColour = glm::vec4(0.6, 0.6, 0.6, 0.5);
+    platformUbo->outColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+    platformUbo->data = glm::vec4(0.0, 0.1, 1.0, 1.0);
+    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory);
+
+    s_debugLineUbo* lineUbo;
+    s_debugLineUbo copyLine;
+    copyLine.colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+    copyLine.data.y = 0.02; copyLine.data.z = 0.25;
+    copyLine.data.x = 0.4; copyLine.data.w = 0.2;
+    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->debugLineShader->uniformBuffers[0]->memory,
+        thinDrawer->debugLineShader->numLines * sizeof(s_debugLineUbo), sizeof(s_debugLineUbo) * 3, 0, (void**)&lineUbo);
+    
+    *lineUbo = copyLine;
+    lineUbo->positions = glm::vec4(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
+
+    lineUbo++;
+    *lineUbo = copyLine;
+    lineUbo->positions = glm::vec4(lineStart.x - rightLine.x, lineStart.y - rightLine.y, lineStart.x + rightLine.x, lineStart.y + rightLine.y);
+
+    lineUbo++;
+    *lineUbo = copyLine;
+    lineUbo->positions = glm::vec4(lineEnd.x - rightLine.x, lineEnd.y - rightLine.y, lineEnd.x + rightLine.x, lineEnd.y + rightLine.y);
+
+    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->debugLineShader->uniformBuffers[0]->memory);
+
+    s_objectDataGrid* objectData = new s_objectDataGrid();
+    s_gridData uData; uData.ptr = (void*)objectData;
+
+    for (int i = 0; i < size.y; i++)
+    {
+        for (int j = 0; j < size.x; j++)
+        {
+            int x = pos.x + j; int y = pos.y + i;
+            const s_levelGridData& currentGridData = getSquare(x, y);
+            setSquare(x, y, { (levelObject)(PLATFORM | currentGridData.objectType), uData });
+        }
+    }
+
+    objectData->offset = thinDrawer->platformRectangle->numPlatforms;
+    objectData->objectType = PLATFORM;
+    objectData->rotation = rotation;
+    objectData->pos = { pos.x, pos.y };
+    objectData->scale = { size.x, size.y };
+    objectData->extraScale = { pSize, 0 };
+    objectData->extraOffsets.push_back(thinDrawer->debugLineShader->numLines);
+
+    levelObjects.insert(objectData);
+
+    lastOffsetPos_Platform.push_back({ pos.x, pos.y });
+
+    thinDrawer->platformRectangle->numPlatforms++;
+    thinDrawer->debugLineShader->numLines += 3;
+
+    return objectData;
+}
+
+void Leveler::removePlatform(short x, short y)
+{
+    const s_levelGridData& lgd = getSquare(x, y);
+
+    s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+    int objIndex = getLevelObjectIndex(objectData->objectType);
+
+    const s_gridItemData& item = ol->items[objIndex];
+    short sizeX = objectData->scale.x;
+    short sizeY = objectData->scale.y;
+
+    putBarrierOnMemories({ thinDrawer->platformRectangle, thinDrawer->debugLineShader });
+
+    for (int i = 0; i < sizeY; i++)
+    {
+        for (int j = 0; j < sizeX; j++)
+        {
+            const s_levelGridData& currentGridData = getSquare(x + j, y + i);
+            setSquare(x + j, y + i, { (LevelObject)(currentGridData.objectType & (PLATFORM ^ -1ll)), 0 });
+        }
+    }
+
+    levelObjects.erase(objectData);
+
+    auto& reqVec = lastOffsetPos_Platform;
+    s_gridSquare lastOffsetSquare = reqVec.back();
+
+    thinDrawer->debugLineShader->numLines -= 3;
+    thinDrawer->platformRectangle->numPlatforms--;
+
+    if (lastOffsetSquare.asGlm() == objectData->pos)
+    {
+        reqVec.pop_back();
+        return;
+    }
+
+    const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
+    s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
+
+    int thisSquareOffsetIndex = objectData->offset;
+    reqVec[thisSquareOffsetIndex] = reqVec.back();
+    reqVec.pop_back();
+
+    int lastPlatformOffset = lastObjectData->offset * sizeof(s_platformRectUbo); int thisPlatformOffset = objectData->offset * sizeof(s_platformRectUbo);
+    int lastLineOffset = lastObjectData->extraOffsets[0] * sizeof(s_debugLineUbo); int thisLineOffset = objectData->extraOffsets[0] * sizeof(s_debugLineUbo);
+
+    moveVkMem(thinDrawer->platformRectangle, lastPlatformOffset, thisPlatformOffset, sizeof(s_platformRectUbo));
+    moveVkMem(thinDrawer->debugLineShader, lastLineOffset, thisLineOffset, sizeof(s_debugLineUbo) * 3);
+
+    lastObjectData->offset = objectData->offset;
+    lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
+}
+
+s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize)
+{
+    if (item.objectType & PLATFORM)
+    {
+        return putPlatform({ startX, startY }, { scaleX, scaleY }, pSize, rotation);
+    }
+
     glm::vec2 extraAdd = rotationMults[rotation] * item.gridRenderTranslation.y;
 
     short endX = startX + scaleX;
@@ -1243,6 +1474,11 @@ void Leveler::removeObject(short x, short y)
 {
     const s_levelGridData& lgd = getSquare(x, y);
 
+    if (lgd.objectType & PLATFORM)
+    {
+        removePlatform(x, y);
+    }
+
     if (!(lgd.objectType & SINGLE_DRAWS))
     {
 		return;
@@ -1293,7 +1529,7 @@ void Leveler::removeObject(short x, short y)
     {
         for (int j = 0; j < sizeX; j++)
         {
-            const s_levelGridData& currentGridData = getSquare(x, y);
+            const s_levelGridData& currentGridData = getSquare(x + j, y + i);
             setSquare(x + j, y + i, { (LevelObject)(currentGridData.objectType & (lgd.objectType ^ -1ll)), 0});
         }
     }
@@ -1414,10 +1650,8 @@ void Leveler::takeBack(bool shiftPressed)
                     s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
                     int objIndex = getLevelObjectIndex(objectData->objectType);
                     const s_gridItemData& item = ol->items[objIndex];
-                    short scaleX = item.gridScale[objectData->rotation % 2];
-                    short scaleY = item.gridScale[(objectData->rotation % 2) ^ 1];
 
-                    putObject(item, sq.x, sq.y, scaleX, scaleY, objectData->rotation);
+                    putObject(item, sq.x, sq.y, objectData->scale.x, objectData->scale.y, objectData->rotation, objectData->extraScale.x);
                 }
                     break;
 
@@ -1464,10 +1698,8 @@ void Leveler::takeBack(bool shiftPressed)
                 s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
                 int objIndex = getLevelObjectIndex(objectData->objectType);
                 const s_gridItemData& item = ol->items[objIndex];
-                short scaleX = item.gridScale[objectData->rotation % 2];
-                short scaleY = item.gridScale[(objectData->rotation % 2) ^ 1];
 
-                putObject(item, sq.x, sq.y, scaleX, scaleY, objectData->rotation);
+                putObject(item, sq.x, sq.y, objectData->scale.x, objectData->scale.y, objectData->rotation, objectData->extraScale.x);
             }
                 break;
 
@@ -1565,7 +1797,7 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
         {
             s_levelGridData lgData = getSquare(j, i);
 
-            if (lgData.objectType == fillType || lgData.objectType & SINGLE_DRAWS ||
+            if (lgData.objectType == fillType || lgData.objectType & (SINGLE_DRAWS | PLATFORM) ||
                 (lgData.objectType & GRID_DEPS && !(fillType & (BLACK_WALL | WHITE_WALL))))
             {
                 continue;
