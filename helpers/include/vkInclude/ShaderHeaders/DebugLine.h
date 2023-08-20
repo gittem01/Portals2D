@@ -11,10 +11,7 @@ typedef struct
 
 class DebugLine : public ShaderBase
 {
-    friend class ThinDrawer;
-    friend class BaseTestCase;
-
-private:
+public:
     DebugLine(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     int numLines = 0;

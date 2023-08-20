@@ -37,6 +37,7 @@ Overlayer::Overlayer(Game* game)
     addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, { 1.0, 1.0 }, 1.0, false, 0);
     addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.335 }, { 2, 1 }, 2.0, true, 0);
     addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.07 }, { 1.0, 1.0 }, 1.0, true, 0);
+    addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.07 }, { 1.0, 1.0 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
 }
 
@@ -238,8 +239,13 @@ void Overlayer::update()
                     item.extraScale = fmax(item.extraScale - game->deltaTime * 15.0 * item.extraScale, 0.0);
                     if (wh->mouseData[2] == 2)
                     {
+                        if (selectedItemIndex != hoverIndex)
+                        {
+                            Leveler::object->selectedObjectRotation = 0;
+                            Leveler::object->consqClickVec.clear();
+                        }
+
                         selectedItemIndex = hoverIndex;
-                        Leveler::object->selectedObjectRotation = 0;
 
                         ALuint source = sounder->playSound(clickSound, 0.3);
                         alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);

@@ -3,7 +3,7 @@
 layout (location = 0) out vec4 color;
 
 layout (location = 0) in vec2 localPos;
-layout (location = 1) in vec2 size;
+layout (location = 1) flat in vec2 size;
 layout (location = 2) flat in int instanceIndex;
 
 layout (set = 0, binding = 0) uniform SharedUboData
@@ -28,6 +28,13 @@ layout (std140, set = 1, binding = 0) readonly buffer UBO
 void main()
 {
     lineData data = ubo.sData[instanceIndex];
+
+    float lp2x = localPos.x + size.x * 0.5 + size.y;
+    if (mod(lp2x, data.data.x) < data.data.w)
+    {
+        color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+        return;
+    }
 
     float zoom = sharedUboData.data.x;
     float perctDist = 1.0f;

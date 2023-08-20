@@ -21,6 +21,7 @@
 #include <ShaderHeaders/ItemList.h>
 #include <ShaderHeaders/ManyTexture.h>
 #include <ShaderHeaders/DiagonalLiner.h>
+#include <ShaderHeaders/PlatformRectangle.h>
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -175,6 +176,7 @@ public:
     ItemList* itemList;
     ManyTexture* manyTexture;
     DiagonalLiner* diagonalLiner;
+    PlatformRectangle* platformRectangle;
 
     std::vector<ShaderBase*> shaders;
 

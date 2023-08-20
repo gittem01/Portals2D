@@ -18,7 +18,7 @@ void DebugLine::prepareUniforms()
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(alignedSizeFS * 10000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(alignedSizeFS * 100000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void DebugLine::setupDescriptorSetLayout()

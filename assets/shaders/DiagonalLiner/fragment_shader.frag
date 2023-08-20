@@ -2,7 +2,6 @@
 
 #define PI 3.14159265359
 
-
 layout (location = 0) out vec4 FragColour;
 
 layout (location = 0) in vec2 localPos;

@@ -9,6 +9,7 @@
 Leveler* Leveler::object;
 
 glm::vec2 rotationMults[4] = { {+0.0f, -1.0f}, {+1.0f, +0.0f}, {0.0f, +1.0f}, {-1.0f, 0.0f} };
+const int maxPlatformDiff = 4;
 
 Leveler::Leveler(Game* game)
 {
@@ -438,6 +439,238 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, renderIndex);
 }
 
+void getPlatformLastStateSquares(glm::ivec2 p0, glm::ivec2 p1, glm::ivec2 mp, glm::ivec2& lp0, glm::ivec2& lp1)
+{
+    short downY = std::min(p0.y, p1.y); short downYDiff = downY - mp.y;
+    short upY = std::max(p0.y, p1.y); short upYDiff = mp.y - upY;
+    short leftX = std::min(p0.x, p1.x); short leftXDiff = leftX - mp.x;
+    short rightX = std::max(p0.x, p1.x); short rightXDiff = mp.x - rightX;
+
+    int maxDiff = std::max(std::max(downYDiff, upYDiff), std::max(leftXDiff, rightXDiff));
+
+    if (maxDiff <= 0)
+    {
+        lp0 = glm::ivec2(leftX, downY); lp1 = glm::ivec2(rightX, upY);
+    }
+    else if (downYDiff == maxDiff)
+    {
+        lp0 = glm::ivec2(leftX, downY - maxDiff); lp1 = glm::ivec2(rightX, downY - 1);
+    }
+    else if (rightXDiff == maxDiff)
+    {
+        lp0 = glm::ivec2(rightX + 1, downY); lp1 = glm::ivec2(rightX + maxDiff, upY);
+    }
+    else if (upYDiff == maxDiff)
+    {
+        lp0 = glm::ivec2(leftX, upY + 1); lp1 = glm::ivec2(rightX, upY + maxDiff);
+    }
+    else if (leftXDiff == maxDiff)
+    {
+        lp0 = glm::ivec2(leftX - maxDiff, downY); lp1 = glm::ivec2(leftX - 1, upY);
+    }
+}
+
+void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
+{
+    ThinDrawer* td = leveler->thinDrawer;
+
+    glm::ivec2 mp = leveler->getMouseGrid();
+
+    const VkDeviceSize offsets = 0;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->platformRectangle->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->platformRectangle->pipelineLayout, 1, 1, &td->platformRectangle->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, td->platformRectangle->numPlatforms, 0, 0);
+
+    if (leveler->ol->selectedItemIndex < 0) return;
+
+    const s_gridItemData& item = leveler->ol->items[leveler->ol->selectedItemIndex];
+
+    if (!(item.objectType & PLATFORM)) return;
+
+    if (leveler->consqClickVec.size() == 0)
+    {
+        s_gridSquareData gsData;
+        gsData.positionData[2] = 1;
+        gsData.positionData[3] = 1;
+
+        gsData.positionData[0] = mp.x;
+        gsData.positionData[1] = mp.y;
+
+        if (leveler->checkGridOccupancy(mp.x, mp.y))
+        {
+            gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        }
+        else
+        {
+            gsData.colour = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+        }
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+    }
+    else if (leveler->consqClickVec.size() == 1)
+    {
+        glm::ivec2 p0 = leveler->consqClickVec[0];
+
+        int xDiff = std::max(std::min(mp.x - p0.x, maxPlatformDiff), -maxPlatformDiff);
+        int yDiff = std::max(std::min(mp.y - p0.y, maxPlatformDiff), -maxPlatformDiff);
+
+        glm::ivec2 p1 = p0 + glm::ivec2(xDiff, yDiff);
+
+        int minX = std::min(p0.x, p1.x); int maxX = std::max(p0.x, p1.x);
+        int minY = std::min(p0.y, p1.y); int maxY = std::max(p0.y, p1.y);
+
+        int xSize = maxX - minX + 1;
+        int ySize = maxY - minY + 1;
+
+        float midX = (minX + maxX) * 0.5 + 0.5;
+        float midY = (minY + maxY) * 0.5 + 0.5;
+
+        s_platformRectUbo* platformUbo;
+        vkMapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory, td->platformRectangle->numPlatforms, sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
+        platformUbo->posSize = glm::vec4(midX, midY, xSize, ySize);
+        platformUbo->inColour = glm::vec4(0.02, 0.02, 0.02, 0.9);
+        platformUbo->outColour = glm::vec4(0.0, 0.0, 0.0, 1.0);
+        platformUbo->data = glm::vec4(0.0, 0.1, 1.0, 1.0);
+        vkUnmapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory);
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->platformRectangle->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->platformRectangle->pipelineLayout, 1, 1, &td->platformRectangle->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, td->platformRectangle->numPlatforms);
+
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        s_gridSquareData gsData;
+        gsData.positionData[2] = 1;
+        gsData.positionData[3] = 1;
+        for (int y = minY; y <= maxY; y++)
+        {
+            for (int x = minX; x <= maxX; x++)
+            {
+                gsData.positionData[0] = x;
+                gsData.positionData[1] = y;
+
+                if (leveler->checkGridOccupancy(gsData.positionData[0], gsData.positionData[1]))
+                {
+                    gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                }
+                else
+                {
+                    gsData.colour = glm::vec4(0.0f, 1.0f, 0.5f, 1.0f);
+                }
+
+                vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+                vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+            }
+        }
+    }
+    else if (leveler->consqClickVec.size() == 2)
+    {
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->platformRectangle->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->platformRectangle->pipelineLayout, 1, 1, &td->platformRectangle->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, td->platformRectangle->numPlatforms);
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        glm::ivec2 lp0;
+        glm::ivec2 lp1;
+
+        getPlatformLastStateSquares(leveler->consqClickVec[0], leveler->consqClickVec[1], mp, lp0, lp1);
+
+        s_gridSquareData gsData;
+        gsData.positionData[2] = 1;
+        gsData.positionData[3] = 1;
+        for (int y = lp0.y; y <= lp1.y; y++)
+        {
+            for (int x = lp0.x; x <= lp1.x; x++)
+            {
+                gsData.positionData[0] = x;
+                gsData.positionData[1] = y;
+
+                if (leveler->checkGridOccupancy(x, y))
+                {
+                    gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                }
+                else
+                {
+                    gsData.colour = glm::vec4(0.0f, 0.7f, 0.7f, 1.0f);
+                }
+
+                vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+                vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+			}
+		}
+
+        s_debugLineUbo* lineUbo;
+        vkMapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory, td->debugLineShader->numLines * sizeof(s_debugLineUbo),
+            sizeof(s_debugLineUbo), 0, (void**)&lineUbo);
+        lineUbo->colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+        lineUbo->positions = glm::vec4(-10.0, 5.0, 10.0, 0.0);
+        lineUbo->data.y = 0.05; lineUbo->data.z = 0.5;
+        lineUbo->data.x = 0.5; lineUbo->data.w = 0.3;
+        vkUnmapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory);
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+
+        const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            td->debugLineShader->pipelineLayout, 1, 1, &td->debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+        vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, 1, 0, td->debugLineShader->numLines);
+    }
+}
+
 void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 {
     Leveler* leveler = (Leveler*)ptr;
@@ -448,6 +681,8 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
     const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
 
     renderTextureds(cmdBuff, leveler);
+
+    renderPlatforms(cmdBuff, leveler);
 
     if (leveler->ol->selectedItemIndex < 0) return;
 
@@ -549,13 +784,18 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
     }
 }
 
-glm::ivec2 Leveler::getMouseGrid()
+void Leveler::calcMouseGrid()
 {
     glm::vec2 mousePos = wh->cam->getMouseCoords();
     int px = keepXInBounds(std::floor(mousePos.x));
     int py = keepYInBounds(std::floor(mousePos.y));
 
-    return glm::ivec2(px, py);
+    mouseGrid = glm::ivec2(px, py);
+}
+
+inline glm::ivec2 Leveler::getMouseGrid()
+{
+    return mouseGrid;
 }
 
 bool Leveler::checkGridOccupancy(short x, short y)
@@ -606,13 +846,16 @@ void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* ob
 
 void Leveler::update()
 {
+    calcMouseGrid();
+
     ol->update();
 
     s_gridItemData* item = ol->selectedItemIndex >= 0 ? &ol->items[ol->selectedItemIndex] : nullptr;
 
-    if (wh->mouseData[3] == 2)
+    if (wh->mouseData[3] == 2 || wh->keyData[GLFW_KEY_ESCAPE] == 2)
     {
         clickStart[0] = -100000;
+        consqClickVec.clear();
     }
 
     if (wh->mouseData[2] == 0)
@@ -686,6 +929,10 @@ void Leveler::update()
                 setObjectOperationTrack(ADD, objectData);
             }
         }
+        else if (item->objectType & PLATFORM)
+        {
+            putPlatformOnClick();
+        }
     }
 
     if (wh->keyData[wh->pIndLeftCommand] && wh->keyData[GLFW_KEY_Z] == 2)
@@ -700,6 +947,77 @@ void Leveler::update()
     if (wh->keyData[GLFW_KEY_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS)
     {
         selectedObjectRotation = (selectedObjectRotation + 1) % 4;
+    }
+}
+
+void Leveler::putPlatformOnClick()
+{
+    glm::ivec2 mp = getMouseGrid();
+
+    if (consqClickVec.size() == 0)
+    {
+        if (!checkGridOccupancy(mp.x, mp.y))
+        {
+            consqClickVec.push_back(mp);
+        }
+    }
+    else if (consqClickVec.size() == 1)
+    {
+        glm::ivec2 p0 = consqClickVec[0];
+
+        int xDiff = std::max(std::min(mp.x - p0.x, maxPlatformDiff), -maxPlatformDiff);
+        int yDiff = std::max(std::min(mp.y - p0.y, maxPlatformDiff), -maxPlatformDiff);
+
+        glm::ivec2 p1 = p0 + glm::ivec2(xDiff, yDiff);
+
+        int minX = std::min(p0.x, p1.x); int maxX = std::max(p0.x, p1.x);
+        int minY = std::min(p0.y, p1.y); int maxY = std::max(p0.y, p1.y);
+
+        for (int y = minY; y <= maxY; y++)
+        {
+            for (int x = minX; x <= maxX; x++)
+            {
+                if (checkGridOccupancy(x, y))
+                {
+					return;
+				}
+			}
+		}
+
+        consqClickVec.push_back(p1);
+    }
+    else
+    {
+        glm::ivec2 lp0;
+        glm::ivec2 lp1;
+
+        glm::ivec2 p0 = consqClickVec[0];
+        glm::ivec2 p1 = consqClickVec[1];
+
+        getPlatformLastStateSquares(p0, p1, mp, lp0, lp1);
+
+        int s0 = abs(p0.x - p1.x) + abs(p0.y - p1.y);
+        int s1 = abs(lp0.x - lp1.x) + abs(lp0.y - lp1.y);
+
+        if (s0 == s1)
+        {
+			return;
+		}
+
+        for (int y = lp0.y; y <= lp1.y; y++)
+        {
+            for (int x = lp0.x; x <= lp1.x; x++)
+            {
+                if (checkGridOccupancy(x, y))
+                {
+                    return;
+                }
+            }
+        }
+
+        // add here
+
+        consqClickVec.clear();
     }
 }
 
@@ -814,6 +1132,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     objectData->objectType = item.objectType;
     objectData->rotation = rotation;
     objectData->pos = { startX, startY };
+    objectData->scale = { scaleX, scaleY };
     
     pdData->currentOffset += 1;
 
@@ -935,8 +1254,8 @@ void Leveler::removeObject(short x, short y)
     int objIndex = getLevelObjectIndex(objectData->objectType);
 
     const s_gridItemData& item = ol->items[objIndex];
-    short sizeX = item.gridScale[objectData->rotation % 2];
-    short sizeY = item.gridScale[(objectData->rotation % 2) ^ 1];
+    short sizeX = objectData->scale.x;
+    short sizeY = objectData->scale.y;
 
     glm::i16vec4 sideArea = { x, x + sizeX, y, y + sizeY };
 
@@ -997,7 +1316,7 @@ void Leveler::removeObject(short x, short y)
 
     perTextureData[objIndex - 4].currentOffset--;
 
-    if (lastOffsetSquare == objectData->pos)
+    if (lastOffsetSquare.asGlm() == objectData->pos)
     {
         reqVec.pop_back();
         return;
@@ -1026,7 +1345,7 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 
         thinDrawer->laserShader->numLasers--;
 
-        if (lastOffsetSquare == objectData->pos)
+        if (lastOffsetSquare.asGlm() == objectData->pos)
         {
             return;
         }
@@ -1083,7 +1402,7 @@ void Leveler::takeBack(bool shiftPressed)
             }
             else
             {
-                s_gridSquare sq = currentOperation->objectOperation->objData->pos;
+                glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
                 switch (currentOperation->objectOperation->operationType)
                 {
                 case REMOVE:
@@ -1137,7 +1456,7 @@ void Leveler::takeBack(bool shiftPressed)
         }
         else
         {
-            s_gridSquare sq = currentOperation->objectOperation->objData->pos;
+            glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
             switch (currentOperation->objectOperation->operationType)
             {
             case REMOVE:
@@ -1297,7 +1616,7 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
 
     for (s_objectDataGrid* objectData : levelObjects)
     {
-        s_gridSquare pos = objectData->pos;
+        glm::i16vec2 pos = objectData->pos;
         bool cond0 = pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY;
         bool cond1 = pos.x > minX && pos.x < maxX && pos.y < minY && objectData->rotation == 0;
         bool cond2 = pos.x > minX && pos.x < maxX && pos.y > maxY && objectData->rotation == 2;

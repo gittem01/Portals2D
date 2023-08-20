@@ -38,6 +38,7 @@ typedef enum LevelObject : long long
 	DEFAULT_CUBE	= 0x1ll << 4,
 	DOWN_BUTTON		= 0x1ll << 5,
 	LASERER			= 0x1ll << 6,
+	PLATFORM		= 0x1ll << 7,
 
 	DOWN_DEPENDENT	= 0x1ll << 59,
 	RIGHT_DEPENDENT	= 0x1ll << 60,
@@ -65,6 +66,8 @@ constexpr int getLevelObjectIndex(levelObject value)
 			return 5;
 		case LASERER:
 			return 6;
+		case PLATFORM:
+			return 7;
 	default:
 		return -1;
 	}
@@ -73,7 +76,7 @@ constexpr int getLevelObjectIndex(levelObject value)
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
 #define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM)
 
 typedef enum OperationType
 {
@@ -85,6 +88,12 @@ typedef struct GridSquare_S
 {
 	short x;
 	short y;
+
+	glm::i16vec2 asGlm() const
+	{
+		return glm::i16vec2(x, y);
+	}
+
 } s_gridSquare;
 
 typedef struct GridData_S
@@ -96,9 +105,10 @@ typedef struct GridData_S
 typedef struct ObjectDataGrid
 {
 	std::vector<int> extraOffsets;
-	int offset;
-	s_gridSquare pos;
 	levelObject objectType;
+	int offset;
+	glm::i16vec2 pos;
+	glm::i16vec2 scale;
 	int rotation;
 } s_objectDataGrid;
 
@@ -183,10 +193,12 @@ public:
 	std::vector<s_gridSquare> lastOffsetPos_Laser;
 
 	//////////////////
+	glm::ivec2 mouseGrid;
 	std::vector<std::vector<s_levelGridData>> gridMap;
 	glm::ivec2 clickStart;
 	glm::ivec2 lastGrid;
 	int selectedObjectRotation = 0;
+	std::vector<glm::ivec2> consqClickVec;
 
 	/////////////////
 	const short xSize = 400;
@@ -216,6 +228,7 @@ public:
 	void fillGrid(short minX, short minY, short maxX, short maxY, levelObject fillType);
 	void putBarrierOnMemories(std::vector<class ShaderBase*> shaders);
 	void afterFillRayCheck(short minX, short minY, short maxX, short maxY);
+	void putPlatformOnClick();
 	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
 	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
@@ -243,6 +256,7 @@ public:
 	void removeGridSquare(short x, short y);
 	void setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData);
 	void update();
+	void calcMouseGrid();
 	glm::ivec2 getMouseGrid();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);

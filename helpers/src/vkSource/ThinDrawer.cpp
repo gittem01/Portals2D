@@ -70,6 +70,7 @@ void ThinDrawer::initExtra()
     itemList = new ItemList(this); shaders.push_back(itemList);
     manyTexture = new ManyTexture(this); shaders.push_back(manyTexture);
     diagonalLiner = new DiagonalLiner(this); shaders.push_back(diagonalLiner);
+    platformRectangle = new PlatformRectangle(this); shaders.push_back(platformRectangle);
 
     setupDescriptorPool();
 
@@ -441,21 +442,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
     diagonalLiner->render(cmdBuff, 1, camPos.x, -camPos.y);
-
-    // Laser
-    {
-        /*vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, laserShader->pipeline);
-
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            laserShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            laserShader->pipelineLayout, 1, 1, &laserShader->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-        vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 2, 0, 0);*/
-    }
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
