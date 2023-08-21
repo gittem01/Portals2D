@@ -37,6 +37,7 @@ Leveler::Leveler(Game* game)
 
     //thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
     thinDrawer->midDrawFuncs.push_back({ renderLasers, (void*)this });
+    thinDrawer->midDrawFuncs.push_back({ renderFunnels, (void*)this });
     thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
 
     ol = new Overlayer(game);
@@ -110,7 +111,7 @@ void Leveler::initOffsets()
     textureRenderOffset = mt->lastAvailablePos;
     mt->lastAvailablePos += numSwapChainImages;
 
-    perTextureData.resize(3);
+    perTextureData.resize(4);
     lastOffsetPos_M.resize(perTextureData.size());
     for (int i = 0; i < perTextureData.size(); i++)
     {
@@ -276,6 +277,74 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
         vkUnmapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0]->memory);
 
         vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, laserOffset);
+    }
+}
+
+void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
+{
+    Leveler* leveler = (Leveler*)ptr;
+    ThinDrawer* td = leveler->thinDrawer;
+
+    VkDeviceSize offsets = 0;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->funnelShader->pipeline);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->funnelShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->funnelShader->pipelineLayout, 1, 1, &td->funnelShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, td->funnelShader->numFunnels, 0, 0);
+
+    int funnelIndex = getLevelObjectIndex(FUNNEL);
+
+    if (leveler->ol->selectedItemIndex == funnelIndex)
+    {
+        const s_gridItemData& item = leveler->ol->items[leveler->ol->selectedItemIndex];
+
+        glm::ivec2 mp = leveler->getMouseGrid();
+        int objRot = leveler->selectedObjectRotation;
+
+        short scaleX = item.gridScale[objRot % 2];
+        short scaleY = item.gridScale[(objRot + 1) % 2];
+
+        float xSub = ((objRot + 1) % 2) * -1.0;
+        float ySub = (objRot % 2) * -1.0;
+
+        glm::vec2 startPoint;
+        glm::vec2 endPoint;
+
+        leveler->sendObjectRay(item, mp.x + xSub, mp.y + ySub, objRot, scaleX, scaleY, 0.1, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+
+        int funnelOffset = td->funnelShader->numFunnels + td->lastSwapChainImageIndex;
+
+        s_funnelUbo* funnelUbo;
+        vkMapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0]->memory,
+            funnelOffset * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+
+        funnelUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+        float diffLen = glm::length(endPoint - startPoint);
+        funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 1.0);
+        funnelUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
+        funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -1.0);
+        funnelUbo->data2 = glm::vec4(diffLen + 10.0, diffLen - 1.0, diffLen, 0.0);
+
+        vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0]->memory);
+
+        VkMappedMemoryRange memoryRange = {};
+        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        memoryRange.memory = td->funnelShader->uniformBuffers[0]->memory;
+        memoryRange.offset = funnelOffset * sizeof(s_funnelUbo);
+        memoryRange.size = sizeof(s_funnelUbo);
+
+        vkFlushMappedMemoryRanges(td->funnelShader->logicalDevice, 1, &memoryRange);
+
+        vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0]->memory);
+
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, funnelOffset);
     }
 }
 
@@ -1404,14 +1473,14 @@ void Leveler::sendObjectRay(const s_gridItemData& item, short x, short y, short 
 
     glm::i16vec2 rightDir = { frwdDir.y, -frwdDir.x };
 
-    int finalX = startPosition.x;
-    int finalY = startPosition.y;
+    int finalX;
+    int finalY;
     int roadSize = 0;
 
     while (1)
     {
         roadSize += 1;
-        for (int i = 0; i < item.gridScale.y; i++)
+        for (int i = 0; i < item.gridScale.x; i++)
         {
             finalX = startPosition.x + frwdDir.x * roadSize + rightDir.x * i;
             finalY = startPosition.y + frwdDir.y * roadSize + rightDir.y * i;
@@ -1464,7 +1533,35 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
         thinDrawer->laserShader->numLasers++;
     }
-        break;
+    break;
+
+    case FUNNEL:
+    {
+        lastOffsetPos_Funnel.push_back({ x, y });
+        objectData->extraOffsets.push_back(thinDrawer->funnelShader->numFunnels);
+
+        glm::vec2 startPoint;
+        glm::vec2 endPoint;
+        sendObjectRay(item, x, y, objectData->rotation, scaleX, scaleY, 0.1, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+
+        ShaderBase* shader = thinDrawer->funnelShader;
+        s_funnelUbo* funnelUbo;
+        vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+            objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+
+        funnelUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+        float diffLen = glm::length(endPoint - startPoint);
+        funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 1.0);
+        funnelUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
+        funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -1.0);
+        funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, game->gameTime);
+
+        vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+
+        thinDrawer->funnelShader->numFunnels++;
+    }
+    break;
+
     default:
         break;
     }
@@ -1598,6 +1695,31 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
         lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
     }
         break;
+    case FUNNEL:
+    {
+        s_gridSquare lastOffsetSquare = lastOffsetPos_Funnel.back();
+        lastOffsetPos_Funnel.pop_back();
+
+        thinDrawer->funnelShader->numFunnels--;
+
+        if (lastOffsetSquare.asGlm() == objectData->pos)
+        {
+            return;
+        }
+
+        const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
+        s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
+
+        int thisSquareOffsetIndex = objectData->extraOffsets[0];
+        lastOffsetPos_Funnel[thisSquareOffsetIndex] = lastOffsetSquare;
+
+        moveVkMem(thinDrawer->funnelShader, lastObjectData->extraOffsets[0] * sizeof(s_funnelUbo),
+            objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo));
+
+        lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
+    }
+        break;
+
     default:
         break;
     }
@@ -1875,7 +1997,32 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
                 laserUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
                 vkUnmapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory);
             }
-            break;
+                break;
+
+            case FUNNEL:
+            {
+                glm::vec2 startPoint;
+                glm::vec2 endPoint;
+                sendObjectRay(item, pos.x, pos.y, objectData->rotation, scaleX, scaleY, 0.1, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+
+                s_funnelUbo* funnelUbo;
+                vkMapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory,
+                    objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+                float diffBefore = glm::length(glm::vec2(funnelUbo->pointts.z, funnelUbo->pointts.w) - glm::vec2(funnelUbo->pointts.x, funnelUbo->pointts.y));
+                float diffLen = glm::length(endPoint - startPoint);
+                funnelUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+                funnelUbo->data2.y = diffLen - 1.0; funnelUbo->data2.z = diffLen;
+                if (diffBefore < diffLen && funnelUbo->data.w < 0.0)
+                {
+                    float data2WChange = game->gameTime - funnelUbo->data2.w;
+                    funnelUbo->data2.x = diffBefore; funnelUbo->data2.w = game->gameTime;
+                    funnelUbo->data.y -= data2WChange;
+                }
+
+                vkUnmapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+            }
+                break;
+            
             default:
                 break;
             }

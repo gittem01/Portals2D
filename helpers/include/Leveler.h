@@ -38,7 +38,8 @@ typedef enum LevelObject : long long
 	DEFAULT_CUBE	= 0x1ll << 4,
 	DOWN_BUTTON		= 0x1ll << 5,
 	LASERER			= 0x1ll << 6,
-	PLATFORM		= 0x1ll << 7,
+	FUNNEL			= 0x1ll << 7,
+	PLATFORM		= 0x1ll << 8,
 
 	DOWN_DEPENDENT	= 0x1ll << 59,
 	RIGHT_DEPENDENT	= 0x1ll << 60,
@@ -66,8 +67,10 @@ constexpr int getLevelObjectIndex(levelObject value)
 			return 5;
 		case LASERER:
 			return 6;
-		case PLATFORM:
+		case FUNNEL:
 			return 7;
+		case PLATFORM:
+			return 8;
 	default:
 		return -1;
 	}
@@ -75,8 +78,8 @@ constexpr int getLevelObjectIndex(levelObject value)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM)
+#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL)
 
 typedef enum OperationType
 {
@@ -189,6 +192,7 @@ public:
 
 	std::vector<std::vector<s_gridSquare>> lastOffsetPos_M;
 	std::vector<s_gridSquare> lastOffsetPos_Laser;
+	std::vector<s_gridSquare> lastOffsetPos_Funnel;
 	std::vector<s_gridSquare> lastOffsetPos_Platform;
 
 	//////////////////
@@ -262,5 +266,6 @@ public:
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderLasers(VkCommandBuffer cmdBuff, void* ptr);
+	static void renderFunnels(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderGrid(VkCommandBuffer cmdBuff, void* ptr);
 };

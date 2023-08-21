@@ -3,6 +3,26 @@
 #include <ThinDrawer.h>
 #include <Sounder.h>
 
+// funnel thingy
+//if (wh->keyData[GLFW_KEY_SPACE] == 2)
+//{
+//    s_funnelUbo* funnelUbo;
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory, 0, sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+//    float colorSplitPos = std::max(std::min(funnelUbo->data2.x + funnelUbo->data.w * ((float)game->gameTime - funnelUbo->data2.w) * -200.0f, 70.0f), -10.0f);
+//    funnelUbo->data.y += (game->gameTime - funnelUbo->data2.w) * funnelUbo->data.w;
+//    funnelUbo->data.w *= -1.0f;
+//    funnelUbo->data2.x = colorSplitPos;
+//    funnelUbo->data2.w = game->gameTime;
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+//
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory, sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+//    funnelUbo->data.y += (game->gameTime - funnelUbo->data2.w) * funnelUbo->data.w;
+//    funnelUbo->data.w *= -1.0f;
+//    funnelUbo->data2.x = colorSplitPos;
+//    funnelUbo->data2.w = game->gameTime;
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+//}
+
 Overlayer::Overlayer(Game* game)
 {
 	this->game = game;
@@ -37,7 +57,8 @@ Overlayer::Overlayer(Game* game)
     addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, { 1.0, 1.0 }, 1.0, false, 0);
     addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.335 }, { 2, 1 }, 2.0, true, 0);
     addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.07 }, { 1.0, 1.0 }, 1.0, true, 0);
-    addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.07 }, { 1.0, 1.0 }, 1.0, true, 0);
+    addItem("Funnel", "funnel.png", FUNNEL, { 0.5, +0.39 }, { 2, 1 }, 2.0, true, 0);
+    addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, { 1, 1 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
 }
 
