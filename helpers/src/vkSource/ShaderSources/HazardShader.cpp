@@ -35,7 +35,7 @@ void HazardShader::setupDescriptorSetLayout()
     descriptorSetLayouts[0] = ShaderBase::sharedLayout;
 
     VkDescriptorSetLayoutBinding layoutBinding10 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
+        VK_SHADER_STAGE_VERTEX_BIT, 1, 0);
 
     VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding10 };
 

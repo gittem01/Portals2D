@@ -23,7 +23,7 @@
 //    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
 //}
 
-// hazard thingy
+// hazard thingy -same for blue thingy-
 //if (wh->keyData[GLFW_KEY_SPACE] == 2)
 //{
 //    s_hazardUbo* hazardUbo;
@@ -218,6 +218,15 @@ void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm:
 
 void Overlayer::update()
 {
+    if (wh->keyData[GLFW_KEY_SPACE] == 2)
+    {
+        sizeof(glm::lowp_bvec2);
+        s_blueFieldUbo* blueUbo;
+        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
+        blueUbo->shootData = glm::vec4(0.0, 2.9, game->gameTime, 0.0);
+        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
+    }
+
     glm::vec2 p = cam.getMouseCoords();
 
     const float mult = 6.0;
