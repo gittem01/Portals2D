@@ -23,6 +23,25 @@
 //    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
 //}
 
+// hazard thingy
+//if (wh->keyData[GLFW_KEY_SPACE] == 2)
+//{
+//    s_hazardUbo* hazardUbo;
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory, 0, sizeof(s_funnelUbo), 0, (void**)&hazardUbo);
+//
+//    float dist = glm::length(glm::vec2(hazardUbo->pointts.z, hazardUbo->pointts.w) - glm::vec2(hazardUbo->pointts.x, hazardUbo->pointts.y));
+//    const float speed = std::min(200.0f, dist * 5.0f);
+//    const float smoothSize = std::min(std::max(dist * 0.1, 0.3), 5.0);
+//    float timeDiff = (game->gameTime - hazardUbo->data.w) * speed;
+//    float mm0 = std::min(-smoothSize + timeDiff, dist * 0.5f + smoothSize);
+//    float mm1 = dist * 0.5 + smoothSize;
+//    float d = mm1 - mm0;
+//
+//    hazardUbo->data.z = hazardUbo->data.z < 0.5 ? 1.0 : 0.0;
+//    hazardUbo->data.w = game->gameTime - d / speed;
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory);
+//}
+
 Overlayer::Overlayer(Game* game)
 {
 	this->game = game;
@@ -54,11 +73,12 @@ Overlayer::Overlayer(Game* game)
     addItem("N_PotallableWall", "bb.png", BLACK_WALL);
     addItem("GlassWall", "glassWall.png", GLASS_WALL);
     addItem("FenceWall", "fenceWall.png", FENCE_WALL);
-    addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, { 1.0, 1.0 }, 1.0, false, 0);
-    addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.335 }, { 2, 1 }, 2.0, true, 0);
-    addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.07 }, { 1.0, 1.0 }, 1.0, true, 0);
-    addItem("Funnel", "funnel.png", FUNNEL, { 0.5, +0.39 }, { 2, 1 }, 2.0, true, 0);
-    addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, { 1, 1 }, 1.0, true, 0);
+    addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, 1, { 1.0, 1.0 }, 1.0, false, 0);
+    addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.335 }, 1, { 2, 1 }, 2.0, true, 0);
+    addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.07 }, 1, { 1.0, 1.0 }, 1.0, true, 0);
+    addItem("Funnel", "funnel.png", FUNNEL, { 0.5, +0.39 }, 1, { 2, 1 }, 2.0, true, 0);
+    addItem("HazardLaser", "hazard.png", HAZARDER, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
+    addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
 }
 
@@ -176,7 +196,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
 }
 
-void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation,
+void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation, int numTextureObjects,
     glm::ivec2 gridScale, float gridRenderScale, bool canRotate, int requiredSideFill)
 {
     s_gridItemData itemData;
@@ -187,6 +207,7 @@ void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm:
     itemData.gridRenderScale = gridRenderScale;
     itemData.canRotate = canRotate;
     itemData.requiredSideFill = requiredSideFill;
+    itemData.numTextureObjects = numTextureObjects;
 
     s_texture* tex = IOHelper::loadTexture(fileName, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
     itemData.texSet = tex->set;

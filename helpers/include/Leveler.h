@@ -39,7 +39,8 @@ typedef enum LevelObject : long long
 	DOWN_BUTTON		= 0x1ll << 5,
 	LASERER			= 0x1ll << 6,
 	FUNNEL			= 0x1ll << 7,
-	PLATFORM		= 0x1ll << 8,
+	HAZARDER		= 0x1ll << 8,
+	PLATFORM		= 0x1ll << 9,
 
 	DOWN_DEPENDENT	= 0x1ll << 59,
 	RIGHT_DEPENDENT	= 0x1ll << 60,
@@ -69,8 +70,10 @@ constexpr int getLevelObjectIndex(levelObject value)
 			return 6;
 		case FUNNEL:
 			return 7;
-		case PLATFORM:
+		case HAZARDER:
 			return 8;
+		case PLATFORM:
+			return 9;
 	default:
 		return -1;
 	}
@@ -78,8 +81,8 @@ constexpr int getLevelObjectIndex(levelObject value)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL)
+#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER)
 
 typedef enum OperationType
 {
@@ -161,9 +164,10 @@ typedef struct GridItemData
 	std::string name;
 	levelObject objectType;
 	VkDescriptorSet texSet;
-	float extraScale;
 	glm::vec2 gridRenderTranslation;
 	glm::ivec2 gridScale;
+	float extraScale;
+	int numTextureObjects;
 	float gridRenderScale;
 	int requiredSideFill;
 	bool canRotate;
@@ -212,7 +216,7 @@ public:
 	const int numWhiteWall = xSize * ySize;
 	const int numBlackWall = xSize * ySize;
 
-	const int perTextureSpace = 400;
+	const int perTextureSpace = 1000;
 	int textureRenderOffset;
 	std::vector<s_perTextureData> perTextureData;
 

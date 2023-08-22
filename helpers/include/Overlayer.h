@@ -41,7 +41,7 @@ public:
 
 	static void windowSizeEventCallback(GLFWwindow*, int, int);
 
-	void addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation=glm::vec2(0.0, 0.0),
-		glm::ivec2 gridScale=glm::ivec2(1.0, 1.0), float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1);
+	void addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation=glm::vec2(0.0, 0.0), int numTextureObjects=1,
+		glm::ivec2 gridScale=glm::ivec2(1, 1), float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1);
 	void update();
 };

@@ -63,6 +63,7 @@ void ThinDrawer::initExtra()
     wallLight = new WallLight(this); shaders.push_back(wallLight);
     laserShader = new LaserShader(this); shaders.push_back(laserShader);
     funnelShader = new FunnelShader(this); shaders.push_back(funnelShader);
+    hazardShader = new HazardShader(this); shaders.push_back(hazardShader);
     gunEffect = new GunEffect(this); shaders.push_back(gunEffect);
     playerShader = new PlayerShader(this); shaders.push_back(playerShader);
     endlessGrid = new EndlessGrid(this); shaders.push_back(endlessGrid);
@@ -443,6 +444,18 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
     diagonalLiner->render(cmdBuff, 1, camPos.x, -camPos.y);
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, hazardShader->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        hazardShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        hazardShader->pipelineLayout, 1, 1, &hazardShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 1, 0, 0);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

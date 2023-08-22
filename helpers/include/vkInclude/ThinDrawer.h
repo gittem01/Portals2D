@@ -15,6 +15,7 @@
 #include <ShaderHeaders/GunEffect.h>
 #include <ShaderHeaders/LaserShader.h>
 #include <ShaderHeaders/FunnelShader.h>
+#include <ShaderHeaders/HazardShader.h>
 #include <ShaderHeaders/PlayerShader.h>
 #include <ShaderHeaders/EndlessGrid.h>
 #include <ShaderHeaders/GridSquare.h>
@@ -170,6 +171,7 @@ public:
     WallLight* wallLight;
     LaserShader* laserShader;
     FunnelShader* funnelShader;
+    HazardShader* hazardShader;
     GunEffect* gunEffect;
     PlayerShader* playerShader;
     EndlessGrid* endlessGrid;

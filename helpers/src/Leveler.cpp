@@ -111,7 +111,7 @@ void Leveler::initOffsets()
     textureRenderOffset = mt->lastAvailablePos;
     mt->lastAvailablePos += numSwapChainImages;
 
-    perTextureData.resize(4);
+    perTextureData.resize(5);
     lastOffsetPos_M.resize(perTextureData.size());
     for (int i = 0; i < perTextureData.size(); i++)
     {
@@ -1433,12 +1433,11 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     objectData->rotation = rotation;
     objectData->pos = { startX, startY };
     objectData->scale = { scaleX, scaleY };
-    
-    pdData->currentOffset += 1;
-
-    levelObjects.insert(objectData);
 
     afterPutObject(item, objectData, scaleX, scaleY);
+
+    levelObjects.insert(objectData);
+    pdData->currentOffset += item.numTextureObjects;
 
     return objectData;
 }
@@ -1560,6 +1559,11 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
         thinDrawer->funnelShader->numFunnels++;
     }
+    case HAZARDER:
+    {
+
+    }
+        break;
     break;
 
     default:
@@ -1647,7 +1651,7 @@ void Leveler::removeObject(short x, short y)
     auto& reqVec = lastOffsetPos_M[objIndex - 4];
     s_gridSquare lastOffsetSquare = reqVec.back();
 
-    perTextureData[objIndex - 4].currentOffset--;
+    perTextureData[objIndex - 4].currentOffset -= item.numTextureObjects;
 
     if (lastOffsetSquare.asGlm() == objectData->pos)
     {
@@ -1658,11 +1662,12 @@ void Leveler::removeObject(short x, short y)
     const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
     s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
 
-    int thisSquareOffsetIndex = objectData->offset - perTextureData[objIndex - 4].offsetStart;
+    int thisSquareOffsetIndex = (objectData->offset - perTextureData[objIndex - 4].offsetStart) / item.numTextureObjects;
     reqVec[thisSquareOffsetIndex] = reqVec.back();
     reqVec.pop_back();
 
-    moveVkMem(thinDrawer->manyTexture, lastObjectData->offset * sizeof(s_manyTextureData), objectData->offset * sizeof(s_manyTextureData), sizeof(s_manyTextureData));
+    moveVkMem(thinDrawer->manyTexture, lastObjectData->offset * sizeof(s_manyTextureData), objectData->offset * sizeof(s_manyTextureData),
+        sizeof(s_manyTextureData) * item.numTextureObjects);
 
     lastObjectData->offset = objectData->offset;
 }
