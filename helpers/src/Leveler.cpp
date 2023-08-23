@@ -332,8 +332,6 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
         funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -1.0);
         funnelUbo->data2 = glm::vec4(diffLen + 10.0, diffLen - 1.0, diffLen, 0.0);
 
-        vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0]->memory);
-
         VkMappedMemoryRange memoryRange = {};
         memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
         memoryRange.memory = td->funnelShader->uniformBuffers[0]->memory;
