@@ -78,6 +78,7 @@ Overlayer::Overlayer(Game* game)
     addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.07 }, 1, { 1.0, 1.0 }, 1.0, true, 0);
     addItem("Funnel", "funnel.png", FUNNEL, { 0.5, +0.39 }, 1, { 2, 1 }, 2.0, true, 0);
     addItem("HazardLaser", "hazard.png", HAZARDER, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
+    addItem("BlueField", "blueFielder.png", FORCE_FIELD, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
     addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
 }

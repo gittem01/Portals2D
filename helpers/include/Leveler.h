@@ -40,7 +40,11 @@ typedef enum LevelObject : long long
 	LASERER			= 0x1ll << 6,
 	FUNNEL			= 0x1ll << 7,
 	HAZARDER		= 0x1ll << 8,
-	PLATFORM		= 0x1ll << 9,
+	FORCE_FIELD		= 0x1ll << 9,
+	PLATFORM		= 0x1ll << 10,
+
+	HAZARDER_MID	= 0x1ll << 57,
+	FORCE_FIELD_MID = 0x1ll << 58,
 
 	DOWN_DEPENDENT	= 0x1ll << 59,
 	RIGHT_DEPENDENT	= 0x1ll << 60,
@@ -72,8 +76,10 @@ constexpr int getLevelObjectIndex(levelObject value)
 			return 7;
 		case HAZARDER:
 			return 8;
-		case PLATFORM:
+		case FORCE_FIELD:
 			return 9;
+		case PLATFORM:
+			return 10;
 	default:
 		return -1;
 	}
@@ -81,8 +87,9 @@ constexpr int getLevelObjectIndex(levelObject value)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER)
+#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER | FORCE_FIELD)
+#define MID_FIELDS (HAZARDER_MID | FORCE_FIELD_MID)
 
 typedef enum OperationType
 {
@@ -238,6 +245,7 @@ public:
 	void putPlatformOnClick();
 	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation);
 	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize);
+	bool extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize);
 	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void removeObject(short x, short y);

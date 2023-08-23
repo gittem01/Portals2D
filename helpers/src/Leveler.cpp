@@ -1442,6 +1442,24 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     return objectData;
 }
 
+bool Leveler::extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize)
+{
+    switch (item.objectType)
+    {
+    case HAZARDER:
+    case FORCE_FIELD:
+    {
+        glm::vec2 startPoint;
+        glm::vec2 endPoint;
+        sendObjectRay(item, startX, startY, rotation, scaleX, scaleY, 0.5, 1.5, (LevelObject)GRID_DRAWS, startPoint, endPoint);
+    }
+        break;
+
+    default:
+        break;
+    }
+}
+
 void Leveler::sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY, float startOffset, float endOffset,
     levelObject objectMask, glm::vec2& startPoint, glm::vec2& endPoint)
 {
