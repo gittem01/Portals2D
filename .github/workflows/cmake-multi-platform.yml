@@ -1,0 +1,25 @@
+name: Simple CMake and Make
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Change to build directory
+      run: cd build
+
+    - name: Configure CMake
+      run: cmake ..
+
+    - name: Build
+      run: make
