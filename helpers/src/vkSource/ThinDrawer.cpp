@@ -456,7 +456,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         hazardShader->pipelineLayout, 1, 1, &hazardShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 1, 0, 0);
+    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, hazardShader->numHazards, 0, 0);
 
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, blueField->pipeline);
@@ -469,7 +469,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         blueField->pipelineLayout, 1, 1, &blueField->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, 1, 0, 0);
+    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, blueField->numFields, 0, 0);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

@@ -48,6 +48,7 @@ void main()
     int instanceIndex = gl_InstanceIndex;
     storageData data = ubo.sData[instanceIndex];
     outData = data.data;
+    colour = data.colour;
 
     vec2 diffVec = data.pointts.zw - data.pointts.xy;
     float dist = length(diffVec);

@@ -111,7 +111,7 @@ void Leveler::initOffsets()
     textureRenderOffset = mt->lastAvailablePos;
     mt->lastAvailablePos += numSwapChainImages;
 
-    perTextureData.resize(5);
+    perTextureData.resize(6);
     lastOffsetPos_M.resize(perTextureData.size());
     for (int i = 0; i < perTextureData.size(); i++)
     {
@@ -1388,6 +1388,11 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
         }
     }
 
+    if (!extraPutCheck(item, startX, startY, scaleX, scaleY, rotation))
+    {
+        return nullptr;
+    }
+
     s_objectDataGrid* objectData = new s_objectDataGrid();
     s_gridData uData; uData.ptr = (void*)objectData;
     for (int y = startY; y < endY; y++)
@@ -1432,7 +1437,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     objectData->pos = { startX, startY };
     objectData->scale = { scaleX, scaleY };
 
-    afterPutObject(item, objectData, scaleX, scaleY);
+    afterPutObject(item, objectData, scaleX, scaleY, rotation);
 
     levelObjects.insert(objectData);
     pdData->currentOffset += item.numTextureObjects;
@@ -1440,7 +1445,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     return objectData;
 }
 
-bool Leveler::extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize)
+bool Leveler::extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation)
 {
     switch (item.objectType)
     {
@@ -1449,13 +1454,29 @@ bool Leveler::extraPutCheck(const s_gridItemData& item, short startX, short star
     {
         glm::vec2 startPoint;
         glm::vec2 endPoint;
-        sendObjectRay(item, startX, startY, rotation, scaleX, scaleY, 0.5, 1.5, (LevelObject)GRID_DRAWS, startPoint, endPoint);
+        sendObjectRay(item, startX, startY, rotation, scaleX, scaleY, 0.5, -0.5, (levelObject)(BLACK_WALL | WHITE_WALL | GLASS_WALL), startPoint, endPoint);
+
+        if (abs(endPoint.x) > (float)xSize_H || abs(endPoint.y) > (float)ySize_H)
+        {
+            return false;
+        }
+
+        int px = std::floor(endPoint.x);
+        int py = std::floor(endPoint.y);
+        const s_levelGridData& lgd = getSquare(px, py);
+
+        if (lgd.objectType & (BLACK_WALL | WHITE_WALL))
+        {
+            return true;
+        }
     }
         break;
 
     default:
-        break;
+        return true;
     }
+
+    return false;
 }
 
 void Leveler::sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY, float startOffset, float endOffset,
@@ -1521,10 +1542,15 @@ end:
     endPoint = glm::vec2(startPoint.x + frwdDir.x * (roadSize - (startOffset + endOffset)), startPoint.y + frwdDir.y * (roadSize - (startOffset + endOffset)));
 }
 
-void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY)
+void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY, int rotation)
 {
     short x = objectData->pos.x;
     short y = objectData->pos.y;
+
+    glm::vec2 startPoint;
+    glm::vec2 endPoint;
+    glm::vec2 sToE;
+    startPoint.x = NAN;
 
     switch (item.objectType & SINGLE_DRAWS)
     {
@@ -1575,15 +1601,75 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
         thinDrawer->funnelShader->numFunnels++;
     }
+        break;
     case HAZARDER:
     {
+        lastOffsetPos_Hazard.push_back({ x, y });
+        objectData->extraOffsets.push_back(thinDrawer->hazardShader->numHazards);
 
+        sendObjectRay(item, x, y, objectData->rotation, scaleX, scaleY, 0.0, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+        sToE = glm::normalize(endPoint - startPoint);
+
+        ShaderBase* shader = thinDrawer->hazardShader;
+        s_hazardUbo* hazardUbo;
+        vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+            objectData->extraOffsets[0] * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
+
+        hazardUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+        hazardUbo->colour = glm::vec4(1.0, 0.0, 0.0, 1.0);
+        //hazardUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
+        hazardUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
+
+        vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+
+        thinDrawer->hazardShader->numHazards++;
     }
         break;
-    break;
+    case FORCE_FIELD:
+    {
+        lastOffsetPos_Field.push_back({ x, y });
+        objectData->extraOffsets.push_back(thinDrawer->blueField->numFields);
+
+        sendObjectRay(item, x, y, objectData->rotation, scaleX, scaleY, 0.0, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+        sToE = glm::normalize(endPoint - startPoint);
+
+        ShaderBase* shader = thinDrawer->blueField;
+        s_blueFieldUbo* blueFieldUbo;
+        vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+            objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
+
+        blueFieldUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+        blueFieldUbo->colour = glm::vec4(0.0, 0.3, 1.0, 1.0);
+        blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, 1.0);
+        blueFieldUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
+
+        vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+
+        thinDrawer->blueField->numFields++;
+    }
+        break;
 
     default:
         break;
+    }
+
+    if (startPoint.x == startPoint.x)
+    {
+        int index = getLevelObjectIndex(item.objectType) - 4;
+        s_perTextureData* pdData = &perTextureData[index];
+
+        int renderIndex = pdData->currentOffset + 1;
+        s_manyTextureData* mtd;
+        vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, renderIndex * sizeof(s_manyTextureData),
+            sizeof(s_manyTextureData), 0, (void**)&mtd);
+
+        int objRot = ((rotation + 2) % 4);
+        glm::vec2 extraAdd = rotationMults[objRot] * item.gridRenderTranslation.y;
+
+        glm::vec2 p = endPoint + extraAdd - sToE * 0.5f;
+        mtd->posSize = glm::vec4(p.x, p.y, item.gridRenderScale, item.gridRenderScale);
+        mtd->data.x = objRot * b2_pi * 0.5;
+        vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
     }
 }
 
@@ -1740,6 +1826,55 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
         lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
     }
         break;
+    case HAZARDER:
+    {
+        s_gridSquare lastOffsetSquare = lastOffsetPos_Hazard.back();
+        lastOffsetPos_Hazard.pop_back();
+
+        thinDrawer->hazardShader->numHazards--;
+
+        if (lastOffsetSquare.asGlm() == objectData->pos)
+        {
+            return;
+        }
+
+        const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
+        s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
+
+        int thisSquareOffsetIndex = objectData->extraOffsets[0];
+        lastOffsetPos_Hazard[thisSquareOffsetIndex] = lastOffsetSquare;
+
+        moveVkMem(thinDrawer->hazardShader, lastObjectData->extraOffsets[0] * sizeof(s_hazardUbo),
+            objectData->extraOffsets[0] * sizeof(s_hazardUbo), sizeof(s_hazardUbo));
+
+        lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
+    }
+    break;
+
+    case FORCE_FIELD:
+    {
+        s_gridSquare lastOffsetSquare = lastOffsetPos_Field.back();
+        lastOffsetPos_Field.pop_back();
+
+        thinDrawer->blueField->numFields--;
+
+        if (lastOffsetSquare.asGlm() == objectData->pos)
+        {
+            return;
+        }
+
+        const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
+        s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
+
+        int thisSquareOffsetIndex = objectData->extraOffsets[0];
+        lastOffsetPos_Field[thisSquareOffsetIndex] = lastOffsetSquare;
+
+        moveVkMem(thinDrawer->blueField, lastObjectData->extraOffsets[0] * sizeof(s_blueFieldUbo),
+            objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo));
+
+        lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
+    }
+    break;
 
     default:
         break;

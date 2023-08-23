@@ -99,8 +99,6 @@ float func1(float val, float secondVal, float thirdVal)
 
 void main()
 {
-    vec4 wavColor = vec4(1.0, 0.0, 0.0, 1.0);
-
     const float smoothSize = min(max(size.x * 0.1, 0.3), 5.0);
 
     float xSize = size.x;
@@ -142,5 +140,5 @@ void main()
     const float sideLineThick = 0.06 / size.y;
     float yMult = 0.5 - abs(localPos.y) / size.y;
 
-    FragColour = v * wavColor;
+    FragColour = v * colour;
 }

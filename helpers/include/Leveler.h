@@ -204,6 +204,8 @@ public:
 	std::vector<std::vector<s_gridSquare>> lastOffsetPos_M;
 	std::vector<s_gridSquare> lastOffsetPos_Laser;
 	std::vector<s_gridSquare> lastOffsetPos_Funnel;
+	std::vector<s_gridSquare> lastOffsetPos_Hazard;
+	std::vector<s_gridSquare> lastOffsetPos_Field;
 	std::vector<s_gridSquare> lastOffsetPos_Platform;
 
 	//////////////////
@@ -245,8 +247,8 @@ public:
 	void putPlatformOnClick();
 	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation);
 	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize);
-	bool extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize);
-	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
+	bool extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
+	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY, int rotation);
 	void afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void removeObject(short x, short y);
 	void removePlatform(short x, short y);
