@@ -890,12 +890,25 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
                 {
                     gsData.positionData[0] = x + objectData->pos.x;
                     gsData.positionData[1] = y + objectData->pos.y;
+
                     gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
                     vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
                     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
                 }
+            }
+
+            if (objectData->objectType & (HAZARDER | FORCE_FIELD))
+            {
+                gsData.positionData[0] = objectData->extraPos.x;
+                gsData.positionData[1] = objectData->extraPos.y;
+
+                gsData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+                vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+                vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
             }
         }
     }
@@ -1473,6 +1486,7 @@ s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short start
         if (lgd.objectType & (BLACK_WALL | WHITE_WALL) && !(lgd2.objectType & OCCUPIERS))
         {
             s_objectDataGrid* objectData = new s_objectDataGrid();
+            objectData->extraPos = glm::i16vec2(px2, py2);
             s_gridData uData; uData.ptr = (void*)objectData;
             setSquare(px2, py2, { (levelObject)(item.objectType | lgd2.objectType), uData });
 
