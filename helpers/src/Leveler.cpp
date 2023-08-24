@@ -1388,12 +1388,12 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
         }
     }
 
-    if (!extraPutCheck(item, startX, startY, scaleX, scaleY, rotation))
+    s_objectDataGrid* objectData = extraPutCheck(item, startX, startY, scaleX, scaleY, rotation);
+    if (!objectData)
     {
         return nullptr;
     }
 
-    s_objectDataGrid* objectData = new s_objectDataGrid();
     s_gridData uData; uData.ptr = (void*)objectData;
     for (int y = startY; y < endY; y++)
     {
@@ -1445,7 +1445,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     return objectData;
 }
 
-bool Leveler::extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation)
+s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation)
 {
     switch (item.objectType)
     {
@@ -1455,28 +1455,49 @@ bool Leveler::extraPutCheck(const s_gridItemData& item, short startX, short star
         glm::vec2 startPoint;
         glm::vec2 endPoint;
         sendObjectRay(item, startX, startY, rotation, scaleX, scaleY, 0.5, -0.5, (levelObject)(BLACK_WALL | WHITE_WALL | GLASS_WALL), startPoint, endPoint);
+        glm::vec2 sToE = glm::normalize(endPoint - startPoint);
 
         if (abs(endPoint.x) > (float)xSize_H || abs(endPoint.y) > (float)ySize_H)
         {
-            return false;
+            return nullptr;
         }
 
         int px = std::floor(endPoint.x);
         int py = std::floor(endPoint.y);
         const s_levelGridData& lgd = getSquare(px, py);
 
-        if (lgd.objectType & (BLACK_WALL | WHITE_WALL))
+        int px2 = std::floor(endPoint.x - sToE.x);
+        int py2 = std::floor(endPoint.y - sToE.y);
+        const s_levelGridData& lgd2 = getSquare(px2, py2);
+
+        if (lgd.objectType & (BLACK_WALL | WHITE_WALL) && !(lgd2.objectType & OCCUPIERS))
         {
-            return true;
+            s_objectDataGrid* objectData = new s_objectDataGrid();
+            s_gridData uData; uData.ptr = (void*)objectData;
+            setSquare(px2, py2, { (levelObject)(item.objectType | lgd2.objectType), uData });
+
+            setSquare(px, py, { (levelObject)(lgd.objectType | (DOWN_DEPENDENT << ((rotation + 2) % 4))), lgd.data });
+
+            glm::i16vec2 midStart = { std::floor(startPoint.x + sToE.x), std::floor(startPoint.y + sToE.y) };
+            glm::i16vec2 midEnd = { px2, py2 };
+            glm::i16vec2 dir = glm::min(glm::max(midEnd - midStart, glm::i16vec2(-1, -1)), glm::i16vec2(1, 1));
+
+            for (; midStart != midEnd; midStart += dir)
+            {
+                const s_levelGridData& lgdLoop = getSquare(midStart.x, midStart.y);
+                setSquare(midStart.x, midStart.y, { (levelObject)((item.objectType << (47 + (rotation % 2) * 2)) | lgdLoop.objectType), lgdLoop.data });
+            }
+
+            return objectData;
         }
     }
         break;
 
     default:
-        return true;
+        return new s_objectDataGrid();
     }
 
-    return false;
+    return nullptr;
 }
 
 void Leveler::sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY, float startOffset, float endOffset,
@@ -1680,6 +1701,7 @@ void Leveler::removeObject(short x, short y)
     if (lgd.objectType & PLATFORM)
     {
         removePlatform(x, y);
+        return;
     }
 
     if (!(lgd.objectType & SINGLE_DRAWS))
@@ -1776,6 +1798,10 @@ void Leveler::removeObject(short x, short y)
 
 void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY)
 {
+    ShaderBase* hazBlShader = nullptr;
+    std::vector<s_gridSquare>* lastOffsetVec = nullptr;
+    int dataSize = 0;
+
     switch (objectData->objectType)
     {
     case LASERER:
@@ -1828,35 +1854,57 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
         break;
     case HAZARDER:
     {
-        s_gridSquare lastOffsetSquare = lastOffsetPos_Hazard.back();
-        lastOffsetPos_Hazard.pop_back();
-
+        hazBlShader = thinDrawer->hazardShader;
         thinDrawer->hazardShader->numHazards--;
-
-        if (lastOffsetSquare.asGlm() == objectData->pos)
-        {
-            return;
-        }
-
-        const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
-        s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
-
-        int thisSquareOffsetIndex = objectData->extraOffsets[0];
-        lastOffsetPos_Hazard[thisSquareOffsetIndex] = lastOffsetSquare;
-
-        moveVkMem(thinDrawer->hazardShader, lastObjectData->extraOffsets[0] * sizeof(s_hazardUbo),
-            objectData->extraOffsets[0] * sizeof(s_hazardUbo), sizeof(s_hazardUbo));
-
-        lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
+        lastOffsetVec = &lastOffsetPos_Hazard;
+        dataSize = sizeof(s_hazardUbo);
     }
-    break;
+        break;
 
     case FORCE_FIELD:
     {
-        s_gridSquare lastOffsetSquare = lastOffsetPos_Field.back();
-        lastOffsetPos_Field.pop_back();
-
+        hazBlShader = thinDrawer->blueField;
         thinDrawer->blueField->numFields--;
+        lastOffsetVec = &lastOffsetPos_Field;
+        dataSize = sizeof(s_blueFieldUbo);
+    }
+        break;
+
+    default:
+        break;
+    }
+
+    if (hazBlShader)
+    {
+        glm::i16vec2 inc;
+        glm::i16vec2 startPos = objectData->pos;
+        switch (objectData->rotation % 4)
+        {
+        case 0: inc.x = 0; inc.y = 1; break;
+        case 1: inc.x = -1; inc.y = 0; break;
+        case 2: inc.x = 0; inc.y = -1; break;
+        case 3: inc.x = 1; inc.y = 0; break;
+        }
+
+        while (1)
+        {
+            startPos += inc;
+            const s_levelGridData& lgd = getSquare(startPos.x, startPos.y);
+            if ((s_objectDataGrid*)lgd.data.ptr == objectData)
+            {
+                setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & (objectData->objectType ^ -1ll)), 0 });
+                startPos += inc;
+                const s_levelGridData& lgd2 = getSquare(startPos.x, startPos.y);
+                setSquare(startPos.x, startPos.y, { (LevelObject)(lgd2.objectType & ((DOWN_DEPENDENT << ((objectData->rotation + 2) % 4)) ^ -1ll)), lgd2.data });
+				break;
+			}
+
+            levelObject midMask = (levelObject)((objectData->objectType << (47 + (objectData->rotation % 2) * 2)) ^ -1ll);
+            setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & midMask), lgd.data });
+        }
+
+        s_gridSquare lastOffsetSquare = lastOffsetVec->back();
+        lastOffsetVec->pop_back();
 
         if (lastOffsetSquare.asGlm() == objectData->pos)
         {
@@ -1867,17 +1915,12 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
         s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
 
         int thisSquareOffsetIndex = objectData->extraOffsets[0];
-        lastOffsetPos_Field[thisSquareOffsetIndex] = lastOffsetSquare;
+        (*lastOffsetVec)[thisSquareOffsetIndex] = lastOffsetSquare;
 
-        moveVkMem(thinDrawer->blueField, lastObjectData->extraOffsets[0] * sizeof(s_blueFieldUbo),
-            objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo));
+        moveVkMem(hazBlShader, lastObjectData->extraOffsets[0] * dataSize,
+            objectData->extraOffsets[0] * dataSize, dataSize);
 
         lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
-    }
-    break;
-
-    default:
-        break;
     }
 }
 
@@ -2076,7 +2119,8 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
             s_levelGridData lgData = getSquare(j, i);
 
             if (lgData.objectType == fillType || lgData.objectType & (SINGLE_DRAWS | PLATFORM) ||
-                (lgData.objectType & GRID_DEPS && !(fillType & (BLACK_WALL | WHITE_WALL))))
+                (lgData.objectType & GRID_DEPS && !(fillType & (BLACK_WALL | WHITE_WALL))) ||
+                (lgData.objectType & MID_FIELDS) && !(fillType & (FENCE_WALL | ERASER)))
             {
                 continue;
             }
