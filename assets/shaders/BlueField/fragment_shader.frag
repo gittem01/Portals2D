@@ -59,7 +59,7 @@ void main()
 
     v *= sideMult;
 
-    const float smoothSize = min(max(size.x * 0.1, 0.3), 5.0);
+    const float smoothSize = min(size.x * 0.1, 5.0);
     float timeDiff = (sharedUboData.data.y - data.w) * min(200.0, size.x * 5.0);
     float splitX = (-smoothSize + timeDiff) * data.z + (size.x * 0.5 + smoothSize - timeDiff) * (1.0 - data.z);
 

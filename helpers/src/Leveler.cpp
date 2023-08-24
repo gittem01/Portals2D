@@ -255,7 +255,7 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
         glm::vec2 startPoint;
         glm::vec2 endPoint;
 
-        leveler->sendObjectRay(item, mp.x, mp.y, objRot, scaleX, scaleY, 0.5, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
+        leveler->sendObjectRay(item, mp.x, mp.y, objRot, scaleX, scaleY, 0.2, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
 
         int laserOffset = td->laserShader->numLasers + td->lastSwapChainImageIndex;
 
@@ -1596,7 +1596,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
         glm::vec2 startPoint;
         glm::vec2 endPoint;
-        sendObjectRay(item, x, y, objectData->rotation, scaleX, scaleY, 0.5, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
+        sendObjectRay(item, x, y, objectData->rotation, scaleX, scaleY, 0.2, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
 
         ShaderBase* shader = thinDrawer->laserShader;
         s_laserUbo* laserUbo;
@@ -1890,31 +1890,34 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 
     if (hazBlShader)
     {
-        glm::i16vec2 inc;
-        glm::i16vec2 startPos = objectData->pos;
-        switch (objectData->rotation % 4)
+        if (objectData->extraPos != objectData->pos)
         {
-        case 0: inc.x = 0; inc.y = 1; break;
-        case 1: inc.x = -1; inc.y = 0; break;
-        case 2: inc.x = 0; inc.y = -1; break;
-        case 3: inc.x = 1; inc.y = 0; break;
-        }
-
-        while (1)
-        {
-            startPos += inc;
-            const s_levelGridData& lgd = getSquare(startPos.x, startPos.y);
-            if ((s_objectDataGrid*)lgd.data.ptr == objectData)
+            glm::i16vec2 inc;
+            glm::i16vec2 startPos = objectData->pos;
+            switch (objectData->rotation % 4)
             {
-                setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & (objectData->objectType ^ -1ll)), 0 });
-                startPos += inc;
-                const s_levelGridData& lgd2 = getSquare(startPos.x, startPos.y);
-                setSquare(startPos.x, startPos.y, { (LevelObject)(lgd2.objectType & ((DOWN_DEPENDENT << ((objectData->rotation + 2) % 4)) ^ -1ll)), lgd2.data });
-				break;
-			}
+            case 0: inc.x = 0; inc.y = 1; break;
+            case 1: inc.x = -1; inc.y = 0; break;
+            case 2: inc.x = 0; inc.y = -1; break;
+            case 3: inc.x = 1; inc.y = 0; break;
+            }
 
-            levelObject midMask = (levelObject)((objectData->objectType << (47 + (objectData->rotation % 2) * 2)) ^ -1ll);
-            setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & midMask), lgd.data });
+            while (1)
+            {
+                startPos += inc;
+                const s_levelGridData& lgd = getSquare(startPos.x, startPos.y);
+                if ((s_objectDataGrid*)lgd.data.ptr == objectData)
+                {
+                    setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & (objectData->objectType ^ -1ll)), 0 });
+                    startPos += inc;
+                    const s_levelGridData& lgd2 = getSquare(startPos.x, startPos.y);
+                    setSquare(startPos.x, startPos.y, { (LevelObject)(lgd2.objectType & ((DOWN_DEPENDENT << ((objectData->rotation + 2) % 4)) ^ -1ll)), lgd2.data });
+                    break;
+                }
+
+                levelObject midMask = (levelObject)((objectData->objectType << (47 + (objectData->rotation % 2) * 2)) ^ -1ll);
+                setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & midMask), lgd.data });
+            }
         }
 
         s_gridSquare lastOffsetSquare = lastOffsetVec->back();
@@ -2203,7 +2206,7 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
             {
                 glm::vec2 startPoint;
                 glm::vec2 endPoint;
-                sendObjectRay(item, pos.x, pos.y, objectData->rotation, scaleX, scaleY, 0.5, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
+                sendObjectRay(item, pos.x, pos.y, objectData->rotation, scaleX, scaleY, 0.2, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
 
                 s_laserUbo* laserUbo;
                 vkMapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory,

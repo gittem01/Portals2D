@@ -66,7 +66,7 @@ void main()
     vCopy.x *= dist;
     vCopy.y *= data.data.x;
 
-    const float smoothSize = min(max(dist * 0.1, 0.3), 5.0);
+    const float smoothSize = min(dist * 0.1, 5.0);
     float timeDiff = (sharedUboData.data.y - data.data.w) * min(200.0, dist * 5.0);
     float splitX = (-smoothSize + timeDiff) * data.data.z + (dist * 0.5 + smoothSize - timeDiff) * (1.0 - data.data.z);
     if (splitX < -smoothSize)

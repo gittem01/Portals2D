@@ -99,7 +99,7 @@ float func1(float val, float secondVal, float thirdVal)
 
 void main()
 {
-    const float smoothSize = min(max(size.x * 0.1, 0.3), 5.0);
+    const float smoothSize = min(size.x * 0.1, 5.0);
 
     float xSize = size.x;
     float yMax = size.y * 0.5;

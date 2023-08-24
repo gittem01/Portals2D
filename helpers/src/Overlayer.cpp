@@ -31,7 +31,7 @@
 //
 //    float dist = glm::length(glm::vec2(hazardUbo->pointts.z, hazardUbo->pointts.w) - glm::vec2(hazardUbo->pointts.x, hazardUbo->pointts.y));
 //    const float speed = std::min(200.0f, dist * 5.0f);
-//    const float smoothSize = std::min(std::max(dist * 0.1, 0.3), 5.0);
+//    const float smoothSize = std::min(dist * 0.1, 5.0);
 //    float timeDiff = (game->gameTime - hazardUbo->data.w) * speed;
 //    float mm0 = std::min(-smoothSize + timeDiff, dist * 0.5f + smoothSize);
 //    float mm1 = dist * 0.5 + smoothSize;
@@ -40,6 +40,15 @@
 //    hazardUbo->data.z = hazardUbo->data.z < 0.5 ? 1.0 : 0.0;
 //    hazardUbo->data.w = game->gameTime - d / speed;
 //    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory);
+//}
+
+// blue shoot
+//if (wh->keyData[GLFW_KEY_SPACE] == 2)
+//{
+//    s_blueFieldUbo* blueUbo;
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
+//    blueUbo->shootData = glm::vec4(0.0, 2.9, game->gameTime, 0.0);
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
 //}
 
 Overlayer::Overlayer(Game* game)
@@ -74,8 +83,8 @@ Overlayer::Overlayer(Game* game)
     addItem("GlassWall", "glassWall.png", GLASS_WALL);
     addItem("FenceWall", "fenceWall.png", FENCE_WALL);
     addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, 1, { 1.0, 1.0 }, 1.0, false, 0);
-    addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.335 }, 1, { 2, 1 }, 2.0, true, 0);
-    addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.07 }, 1, { 1.0, 1.0 }, 1.0, true, 0);
+    addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.415 }, 1, { 1, 1 }, 1.0, true, 0);
+    addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.28 }, 1, { 1.0, 1.0 }, 0.5, true, 0);
     addItem("Funnel", "funnel.png", FUNNEL, { 0.5, +0.39 }, 1, { 2, 1 }, 2.0, true, 0);
     addItem("HazardLaser", "hazard.png", HAZARDER, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
     addItem("BlueField", "blueFielder.png", FORCE_FIELD, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
@@ -219,15 +228,6 @@ void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm:
 
 void Overlayer::update()
 {
-    if (wh->keyData[GLFW_KEY_SPACE] == 2)
-    {
-        sizeof(glm::lowp_bvec2);
-        s_blueFieldUbo* blueUbo;
-        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
-        blueUbo->shootData = glm::vec4(0.0, 2.9, game->gameTime, 0.0);
-        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
-    }
-
     glm::vec2 p = cam.getMouseCoords();
 
     const float mult = 6.0;
