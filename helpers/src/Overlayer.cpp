@@ -62,9 +62,9 @@ Overlayer::Overlayer(Game* game)
     this->mt = thinDrawer->manyTexture;
 
     cam.zoom = 1.0;
-    cam.baseX = 160.0;
-    cam.defaultXSides = glm::vec2(-80.0, +80.0);
-    cam.defaultYSides = glm::vec2(-45.0, +45.0);
+    cam.baseX = abs(leftX) * 2.0;
+    cam.defaultXSides = glm::vec2(leftX, -leftX);
+    cam.defaultYSides = cam.defaultXSides * (9.0f / 16.0f);
     cam.init(glm::vec2(0.0, 0.0), wh);
 
     switchSound = sounder->loadSound("switch.wav");
@@ -127,7 +127,9 @@ void Overlayer::maper(void* ptr)
             s_manyTextureData* mtd;
             vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc) * sizeof(s_manyTextureData),
                 sizeof(s_manyTextureData), 0, (void**)&mtd);
-            mtd->posSize = glm::vec4(-94.5 + ol->itemRatio * 20.0 + x * 9.0, 31.5 - y * 9.0, 6.0 + item.extraScale, 6.0 + item.extraScale);
+            mtd->posSize = glm::vec4(ol->leftX - ol->xSize + ol->itemRatio * ol->xSize + x * 9.0 + 5.0f, 31.5 - y * 9.0,
+                6.0 + item.extraScale, 6.0 + item.extraScale);
+
             mtd->data.x = 0.0;
             vkUnmapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory);
 
@@ -152,7 +154,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         s_itemData iData;
         iData.data[0] = hoverGridX;
         iData.data[1] = hoverGridY;
-        iData.posSize = glm::vec4(-90.0 + ol->itemRatio * 20.0, 0.0, 19.0, 73.0);
+        iData.posSize = glm::vec4(ol->leftX - ol->xSize * 0.5 + ol->itemRatio * ol->xSize, 0.0, ol->xSize, ol->ySize + 1.0);
 
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ol->il->pipeline);
 
@@ -190,7 +192,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
     // arrow
     s_arrowData aData;
-    aData.posSize = glm::vec4(-78.5 + ol->itemRatio * 20.0, 0.0, 3.0, 3.0);
+    aData.posSize = glm::vec4(ol->leftX + 1.5f + ol->itemRatio * ol->xSize, 0.0, 3.0, 3.0);
     aData.color = glm::vec4(0.5f, 1.0f, 1.0f, 1.0f - ol->itemRatio * 0.75);
     aData.data = glm::vec4(-ol->itemRatio * 0.3, 0.5 - ol->itemRatio * 0.2, -0.5 + ol->itemRatio * 0.5, 0.5);
     aData.data2 = glm::vec4(0.0, 0.3 - ol->itemRatio * 0.2, 0.5 - ol->itemRatio * 0.3, 0.1);
@@ -233,7 +235,7 @@ void Overlayer::update()
 
     const float mult = 6.0;
 
-    if (-78.0 + itemRatio * 17.0 < p.x || game->leveler->clickStart[0] != -100000 || game->leveler->consqClickVec.size() > 0)
+    if (leftX + itemRatio * xSize + 1.5 < p.x || game->leveler->clickStart[0] != -100000 || game->leveler->consqClickVec.size() > 0)
     {
         if (itemDir == 1)
         {
@@ -262,8 +264,8 @@ void Overlayer::update()
 
     if (itemRatio > 0.0)
     {
-        char leftX = -97.0 + itemRatio * 18.0;
-        char upY = 36.0;
+        char leftX = this->leftX - xSize + itemRatio * xSize;
+        char upY = ySize * 0.5f;
         
         char hoverGridX = std::floor((p.x - leftX) / 9.0f);
         char hoverGridY = std::floor((upY - p.y) / 9.0f);

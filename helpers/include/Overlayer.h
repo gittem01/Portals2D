@@ -18,8 +18,11 @@ public:
 
 	std::vector<s_gridItemData> items;
 
-	const char numX = 2;
+	const char numX = 4;
 	const char numY = 8;
+	const float leftX = -80.0;
+	const float xSize = numX * 9.0f + 1.0;
+	const float ySize = 72.0;
 	const char totalNum = numX * numY;
 
 	char selectedItemIndex = -1;

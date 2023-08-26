@@ -60,7 +60,7 @@ void main()
 
     float sqDiff = 0.0;
 
-    if (pc.data[0] < 2 && pc.data[0] >= 0 && pc.data[1] < 8 && pc.data[1] >= 0)
+    if (pc.data[0] < 4 && pc.data[0] >= 0 && pc.data[1] < 8 && pc.data[1] >= 0)
     {
         float gridX = (9.0 * pc.data[0] - pc.posSize.z * 0.5 + 0.5) + 4.5f;
         float gridY = (-9.0 * pc.data[1] + pc.posSize.w * 0.5 - 0.5) - 4.5f;
