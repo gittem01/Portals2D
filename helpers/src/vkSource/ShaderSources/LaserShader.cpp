@@ -16,7 +16,7 @@ void LaserShader::prepareUniforms()
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(sizeof(s_laserUbo) * 80000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_laserUbo) * 2000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_laserUbo* laserUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, sizeof(s_laserUbo), 0, (void**)&laserUbo);

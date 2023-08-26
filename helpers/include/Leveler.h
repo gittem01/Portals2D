@@ -42,7 +42,8 @@ typedef enum LevelObject : long long
 	HAZARDER		= 0x1ll << 8,
 	FORCE_FIELD		= 0x1ll << 9,
 	CATAPULT		= 0x1ll << 10,
-	PLATFORM		= 0x1ll << 11,
+	LIGHT_BRIDGE	= 0x1ll << 11,
+	PLATFORM		= 0x1ll << 12,
 
 	HAZARDER_MID_DU = 0x1ll << 55,
 	FIELD_MID_DU	= 0x1ll << 56,
@@ -83,8 +84,10 @@ constexpr int getLevelObjectIndex(levelObject value)
 			return 9;
 		case CATAPULT:
 			return 10;
-		case PLATFORM:
+		case LIGHT_BRIDGE:
 			return 11;
+		case PLATFORM:
+			return 12;
 	default:
 		return -1;
 	}
@@ -92,8 +95,8 @@ constexpr int getLevelObjectIndex(levelObject value)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT)
+#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT | LIGHT_BRIDGE)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT | LIGHT_BRIDGE)
 #define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
 
 typedef enum OperationType
@@ -209,6 +212,7 @@ public:
 
 	std::vector<std::vector<s_gridSquare>> lastOffsetPos_M;
 	std::vector<s_gridSquare> lastOffsetPos_Laser;
+	std::vector<s_gridSquare> lastOffsetPos_Bridge;
 	std::vector<s_gridSquare> lastOffsetPos_Funnel;
 	std::vector<s_gridSquare> lastOffsetPos_Hazard;
 	std::vector<s_gridSquare> lastOffsetPos_Field;
@@ -287,6 +291,7 @@ public:
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderLasers(VkCommandBuffer cmdBuff, void* ptr);
+	static void renderBridges(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderFunnels(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderGrid(VkCommandBuffer cmdBuff, void* ptr);
 };

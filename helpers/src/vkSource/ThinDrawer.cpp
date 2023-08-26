@@ -62,6 +62,7 @@ void ThinDrawer::initExtra()
     bodyShader = new BodyShader(this); shaders.push_back(bodyShader);
     wallLight = new WallLight(this); shaders.push_back(wallLight);
     laserShader = new LaserShader(this); shaders.push_back(laserShader);
+    lightBridge = new LightBridge(this); shaders.push_back(lightBridge);
     funnelShader = new FunnelShader(this); shaders.push_back(funnelShader);
     hazardShader = new HazardShader(this); shaders.push_back(hazardShader);
     blueField = new BlueField(this); shaders.push_back(blueField);
@@ -437,16 +438,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     diagonalLiner->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
-    for (auto& f : midDrawFuncs)
-    {
-        f.first(cmdBuff, f.second);
-    }
-
-    blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
-    whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
-    wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
-    diagonalLiner->render(cmdBuff, 1, camPos.x, -camPos.y);
-
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, hazardShader->pipeline);
 
     vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
@@ -472,7 +463,17 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, blueField->numFields, 0, 0);
 
-    
+
+    for (auto& f : midDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
+
+    blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
+    whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
+    wallLight->render(cmdBuff, 1, camPos.x, -camPos.y);
+    diagonalLiner->render(cmdBuff, 1, camPos.x, -camPos.y);
+
     polynomShader->render(cmdBuff, wh->cam);
 }
 

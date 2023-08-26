@@ -38,6 +38,7 @@ Leveler::Leveler(Game* game)
     //thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
     thinDrawer->midDrawFuncs.push_back({ renderLasers, (void*)this });
     thinDrawer->midDrawFuncs.push_back({ renderFunnels, (void*)this });
+    thinDrawer->midDrawFuncs.push_back({ renderBridges, (void*)this });
     thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
 
     ol = new Overlayer(game);
@@ -278,6 +279,65 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
         vkUnmapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0]->memory);
 
         vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, laserOffset);
+    }
+}
+
+void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
+{
+    Leveler* leveler = (Leveler*)ptr;
+    ThinDrawer* td = leveler->thinDrawer;
+
+    VkDeviceSize offsets = 0;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->lightBridge->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->lightBridge->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->lightBridge->pipelineLayout, 1, 1, &td->lightBridge->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, td->lightBridge->numbridges, 0, 0);
+
+    int bridgeIndex = getLevelObjectIndex(LIGHT_BRIDGE);
+
+    if (leveler->ol->selectedItemIndex == bridgeIndex)
+    {
+        const s_gridItemData& item = leveler->ol->items[leveler->ol->selectedItemIndex];
+
+        glm::ivec2 mp = leveler->getMouseGrid();
+        int objRot = leveler->selectedObjectRotation;
+
+        short scaleX = item.gridScale[objRot % 2];
+        short scaleY = item.gridScale[(objRot + 1) % 2];
+
+        glm::vec2 startPoint;
+        glm::vec2 endPoint;
+
+        leveler->sendObjectRay(item, mp.x, mp.y, objRot, scaleX, scaleY, 0.0, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+
+        int bridgeOffset = td->lightBridge->numbridges + td->lastSwapChainImageIndex;
+
+        s_bridgeUbo* bridgeUbo;
+        vkMapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0]->memory,
+            bridgeOffset * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
+        bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+        bridgeUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
+
+        VkMappedMemoryRange memoryRange = {};
+        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        memoryRange.memory = td->lightBridge->uniformBuffers[0]->memory;
+        memoryRange.offset = bridgeOffset * sizeof(s_bridgeUbo);
+        memoryRange.size = sizeof(s_bridgeUbo);
+
+        vkFlushMappedMemoryRanges(td->lightBridge->logicalDevice, 1, &memoryRange);
+
+        vkUnmapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0]->memory);
+
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, bridgeOffset);
     }
 }
 
@@ -1901,6 +1961,28 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
     }
     break;
 
+    case LIGHT_BRIDGE:
+    {
+        lastOffsetPos_Bridge.push_back({ x, y });
+        objectData->extraOffsets.push_back(thinDrawer->lightBridge->numbridges);
+
+        glm::vec2 startPoint;
+        glm::vec2 endPoint;
+        sendObjectRay(item, x, y, objectData->rotation, scaleX, scaleY, 0.0, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+
+        ShaderBase* shader = thinDrawer->lightBridge;
+        s_bridgeUbo* bridgeUbo;
+        vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+            objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
+        bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+        bridgeUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
+        bridgeUbo->portal.x = -45263872644141.1361783f;
+        vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+
+        thinDrawer->lightBridge->numbridges++;
+    }
+        break;
+
     case FUNNEL:
     {
         lastOffsetPos_Funnel.push_back({ x, y });
@@ -2133,6 +2215,30 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 
         moveVkMem(thinDrawer->laserShader, lastObjectData->extraOffsets[0] * sizeof(s_laserUbo),
             objectData->extraOffsets[0] * sizeof(s_laserUbo), sizeof(s_laserUbo));
+
+        lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
+    }
+        break;
+    case LIGHT_BRIDGE:
+    {
+        s_gridSquare lastOffsetSquare = lastOffsetPos_Bridge.back();
+        lastOffsetPos_Bridge.pop_back();
+
+        thinDrawer->lightBridge->numbridges--;
+
+        if (lastOffsetSquare.asGlm() == objectData->pos)
+        {
+            return;
+        }
+
+        const s_levelGridData& lastSquareData = getSquare(lastOffsetSquare.x, lastOffsetSquare.y);
+        s_objectDataGrid* lastObjectData = (s_objectDataGrid*)lastSquareData.data.ptr;
+
+        int thisSquareOffsetIndex = objectData->extraOffsets[0];
+        lastOffsetPos_Bridge[thisSquareOffsetIndex] = lastOffsetSquare;
+
+        moveVkMem(thinDrawer->lightBridge, lastObjectData->extraOffsets[0] * sizeof(s_bridgeUbo),
+            objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo));
 
         lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
     }
@@ -2516,6 +2622,20 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
                 vkUnmapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory);
             }
                 break;
+
+            case LIGHT_BRIDGE:
+            {
+                glm::vec2 startPoint;
+                glm::vec2 endPoint;
+                sendObjectRay(item, pos.x, pos.y, objectData->rotation, scaleX, scaleY, 0.0, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
+
+                s_bridgeUbo* bridgeUbo;
+                vkMapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory,
+                    objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
+                bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+                vkUnmapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory);
+            }
+            break;
 
             case FUNNEL:
             {

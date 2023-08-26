@@ -16,7 +16,7 @@ void ManyTexture::prepareUniforms()
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(sizeof(s_manyTextureData) * 20000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_manyTextureData) * 40000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void ManyTexture::setupDescriptorSetLayout()

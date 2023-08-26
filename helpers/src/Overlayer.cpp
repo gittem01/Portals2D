@@ -82,13 +82,14 @@ Overlayer::Overlayer(Game* game)
     addItem("N_PotallableWall", "bb.png", BLACK_WALL);
     addItem("GlassWall", "glassWall.png", GLASS_WALL);
     addItem("FenceWall", "fenceWall.png", FENCE_WALL);
-    addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.0 }, 1, { 1.0, 1.0 }, 1.0, false, 0);
+    addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.1 }, 1, { 1.0, 1.0 }, 0.8, false, 0);
     addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.415 }, 1, { 1, 1 }, 1.0, true, 0);
     addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.28 }, 1, { 1.0, 1.0 }, 0.5, true, 0);
     addItem("Funnel", "funnel.png", FUNNEL, { 0.5, +0.39 }, 1, { 2, 1 }, 2.0, true, 0);
     addItem("HazardLaser", "hazard.png", HAZARDER, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
     addItem("BlueField", "blueFielder.png", FORCE_FIELD, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
-    addItem("Catapult", "plate.png", CATAPULT, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
+    addItem("Catapult", "plate.png", CATAPULT, { 0.5, +0.475 }, 1, { 1, 1 }, 0.8, true, 0);
+    addItem("LightBridge", "lightBridge.png", LIGHT_BRIDGE, { 0.5, +0.402 }, 1, { 1, 1 }, 0.8, true, 0);
     addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
 }
