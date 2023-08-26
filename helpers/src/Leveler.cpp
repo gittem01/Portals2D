@@ -879,11 +879,11 @@ glm::vec2 constrainEndPos(glm::vec2 sp, glm::vec2 ep, int rotation)
     case 0:
         return ep;
     case 1:
-        return glm::vec2(std::min(ep.x, sp.x), ep.y);
+        return glm::vec2(std::min(ep.x, sp.x - 1.0f), ep.y);
     case 2:
-        return glm::vec2(ep.x, std::min(ep.y, sp.y));
+        return glm::vec2(ep.x, std::min(ep.y, sp.y - 1));
     case 3:
-        return glm::vec2(std::max(ep.x, sp.x), ep.y);
+        return glm::vec2(std::max(ep.x, sp.x + 1), ep.y);
     default:
         break;
     }
@@ -909,17 +909,17 @@ void renderCatapultLines(VkCommandBuffer cmdBuff, Leveler* leveler)
     glm::vec2 lastPos;
     if (leveler->consqClickVec.size() == 1)
     {
-        midPos = (mp + p0) * 0.5f + glm::vec2(0.0f, 5.0f);
         lastPos = mp;
+        lastPos = constrainEndPos(p0, lastPos, leveler->selectedObjectRotation);
+        midPos = (lastPos + p0) * 0.5f + glm::vec2(0.0f, 5.0f);
     }
     else if (leveler->consqClickVec.size() > 1)
     {
-        float midX = (leveler->consqClickVec[1].x + p0.x) * 0.5f;
-        midPos = glm::vec2(midX, leveler->wh->cam->getMouseCoords().y);
         lastPos = (glm::vec2)leveler->consqClickVec[1] + glm::vec2(0.5f, 0.5f);
+        lastPos = constrainEndPos(p0, lastPos, leveler->selectedObjectRotation);
+        float midX = (lastPos.x + p0.x) * 0.5f;
+        midPos = glm::vec2(midX, leveler->wh->cam->getMouseCoords().y);
     }
-
-    lastPos = constrainEndPos(p0, lastPos, leveler->selectedObjectRotation);
 
     glm::vec2 diff = lastPos - p0;
 
@@ -1205,7 +1205,15 @@ void Leveler::update()
             short scaleX = item.gridScale[selectedObjectRotation % 2];
             short scaleY = item.gridScale[(selectedObjectRotation % 2) ^ 1];
 
-            s_objectDataGrid* objectData = putObject(item, mousePos.x - scaleX / 2, mousePos.y - scaleY / 2, scaleX, scaleY, selectedObjectRotation, 0);
+            s_objectDataGrid inData;
+            inData.pos.x = mousePos.x - scaleX / 2;
+            inData.pos.y = mousePos.y - scaleY / 2;
+            inData.scale.x = scaleX;
+            inData.scale.y = scaleY;
+            inData.rotation = selectedObjectRotation;
+            inData.fullData.w = 0.0;
+
+            s_objectDataGrid* objectData = putObject(item, &inData);
 
             if (objectData)
             {
@@ -1227,7 +1235,9 @@ void Leveler::update()
             {
                 if (consqClickVec.size() > 0 && abs(consqClickVec[0].x - getMouseGrid().x) < 0.6)
                 {
-                    putCatapult();
+                    glm::i16vec2 p = consqClickVec[0];
+                    glm::ivec2 mp = getMouseGrid();
+                    putCatapult({ p }, glm::vec4(mp.x, mp.y, 0.0, 0.0));
                     consqClickVec.clear();
                 }
                 else
@@ -1237,7 +1247,11 @@ void Leveler::update()
             }
             else
             {
-                putCatapult();
+                glm::i16vec2 p1 = consqClickVec[0];
+                glm::i16vec2 p2 = consqClickVec[1];
+                float midX = (p1.x + p2.x + 1.0) * 0.5f;
+                glm::vec2 midPos = glm::vec2(midX, wh->cam->getMouseCoords().y);
+                putCatapult({ p1, p2 }, glm::vec4(midPos.x, midPos.y, 0.0, 0.0));
                 consqClickVec.clear();
             }
         }
@@ -1252,15 +1266,16 @@ void Leveler::update()
         printf("Rev Time: %f\n", glfwGetTime() - st);
     }
 
-    if (wh->keyData[GLFW_KEY_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS)
+    if (wh->keyData[GLFW_KEY_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS && consqClickVec.size() == 0)
     {
         selectedObjectRotation = (selectedObjectRotation + 1) % 4;
     }
 }
 
-void Leveler::putCatapult()
+void Leveler::putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData)
 {
-    const s_levelGridData& lgd = getSquare(consqClickVec[0].x, consqClickVec[0].y);
+    glm::vec2 midPos = glm::vec2(oData.x, oData.y);
+    const s_levelGridData& lgd = getSquare(positions[0].x, positions[0].y);
     s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
     
     int lineIndex;
@@ -1276,17 +1291,18 @@ void Leveler::putCatapult()
 
     objectData->extraOffsets.push_back(lineIndex);
 
-    glm::vec2 p0 = (glm::vec2)consqClickVec[0] + glm::vec2(0.5, 0.5);
-    
-    objectData->extraPos = consqClickVec[0];
+    glm::vec2 p0 = (glm::vec2)positions[0] + glm::vec2(0.5, 0.5);
 
-    if (consqClickVec.size() < 2)
+    objectData->extraPos = positions[0];
+
+    if (positions.size() < 2 || (positions.size() == 2 && positions[1].x < -1000))
     {
-        glm::vec2 mp = getMouseGrid();
+        glm::vec2 mp = midPos; // used as secondary click pos
         s_polynomUbo data;
         data.equation = glm::vec4(0.0, 0.0, 0.0, 0.1f);
         data.data = glm::vec4(p0.x, p0.y, mp.y - p0.y, 0.0);
-        objectData->extraScale = mp;
+        objectData->extraScale.x = -3532;
+        objectData->fullData = glm::vec4(mp.x, mp.y, 0.0, 1.0);
 
         if (lineIndex < thinDrawer->polynomShader->datas.size())
         {
@@ -1299,10 +1315,7 @@ void Leveler::putCatapult()
         return;
     }
 
-    glm::vec2 lastPos = (glm::vec2)consqClickVec[1] + glm::vec2(0.5f, 0.5f);
-
-    float midX = (consqClickVec[1].x + p0.x) * 0.5f;
-    glm::vec2 midPos = glm::vec2(midX, wh->cam->getMouseCoords().y);
+    glm::vec2 lastPos = (glm::vec2)positions[1] + glm::vec2(0.5f, 0.5f);
 
     lastPos = constrainEndPos(p0, lastPos, selectedObjectRotation);
 
@@ -1317,8 +1330,8 @@ void Leveler::putCatapult()
     data.equation = glm::vec4(polynom.x, polynom.y, polynom.z, 0.1f);
     data.data = glm::vec4(p0.x, start, size, vert ? 1.0 : 0.0);
 
-    objectData->extraScale = consqClickVec[1];
-    objectData->fullData = glm::vec4(polynom.x, polynom.y, polynom.z, 0.0);
+    objectData->extraScale = positions[1];
+    objectData->fullData = glm::vec4(midPos.x, midPos.y, 0.0, 1.0);
 
     if (lineIndex < thinDrawer->polynomShader->datas.size())
     {
@@ -1577,11 +1590,17 @@ void Leveler::removePlatform(short x, short y)
     lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
 }
 
-s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize)
+s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
 {
+    short startX = inData->pos.x;
+    short startY = inData->pos.y;
+    short scaleX = inData->scale.x;
+    short scaleY = inData->scale.y;
+    short rotation = inData->rotation;
+
     if (item.objectType & PLATFORM)
     {
-        return putPlatform({ startX, startY }, { scaleX, scaleY }, pSize, rotation);
+        return putPlatform({ startX, startY }, { scaleX, scaleY }, inData->extraScale.x, rotation);
     }
 
     glm::vec2 extraAdd = rotationMults[rotation] * item.gridRenderTranslation.y;
@@ -1699,6 +1718,9 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, short startX, s
     objectData->rotation = rotation;
     objectData->pos = { startX, startY };
     objectData->scale = { scaleX, scaleY };
+    
+    objectData->fullData = inData->fullData;
+    objectData->extraScale = inData->extraScale;
 
     afterPutObject(item, objectData, scaleX, scaleY, rotation);
 
@@ -1886,7 +1908,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
         thinDrawer->funnelShader->numFunnels++;
     }
-        break;
+    break;
     case HAZARDER:
     {
         lastOffsetPos_Hazard.push_back({ x, y });
@@ -1909,7 +1931,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
         thinDrawer->hazardShader->numHazards++;
     }
-        break;
+    break;
     case FORCE_FIELD:
     {
         lastOffsetPos_Field.push_back({ x, y });
@@ -1933,7 +1955,12 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
         thinDrawer->blueField->numFields++;
     }
         break;
-
+    case CATAPULT: 
+        if (objectData->fullData.w > 0.5)
+        {
+            putCatapult({ objectData->pos, objectData->extraScale }, objectData->fullData);
+        }
+        break;
     default:
         break;
     }
@@ -2245,7 +2272,7 @@ void Leveler::takeBack(bool shiftPressed)
                     int objIndex = getLevelObjectIndex(objectData->objectType);
                     const s_gridItemData& item = ol->items[objIndex];
 
-                    putObject(item, sq.x, sq.y, objectData->scale.x, objectData->scale.y, objectData->rotation, objectData->extraScale.x);
+                    putObject(item, objectData);
                 }
                     break;
 
@@ -2293,7 +2320,7 @@ void Leveler::takeBack(bool shiftPressed)
                 int objIndex = getLevelObjectIndex(objectData->objectType);
                 const s_gridItemData& item = ol->items[objIndex];
 
-                putObject(item, sq.x, sq.y, objectData->scale.x, objectData->scale.y, objectData->rotation, objectData->extraScale.x);
+                putObject(item, objectData);
             }
                 break;
 

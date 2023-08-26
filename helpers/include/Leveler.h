@@ -252,8 +252,8 @@ public:
 	void afterFillRayCheck(short minX, short minY, short maxX, short maxY);
 	void putPlatformOnClick();
 	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation);
-	void putCatapult();
-	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize);
+	void putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData);
+	s_objectDataGrid* putObject(const s_gridItemData& item, s_objectDataGrid* inData);
 	s_objectDataGrid* extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
 	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY, int rotation);
 	void afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
