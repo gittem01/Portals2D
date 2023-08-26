@@ -69,6 +69,8 @@ void WallBase::render(VkCommandBuffer cmdBuff, int layer, float camX, float camY
         {
             s_shaderGridData& data = renderGridUp[layer][i][j];
 
+            if (data.numElements == 0) continue;
+
             vkCmdDraw(cmdBuff, buffers[0]->count, data.numElements, 0, data.offsetStart);
         }
     }

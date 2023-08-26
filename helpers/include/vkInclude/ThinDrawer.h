@@ -25,6 +25,7 @@
 #include <ShaderHeaders/ManyTexture.h>
 #include <ShaderHeaders/DiagonalLiner.h>
 #include <ShaderHeaders/PlatformRectangle.h>
+#include <ShaderHeaders/PolynomialShader.h>
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -183,6 +184,7 @@ public:
     ManyTexture* manyTexture;
     DiagonalLiner* diagonalLiner;
     PlatformRectangle* platformRectangle;
+    PolynomialShader* polynomShader;;
 
     std::vector<ShaderBase*> shaders;
 

@@ -502,7 +502,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
     botVector = pWorld->rotateVec(botVector, contactingBody->GetAngle());
 
     b2Vec2 botY = bodyPos + (bodySize.y / 2.0f) * botVector;
-    ThinDrawer::object->registerDebugLine(glm::vec4(botY.x, botY.y, botY.x, botY.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.07, 0.5);
+    ThinDrawer::object->registerDebugLine(glm::vec4(botY.x, botY.y, botY.x, botY.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.1, 0.5);
     ThinDrawer::object->registerDebugLine(glm::vec4(cPos.x, cPos.y, cPos.x, cPos.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.07, 0.5);
     if ((cPos - botY).LengthSquared() < tHold)
     {

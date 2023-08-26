@@ -74,6 +74,7 @@ void ThinDrawer::initExtra()
     manyTexture = new ManyTexture(this); shaders.push_back(manyTexture);
     diagonalLiner = new DiagonalLiner(this); shaders.push_back(diagonalLiner);
     platformRectangle = new PlatformRectangle(this); shaders.push_back(platformRectangle);
+    polynomShader = new PolynomialShader(this); shaders.push_back(polynomShader);
 
     setupDescriptorPool();
 
@@ -470,6 +471,9 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         blueField->pipelineLayout, 1, 1, &blueField->descriptorSets[1], 0, VK_NULL_HANDLE);
 
     vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, blueField->numFields, 0, 0);
+
+    
+    polynomShader->render(cmdBuff, wh->cam);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

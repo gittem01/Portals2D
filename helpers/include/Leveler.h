@@ -41,7 +41,8 @@ typedef enum LevelObject : long long
 	FUNNEL			= 0x1ll << 7,
 	HAZARDER		= 0x1ll << 8,
 	FORCE_FIELD		= 0x1ll << 9,
-	PLATFORM		= 0x1ll << 10,
+	CATAPULT		= 0x1ll << 10,
+	PLATFORM		= 0x1ll << 11,
 
 	HAZARDER_MID_DU = 0x1ll << 55,
 	FIELD_MID_DU	= 0x1ll << 56,
@@ -80,8 +81,10 @@ constexpr int getLevelObjectIndex(levelObject value)
 			return 8;
 		case FORCE_FIELD:
 			return 9;
-		case PLATFORM:
+		case CATAPULT:
 			return 10;
+		case PLATFORM:
+			return 11;
 	default:
 		return -1;
 	}
@@ -89,8 +92,8 @@ constexpr int getLevelObjectIndex(levelObject value)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER | FORCE_FIELD)
+#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT)
+#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT)
 #define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
 
 typedef enum OperationType
@@ -119,6 +122,7 @@ typedef struct GridData_S
 
 typedef struct ObjectDataGrid
 {
+	glm::vec4 fullData;
 	std::vector<int> extraOffsets;
 	levelObject objectType;
 	levelObject extraType;
@@ -248,6 +252,7 @@ public:
 	void afterFillRayCheck(short minX, short minY, short maxX, short maxY);
 	void putPlatformOnClick();
 	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation);
+	void putCatapult();
 	s_objectDataGrid* putObject(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation, int pSize);
 	s_objectDataGrid* extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
 	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY, int rotation);

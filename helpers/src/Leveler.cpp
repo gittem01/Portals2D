@@ -111,7 +111,8 @@ void Leveler::initOffsets()
     textureRenderOffset = mt->lastAvailablePos;
     mt->lastAvailablePos += numSwapChainImages;
 
-    perTextureData.resize(6);
+    int platformIndex = getLevelObjectIndex(PLATFORM);
+    perTextureData.resize(platformIndex - 4);
     lastOffsetPos_M.resize(perTextureData.size());
     for (int i = 0; i < perTextureData.size(); i++)
     {
@@ -788,6 +789,154 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
     }
 }
 
+glm::vec3 calculatePolynom(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3)
+{
+    glm::vec3 res;
+
+    res.x = (p1.x * (p3.y - p2.y) + p2.x * (p1.y - p3.y) + p3.x * (p2.y - p1.y)) / ((p1.x - p2.x) * (p1.x - p3.x) * (p2.x - p3.x));
+    res.y = (p2.y - p1.y) / (p2.x - p1.x) - res.x * (p1.x + p2.x);
+    res.z = p1.y - res.x * p1.x * p1.x - res.y * p1.x;
+
+    return res;
+}
+
+glm::vec3 calculatePolynomWithChecks(glm::vec2 sp, glm::vec2 mp, glm::vec2 ep, int rotation)
+{
+    if (sp.x == ep.x)
+    {
+        return glm::vec3(0.0, 0.0, 0.0);
+    }
+
+    glm::vec2 diff = ep - sp;
+    float diffSlope = diff.y / diff.x;
+    float minSlope;
+    float maxSlope;
+
+    switch (rotation)
+    {
+    case 0:
+    case 1:
+    case 3:
+    {
+        if (diff.x > 0.0)
+        {
+            minSlope = std::max(diffSlope + 0.5, 0.0);
+            maxSlope = 20.0;
+        }
+        else
+        {
+            maxSlope = std::min(diffSlope - 0.5, 0.0);
+            minSlope = -20.0;
+        }
+    }
+        break;
+    case 2:
+    {
+        if (diff.x > 0.0)
+        {
+            minSlope = std::min(diffSlope + 0.5, 0.0);
+            maxSlope = 0.0;
+        }
+        else
+        {
+            maxSlope = std::max(diffSlope - 0.5, 0.0);
+            minSlope = 0.0;
+        }
+    }
+        break;
+    default:
+        break;
+    }
+
+    glm::vec3 polynom = calculatePolynom(sp, mp, ep);
+
+    float calcSlope = 2.0 * polynom.x * sp.x + polynom.y;
+    float slope = 0.0;
+    if (calcSlope < minSlope) slope = minSlope;
+    else if (calcSlope > maxSlope) slope = maxSlope;
+	
+    if (calcSlope < minSlope || calcSlope > maxSlope)
+    {
+        float a = (ep.y - ep.x * slope - sp.y + slope * sp.x) / (ep.x * ep.x - 2 * sp.x * ep.x + sp.x * sp.x);
+        float b = slope - 2.0 * a * sp.x;
+        float c = sp.y + a * sp.x * sp.x;
+        c = sp.y - (a * sp.x * sp.x + b * sp.x);
+
+        polynom = glm::vec3(a, b, c);
+    }
+
+    if (polynom.x == NAN) polynom.x = 0.0;
+    if (polynom.y == NAN) polynom.y = 0.0;
+    if (polynom.z == NAN) polynom.z = 0.0;
+
+    return polynom;
+}
+
+glm::vec2 constrainEndPos(glm::vec2 sp, glm::vec2 ep, int rotation)
+{
+    switch (rotation)
+    {
+    case 0:
+        return ep;
+    case 1:
+        return glm::vec2(std::min(ep.x, sp.x), ep.y);
+    case 2:
+        return glm::vec2(ep.x, std::min(ep.y, sp.y));
+    case 3:
+        return glm::vec2(std::max(ep.x, sp.x), ep.y);
+    default:
+        break;
+    }
+}
+
+void renderCatapultLines(VkCommandBuffer cmdBuff, Leveler* leveler)
+{
+    ThinDrawer* td = leveler->thinDrawer;
+    const VkDeviceSize offsets = 0;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+
+    glm::vec2 p0 = (glm::vec2)leveler->consqClickVec[0] + glm::vec2(0.5, 0.5);
+    glm::vec2 mp = (glm::vec2)leveler->getMouseGrid() + glm::vec2(0.5f, 0.5f);
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->polynomShader->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->polynomShader->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        td->polynomShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    glm::vec2 midPos;
+    glm::vec2 lastPos;
+    if (leveler->consqClickVec.size() == 1)
+    {
+        midPos = (mp + p0) * 0.5f + glm::vec2(0.0f, 5.0f);
+        lastPos = mp;
+    }
+    else if (leveler->consqClickVec.size() > 1)
+    {
+        float midX = (leveler->consqClickVec[1].x + p0.x) * 0.5f;
+        midPos = glm::vec2(midX, leveler->wh->cam->getMouseCoords().y);
+        lastPos = (glm::vec2)leveler->consqClickVec[1] + glm::vec2(0.5f, 0.5f);
+    }
+
+    lastPos = constrainEndPos(p0, lastPos, leveler->selectedObjectRotation);
+
+    glm::vec2 diff = lastPos - p0;
+
+    bool vert = abs(diff.x) > 0.5;
+    float start = vert ? p0.x : p0.y;
+    float size = vert > 0.5 ? diff.x : diff.y;
+
+    glm::vec3 polynom = calculatePolynomWithChecks(p0, midPos, lastPos, leveler->selectedObjectRotation);
+    s_polynomUbo data;
+    data.equation = glm::vec4(polynom.x, polynom.y, polynom.z, 0.1f);
+    data.data = glm::vec4(p0.x, start, size, vert ? 1.0 : 0.0);
+
+    vkCmdPushConstants(cmdBuff, td->polynomShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_polynomUbo), &data);
+
+    vkCmdDraw(cmdBuff, td->polynomShader->buffers[0]->count, 1, 0, 0);
+}
+
 void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 {
     Leveler* leveler = (Leveler*)ptr;
@@ -808,9 +957,13 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
     const s_gridItemData& item = leveler->ol->items[leveler->ol->selectedItemIndex];
     const s_levelGridData& lgd = leveler->getSquare(mp.x, mp.y);
 
-    if (item.objectType & SINGLE_DRAWS)
+    if (item.objectType & SINGLE_DRAWS && !(item.objectType & CATAPULT && leveler->consqClickVec.size() > 0))
     {
         renderSingleDrawSelection(cmdBuff, leveler);
+    }
+    else if (item.objectType & CATAPULT)
+    {
+        renderCatapultLines(cmdBuff, leveler);
     }
 
     // Grid
@@ -1044,7 +1197,7 @@ void Leveler::update()
                 lastGrid = clickStart;
             }
         }
-        else if (item->objectType & SINGLE_DRAWS)
+        else if (item->objectType & SINGLE_DRAWS && !(item->objectType & CATAPULT && consqClickVec.size() > 0))
         {
             glm::ivec2 mousePos = getMouseGrid();
 
@@ -1056,12 +1209,37 @@ void Leveler::update()
 
             if (objectData)
             {
+                if (objectData->objectType & CATAPULT)
+                {
+                    consqClickVec.push_back(objectData->pos);
+                }
+
                 setObjectOperationTrack(ADD, objectData);
             }
         }
         else if (item->objectType & PLATFORM)
         {
             putPlatformOnClick();
+        }
+        else if (item->objectType & CATAPULT)
+        {
+            if (consqClickVec.size() < 2)
+            {
+                if (consqClickVec.size() > 0 && abs(consqClickVec[0].x - getMouseGrid().x) < 0.6)
+                {
+                    putCatapult();
+                    consqClickVec.clear();
+                }
+                else
+                {
+                    consqClickVec.push_back(getMouseGrid());
+                }
+            }
+            else
+            {
+                putCatapult();
+                consqClickVec.clear();
+            }
         }
     }
 
@@ -1077,6 +1255,78 @@ void Leveler::update()
     if (wh->keyData[GLFW_KEY_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS)
     {
         selectedObjectRotation = (selectedObjectRotation + 1) % 4;
+    }
+}
+
+void Leveler::putCatapult()
+{
+    const s_levelGridData& lgd = getSquare(consqClickVec[0].x, consqClickVec[0].y);
+    s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+    
+    int lineIndex;
+    if (thinDrawer->polynomShader->freeIndices.size() > 0)
+    {
+        lineIndex = thinDrawer->polynomShader->freeIndices.back();
+        thinDrawer->polynomShader->freeIndices.pop_back();
+    }
+    else
+    {
+        lineIndex = thinDrawer->polynomShader->datas.size();
+    }
+
+    objectData->extraOffsets.push_back(lineIndex);
+
+    glm::vec2 p0 = (glm::vec2)consqClickVec[0] + glm::vec2(0.5, 0.5);
+    
+    objectData->extraPos = consqClickVec[0];
+
+    if (consqClickVec.size() < 2)
+    {
+        glm::vec2 mp = getMouseGrid();
+        s_polynomUbo data;
+        data.equation = glm::vec4(0.0, 0.0, 0.0, 0.1f);
+        data.data = glm::vec4(p0.x, p0.y, mp.y - p0.y, 0.0);
+        objectData->extraScale = mp;
+
+        if (lineIndex < thinDrawer->polynomShader->datas.size())
+        {
+            thinDrawer->polynomShader->datas[lineIndex] = { data, true };
+        }
+        else
+        {
+            thinDrawer->polynomShader->datas.push_back({ data, true });
+        }
+        return;
+    }
+
+    glm::vec2 lastPos = (glm::vec2)consqClickVec[1] + glm::vec2(0.5f, 0.5f);
+
+    float midX = (consqClickVec[1].x + p0.x) * 0.5f;
+    glm::vec2 midPos = glm::vec2(midX, wh->cam->getMouseCoords().y);
+
+    lastPos = constrainEndPos(p0, lastPos, selectedObjectRotation);
+
+    glm::vec2 diff = lastPos - p0;
+
+    bool vert = abs(diff.x) > 0.5;
+    float start = vert ? p0.x : p0.y;
+    float size = vert > 0.5 ? diff.x : diff.y;
+
+    glm::vec3 polynom = calculatePolynomWithChecks(p0, midPos, lastPos, selectedObjectRotation);
+    s_polynomUbo data;
+    data.equation = glm::vec4(polynom.x, polynom.y, polynom.z, 0.1f);
+    data.data = glm::vec4(p0.x, start, size, vert ? 1.0 : 0.0);
+
+    objectData->extraScale = consqClickVec[1];
+    objectData->fullData = glm::vec4(polynom.x, polynom.y, polynom.z, 0.0);
+
+    if (lineIndex < thinDrawer->polynomShader->datas.size())
+    {
+        thinDrawer->polynomShader->datas[lineIndex] = { data, true };
+    }
+    else
+    {
+        thinDrawer->polynomShader->datas.push_back({ data, true });
     }
 }
 
@@ -1883,7 +2133,13 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
         dataSize = sizeof(s_blueFieldUbo);
     }
         break;
-
+    case CATAPULT:
+    {
+        int index = objectData->extraOffsets[0];
+        thinDrawer->polynomShader->datas[index].shouldRender = false;
+        thinDrawer->polynomShader->freeIndices.push_back(index);
+    }
+        break;
     default:
         break;
     }
