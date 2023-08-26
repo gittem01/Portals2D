@@ -877,7 +877,10 @@ glm::vec2 constrainEndPos(glm::vec2 sp, glm::vec2 ep, int rotation)
     switch (rotation)
     {
     case 0:
-        return ep;
+        if (abs(ep.x - sp.x) < 0.6 && ep.y <= sp.y)
+			return glm::vec2(ep.x, sp.y + 1.0);
+        else
+            return ep;
     case 1:
         return glm::vec2(std::min(ep.x, sp.x - 1.0f), ep.y);
     case 2:
@@ -930,7 +933,7 @@ void renderCatapultLines(VkCommandBuffer cmdBuff, Leveler* leveler)
     glm::vec3 polynom = calculatePolynomWithChecks(p0, midPos, lastPos, leveler->selectedObjectRotation);
     s_polynomUbo data;
     data.equation = glm::vec4(polynom.x, polynom.y, polynom.z, 0.1f);
-    data.data = glm::vec4(p0.x, start, size, vert ? 1.0 : 0.0);
+    data.data = glm::vec4(vert ? -6365758373783.0f : p0.x, start, size, 1.0);
 
     vkCmdPushConstants(cmdBuff, td->polynomShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_polynomUbo), &data);
 
@@ -1137,6 +1140,11 @@ void Leveler::update()
 
     if (wh->mouseData[3] == 2 || wh->keyData[GLFW_KEY_ESCAPE] == 2)
     {
+        if (item->objectType & CATAPULT && consqClickVec.size() > 0)
+        {
+            goto catapultLogic;
+        }
+
         clickStart[0] = -100000;
         consqClickVec.clear();
     }
@@ -1231,18 +1239,28 @@ void Leveler::update()
         }
         else if (item->objectType & CATAPULT)
         {
+catapultLogic:
             if (consqClickVec.size() < 2)
             {
-                if (consqClickVec.size() > 0 && abs(consqClickVec[0].x - getMouseGrid().x) < 0.6)
+                glm::ivec2 mp;
+                if (consqClickVec.size() > 0)
+                {
+                    mp = constrainEndPos(consqClickVec[0], getMouseGrid(), selectedObjectRotation);
+                }
+                else
+                {
+                    mp = getMouseGrid();
+                }
+
+                if (consqClickVec.size() > 0 && abs(consqClickVec[0].x - mp.x) < 0.6)
                 {
                     glm::i16vec2 p = consqClickVec[0];
-                    glm::ivec2 mp = getMouseGrid();
                     putCatapult({ p }, glm::vec4(mp.x, mp.y, 0.0, 0.0));
                     consqClickVec.clear();
                 }
                 else
                 {
-                    consqClickVec.push_back(getMouseGrid());
+                    consqClickVec.push_back(mp);
                 }
             }
             else
@@ -1300,7 +1318,7 @@ void Leveler::putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData)
         glm::vec2 mp = midPos; // used as secondary click pos
         s_polynomUbo data;
         data.equation = glm::vec4(0.0, 0.0, 0.0, 0.1f);
-        data.data = glm::vec4(p0.x, p0.y, mp.y - p0.y, 0.0);
+        data.data = glm::vec4(p0.x, p0.y, mp.y - p0.y + 0.5, 0.1);
         objectData->extraScale.x = -3532;
         objectData->fullData = glm::vec4(mp.x, mp.y, 0.0, 1.0);
 
@@ -1328,7 +1346,7 @@ void Leveler::putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData)
     glm::vec3 polynom = calculatePolynomWithChecks(p0, midPos, lastPos, selectedObjectRotation);
     s_polynomUbo data;
     data.equation = glm::vec4(polynom.x, polynom.y, polynom.z, 0.1f);
-    data.data = glm::vec4(p0.x, start, size, vert ? 1.0 : 0.0);
+    data.data = glm::vec4(-6365758373783.0f, start, size, 0.1);
 
     objectData->extraScale = positions[1];
     objectData->fullData = glm::vec4(midPos.x, midPos.y, 0.0, 1.0);

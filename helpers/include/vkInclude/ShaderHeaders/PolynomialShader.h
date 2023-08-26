@@ -6,7 +6,7 @@ typedef struct
 {
     // ax^2 + bx + c
     glm::vec4 equation; // a, b, c, thickness
-    glm::vec4 data; // dotRatio, startX, xLen, unused
+    glm::vec4 data; // dotRatio, startX, xLen, alphaMult
 } s_polynomUbo;
 
 typedef struct

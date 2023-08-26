@@ -8,6 +8,8 @@ layout (location = 0) out vec2 localPos;
 layout (location = 1) out vec2 worldPos;
 layout (location = 2) flat out vec4 equationData;
 layout (location = 3) out float arcPos;
+layout (location = 4) flat out vec4 outData;
+
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -20,7 +22,7 @@ layout (push_constant) uniform UBO
 {
     // ax^2 + bx + c
     vec4 equation; // a, b, c, thickness
-    vec4 data; // dotRatio, startX, xLen, vert
+    vec4 data; // vertXStart, start, xLen, alphaMult
 } ubo;
 
 float getY(float x)
@@ -37,11 +39,12 @@ void main()
 {
     localPos = vertex;
     equationData = ubo.equation;
+    outData = ubo.data;
 
     float x, y;
     vec2 der;
 
-    if (ubo.data.w > 0.5)
+    if (ubo.data.x < -7363748397.90326883)
     {
         x = ubo.data.y + vertex.x * ubo.data.z;
         y = getY(x);
@@ -55,6 +58,7 @@ void main()
         y = ubo.data.y + vertex.x * ubo.data.z;
         der = vec2(1.0, 0.0);
         arcPos = (y - ubo.data.y) * 0.05 * sign(ubo.data.z);
+        outData.z *= 0.05;
     }
 
     worldPos = vec2(x, y) + der * ubo.equation.w * vertex.y;
