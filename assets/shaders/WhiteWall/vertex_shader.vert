@@ -3,8 +3,7 @@
 layout (location = 0) in vec2 vertex;
 
 layout (location = 0) out vec4 localPos;
-layout (location = 1) out vec4 worldPos;
-layout (location = 2) out vec2 out_tc;
+layout (location = 1) out vec2 out_tc;
 
 layout (location = 3) out OutData
 {
@@ -56,7 +55,7 @@ void main()
     newCameraMatrix[3][1] *= data2.z;
 
     localPos.xy = vertex * ubo.sData[instanceID].posSize.zw;
-    worldPos = vec4(ubo.sData[instanceID].posSize.xy + localPos.xy, 0.0, 1.0);
+    vec4 worldPos = vec4(ubo.sData[instanceID].posSize.xy + localPos.xy, 0.0, 1.0);
     vec4 pos = newCameraMatrix * worldPos;
 
     out_tc = (vertex - 0.5) * vec2(data2.x / data.x, data2.y / data.x);

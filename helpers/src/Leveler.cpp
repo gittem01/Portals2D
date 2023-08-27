@@ -27,8 +27,7 @@ Leveler::Leveler(Game* game)
 
     clickStart[0] = -100000;
 
-    operationList = new s_gridOperationList();
-    currentOperation = operationList;
+    currentOperation = new s_gridOperationList();
 
     thinDrawer->whiteWallShader->recreateUniforms(numWhiteWall * 2);
     thinDrawer->blackWallShader->recreateUniforms(numBlackWall * 2);
@@ -268,14 +267,6 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
         laserUbo->colour = glm::vec4(1.0, 0.0, 0.0, 1.0);
         laserUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
 
-        VkMappedMemoryRange memoryRange = {};
-        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-        memoryRange.memory = td->laserShader->uniformBuffers[0]->memory;
-        memoryRange.offset = laserOffset * sizeof(s_laserUbo);
-        memoryRange.size = sizeof(s_laserUbo);
-
-        vkFlushMappedMemoryRanges(td->laserShader->logicalDevice, 1, &memoryRange);
-
         vkUnmapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0]->memory);
 
         vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, laserOffset);
@@ -326,14 +317,6 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
             bridgeOffset * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
         bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
         bridgeUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
-
-        VkMappedMemoryRange memoryRange = {};
-        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-        memoryRange.memory = td->lightBridge->uniformBuffers[0]->memory;
-        memoryRange.offset = bridgeOffset * sizeof(s_bridgeUbo);
-        memoryRange.size = sizeof(s_bridgeUbo);
-
-        vkFlushMappedMemoryRanges(td->lightBridge->logicalDevice, 1, &memoryRange);
 
         vkUnmapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0]->memory);
 
@@ -392,14 +375,6 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
         funnelUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
         funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -1.0);
         funnelUbo->data2 = glm::vec4(diffLen + 10.0, diffLen - 1.0, diffLen, 0.0);
-
-        VkMappedMemoryRange memoryRange = {};
-        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-        memoryRange.memory = td->funnelShader->uniformBuffers[0]->memory;
-        memoryRange.offset = funnelOffset * sizeof(s_funnelUbo);
-        memoryRange.size = sizeof(s_funnelUbo);
-
-        vkFlushMappedMemoryRanges(td->funnelShader->logicalDevice, 1, &memoryRange);
 
         vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0]->memory);
 

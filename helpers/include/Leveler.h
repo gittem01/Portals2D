@@ -201,9 +201,7 @@ public:
 	class ManyTexture* mt;
 
 	//////////////////
-	s_gridOperationList* operationList;
 	s_gridOperationList* currentOperation;
-	int numOperations = 0;
 
 	//////////////////
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;

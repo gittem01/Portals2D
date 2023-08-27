@@ -3,8 +3,7 @@
 layout (location = 0) out vec4 FragColour;
 
 layout (location = 0) in vec4 localPos;
-layout (location = 1) in vec4 worldPos;
-layout (location = 2) in vec2 tc;
+layout (location = 1) in vec2 tc;
 
 layout (location = 3) in InData
 {
