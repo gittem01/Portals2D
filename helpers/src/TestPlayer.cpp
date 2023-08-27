@@ -1488,12 +1488,15 @@ void TestPlayer::update(float dt, int totalIter)
         bodySwitch = true;
         switchTimer = gameTime;
         float diff = abs(lastDirs[0].x + lastDirs[1].x);
-        if (lastKey != -1 && diff > 1.0f) {
+        if (lastKey != -1 && diff > 1.0f)
+        {
             keyBeforeSwitch = lastKey;
         }
     }
-    if (bodySwitch) {
-        if (gameTime - switchTimer > totalTime) {
+    if (bodySwitch)
+    {
+        if (gameTime - switchTimer > totalTime)
+        {
             bodySwitch = false;
             lastBody = nullptr;
         }
@@ -1504,21 +1507,27 @@ void TestPlayer::update(float dt, int totalIter)
         speedOffset = platformBody->GetLinearVelocity().x;
     }
 
-    if (wh->keyData[GLFW_KEY_D] && wh->keyData[GLFW_KEY_A]) {
-        if (lastDoubleKey == -1) {
+    if (wh->keyData[GLFW_KEY_D] && wh->keyData[GLFW_KEY_A])
+    {
+        if (lastDoubleKey == -1)
+        {
             right = true;
         }
-        else if (lastDoubleKey == GLFW_KEY_A) {
+        else if (lastDoubleKey == GLFW_KEY_A)
+{
             right = true;
         }
-        else if (lastDoubleKey == GLFW_KEY_D) {
+        else if (lastDoubleKey == GLFW_KEY_D)
+{
             left = true;
         }
     }
-    else if (wh->keyData[GLFW_KEY_D]) {
+    else if (wh->keyData[GLFW_KEY_D])
+{
         right = true;
     }
-    else if (wh->keyData[GLFW_KEY_A]) {
+    else if (wh->keyData[GLFW_KEY_A])
+{
         left = true;
     }
 
@@ -1543,13 +1552,16 @@ void TestPlayer::update(float dt, int totalIter)
 
     if (!(wh->keyData[GLFW_KEY_A] && wh->keyData[GLFW_KEY_D]))
     {
-        if (wh->keyData[GLFW_KEY_A]) {
+        if (wh->keyData[GLFW_KEY_A])
+        {
             lastDoubleKey = GLFW_KEY_A;
         }
-        else if (wh->keyData[GLFW_KEY_D]) {
+        else if (wh->keyData[GLFW_KEY_D])
+        {
             lastDoubleKey = GLFW_KEY_D;
         }
-        else {
+        else
+        {
             lastDoubleKey = -1;
         }
     }

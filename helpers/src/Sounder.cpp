@@ -205,7 +205,6 @@ ALuint Sounder::playLoopingSound(ALuint buffer)
 void Sounder::stopSound(ALuint source)
 {
     alSourceStop(source);
-
 }
 
 void Sounder::stopLoopingSound(ALuint source)
