@@ -248,7 +248,7 @@ public:
     void updateImageDescriptors(s_texture* tex, VkDescriptorSetLayout& setLayout);
     void createImage(uint32_t width, uint32_t p_height, uint32_t mipLevels,
                      VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                     VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+                     VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth=1, uint32_t arrayLayers=1);
 
     void registerDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness);
     void addDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness);

@@ -262,7 +262,7 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
 
         s_laserUbo* laserUbo;
         vkMapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0]->memory,
-            laserOffset * sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
+            laserOffset * sizeof(s_laserUbo) * 1000, sizeof(s_laserUbo), 0, (void**)&laserUbo);
         laserUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
         laserUbo->colour = glm::vec4(1.0, 0.0, 0.0, 1.0);
         laserUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);

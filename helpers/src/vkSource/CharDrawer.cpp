@@ -5,6 +5,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vkInit.h>
 
+// use noto sans fonts
+
 std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 {
     std::vector<uint32_t> codePoints;
@@ -62,20 +64,19 @@ std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
     return codePoints;
 }
 
-s_texture* tex;
-
 CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
 {
-    IOHelper::getAssetsFolder();
-    //fontFile = "Roboto-Regular.ttf";
+    fontFile = "NotoSans-Regular.ttf";
     std::vector<unsigned char> fontData;
     stbtt_fontinfo fontInfo;
     loadFontFile(fontFile, fontData, fontInfo);
 
+    s_texture* tex;
+
     this->thinDrawer = thinDrawer;
 
-    int targetWidth = 1000;
-    int targetHeight = 1000;
+    int targetWidth = 200;
+    int targetHeight = 200;
 
     std::string file_path = IOHelper::assetsFolder + "texts/testText.txt";
 
@@ -88,12 +89,21 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
     // Convert the UTF-8 encoded bytes to Unicode code points
     std::vector<uint32_t> codePoints = utf8ToUnicode(utf8String);
 
+    renderDatas.push_back(std::vector<s_charRenderData>());
+
     for (uint32_t codepoint : codePoints)
     {
         if (codepoint == 32)
         {
-            renderDatas.push_back({ {0.3, 0.0, 0.0, 0.0}, nullptr });
+            renderDatas[0].push_back({ {0.3, 0.0, 0.0, 0.0}, nullptr });
             continue;
+        }
+
+        auto& iterFind = codepointMap.find(codepoint);
+        if (iterFind != codepointMap.end())
+        {
+            renderDatas[0].push_back((*iterFind).second);
+			continue;
         }
 
         float scale = stbtt_ScaleForPixelHeight(&fontInfo, targetHeight);
@@ -113,6 +123,17 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
 
         // Render the character into the bitmap
         int glyph = stbtt_FindGlyphIndex(&fontInfo, codepoint);
+        if (glyph == 0)
+        {
+            codepoint = 0;
+            auto& iterFind = codepointMap.find(0);
+            if (iterFind != codepointMap.end())
+            {
+                renderDatas[0].push_back((*iterFind).second);
+                continue;
+            }
+        }
+
         int width, height, xOffset, yOffset;
         unsigned char* bitmap = stbtt_GetGlyphBitmap(&fontInfo, scale, scale, glyph, &width, &height, &xOffset, &yOffset);
 
@@ -125,15 +146,18 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
         texData.height = height;
         texData.numChannels = 1;
         tex = (s_texture*)malloc(sizeof(s_texture));
+        
         thinDrawer->loadTextureFromMemory(&texData, tex, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
         IOHelper::updateTextureSet(tex);
 
         s_charRenderData rData;
-        rData.size_leftBotMargin = glm::vec4((float)width / targetWidth, (float)height / targetHeight, left, toMid);
+        rData.size_leftBotMargin = glm::vec4((float)width / targetHeight, (float)height / targetHeight, left, toMid);
         rData.tex = tex;
 
-        renderDatas.push_back(rData);
+        codepointMap[codepoint] = rData;
+
+        renderDatas[0].push_back(rData);
 
         stbtt_FreeBitmap(bitmap, nullptr);
     }
@@ -142,7 +166,7 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
     thinDrawer->shaders.push_back(fontShader);
     fontShader->init();
 
-    //thinDrawer->drawFuncs.push_back({ draw, this });
+    thinDrawer->drawFuncs.push_back({ draw, this });
 }
 
 void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
@@ -161,7 +185,7 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
     float x = 0.0;
     s_charRenderData prevData;
     prevData.size_leftBotMargin = { 0, 0, 0, 0 };
-    for (auto& data : cd->renderDatas)
+    for (const auto& data : cd->renderDatas[0])
     {
         if (data.tex == nullptr)
         {
@@ -170,7 +194,7 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
             continue;
         }
 
-        x += data.size_leftBotMargin.x * 0.5 + prevData.size_leftBotMargin.x * 0.5 + data.size_leftBotMargin.z;
+        x += data.size_leftBotMargin.x * 0.5 + prevData.size_leftBotMargin.x * 0.5 + data.size_leftBotMargin.z + 0.1;
         glm::vec4 d = data.size_leftBotMargin;
         d.x = x;
         d.y = data.size_leftBotMargin.w;

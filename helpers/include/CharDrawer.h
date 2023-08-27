@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 
 #include <stb_truetype.h>
 #include <FontShader.h>
@@ -20,7 +21,8 @@ public:
 	class ThinDrawer* thinDrawer;
 	FontShader* fontShader;
 
-	std::vector<s_charRenderData> renderDatas;
+	std::vector<std::vector<s_charRenderData>> renderDatas;
+	std::map<int, s_charRenderData> codepointMap;
 
 	CharDrawer(ThinDrawer* thinDrawer, const char* fontFile);
 

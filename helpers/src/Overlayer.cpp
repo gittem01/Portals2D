@@ -268,7 +268,7 @@ void Overlayer::update()
         char leftX = this->leftX - xSize + itemRatio * xSize;
         char upY = ySize * 0.5f;
         
-        char hoverGridX = std::floor((p.x - leftX) / 9.0f);
+        char hoverGridX = std::floor((p.x - leftX - 0.5f) / 9.0f);
         char hoverGridY = std::floor((upY - p.y) / 9.0f);
 
         char hoverIndex = -1;

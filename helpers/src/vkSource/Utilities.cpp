@@ -104,16 +104,16 @@ uint32_t ThinDrawer::getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags
 
 void ThinDrawer::createImage(uint32_t p_width, uint32_t p_height, uint32_t mipLevels,
                              VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                             VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+                             VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth, uint32_t arrayLayers)
 {
     VkImageCreateInfo imageInfo = { };
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = p_width;
     imageInfo.extent.height = p_height;
-    imageInfo.extent.depth = 1;
+    imageInfo.extent.depth = depth;
     imageInfo.mipLevels = mipLevels;
-    imageInfo.arrayLayers = 1;
+    imageInfo.arrayLayers = arrayLayers;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -202,7 +202,7 @@ void ThinDrawer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t te
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
     {
-        printf("linear blitting is not supported");
+        printf("linear blitting is not supported - (mipmapError)\n");
         exit(-1);
     }
 
@@ -323,7 +323,7 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
 
-    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))
+    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) && format == VK_FORMAT_R8G8B8A8_SRGB)
     {
         format = VK_FORMAT_R8G8B8A8_UNORM;
     }
@@ -362,17 +362,6 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
     imageExtent.height = static_cast<uint32_t>(texData->height);
     imageExtent.depth = 1;
 
-    VkBufferImageCopy copyRegion = { };
-    copyRegion.bufferOffset = 0;
-    copyRegion.bufferRowLength = 0;
-    copyRegion.bufferImageHeight = 0;
-
-    copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.imageSubresource.mipLevel = 0;
-    copyRegion.imageSubresource.baseArrayLayer = 0;
-    copyRegion.imageSubresource.layerCount = 1;
-    copyRegion.imageExtent = imageExtent;
-
     createImage(texture->width, texture->height, texture->mipLevels, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         texture->image, texture->deviceMemory);
@@ -393,6 +382,17 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
     imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+    VkBufferImageCopy copyRegion = { };
+    copyRegion.bufferOffset = 0;
+    copyRegion.bufferRowLength = 0;
+    copyRegion.bufferImageHeight = 0;
+
+    copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.imageSubresource.mipLevel = 0;
+    copyRegion.imageSubresource.baseArrayLayer = 0;
+    copyRegion.imageSubresource.layerCount = 1;
+    copyRegion.imageExtent = imageExtent;
 
     vkCmdPipelineBarrier(
         copyCmd, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
