@@ -5,8 +5,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vkInit.h>
 
-// use noto sans fonts
-
 std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 {
     std::vector<uint32_t> codePoints;
@@ -83,19 +81,19 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
     // Read the file contents as a sequence of bytes
     std::string utf8String((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-    std::vector<s_charRenderData> rd = getRenderData(utf8String, targetHeight);
+    std::vector<s_charRenderData> rd = getRenderData(utf8String, 100);
     renderDatas.push_back({ rd, { 0.0, 0.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });
 
-    utf8String = "Bottom Line";
-    rd = getRenderData(utf8String, targetHeight);
+    utf8String = u8"Bottom Line";
+    rd = getRenderData(utf8String, 500);
     renderDatas.push_back({ rd, { 0.0, -1.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 0.5 } });
 
-    utf8String = "Third Line of sigğht is visible";
-    rd = getRenderData(utf8String, targetHeight);
+    utf8String = u8"Third Line of sigğht is visible";
+    rd = getRenderData(utf8String, 1000);
     renderDatas.push_back({ rd, { 0.0, -2.0, 1.0, 0.0 }, { 1.0, 0.0, 0.0, 1.0 } });
 
-    utf8String = "Now we are at 4444444444444444444\n";
-    rd = getRenderData(utf8String, targetHeight);
+    utf8String = u8"Now we are at 4444444444444444444\n";
+    rd = getRenderData(utf8String, 2000);
     renderDatas.push_back({ rd, { 0.0, -3.0, 1.0, 0.0 }, { 1.0, 0.0, 0.0, 0.5 } });
 
     fontShader = new FontShader(thinDrawer);
@@ -220,7 +218,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
         texData.numChannels = 1;
         s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
 
-        thinDrawer->loadTextureFromMemory(&texData, tex, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+        thinDrawer->loadTextureFromMemory(&texData, tex, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_LINEAR, -0.3);
 
         IOHelper::updateTextureSet(tex);
 
