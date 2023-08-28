@@ -1,4 +1,4 @@
-#define STB_TRUETYPE_IMPLEMENTATION
+﻿#define STB_TRUETYPE_IMPLEMENTATION
 
 #include <CharDrawer.h>
 #include <ThinDrawer.h>
@@ -68,10 +68,7 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
 {
     fontFile = "NotoSans-Regular.ttf";
     std::vector<unsigned char> fontData;
-    stbtt_fontinfo fontInfo;
     loadFontFile(fontFile, fontData, fontInfo);
-
-    s_texture* tex;
 
     this->thinDrawer = thinDrawer;
 
@@ -86,24 +83,100 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
     // Read the file contents as a sequence of bytes
     std::string utf8String((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-    // Convert the UTF-8 encoded bytes to Unicode code points
-    std::vector<uint32_t> codePoints = utf8ToUnicode(utf8String);
+    std::vector<s_charRenderData> rd = getRenderData(utf8String, targetHeight);
+    renderDatas.push_back({ rd, { 0.0, 0.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });
 
-    renderDatas.push_back(std::vector<s_charRenderData>());
+    utf8String = "Bottom Line";
+    rd = getRenderData(utf8String, targetHeight);
+    renderDatas.push_back({ rd, { 0.0, -1.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 0.5 } });
+
+    utf8String = "Third Line of sigğht is visible";
+    rd = getRenderData(utf8String, targetHeight);
+    renderDatas.push_back({ rd, { 0.0, -2.0, 1.0, 0.0 }, { 1.0, 0.0, 0.0, 1.0 } });
+
+    utf8String = "Now we are at 4444444444444444444\n";
+    rd = getRenderData(utf8String, targetHeight);
+    renderDatas.push_back({ rd, { 0.0, -3.0, 1.0, 0.0 }, { 1.0, 0.0, 0.0, 0.5 } });
+
+    fontShader = new FontShader(thinDrawer);
+    thinDrawer->shaders.push_back(fontShader);
+    fontShader->init();
+
+    thinDrawer->drawFuncs.push_back({ draw, this });
+}
+
+void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
+{
+    CharDrawer* cd = (CharDrawer*)ptr;
+    const VkDeviceSize offsets = 0;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * cd->thinDrawer->lastSwapChainImageIndex;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, cd->fontShader->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &cd->fontShader->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        cd->fontShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    for (const auto& data : cd->renderDatas)
+    {
+        const glm::vec2 posOffset = glm::vec2(data.posScale.x, data.posScale.y);
+        const float scale = data.posScale.z;
+
+        float x = 0.0;
+
+        s_charRenderData prevData;
+        prevData.size_leftBotMargin = { 0, 0, 0, 0 };
+
+        s_textData texData;
+        texData.color = data.color;
+
+        for (auto& chrData : data.charDatas)
+        {
+            if (chrData.tex == nullptr)
+            {
+                x += chrData.size_leftBotMargin.x + prevData.size_leftBotMargin.x * 0.5;
+                prevData.size_leftBotMargin = { 0, 0, 0, 0 };
+                continue;
+            }
+
+            x += chrData.size_leftBotMargin.x * 0.5 + prevData.size_leftBotMargin.x * 0.5 + (x != 0 ? chrData.size_leftBotMargin.z : 0.0);
+            
+            texData.data.x = x * scale + posOffset.x;
+            texData.data.y = chrData.size_leftBotMargin.w * scale + posOffset.y;
+            texData.data.z = chrData.size_leftBotMargin.x * scale;
+            texData.data.w = chrData.size_leftBotMargin.y * scale;
+            
+            vkCmdPushConstants(cmdBuff, cd->fontShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_textData), (void*)&texData);
+            vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                cd->fontShader->pipelineLayout, 1, 1, &chrData.tex->set, 0, VK_NULL_HANDLE);
+
+            vkCmdDraw(cmdBuff, cd->fontShader->buffers[0]->count, 1, 0, 0);
+            prevData = chrData;
+        }
+    }
+}
+
+std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, float targetHeight)
+{
+    // Convert the UTF-8 encoded bytes to Unicode code points
+    std::vector<uint32_t> codePoints = utf8ToUnicode(text);
+
+    std::vector<s_charRenderData> rd;
 
     for (uint32_t codepoint : codePoints)
     {
         if (codepoint == 32)
         {
-            renderDatas[0].push_back({ {0.3, 0.0, 0.0, 0.0}, nullptr });
+            rd.push_back({ {0.25, 0.0, 0.0, 0.0}, nullptr });
             continue;
         }
 
-        const auto& iterFind = codepointMap.find(codepoint);
+        const auto& iterFind = codepointMap.find({ codepoint, targetHeight});
         if (iterFind != codepointMap.end())
         {
-            renderDatas[0].push_back((*iterFind).second);
-			continue;
+            rd.push_back((*iterFind).second);
+            continue;
         }
 
         float scale = stbtt_ScaleForPixelHeight(&fontInfo, targetHeight);
@@ -126,10 +199,10 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
         if (glyph == 0)
         {
             codepoint = 0;
-            const auto& iterFind = codepointMap.find(0);
+            const auto& iterFind = codepointMap.find({ 0, targetHeight});
             if (iterFind != codepointMap.end())
             {
-                renderDatas[0].push_back((*iterFind).second);
+                rd.push_back((*iterFind).second);
                 continue;
             }
         }
@@ -138,15 +211,15 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
         unsigned char* bitmap = stbtt_GetGlyphBitmap(&fontInfo, scale, scale, glyph, &width, &height, &xOffset, &yOffset);
 
         float toMid = 0.5 - ((float)y / targetHeight + ((float)height * 0.5f / targetHeight));
-        float left = lsb * scale / targetWidth;
+        float left = lsb * scale / targetHeight;
 
         s_textureData texData;
         texData.data = bitmap;
         texData.width = width;
         texData.height = height;
         texData.numChannels = 1;
-        tex = (s_texture*)malloc(sizeof(s_texture));
-        
+        s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
+
         thinDrawer->loadTextureFromMemory(&texData, tex, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
         IOHelper::updateTextureSet(tex);
@@ -155,60 +228,14 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
         rData.size_leftBotMargin = glm::vec4((float)width / targetHeight, (float)height / targetHeight, left, toMid);
         rData.tex = tex;
 
-        codepointMap[codepoint] = rData;
+        codepointMap[{ codepoint, targetHeight }] = rData;
 
-        renderDatas[0].push_back(rData);
+        rd.push_back(rData);
 
         stbtt_FreeBitmap(bitmap, nullptr);
     }
 
-    fontShader = new FontShader(thinDrawer);
-    thinDrawer->shaders.push_back(fontShader);
-    fontShader->init();
-
-    thinDrawer->drawFuncs.push_back({ draw, this });
-}
-
-void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
-{
-    CharDrawer* cd = (CharDrawer*)ptr;
-    const VkDeviceSize offsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * cd->thinDrawer->lastSwapChainImageIndex;
-
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, cd->fontShader->pipeline);
-
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &cd->fontShader->buffers[0]->buffer, &offsets);
-    
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        cd->fontShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    const float scale = 2.4f;
-    const glm::vec2 posOffset = glm::vec2(-100.0, 0.5);
-    float x = 0.0;
-    s_charRenderData prevData;
-    prevData.size_leftBotMargin = { 0, 0, 0, 0 };
-    for (const auto& data : cd->renderDatas[0])
-    {
-        if (data.tex == nullptr)
-        {
-            x += data.size_leftBotMargin.x + prevData.size_leftBotMargin.x * 0.5;
-            prevData.size_leftBotMargin = { 0, 0, 0, 0 };
-            continue;
-        }
-
-        x += data.size_leftBotMargin.x * 0.5 + prevData.size_leftBotMargin.x * 0.5 + data.size_leftBotMargin.z;
-        glm::vec4 d = data.size_leftBotMargin;
-        d.x = x * scale + posOffset.x;
-        d.y = data.size_leftBotMargin.w * scale + posOffset.y;
-        d.z = data.size_leftBotMargin.x * scale;
-        d.w = data.size_leftBotMargin.y * scale;
-        vkCmdPushConstants(cmdBuff, cd->fontShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_textData), (void*)glm::value_ptr(d));
-        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            cd->fontShader->pipelineLayout, 1, 1, &data.tex->set, 0, VK_NULL_HANDLE);
-
-        vkCmdDraw(cmdBuff, cd->fontShader->buffers[0]->count, 1, 0, 0);
-        prevData = data;
-    }
+    return rd;
 }
 
 bool CharDrawer::loadFontFile(const std::string& filename, std::vector<unsigned char>& fontData, stbtt_fontinfo& fontInfo)

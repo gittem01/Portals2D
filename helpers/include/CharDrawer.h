@@ -15,16 +15,26 @@ typedef struct CharRenderData
 	s_texture* tex;
 } s_charRenderData;
 
+typedef struct LineRenderData
+{
+	std::vector<s_charRenderData> charDatas;
+	glm::vec4 posScale; // startX, startY, scale, unused
+	glm::vec4 color;
+} s_lineRenderData;
+
 class CharDrawer
 {
 public:
 	class ThinDrawer* thinDrawer;
 	FontShader* fontShader;
+	stbtt_fontinfo fontInfo;
 
-	std::vector<std::vector<s_charRenderData>> renderDatas;
-	std::map<int, s_charRenderData> codepointMap;
+	std::vector<s_lineRenderData> renderDatas;
+	std::map<std::pair<int, int>, s_charRenderData> codepointMap;
 
 	CharDrawer(ThinDrawer* thinDrawer, const char* fontFile);
+
+	std::vector<s_charRenderData> getRenderData(const std::string& text, float targetHeight);
 
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 

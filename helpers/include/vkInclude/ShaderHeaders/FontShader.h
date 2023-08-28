@@ -5,6 +5,7 @@
 typedef struct TextData
 {
     glm::vec4 data;
+    glm::vec4 color;
 } s_textData;
 
 class FontShader : public ShaderBase
