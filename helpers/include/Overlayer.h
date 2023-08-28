@@ -12,6 +12,7 @@ public:
 	class WindowHandler* wh;
 	class ArrowShader* as;
 	class ItemList* il;
+	class OptionShader* os;
 	class ManyTexture* mt;
 	class Sounder* sounder;
 	class Camera cam;
@@ -41,8 +42,6 @@ public:
 
 	static void maper(void* ptr);
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
-
-	static void windowSizeEventCallback(GLFWwindow*, int, int);
 
 	void addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation=glm::vec2(0.0, 0.0), int numTextureObjects=1,
 		glm::ivec2 gridScale=glm::ivec2(1, 1), float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1);

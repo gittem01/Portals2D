@@ -2,6 +2,7 @@
 #include <Game.h>
 #include <ThinDrawer.h>
 #include <Sounder.h>
+#include <OptionShader.h>
 
 // funnel thingy
 //if (wh->keyData[GLFW_KEY_SPACE] == 2)
@@ -60,6 +61,10 @@ Overlayer::Overlayer(Game* game)
 	this->as = thinDrawer->arrowShader;
     this->il = thinDrawer->itemList;
     this->mt = thinDrawer->manyTexture;
+
+    this->os = new OptionShader(thinDrawer);
+    thinDrawer->shaders.push_back(os);
+    os->init();
 
     cam.zoom = 1.0;
     cam.baseX = abs(leftX) * 2.0;
@@ -146,6 +151,29 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
     const VkDeviceSize offsets = 0;
     const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->lastSwapChainImageIndex + 8);
+
+    OptionShader* os = ol->os;
+
+    // arrow
+    s_optionData optData;
+    optData.posSize = glm::vec4(0.0, 0.0, 60.0, 64.0);
+    optData.data.x = 0x10f13175;
+
+    glm::vec2 cp = -ol->cam.getMouseCoords();
+    cp.y += 16.0;
+    int intPosY = (int)(cp.y / 4.0);
+    optData.data.x |= (intPosY & 0xff) << 24;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, os->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        os->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdPushConstants(cmdBuff, os->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_optionData), (void*)&optData);
+
+    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
 
     if (ol->itemRatio > 0.0)
     {
