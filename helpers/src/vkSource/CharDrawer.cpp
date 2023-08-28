@@ -99,7 +99,7 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
             continue;
         }
 
-        auto& iterFind = codepointMap.find(codepoint);
+        const auto& iterFind = codepointMap.find(codepoint);
         if (iterFind != codepointMap.end())
         {
             renderDatas[0].push_back((*iterFind).second);
@@ -126,7 +126,7 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
         if (glyph == 0)
         {
             codepoint = 0;
-            auto& iterFind = codepointMap.find(0);
+            const auto& iterFind = codepointMap.find(0);
             if (iterFind != codepointMap.end())
             {
                 renderDatas[0].push_back((*iterFind).second);
@@ -182,6 +182,8 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         cd->fontShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
+    const float scale = 2.4f;
+    const glm::vec2 posOffset = glm::vec2(-100.0, 0.5);
     float x = 0.0;
     s_charRenderData prevData;
     prevData.size_leftBotMargin = { 0, 0, 0, 0 };
@@ -194,12 +196,12 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
             continue;
         }
 
-        x += data.size_leftBotMargin.x * 0.5 + prevData.size_leftBotMargin.x * 0.5 + data.size_leftBotMargin.z + 0.1;
+        x += data.size_leftBotMargin.x * 0.5 + prevData.size_leftBotMargin.x * 0.5 + data.size_leftBotMargin.z;
         glm::vec4 d = data.size_leftBotMargin;
-        d.x = x;
-        d.y = data.size_leftBotMargin.w;
-        d.z = data.size_leftBotMargin.x;
-        d.w = data.size_leftBotMargin.y;
+        d.x = x * scale + posOffset.x;
+        d.y = data.size_leftBotMargin.w * scale + posOffset.y;
+        d.z = data.size_leftBotMargin.x * scale;
+        d.w = data.size_leftBotMargin.y * scale;
         vkCmdPushConstants(cmdBuff, cd->fontShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_textData), (void*)glm::value_ptr(d));
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             cd->fontShader->pipelineLayout, 1, 1, &data.tex->set, 0, VK_NULL_HANDLE);

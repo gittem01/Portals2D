@@ -88,8 +88,7 @@ void ThinDrawer::initExtra()
         shader->init();
     }
 
-    IOHelper::loadTexture("white.png");
-    IOHelper::loadTexture("ww.png");
+    IOHelper::loadTexture("null.png");
 
     initImgui();
 }
@@ -1234,8 +1233,8 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
             }
             catch (const std::exception& ex)
             {
-                printf("failed to load texture %s. Using edfault texture\n", textures[i].data());
-                renderGroup->imageSets.push_back(&(IOHelper::textureMap["white.png"]->set));
+                printf("failed to load texture %s. Using default texture\n", textures[i].data());
+                renderGroup->imageSets.push_back(&(IOHelper::textureMap["null.png"]->set));
             }
         }
         else
@@ -1246,7 +1245,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
 
     if (textures.size() == 0)
     {
-        renderGroup->imageSets.push_back(&(IOHelper::textureMap["white.png"]->set));
+        renderGroup->imageSets.push_back(&(IOHelper::textureMap["null.png"]->set));
     }
 
     s_renderBody* renderBody = new s_renderBody;
