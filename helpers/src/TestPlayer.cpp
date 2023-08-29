@@ -165,8 +165,8 @@ void TestPlayer::memMap(void* ptr)
         float sign = (linVel.x > 0) ? -1 : +1;
         float len = linVel.Length();
         tp->rotSpeed += len * Game::object->deltaTime * 10.0 * sign;
-        tp->rotSpeed = fmin(tp->rotSpeed, +len * 2.0 * b2_pi * 0.75);
-        tp->rotSpeed = fmax(tp->rotSpeed, -len * 2.0 * b2_pi * 0.75);
+        tp->rotSpeed = fmin(tp->rotSpeed, +len * 1.0 * b2_pi * 0.75);
+        tp->rotSpeed = fmax(tp->rotSpeed, -len * 1.0 * b2_pi * 0.75);
     }
 
     if ((diff.Length() > 0.2 || linVel.Length() > 1.0) && tp->grounded)
@@ -223,7 +223,7 @@ void TestPlayer::memMap(void* ptr)
     float ratio01 = 1.0 - (tp->renderData.legRatio - 0.25) / 0.25;
     ratio01 = pow(ratio01, 15.0);
 
-    tp->renderData.ld.legThick = 0.1;
+    tp->renderData.ld.legThick = 0.12;
     tp->renderData.ld.circR = tp->renderData.legRatio * 0.5 * (1.0 - ratio01) + 10.0 * ratio01;
     tp->renderData.ld.legLen = tp->renderData.legRatio * 0.5;
     tp->renderData.ld.legOuterCircAng = tp->legAng;
@@ -364,7 +364,7 @@ void TestPlayer::renderInit()
     renderData.legRatio = 0.25;
     renderData.margin1 = (1.0 - renderData.headRatio - renderData.bodyRatio - renderData.legRatio) * 0.5;
     renderData.margin2 = (1.0 - renderData.headRatio - renderData.bodyRatio - renderData.legRatio) * 0.5;
-    renderData.lineSize = 0.025;
+    renderData.lineSize = 0.035;
     renderData.headCircles = glm::vec2(0.07, 0.07);
     renderData.bodyCircles = 0.1;
 
@@ -568,7 +568,7 @@ void TestPlayer::handleBodyRotation()
         {
             l_portalBody->body->SetAngularVelocity(0.0f);
         }
-        pb->body->SetAngularVelocity(-10.0f * (abs(ang) / b2_pi));
+        pb->body->SetAngularVelocity(-18.0f * (abs(ang) / b2_pi));
     }
     else
     {
@@ -576,7 +576,7 @@ void TestPlayer::handleBodyRotation()
         {
             l_portalBody->body->SetAngularVelocity(0.0f);
         }
-        pb->body->SetAngularVelocity(+10.0f * (abs(ang) / b2_pi));
+        pb->body->SetAngularVelocity(+18.0f * (abs(ang) / b2_pi));
     }
 }
 
@@ -1477,7 +1477,7 @@ void TestPlayer::update(float dt, int totalIter)
 {
     gameTime = Game::object->gameTime;
 
-    const float maxSpeed = 5.0f;
+    const float maxSpeed = 10.0f;
     float speedOffset = 0.0f;
     avgNormalX /= numNormals;
     setFriction = 0.0;
@@ -1610,9 +1610,9 @@ void TestPlayer::update(float dt, int totalIter)
     if (left || right)
     {
         //printf("2\n");
-        const float groundMult = 40.0f;
-        const float airMult = 10.0f;
-        const float fwdGrndSlw = 5.0f;
+        const float groundMult = 80.0f;
+        const float airMult = 20.0f;
+        const float fwdGrndSlw = 10.0f;
         if (right)
         {
             float addition;
@@ -1777,7 +1777,7 @@ void TestPlayer::update(float dt, int totalIter)
         Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
     }
 
-    lv.y = std::fmax(lv.y, -20.0);
+    lv.y = std::fmax(lv.y, -34.0);
 
     pb->body->SetLinearVelocity(lv);
 

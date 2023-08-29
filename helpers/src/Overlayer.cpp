@@ -1,8 +1,9 @@
-#include <Overlayer.h>
+﻿#include <Overlayer.h>
 #include <Game.h>
 #include <ThinDrawer.h>
 #include <Sounder.h>
 #include <OptionShader.h>
+#include <CharDrawer.h>
 
 // funnel thingy
 //if (wh->keyData[GLFW_KEY_SPACE] == 2)
@@ -52,6 +53,8 @@
 //    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
 //}
 
+std::vector<s_charRenderData> rd;
+
 Overlayer::Overlayer(Game* game)
 {
 	this->game = game;
@@ -80,6 +83,8 @@ Overlayer::Overlayer(Game* game)
     thinDrawer->memMapFuncs.push_back({ maper, (void*)this });
 	thinDrawer->lateDrawFuncs.push_back({ draw, (void*)this });
 
+    this->cd = new CharDrawer(thinDrawer, "NotoSans-Medium.ttf");
+
     startAlloc = mt->lastAvailablePos;
     mt->lastAvailablePos += numX * numY * 4;
 
@@ -97,6 +102,9 @@ Overlayer::Overlayer(Game* game)
     addItem("LightBridge", "lightBridge.png", LIGHT_BRIDGE, { 0.5, +0.402 }, 1, { 1, 1 }, 0.8, true, 0);
     addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
+    
+    std::string utf8String = u8"Bottom Line ğüş";
+    rd = cd->getRenderData(utf8String, 100);
 }
 
 void Overlayer::maper(void* ptr)
@@ -156,13 +164,24 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
     // arrow
     s_optionData optData;
-    optData.posSize = glm::vec4(0.0, 0.0, 60.0, 64.0);
+    optData.posSize = glm::vec4(0.0, 41.0, 30.0, 32.0);
     optData.data.x = 0x10f13175;
+    optData.data.y = 1;
 
-    glm::vec2 cp = -ol->cam.getMouseCoords();
-    cp.y += 16.0;
-    int intPosY = (int)(cp.y / 4.0);
-    optData.data.x |= (intPosY & 0xff) << 24;
+    glm::vec2 cp = ol->cam.getMouseCoords();
+
+    if (cp.x > optData.posSize.x && cp.x < optData.posSize.x + optData.posSize.z &&
+        cp.y < optData.posSize.y && cp.y > optData.posSize.y - optData.posSize.w)
+    {
+        int intPosY = (int)((-cp.y + optData.posSize.y) / 4.0);
+        optData.data.x |= (intPosY & 0xff) << 24;
+    }
+    else
+    {
+        optData.data.x |= 0xF << 24;
+    }
+
+    ol->cd->renderDatas.push_back({ rd, {optData.posSize.x + 4.5, optData.posSize.y - 2.0, 3.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, os->pipeline);
 

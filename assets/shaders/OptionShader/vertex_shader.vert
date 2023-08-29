@@ -21,5 +21,5 @@ void main()
 {
     localPos = vertex * pc.posSize.zw;
 
-	gl_Position = sharedUboData.orthoMatrix * vec4(vertex * pc.posSize.zw + pc.posSize.xy, 0.0, 1.0);
+	gl_Position = sharedUboData.orthoMatrix * vec4(vertex * pc.posSize.zw + pc.posSize.xy + vec2(pc.posSize.z, -pc.posSize.w) * 0.5, 0.0, 1.0);
 }

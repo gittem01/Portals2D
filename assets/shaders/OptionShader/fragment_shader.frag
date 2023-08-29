@@ -19,7 +19,6 @@ float sdBox(in vec2 p, in vec2 b)
 float sdLine(in vec2 p, float x)
 {
     return p.x - x;
-    return abs(p.x - x);
 }
 
 float sdLineH(in float yPos, float sizeMult)
@@ -43,29 +42,34 @@ float udSegment(in vec2 p, in vec2 a, in vec2 b)
 
 float arrow(vec2 p, vec2 arrowPoint, float sizeMult)
 {
-    float s1 = udSegment(p, arrowPoint, arrowPoint + vec2(-0.5, +0.3) * sizeMult);
-    float s2 = udSegment(p, arrowPoint, arrowPoint + vec2(-0.5, -0.3) * sizeMult);
+    float s1 = udSegment(p, arrowPoint, arrowPoint + vec2(-0.2, +0.2) * sizeMult);
+    float s2 = udSegment(p, arrowPoint, arrowPoint + vec2(-0.2, -0.2) * sizeMult);
     
     return min(s1, s2);
 }
 
 void main()
 {
-    float sizeMult = pc.posSize.w / 16.0;
-    vec2 boxSize = pc.posSize.zw * 0.5;
+    float sizeMult = 4.0;
+    vec2 boxSize = pc.posSize.zw;
     vec2 p = localPos * 2.0;
     p -= boxSize;
     
 	float d = sdBox(p + boxSize, boxSize);
 
-    const float smoother = 0.1 * sizeMult;
+    const float smoother = 0.15 * sizeMult;
 
     float lMult = (sign(-d) + 1.0) * 0.5;
 
     vec4 col = (d > 0.0) ? vec4(0.0, 0.0, 0.0, 0.0) : vec4(1.0, 1.0, 1.0, 1.0);
     
-    float lsd = sdLine(p, -boxSize.x * 2.0 + 2.0 * sizeMult);
-    col = mix(col, vec4(0.5, 0.5, 0.5, 1.0), (1.0 - smoothstep(0.0, smoother * 0.4, lsd)) * lMult);
+    float lsd;
+
+    if (pc.data.y > 0)
+    {
+        lsd = sdLine(p, -boxSize.x * 2.0 + 2.0 * sizeMult);
+        col = mix(col, vec4(0.35, 0.35, 0.35, 1.0), (1.0 - smoothstep(0.0, smoother * 0.4, lsd)) * lMult);
+    }
     
     col = mix(col, vec4(0.0, 0.0, 0.0, 1.0), 1.0 - smoothstep(0.0, smoother, abs(d)));
     
@@ -78,7 +82,7 @@ void main()
     if ((1 << index & mask >> 16) > 0)
     {
         lsd = arrow(p, vec2(-0.5 * sizeMult, -float(index) * 2.0 * sizeMult - sizeMult), sizeMult);
-        col = mix(col, vec4(0.2, 0.2, 0.2, 1.0), (1.0 - smoothstep(0.0, smoother, lsd)) * lMult);
+        col = mix(col, vec4(0.0, 0.0, 0.0, 1.0), (1.0 - smoothstep(0.0, smoother * 1.5, lsd)) * lMult);
     }
     
     if ((mask >> 24 & 0xF) == index)
@@ -89,12 +93,12 @@ void main()
     if ((1 << index & mask) > 0)
     {
         lsd = sdCircle(p + vec2(boxSize.x * 2.0 - sizeMult, float(index) * 2.0 * sizeMult + sizeMult), 0.6 * sizeMult);
-        col = mix(col, vec4(0.1, 0.2, 0.1, 1.0), (1.0 - smoothstep(0.0, smoother * 0.6, lsd)) * lMult);
+        col = mix(col, vec4(0.02, 0.05, 0.02, 1.0), (1.0 - smoothstep(0.0, smoother * 0.6, lsd)) * lMult);
     
         if ((1 << index & mask >> 8) > 0)
         {
             lsd = sdCircle(p + vec2(boxSize.x * 2.0 - sizeMult, float(index) * 2.0 * sizeMult + sizeMult), 0.4 * sizeMult);
-            col = mix(col, vec4(0.2, 1.0, 0.5, 1.0), (1.0 - smoothstep(0.0, smoother * 0.6, lsd)) * lMult);
+            col = mix(col, vec4(0.05, 1.0, 0.2, 1.0), (1.0 - smoothstep(0.0, smoother * 0.6, lsd)) * lMult);
         }
     }    
     

@@ -246,7 +246,7 @@ b2Body* createBox(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, floa
     return body;
 }
 
-b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type, float density=1.0f){
+b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type, float density=1.0f, bool sensor=false){
     b2CircleShape shape;
     shape.m_radius = size;
 
@@ -255,6 +255,7 @@ b2Body* createCircle(b2Vec2 pos, float size, b2World* world, b2BodyType type, fl
     fDef.density = density;
     fDef.restitution = 0.2f;
     fDef.friction = 0.2f;
+    fDef.isSensor = sensor;
 
     b2BodyDef def;
     def.type = type;

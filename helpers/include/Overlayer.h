@@ -14,6 +14,7 @@ public:
 	class ItemList* il;
 	class OptionShader* os;
 	class ManyTexture* mt;
+	class CharDrawer* cd;
 	class Sounder* sounder;
 	class Camera cam;
 

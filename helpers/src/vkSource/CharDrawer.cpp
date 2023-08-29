@@ -64,8 +64,6 @@ std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 
 CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
 {
-	fontFile = "NotoSans-Regular.ttf";
-	std::vector<unsigned char> fontData;
 	loadFontFile(fontFile, fontData, fontInfo);
 
 	this->thinDrawer = thinDrawer;
@@ -81,7 +79,7 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
 	// Read the file contents as a sequence of bytes
 	std::string utf8String((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	std::vector<s_charRenderData> rd = getRenderData(utf8String, 100);
+	std::vector<s_charRenderData> rd = getRenderData(utf8String, 110);
 	renderDatas.push_back({ rd, { 0.0, 0.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });
 
 	utf8String = u8"Bottom Line";
@@ -100,14 +98,14 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
 	thinDrawer->shaders.push_back(fontShader);
 	fontShader->init();
 
-	thinDrawer->drawFuncs.push_back({ draw, this });
+	thinDrawer->lateDrawFuncs.push_back({ draw, this });
 }
 
 void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 {
 	CharDrawer* cd = (CharDrawer*)ptr;
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * cd->thinDrawer->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (cd->thinDrawer->lastSwapChainImageIndex + 8);
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, cd->fontShader->pipeline);
 
@@ -153,6 +151,8 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 			prevData = chrData;
 		}
 	}
+
+	cd->renderDatas.clear();
 }
 
 std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, float targetHeight)
@@ -218,7 +218,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		texData.numChannels = 1;
 		s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
 
-		thinDrawer->loadTextureFromMemory(&texData, tex, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_LINEAR);
+		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_LINEAR, 2);
 
 		IOHelper::updateTextureSet(tex);
 

@@ -457,6 +457,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             fDef.density = fix->GetDensity();
             fDef.restitution = fix->GetRestitution();
             fDef.friction = fix->GetFriction();
+            fDef.isSensor = fix->IsSensor();
             if (c->isReversed ^ pBody->isMirrored)
             {
                 fDef.shape = pBodyData->mirroredShapes[i];

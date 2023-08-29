@@ -2,7 +2,6 @@
 #include <TestCaseIncludes.h>
 #include <Sounder.h>
 #include <Leveler.h>
-#include <CharDrawer.h>
 
 Game* Game::object;
 
@@ -27,9 +26,7 @@ Game::Game()
 
 	sounder = new Sounder();
 
-    new CharDrawer(thinDrawer, "Roboto-Regular.ttf");
-
-    gameStater = &Game::LevelerState;
+    gameStater = &Game::TestState;
 
     glfwShowWindow(thinDrawer->wh->window);
 }

@@ -98,16 +98,19 @@ PortalBody::~PortalBody(){
     pWorld->DestroyBody(body);
 }
 
-void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2){
+void PortalBody::collisionBegin(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2)
+{
     fixtureData* fixData = (fixtureData*)fix2->GetUserData().pointer;
     
     bool shouldCollide = this->shouldCollide(contact, fix1, fix2, fixData);
-    if (!shouldCollide){
+    if (!shouldCollide)
+    {
         contact->SetEnabled(false);
         return;
     }
 
-    if (fixData && fixData->type == F_PORTAL){
+    if (fixData && fixData->type == F_PORTAL)
+    {
         Portal* portal = (Portal*)fixData->data;
         PortalCollisionType out = portal->collisionBegin(contact, fix2, fix1);
         handleOut(fix1, portal, out);

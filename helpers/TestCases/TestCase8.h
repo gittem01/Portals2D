@@ -83,7 +83,7 @@ public:
         srand(2);
         srand(glfwGetTime() * 1000);
         g->pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
-        g->pWorld->SetGravity(b2Vec2(0.0f, -20.0f));
+        g->pWorld->SetGravity(b2Vec2(0.0f, -30.0f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
 
@@ -121,6 +121,19 @@ public:
         createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), g->pWorld, b2_staticBody, true);
         createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(-10.0f, -10.0f), g->pWorld, b2_staticBody, true);
         createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), g->pWorld, b2_staticBody, true);
+
+        const float bSize = 0.1;
+        for (float i = -30; i < 30; i+=3)
+        {
+            for (float j = -200; j < 200; j+=3)
+            {
+                //b2Body* b = createBox(b2Vec2(i, j), b2Vec2(0.5, 0.5), g->pWorld, b2_staticBody);
+                /*createEdge(b2Vec2(j - bSize, i + bSize), b2Vec2(j + bSize, i + bSize), g->pWorld, b2_staticBody, false);
+                createEdge(b2Vec2(j + bSize, i + bSize), b2Vec2(j + bSize, i - bSize), g->pWorld, b2_staticBody, false);
+                createEdge(b2Vec2(j + bSize, i - bSize), b2Vec2(j - bSize, i - bSize), g->pWorld, b2_staticBody, false);
+                createEdge(b2Vec2(j - bSize, i - bSize), b2Vec2(j - bSize, i + bSize), g->pWorld, b2_staticBody, false);*/
+            }
+        }
 
         body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), g->pWorld, b2_kinematicBody, true);
         body->SetTransform(b2Vec2(6.0f, 0.0f), -b2_pi * 0.0f);
@@ -234,48 +247,9 @@ public:
 
     void onUpdate()
     {
+        static int counter = 0;
+
         BaseTestCase::onUpdate();
-
-        /*for (auto ps : outerEdges)
-        {
-            b2Vec2 b2P1 = rbdy->GetWorldPoint(b2Vec2(ps.x, ps.y));
-            b2Vec2 b2P2 = rbdy->GetWorldPoint(b2Vec2(ps.z, ps.w));
-            td->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P2.x, b2P2.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.03, 0.5);
-            td->registerDebugLine(glm::vec4(b2P1.x, b2P1.y, b2P1.x, b2P1.y), glm::vec4(1.0, 0.0, 0.0, 1.0), 0.15, 0.5);
-        }
-
-        glm::vec2 mc = td->wh->cam->getMouseCoords();
-        b2Vec2 diff = b2Vec2(mc.x, mc.y) - rbdy->GetPosition();
-        diff = PortalWorld::rotateVec(diff, -rbdy->GetAngle());
-        diff.Normalize();
-        float diffAng = PortalWorld::calcAngle2(diff);
-
-        int s = 0;
-        int e = angles.size() - 1;
-        for ( ; e - s > 1; )
-        {
-            int p = (e - s) / 2 + s;
-            if (angles[p] < diffAng)
-            {
-                s = p;
-            }
-            else
-            {
-                e = p;
-            }
-        }
-
-        if (angles[0] > diffAng) e = 0;
-        if (angles[angles.size() - 1] < diffAng) e = 0;
-
-        b2Vec2 rotDiff = PortalWorld::rotateVec(diff, b2_pi * 0.5);
-        float vDist = PortalWorld::getRealDist(b2Vec2(0.0, 0.0), rotDiff, b2Vec2(outerVertices[e].pos.x, outerVertices[e].pos.y)) + outerVertices[e].r;
-        diff = PortalWorld::rotateVec(diff, rbdy->GetAngle());
-        rotDiff = PortalWorld::rotateVec(diff, b2_pi * 0.5);
-        b2Vec2 farPos = rbdy->GetPosition() + vDist * diff;
-        b2Vec2 fp1 = farPos - 100.0 * rotDiff;
-        b2Vec2 fp2 = farPos + 100.0 * rotDiff;
-        td->registerDebugLine(glm::vec4(fp1.x, fp1.y, fp2.x, fp2.y), glm::vec4(0.0, 0.0, 1.0, 1.0), 0.06, 0.5);*/
 
         const float speedAddition = 1.5f;
         const float angSpeedAddition = 0.51f;
@@ -301,6 +275,17 @@ public:
         {
             setSpeed += speedAddition * portal2->dir;
         }
+
+        if (td->wh->keyData[GLFW_KEY_K] == 2)
+        {
+            glm::vec2 mp = td->wh->cam->getMouseCoords();
+            b2Body* lastBody = createCircle(b2Vec2(mp.x, mp.y), 0.5f, g->pWorld, b2_dynamicBody, 1.0, true);
+            PortalBody* pbx = g->pWorld->createPortalBody(lastBody);
+            td->debug_addPortalBody(pbx);
+            counter++;
+        }
+
+        printf("%d\n", counter);
 
         bodyToMove->SetLinearVelocity(setSpeed);
         bodyToMove->SetAngularVelocity(setAngle);

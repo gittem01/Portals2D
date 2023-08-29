@@ -460,10 +460,20 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
         pColl = NULL;
     }
 
-    b2WorldManifold wManifold;
-    contact->GetWorldManifold(&wManifold);
+    float angle;
 
-    float angle = pWorld->vecAngle(wManifold.normal, dir);
+    if (fix2->IsSensor())
+    {
+        angle = 0.0;
+    }
+    else
+    {
+        b2WorldManifold wManifold;
+        contact->GetWorldManifold(&wManifold);
+
+        angle = pWorld->vecAngle(wManifold.normal, dir);
+    }
+    
 
     int side = getFixtureSide(fix2);
     bool rayRes = rayCheck(fix2);

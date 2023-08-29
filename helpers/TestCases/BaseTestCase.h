@@ -22,7 +22,7 @@ public:
     bool shouldGetNewTest;
     int testCaseItem;
     
-    double requestedDtPerStep = 0.001;
+    double requestedDtPerStep = 0.002;
 
     void destroy()
     {
@@ -147,6 +147,7 @@ public:
         g->pWorld->SetContactListener(g->contactListener);
         b2Vec2 gravity(0.0f, -10.0f);
         g->pWorld->SetGravity(gravity);
+        g->pWorld->SetAllowSleeping(true);
 
         g->mjh = new mouseJointHandler(g->pWorld, td->wh);
 
@@ -165,6 +166,8 @@ public:
 
     virtual void onUpdate()
     {
+        double physicsTickTime = glfwGetTime();
+
         td->debugLineRegistry.clear();
 
         int requiredIters = fmax(g->deltaTime / requestedDtPerStep, 1);
@@ -180,14 +183,15 @@ public:
 
         for (int i = 0; i < requiredIters; i++)
         {
-			// speeded up 2x times
-            float dt = requiredDt * 2.0;
+            float dt = requiredDt * 1.0;
             g->mjh->mouseHandler(g->frame, requiredIters);
 #if ENABLE_TESTPLAYER
             tp->update(dt, requiredIters);
 #endif
-            g->pWorld->PortalStep(dt, 8, 3);
+            g->pWorld->PortalStep(dt, 1, 1);
         }
+
+        printf("dt: %f\n", glfwGetTime() - physicsTickTime);
     }
 
     void keyHandler(WindowHandler* wh)

@@ -2,7 +2,7 @@
 
 #include <ShaderBase.h>
 
-typedef struct TextData
+typedef struct OptionData
 {
     glm::vec4 posSize;
     glm::ivec4 data;

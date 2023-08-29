@@ -44,6 +44,10 @@ void Camera::updateOrtho()
 
 	camMatrix = glm::ortho(xSides.x, xSides.y, ySides.x, ySides.y, -100.0f, +100.0f);
 	camMatrix[1][1] *= -1;
+
+	//glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), (float)sin(glfwGetTime()) * 10.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	//camMatrix *= rotator;
 }
 
 void Camera::changeZoom(float inc)

@@ -27,6 +27,7 @@ class CharDrawer
 public:
 	class ThinDrawer* thinDrawer;
 	FontShader* fontShader;
+	std::vector<unsigned char> fontData;
 	stbtt_fontinfo fontInfo;
 
 	std::vector<s_lineRenderData> renderDatas;

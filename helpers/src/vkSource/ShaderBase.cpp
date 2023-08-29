@@ -3,8 +3,8 @@
 #include <SwapChain.h>
 #include <vkInit.h>
 
-#define ALLOCATION_COUNT_ALL 2000
-#define ALLOCATION_COUNT_POLY 2000
+#define ALLOCATION_COUNT_ALL 20000
+#define ALLOCATION_COUNT_POLY 20000
 
 ShaderBase::ShaderBase(ThinDrawer* thinDrawer)
 {
