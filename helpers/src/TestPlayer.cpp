@@ -536,24 +536,16 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
 void TestPlayer::camHandle()
 {
     WindowHandler* wh = game->thinDrawer->wh;
-    if (pBody->size() > 1)
-    {
-        b2Vec2 p1 = pBody->at(0)->body->GetPosition();
-        b2Vec2 p2 = pBody->at(1)->body->GetPosition();
 
-        glm::vec2 diff = glm::vec2(abs(p2.x - p1.x), abs(p2.y - p1.y)) / 2.0f + 5.0f;
-        glm::vec2 mid = glm::vec2(p2.x + p1.x, p2.y + p1.y) / 2.0f;
+    glm::f64vec2 mp = wh->cam->getMouseCoords();
+    glm::f64vec2 camDiff = glm::f64vec2(wh->mouseData[0] - wh->windowSizes.x * 0.5, wh->mouseData[1] - wh->windowSizes.y * 0.5);
 
-        glm::vec2 posDiff = mid - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y);
-
-        wh->cam->pos += glm::vec2(posDiff.x, -posDiff.y) * 0.02f;
-    }
-    else
-    {
-        b2Vec2 bp = pBody->at(0)->body->GetPosition();
-        glm::vec2 diff = glm::vec2(bp.x, bp.y) - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y);
-        wh->cam->pos += glm::vec2(diff.x, -diff.y) * 0.02f;
-    }
+    b2Vec2 bp = pBody->at(0)->body->GetPosition();
+    glm::f64vec2 diff1 = (glm::f64vec2(bp.x, bp.y) - glm::f64vec2(wh->cam->pos.x, -wh->cam->pos.y)) * game->deltaTime * 4.0;
+    glm::f64vec2 diff2 = (!holdBody ? (game->deltaTime * 0.04 / wh->cam->zoom) * glm::f64vec2(camDiff.x, -camDiff.y) : glm::f64vec2(0.0f, 0.0f));
+    diff1.x += diff2.x;
+    diff1.y += diff2.y;
+    wh->cam->pos += glm::f64vec2(diff1.x, -diff1.y);
 
     wh->cam->updateOrtho();
 }
@@ -1477,7 +1469,7 @@ void TestPlayer::update(float dt, int totalIter)
 {
     gameTime = Game::object->gameTime;
 
-    const float maxSpeed = 10.0f;
+    const float maxSpeed = 6.0f;
     float speedOffset = 0.0f;
     avgNormalX /= numNormals;
     setFriction = 0.0;
@@ -1610,9 +1602,9 @@ void TestPlayer::update(float dt, int totalIter)
     if (left || right)
     {
         //printf("2\n");
-        const float groundMult = 80.0f;
-        const float airMult = 20.0f;
-        const float fwdGrndSlw = 10.0f;
+        const float groundMult = 40.0f;
+        const float airMult = 10.0f;
+        const float fwdGrndSlw = 5.0f;
         if (right)
         {
             float addition;

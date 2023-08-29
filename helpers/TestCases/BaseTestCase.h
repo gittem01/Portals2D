@@ -22,7 +22,7 @@ public:
     bool shouldGetNewTest;
     int testCaseItem;
     
-    double requestedDtPerStep = 0.002;
+    double requestedDtPerStep = 0.001;
 
     void destroy()
     {
@@ -170,9 +170,9 @@ public:
 
         td->debugLineRegistry.clear();
 
-        int requiredIters = fmax(g->deltaTime / requestedDtPerStep, 1);
+        int requiredIters = std::max((int)std::round(g->deltaTime / requestedDtPerStep), 1);
         double requiredDt = g->deltaTime / requiredIters;
-        requiredIters = fmin(requiredIters, 10);
+        requiredIters = std::min(requiredIters, 20);
 #if ENABLE_TESTPLAYER
         if (followPlayer) tp->camHandle();
 #endif
@@ -183,7 +183,7 @@ public:
 
         for (int i = 0; i < requiredIters; i++)
         {
-            float dt = requiredDt * 1.0;
+            float dt = requiredDt * 2.0;
             g->mjh->mouseHandler(g->frame, requiredIters);
 #if ENABLE_TESTPLAYER
             tp->update(dt, requiredIters);
