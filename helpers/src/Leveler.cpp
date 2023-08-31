@@ -42,6 +42,9 @@ Leveler::Leveler(Game* game)
 
 	ol = new Overlayer(game);
 
+	float x;
+	ol->cd->getRenderData("(),0123456789", 50, x);
+
 	thinDrawer->diagonalLiner->testFill();
 
 	initOffsets();
@@ -1170,6 +1173,14 @@ void Leveler::update()
 	calcMouseGrid();
 
 	ol->update();
+
+	std::ostringstream oss;
+	oss << "(" << mouseGrid.x << ", " << mouseGrid.y << ")";
+	std::string result = oss.str();
+
+	float x;
+	auto rd = ol->cd->getRenderData(result, 50, x);
+	ol->cd->renderDatas.push_back({ rd, { ol->cam.xSides.x + 0.25, ol->cam.ySides.x + 1.25, 2.0, 0.0 }, { 1.0, 1.0, 1.0, 0.5 } });
 
 	s_gridItemData* item = ol->selectedItemIndex >= 0 ? &ol->items[ol->selectedItemIndex] : nullptr;
 
