@@ -62,6 +62,7 @@ void ThinDrawer::initExtra()
     bodyShader = new BodyShader(this); shaders.push_back(bodyShader);
     wallLight = new WallLight(this); shaders.push_back(wallLight);
     laserShader = new LaserShader(this); shaders.push_back(laserShader);
+    lineZ = new LineZ(this); shaders.push_back(lineZ);
     lightBridge = new LightBridge(this); shaders.push_back(lightBridge);
     funnelShader = new FunnelShader(this); shaders.push_back(funnelShader);
     hazardShader = new HazardShader(this); shaders.push_back(hazardShader);
@@ -462,6 +463,18 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, blueField->numFields, 0, 0);
 
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, lineZ->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        lineZ->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        lineZ->pipelineLayout, 1, 1, &lineZ->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, lineZ->numZs, 0, 0);
 
     for (auto& f : midDrawFuncs)
     {

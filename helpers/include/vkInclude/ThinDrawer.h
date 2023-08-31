@@ -14,6 +14,7 @@
 #include <ShaderHeaders/WallLight.h>
 #include <ShaderHeaders/GunEffect.h>
 #include <ShaderHeaders/LaserShader.h>
+#include <ShaderHeaders/LineZ.h>
 #include <ShaderHeaders/LightBridge.h>
 #include <ShaderHeaders/FunnelShader.h>
 #include <ShaderHeaders/HazardShader.h>
@@ -173,6 +174,7 @@ public:
     BodyShader* bodyShader;
     WallLight* wallLight;
     LaserShader* laserShader;
+    LineZ* lineZ;
     LightBridge* lightBridge;
     FunnelShader* funnelShader;
     HazardShader* hazardShader;

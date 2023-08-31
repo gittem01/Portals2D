@@ -124,10 +124,10 @@ void Leveler::initOffsets()
 		mt->lastAvailablePos += perTextureSpace * numSwapChainImages;
 	}
 
-	const float sz = 2.5f;
-	for (int i = -80; i < 80; i++)
+	const float sz = 2.0f;
+	for (int i = -99; i < 99; i++)
 	{
-		for (int j = -80; j < 80; j++)
+		for (int j = -99; j < 99; j++)
 		{
 			float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
 			if (rndVal > 0.9f)
@@ -1110,6 +1110,9 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 void Leveler::calcMouseGrid()
 {
+	wh->cam->pos.x = std::min(std::max(wh->cam->pos.x, (float)-xSize_H + 0.5f), xSize_H - 0.5f);
+	wh->cam->pos.y = std::min(std::max(wh->cam->pos.y, (float)-ySize_H + 0.5f), ySize_H - 0.5f);
+
 	glm::vec2 mousePos = wh->cam->getMouseCoords();
 	int px = keepXInBounds(std::floor(mousePos.x));
 	int py = keepYInBounds(std::floor(mousePos.y));
