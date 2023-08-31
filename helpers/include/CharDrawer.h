@@ -35,7 +35,7 @@ public:
 
 	CharDrawer(ThinDrawer* thinDrawer, const char* fontFile);
 
-	std::vector<s_charRenderData> getRenderData(const std::string& text, float targetHeight);
+	std::vector<s_charRenderData> getRenderData(const std::string& text, float targetHeight, float& x);
 
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 

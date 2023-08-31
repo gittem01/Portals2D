@@ -74,7 +74,7 @@ void main()
     col = mix(col, vec4(0.0, 0.0, 0.0, 1.0), 1.0 - smoothstep(0.0, smoother, abs(d)));
     
     lsd = sdLineH(p.y, sizeMult);
-    col = mix(col, vec4(0.0, 0.0, 0.0, 1.0), (1.0 - smoothstep(0.0, smoother * 0.6, lsd)) * lMult);
+    col = mix(col, vec4(0.0, 0.0, 0.0, 1.0), (1.0 - smoothstep(-smoother * 0.5, smoother * 0.5, lsd)) * lMult);
     
     int index = int((-p.y) / (sizeMult * 2.0));
     
@@ -82,7 +82,7 @@ void main()
     if ((1 << index & mask >> 16) > 0)
     {
         lsd = arrow(p, vec2(-0.5 * sizeMult, -float(index) * 2.0 * sizeMult - sizeMult), sizeMult);
-        col = mix(col, vec4(0.0, 0.0, 0.0, 1.0), (1.0 - smoothstep(0.0, smoother * 1.5, lsd)) * lMult);
+        col = mix(col, vec4(0.0, 0.0, 0.0, 1.0), (1.0 - smoothstep(smoother * 0.5, smoother * 1.2, lsd)) * lMult);
     }
     
     if ((mask >> 24 & 0xF) == index)

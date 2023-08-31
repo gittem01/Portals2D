@@ -3,6 +3,21 @@
 #include <vulkan/vulkan.h>
 #include <Camera.h>
 #include <Leveler.h>
+#include <CharDrawer.h>
+
+typedef struct Pop
+{
+	std::vector<std::vector<s_charRenderData>> texts;
+	std::vector<std::string> secondaryPops;
+	glm::vec2 size;
+	int mask;
+} s_pop;
+
+typedef struct RenderPop
+{
+	std::string popName;
+	glm::vec2 pos;
+} s_renderPop;
 
 class Overlayer
 {
@@ -19,6 +34,8 @@ public:
 	class Camera cam;
 
 	std::vector<s_gridItemData> items;
+	std::map<std::string, s_pop> pops;
+	std::vector<s_renderPop> renderPops;
 
 	const char numX = 4;
 	const char numY = 8;
@@ -32,6 +49,9 @@ public:
 
 	float itemRatio = 0.0;
 	bool itemDir = 0;
+	std::string popShowName = std::string("");
+	int popHoverIndices[2] = { -1, -1 };
+	glm::vec2 popShowPos;
 	int startAlloc;
 	
 	unsigned int switchSound;
@@ -41,10 +61,12 @@ public:
 
 	Overlayer(Game* game);
 
-	static void maper(void* ptr);
-	static void draw(VkCommandBuffer cmdBuff, void* ptr);
-
 	void addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation=glm::vec2(0.0, 0.0), int numTextureObjects=1,
 		glm::ivec2 gridScale=glm::ivec2(1, 1), float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1);
+	int addPop(std::string popName, std::vector<std::string> texts, std::vector<std::string> secondaryPops, int mask);
+	void popUpdate();
 	void update();
+
+	static void maper(void* ptr);
+	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 };

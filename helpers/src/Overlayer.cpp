@@ -3,7 +3,6 @@
 #include <ThinDrawer.h>
 #include <Sounder.h>
 #include <OptionShader.h>
-#include <CharDrawer.h>
 
 // funnel thingy
 //if (wh->keyData[GLFW_KEY_SPACE] == 2)
@@ -53,8 +52,6 @@
 //    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
 //}
 
-std::vector<s_charRenderData> rd;
-
 Overlayer::Overlayer(Game* game)
 {
 	this->game = game;
@@ -102,9 +99,10 @@ Overlayer::Overlayer(Game* game)
     addItem("LightBridge", "lightBridge.png", LIGHT_BRIDGE, { 0.5, +0.402 }, 1, { 1, 1 }, 0.8, true, 0);
     addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
     addItem("Remove", "x.png", ERASER);
-    
-    std::string utf8String = u8"Bottom Line ğüş";
-    rd = cd->getRenderData(utf8String, 100);
+
+    addPop("button", { "Delete Item", "Connect to...", "Item Type", "Remove Connections" }, { "", "", "cube_select", "connection_select"}, 0x100c0000);
+    addPop("connection_select", {"Default Cube #1", "Blue Gel #1"}, {"", ""}, 0x00000000);
+    addPop("cube_select", {"Default Cube", "Companion Cube", "Laser Cube", "Sphere"}, {"", "", "", ""}, 0x000000ff);
 }
 
 void Overlayer::maper(void* ptr)
@@ -156,44 +154,54 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 {
     Overlayer* ol = (Overlayer*)ptr;
     ThinDrawer* td = ol->thinDrawer;
+    OptionShader* os = ol->os;
 
     const VkDeviceSize offsets = 0;
     const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->lastSwapChainImageIndex + 8);
+    
+    int i = 0;
+    for (auto& rp : ol->renderPops)
+    {
+        s_pop& pop = ol->pops[rp.popName];
+        glm::vec2 pos = rp.pos;
 
-    OptionShader* os = ol->os;
+        s_optionData optData;
+        optData.posSize = glm::vec4(pos.x, pos.y, pop.size.x, pop.size.y);
+        optData.data.x = pop.mask;
+        optData.data.y = 1;
+
+        glm::vec2 cp = ol->cam.getMouseCoords();
+
+        if (ol->popHoverIndices[i] >= 0)
+        {
+            optData.data.x |= (ol->popHoverIndices[i] & 0xff) << 24;
+        }
+        else
+        {
+            optData.data.x |= 0xF << 24;
+        }
+
+        vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, os->pipeline);
+
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            os->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+        vkCmdPushConstants(cmdBuff, os->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_optionData), (void*)&optData);
+
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+
+        int j = 0;
+        for (const auto& rd : pop.texts)
+        {
+            ol->cd->renderDatas.push_back({ rd, { optData.posSize.x + 4.5, optData.posSize.y - 2.0 - j++ * 4.0, 3.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
+        }
+
+        i++;
+    }
 
     // arrow
-    s_optionData optData;
-    optData.posSize = glm::vec4(0.0, 41.0, 30.0, 32.0);
-    optData.data.x = 0x10f13175;
-    optData.data.y = 1;
-
-    glm::vec2 cp = ol->cam.getMouseCoords();
-
-    if (cp.x > optData.posSize.x && cp.x < optData.posSize.x + optData.posSize.z &&
-        cp.y < optData.posSize.y && cp.y > optData.posSize.y - optData.posSize.w)
-    {
-        int intPosY = (int)((-cp.y + optData.posSize.y) / 4.0);
-        optData.data.x |= (intPosY & 0xff) << 24;
-    }
-    else
-    {
-        optData.data.x |= 0xF << 24;
-    }
-
-    ol->cd->renderDatas.push_back({ rd, {optData.posSize.x + 4.5, optData.posSize.y - 2.0, 3.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
-
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, os->pipeline);
-
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        os->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    vkCmdPushConstants(cmdBuff, os->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_optionData), (void*)&optData);
-
-    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
-
     if (ol->itemRatio > 0.0)
     {
         char hoverGridX = ol->selectedItemIndex % ol->numX;
@@ -257,6 +265,33 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
 }
 
+int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::vector<std::string> secondaryPops, int mask)
+{
+    assert(texts.size() == secondaryPops.size());
+
+    s_pop pop;
+    pop.mask = mask;
+    pop.secondaryPops = secondaryPops;
+
+    float maxSize = 1.0;
+    for (std::string& text : texts)
+    {
+        float x;
+        std::vector<s_charRenderData> rd = cd->getRenderData(text, 100, x);
+        
+        maxSize = std::max(maxSize, x);
+
+        pop.texts.push_back(rd);
+	}
+
+    pop.size.x = maxSize * 3.0 + 6.5;
+    pop.size.y = texts.size() * 4.0;
+
+    pops[popName] = pop;
+
+    return pops.size() - 1;
+}
+
 void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation, int numTextureObjects,
     glm::ivec2 gridScale, float gridRenderScale, bool canRotate, int requiredSideFill)
 {
@@ -277,9 +312,98 @@ void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm:
     items.push_back(itemData);
 }
 
+void Overlayer::popUpdate()
+{
+    renderPops.clear();
+
+    glm::vec2 cp = cam.getMouseCoords();
+
+    if (thinDrawer->wh->mouseData[3] == 2)
+    {
+        popHoverIndices[0] = -1;
+        popHoverIndices[1] = -1;
+        popShowName = "button";
+        s_pop& pop = pops[popShowName];
+        popShowPos = cp;
+        popShowPos = glm::vec2(std::min(cam.xSides.y - pop.size.x, popShowPos.x), std::max(cam.ySides.x + pop.size.y, popShowPos.y));
+    }
+
+    if (popShowName.length() > 0)
+    {
+        s_pop& pop = pops[popShowName];
+
+        if (cp.x > popShowPos.x && cp.x < popShowPos.x + pop.size.x &&
+            cp.y < popShowPos.y && cp.y > popShowPos.y - pop.size.y)
+        {
+            int intPosY = (int)((-cp.y + popShowPos.y) / 4.0);
+            popHoverIndices[0] = intPosY;
+            popHoverIndices[1] = -1;
+
+            if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[0] & pop.mask >> 16))
+            {
+                popShowName = "";
+                goto ifEnd;
+            }
+        }
+        else
+        {
+            if (thinDrawer->wh->mouseData[2] == 2)
+            {
+                popShowName = "";
+                goto ifEnd;
+            }
+
+            if (!(1 << popHoverIndices[0] & pop.mask >> 16))
+            {
+                popHoverIndices[0] = -1;
+                popHoverIndices[1] = -1;
+            }
+        }
+
+        renderPops.push_back({ popShowName, popShowPos });
+
+        if (popHoverIndices[0] >= 0 && (1 << popHoverIndices[0] & pop.mask >> 16))
+        {
+            std::string index2 = pop.secondaryPops[std::min((int)pop.secondaryPops.size() - 1, popHoverIndices[0])];
+            if (index2.length() > 0 && pops.find(index2) != pops.end())
+            {
+                s_pop& pop2 = pops[index2];
+                glm::vec2 pos2 = { popShowPos.x + pop.size.x, popShowPos.y - popHoverIndices[0] * 4.0f };
+                pos2.y = std::max(cam.ySides.x + pop2.size.y, pos2.y);
+
+                if (pos2.x + pop2.size.x > cam.xSides.y)
+                {
+                    pos2.x -= pop.size.x + pop2.size.x;
+                }
+
+                if (cp.x > pos2.x && cp.x < pos2.x + pop2.size.x &&
+                    cp.y < pos2.y && cp.y > pos2.y - pop2.size.y)
+                {
+                    int intPosY = (int)((-cp.y + pos2.y) / 4.0);
+                    popHoverIndices[1] = intPosY;
+                    if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[1] & pop.mask >> 16))
+                    {
+                        popShowName = "";
+                        goto ifEnd;
+                    }
+                }
+                else if (!(1 << popHoverIndices[1] & pop2.mask >> 16))
+                {
+                    popHoverIndices[1] = -1;
+                }
+
+                renderPops.push_back({ index2, pos2 });
+            }
+        }
+    }
+    ifEnd:
+}
+
 void Overlayer::update()
 {
     glm::vec2 p = cam.getMouseCoords();
+
+    popUpdate();
 
     const float mult = 6.0;
 

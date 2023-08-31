@@ -79,20 +79,9 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
 	// Read the file contents as a sequence of bytes
 	std::string utf8String((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	std::vector<s_charRenderData> rd = getRenderData(utf8String, 110);
-	renderDatas.push_back({ rd, { 0.0, 0.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });
-
-	utf8String = u8"Bottom Line";
-	rd = getRenderData(utf8String, 500);
-	renderDatas.push_back({ rd, { 0.0, -1.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 0.5 } });
-
-	utf8String = u8"Third Line of sigğht is visible";
-	rd = getRenderData(utf8String, 1000);
-	renderDatas.push_back({ rd, { 0.0, -2.0, 1.0, 0.0 }, { 1.0, 0.0, 0.0, 1.0 } });
-
-	utf8String = u8"Now we are at 4444444444444444444\n";
-	rd = getRenderData(utf8String, 2000);
-	renderDatas.push_back({ rd, { 0.0, -3.0, 1.0, 0.0 }, { 1.0, 0.0, 0.0, 0.5 } });
+	/*float x;
+	std::vector<s_charRenderData> rd = getRenderData(utf8String, 110, x);
+	renderDatas.push_back({ rd, { 0.0, 0.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });*/
 
 	fontShader = new FontShader(thinDrawer);
 	thinDrawer->shaders.push_back(fontShader);
@@ -155,18 +144,24 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 	cd->renderDatas.clear();
 }
 
-std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, float targetHeight)
+std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, float targetHeight, float& x)
 {
 	// Convert the UTF-8 encoded bytes to Unicode code points
 	std::vector<uint32_t> codePoints = utf8ToUnicode(text);
 
 	std::vector<s_charRenderData> rd;
 
+	x = 0;
+	float prevX = 0.0;
 	for (uint32_t codepoint : codePoints)
 	{
 		if (codepoint == 32)
 		{
 			rd.push_back({ {0.25, 0.0, 0.0, 0.0}, nullptr });
+
+			x += 0.25 + prevX * 0.5;
+			prevX = 0.0;
+
 			continue;
 		}
 
@@ -174,6 +169,8 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		if (iterFind != codepointMap.end())
 		{
 			rd.push_back((*iterFind).second);
+			x += (*iterFind).second.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? (*iterFind).second.size_leftBotMargin.z : 0.0);
+			prevX = (*iterFind).second.size_leftBotMargin.x;
 			continue;
 		}
 
@@ -201,6 +198,8 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 			if (iterFind != codepointMap.end())
 			{
 				rd.push_back((*iterFind).second);
+				x += (*iterFind).second.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? (*iterFind).second.size_leftBotMargin.z : 0.0);
+				prevX = (*iterFind).second.size_leftBotMargin.x;
 				continue;
 			}
 		}
@@ -226,12 +225,17 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		rData.size_leftBotMargin = glm::vec4((float)width / targetHeight, (float)height / targetHeight, left, toMid);
 		rData.tex = tex;
 
+		x += rData.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? rData.size_leftBotMargin.z : 0.0);
+		prevX = rData.size_leftBotMargin.x;
+
 		codepointMap[{ codepoint, targetHeight }] = rData;
 
 		rd.push_back(rData);
 
 		stbtt_FreeBitmap(bitmap, nullptr);
 	}
+
+	x += prevX;
 
 	return rd;
 }
