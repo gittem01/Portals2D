@@ -76,6 +76,8 @@ Overlayer::Overlayer(Game* game)
     clickSound = sounder->loadSound("click.wav");
     bopSound = sounder->loadSound("boc.wav");
     removeSound = sounder->loadSound("remove.wav");
+    undoSound = sounder->loadSound("undo.wav");
+    redoSound = sounder->loadSound("redo.wav");
 
     thinDrawer->memMapFuncs.push_back({ maper, (void*)this });
 	thinDrawer->lateDrawFuncs.push_back({ draw, (void*)this });

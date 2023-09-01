@@ -34,7 +34,8 @@ void SwapChain::creationLoop()
 {
     for (;;)
     {
-        glfwPollEvents();
+        glfwWaitEvents();
+        //glfwPollEvents();
         querySwapChainSupport();
         extent = chooseSwapExtent();
         if (extent.width > 0 && extent.height > 0)
@@ -144,7 +145,7 @@ void SwapChain::createSwapChain()
     }
     else
     {
-        imageCount = (int)surfaceCapabilities.minImageCount + 1;
+        imageCount = (int)surfaceCapabilities.minImageCount;
     }
 
     VkSwapchainCreateInfoKHR swapChainCreateInfo = { };

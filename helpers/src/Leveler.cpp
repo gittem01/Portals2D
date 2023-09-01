@@ -11,7 +11,7 @@
 
 Leveler* Leveler::object;
 
-glm::vec2 rotationMults[4] = { {+0.0f, -1.0f}, {+1.0f, +0.0f}, {0.0f, +1.0f}, {-1.0f, 0.0f} };
+glm::i16vec2 rotationMults[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 const int maxPlatformDiff = 4;
 
 Leveler::Leveler(Game* game)
@@ -96,6 +96,16 @@ void Leveler::initOffsets()
 		}
 	}
 
+	cableMap.resize(ySize + extraCable * 2);
+	for (int i = 0; i < cableMap.size(); i++)
+	{
+		cableMap[i].resize(xSize + +extraCable * 2);
+		for (int j = 0; j < cableMap[i].size(); j++)
+		{
+			cableMap[i][j] = (cableDir)0x0;
+		}	
+	}
+
 	lastOffsetPos_W.resize(WallBase::gridCount);
 	lastOffsetPos_B.resize(WallBase::gridCount);
 	lastOffsetPos_G.resize(WallBase::gridCount);
@@ -124,10 +134,10 @@ void Leveler::initOffsets()
 		mt->lastAvailablePos += perTextureSpace * numSwapChainImages;
 	}
 
-	const float sz = 2.0f;
-	for (int i = -99; i < 99; i++)
+	const float sz = 1.6f;
+	for (int i = -120; i < 120; i++)
 	{
-		for (int j = -99; j < 99; j++)
+		for (int j = -120; j < 120; j++)
 		{
 			float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
 			if (rndVal > 0.9f)
@@ -135,11 +145,11 @@ void Leveler::initOffsets()
 				float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.01f;
 				float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
 				s_wallUbo_w wallUbo;
-				wallUbo.posSize = glm::vec4(i * sz, j * sz, sz, sz);
+				wallUbo.posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
 				wallUbo.bgColour = glm::vec4(0.1f + randVal11, 0.1f + randVal11, 0.1f + randVal11, 1.0f);
 				wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 				wallUbo.dotColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
-				wallUbo.data = glm::vec4(0.3f + randVal22, 0.01f, 2.0f, 1.0f);
+				wallUbo.data = glm::vec4(0.2f + randVal22, 0.01f, 2.0f, 1.0f);
 				wallUbo.data2 = glm::vec4(0.0, 0.0, 0.8f, 0.0f);
 
 				s_gridPositionShader gridPos = thinDrawer->whiteWallShader->getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
@@ -172,7 +182,7 @@ void Leveler::initOffsets()
 				vkMapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0]->memory,
 					gData->offsetEnd * sizeof(s_walLightlUbo), sizeof(s_walLightlUbo), 0, (void**)&pData);
 				pData->color = glm::vec4(1.0 + r0, 1.0 + g0, 1.0 + b0, 1.0);
-				pData->posSize = glm::vec4(i * sz, j * sz, sz, sz);
+				pData->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
 				pData->data = glm::vec4(sz * 0.6, sz * 0.3, 0.3, -1.5);
 				pData->data2 = glm::vec4(ang, ang2, 0.8, 1.0);
 				vkUnmapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0]->memory);
@@ -187,7 +197,7 @@ void Leveler::initOffsets()
 			s_wallUbo_b* wallUbo;
 			vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
 				gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
-			wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
+			wallUbo->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
 			wallUbo->colour = glm::vec4(0.05, 0.05, 0.05, 1.0) * rndVal;
 			wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.8, 0.0);
 			vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
@@ -434,7 +444,7 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 	short scaleX = item.gridScale[objRot % 2];
 	short scaleY = item.gridScale[(objRot % 2) ^ 1];
-	glm::vec2 extraAdd = rotationMults[objRot] * item.gridRenderTranslation.y;
+	glm::vec2 extraAdd = (glm::vec2)rotationMults[objRot] * item.gridRenderTranslation.y;
 
 	short startX = mp.x - scaleX / 2;
 	short startY = mp.y - scaleY / 2;
@@ -912,7 +922,7 @@ glm::vec3 calculatePolynomWithChecks(glm::vec2 sp, glm::vec2 mp, glm::vec2 ep, i
 
 glm::vec2 constrainEndPos(glm::vec2 sp, glm::vec2 ep, int rotation)
 {
-	switch (rotation)
+	switch (rotation % 4)
 	{
 	case 0:
 		if (abs(ep.x - sp.x) < 0.6 && ep.y <= sp.y)
@@ -1147,9 +1157,35 @@ bool Leveler::isInBounds(short x, short y)
 	return x >= -xSize_H && x < xSize_H && y >= -ySize_H && y < ySize_H;
 }
 
+bool Leveler::isInBoundsCable(short x, short y)
+{
+	return x >= -xSize_H - extraCable && x < xSize_H + extraCable && y >= -ySize_H - extraCable && y < ySize_H + extraCable;
+}
+
 glm::i16vec2 Leveler::keepInBounds(glm::i16vec2 pos)
 {
 	return glm::i16vec2(keepXInBounds(pos.x), keepYInBounds(pos.y));
+}
+
+inline void Leveler::setSquare(short x, short y, s_levelGridData data)
+{
+	gridMap[y + ySize_H][x + xSize_H] = data;
+}
+
+inline s_levelGridData Leveler::getSquare(short x, short y)
+{
+	return gridMap[y + ySize_H][x + xSize_H];
+}
+
+inline void Leveler::setCable(short x, short y, cableDir cblDir)
+{
+	printf("set %d, %d : %d\n", x, y, cblDir);
+	cableMap[y + ySize_H + extraCable][x + xSize_H + extraCable] = cblDir;
+}
+
+inline cableDir Leveler::getCable(short x, short y)
+{
+	return cableMap[y + ySize_H + extraCable][x + xSize_H + extraCable];
 }
 
 void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData)
@@ -1171,11 +1207,34 @@ void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* ob
 	currentOperation->objectOperation->objData = objectData;
 }
 
+int selectedDir = -1;
+
 void Leveler::update()
 {
 	calcMouseGrid();
 
 	ol->update();
+
+
+
+	for (int i = 0; i < 4; i++)
+	{
+		if (wh->keyData[GLFW_KEY_0 + i] == 2)
+		{
+			selectedDir = i;
+			break;
+		}
+	}
+
+	if (wh->keyData[GLFW_KEY_4] == 2) selectedDir = -1;
+
+	if (wh->keyData[GLFW_KEY_ENTER] == 2)
+	{
+		std::vector<glm::i16vec2> path;
+		getPath(path, mouseGrid, {0, 0}, 0);
+	}
+
+
 
 	std::ostringstream oss;
 	oss << "(" << mouseGrid.x << ", " << mouseGrid.y << ")";
@@ -1670,7 +1729,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 		return putPlatform({ startX, startY }, { scaleX, scaleY }, inData->extraScale.x, rotation);
 	}
 
-	glm::vec2 extraAdd = rotationMults[rotation] * item.gridRenderTranslation.y;
+	glm::vec2 extraAdd = (glm::vec2)rotationMults[rotation] * item.gridRenderTranslation.y;
 
 	short endX = startX + scaleX;
 	short endY = startY + scaleY;
@@ -1851,6 +1910,147 @@ s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short start
 	}
 
 	return nullptr;
+}
+
+short Leveler::selectDirs(const glm::i16vec2 p0, const glm::i16vec2 p1, const char inDir, const char cableIndex)
+{
+	short dir = 0;
+	std::set<char> unusedDirs = { 0, 1, 2, 3 };
+	char lookStartDir = inDir < 0 ? 0 : inDir;
+
+	int shifterInt = 0;
+	for (int i = 0; i < 4; i++)
+	{
+		char r = (lookStartDir + i) % 4;
+		glm::i16vec2 p = p0 + rotationMults[r];
+
+		cableDir cblDir = (cableDir)((1 << (((r + 1) % 2) * 8)) << cableIndex);
+		cableDir cblVal;
+		if (isInBoundsCable(p.x, p.y)) cblVal = getCable(p.x, p.y);
+		else cblVal = (cableDir)0xFF;
+
+		//cblVal = (cableDir)(LR_0 | DU_0);
+
+		if ((inDir >= 0 && r == ((inDir + 2) % 4)) || (cblVal & cblDir))
+		{
+			unusedDirs.erase(r);
+			continue;
+		}
+
+		short p0Diff = abs(p1.x - p0.x) + abs(p1.y - p0.y);
+		short pDiff = abs(p1.x - p.x) + abs(p1.y - p.y);
+
+		if (pDiff < p0Diff)
+		{
+			dir |= (1 << r) << (shifterInt++ * 4);
+			unusedDirs.erase(r);
+		}
+	}
+
+	for (char unusedDir : unusedDirs)
+	{
+		dir |= (1 << unusedDir) << (shifterInt++ * 4);
+	}
+
+	//printf("InDir : %d\n", inDir);
+	//printf("First : %d\n", dir & 0x000f);
+	//printf("Second : %d\n", (dir & 0x00f0) >> 4);
+	//printf("Third : %d\n", (dir & 0x0f00) >> 8);
+	//printf("Fourth : %d\n\n", (dir & 0xf000) >> 12);
+
+	return dir;
+}
+
+void Leveler::getPath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 from, glm::i16vec2 to, char cableIndex)
+{
+	std::set<s_gridSquare> visitedSquares;
+	std::vector<glm::i16vec3> backTrack; // x, y, avldirs (1 bit for each dir : 0x(d3)(d2)(d1)(d0))
+	
+	int initDir = -1;
+	for (; ; )
+	{
+		if (from == to)
+		{
+			backTrack.push_back({ from.x, from.y, 0 });
+			printf("goal return\n");
+			break;
+		}
+
+		visitedSquares.insert({ from.x, from.y });
+		short dirs = selectDirs(from, to, initDir, cableIndex);
+		backTrack.push_back({ from.x, from.y, dirs });
+
+	backTrack:
+		if (backTrack.empty())
+		{
+			printf("not found return\n");
+			break;
+		}
+
+		glm::i16vec3 nextPosDir = backTrack.back();
+		glm::i16vec2 pos = glm::i16vec2(nextPosDir.x, nextPosDir.y);
+		dirs = nextPosDir.z;
+		if (dirs == 0)
+		{
+			visitedSquares.erase({ pos.x, pos.y });
+			backTrack.pop_back();
+			goto backTrack;
+		}
+
+		backTrack.back().z >>= 4;
+
+		short nextRot = getRotVal(dirs & 0xF);
+		glm::i16vec2 rotDir = rotationMults[nextRot];
+		glm::i16vec2 nextPos = pos + rotDir;
+
+		cableDir cblDir = (cableDir)((1 << (((nextRot + 1) % 2) * 8)) << cableIndex);
+		cableDir cblVal;
+		if (isInBoundsCable(nextPos.x, nextPos.y)) cblVal = getCable(nextPos.x, nextPos.y);
+		else cblVal = (cableDir)0xFF;
+		if (visitedSquares.find({ nextPos.x, nextPos.y }) != visitedSquares.end() || (cblVal & cblDir))
+		{
+			goto backTrack;
+		}
+
+		from = nextPos;
+	}
+
+	for (int i = 0; i < backTrack.size(); i++)
+	{
+		auto val = backTrack[i];
+		auto backVal = backTrack[std::max(i - 1, 0)];
+		auto nextVal = backTrack[std::min(i + 1, (int)backTrack.size() - 1)];
+		glm::i16vec2 diff0 = val - backVal;
+		glm::i16vec2 diff1 = val - nextVal;
+		
+		cableDir valCable = getCable(val.x, val.y);
+		if (abs(diff0.x) > 0)
+		{
+			setCable(val.x, val.y, (cableDir)(LR_0 | valCable));
+		}
+		else if (abs(diff0.y) > 0)
+		{
+			setCable(val.x, val.y, (cableDir)(DU_0 | valCable));
+		}
+
+		if (abs(diff1.x) > 0)
+		{
+			setCable(val.x, val.y, (cableDir)(LR_0 | valCable));
+		}
+		else if (abs(diff1.y) > 0)
+		{
+			setCable(val.x, val.y, (cableDir)(DU_0 | valCable));
+		}
+
+		s_lineZUbo* lineZUbo;
+		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+			sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+		lineZUbo->points = glm::vec4(backVal.x + 0.5, backVal.y + 0.5, val.x + 0.5, val.y + 0.5);
+		lineZUbo->data = glm::vec4(0.125, 1.0, 1.0, 0.0);
+		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+	}
+
+	printf("herre\n");
 }
 
 void Leveler::sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY, float startOffset, float endOffset,
@@ -2065,7 +2265,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 			sizeof(s_manyTextureData), 0, (void**)&mtd);
 
 		int objRot = ((rotation + 2) % 4);
-		glm::vec2 extraAdd = rotationMults[objRot] * item.gridRenderTranslation.y;
+		glm::vec2 extraAdd = (glm::vec2)rotationMults[objRot] * item.gridRenderTranslation.y;
 
 		glm::vec2 p = endPoint + extraAdd - sToE * 0.5f;
 		mtd->posSize = glm::vec4(p.x, p.y, item.gridRenderScale, item.gridRenderScale);
@@ -2343,6 +2543,9 @@ void Leveler::takeBack(bool shiftPressed)
 	{
 		if (currentOperation->next)
 		{
+			ALuint source = ol->sounder->playSound(ol->redoSound, 0.4);
+			alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+
 			currentOperation = currentOperation->next;
 
 			if (!currentOperation->objectOperation)
@@ -2397,6 +2600,9 @@ void Leveler::takeBack(bool shiftPressed)
 	}
 	else if (currentOperation->prev)
 	{
+		ALuint source = ol->sounder->playSound(ol->undoSound, 0.4);
+		alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+
 		if (!currentOperation->objectOperation)
 		{
 			putBarrierOnMemories({ thinDrawer->whiteWallShader, thinDrawer->blackWallShader, thinDrawer->diagonalLiner, thinDrawer->laserShader });
@@ -2448,16 +2654,6 @@ void Leveler::takeBack(bool shiftPressed)
 
 		currentOperation = currentOperation->prev;
 	}
-}
-
-inline void Leveler::setSquare(short x, short y, s_levelGridData data)
-{
-	gridMap[y + ySize_H][x + xSize_H] = data;
-}
-
-inline s_levelGridData Leveler::getSquare(short x, short y)
-{
-	return gridMap[y + ySize_H][x + xSize_H];
 }
 
 void Leveler::putBarrierOnMemories(std::vector<ShaderBase*> shaders)

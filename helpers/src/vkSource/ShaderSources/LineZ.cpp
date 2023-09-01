@@ -45,11 +45,13 @@ void LineZ::prepareUniforms()
         {
             s_lineZUbo* lineZUbo;
             vkMapMemory(logicalDevice, uniformBuffers[0]->memory, numZs++ * sizeof(s_lineZUbo), sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
-            lineZUbo->points = glm::vec4(j + 0.5, i, j + 0.5, i);
+            lineZUbo->points = glm::vec4(j, i, j, i);
             lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
             vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
         }
     }
+
+    numZs = 0;
 }
 
 void LineZ::setupDescriptorSetLayout()

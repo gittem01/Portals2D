@@ -95,6 +95,23 @@ constexpr int getLevelObjectIndex(levelObject value)
 	}
 }
 
+constexpr int getRotVal(int rot)
+{
+	switch (rot & 0xF)
+	{
+	case 1:
+		return 0;
+	case 2:
+		return 1;
+	case 4:
+		return 2;
+	case 8:
+		return 3;
+	default:
+		return -31;
+	}
+}
+
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
 #define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT | LIGHT_BRIDGE)
@@ -106,6 +123,27 @@ typedef enum OperationType
 	ADD		= 1,
 	REMOVE	= 2,
 } operationType;
+
+typedef enum CableDir : unsigned short
+{
+	LR_0 = 0x1 << 0,
+	LR_1 = 0x1 << 1,
+	LR_2 = 0x1 << 2,
+	LR_3 = 0x1 << 3,
+	LR_4 = 0x1 << 4,
+	LR_5 = 0x1 << 5,
+	LR_6 = 0x1 << 6,
+	LR_7 = 0x1 << 7,
+
+	DU_0 = 0x1 << 8,
+	DU_1 = 0x1 << 9,
+	DU_2 = 0x1 << 10,
+	DU_3 = 0x1 << 11,
+	DU_4 = 0x1 << 12,
+	DU_5 = 0x1 << 13,
+	DU_6 = 0x1 << 14,
+	DU_7 = 0x1 << 15,
+} cableDir;
 
 typedef struct GridSquare_S
 {
@@ -221,6 +259,7 @@ public:
 	//////////////////
 	glm::ivec2 mouseGrid;
 	std::vector<std::vector<s_levelGridData>> gridMap;
+	std::vector<std::vector<cableDir>> cableMap;
 	glm::ivec2 clickStart;
 	glm::ivec2 lastGrid;
 	int selectedObjectRotation = 0;
@@ -231,6 +270,7 @@ public:
 	const short ySize = 400;
 	const short xSize_H = xSize / 2;
 	const short ySize_H = ySize / 2;
+	const short extraCable = 5;
 
 	const int numWhiteWall = xSize * ySize;
 	const int numBlackWall = xSize * ySize;
@@ -250,6 +290,8 @@ public:
 
 	void setSquare(short x, short y, s_levelGridData data);
 	s_levelGridData getSquare(short x, short y);
+	void setCable(short x, short y, cableDir cblDir);
+	cableDir getCable(short x, short y);
 
 	void fillGrid(short minX, short minY, short maxX, short maxY, levelObject fillType);
 	void putBarrierOnMemories(std::vector<class ShaderBase*> shaders);
@@ -274,8 +316,11 @@ public:
 	short keepXInBounds(short x);
 	short keepYInBounds(short y);
 	bool isInBounds(short x, short y);
+	bool isInBoundsCable(short x, short y);
 	glm::i16vec2 keepInBounds(glm::i16vec2 pos);
 
+	short selectDirs(const glm::i16vec2 p0, const glm::i16vec2 p1, const char inDir, const char cableIndex);
+	void getPath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 from, glm::i16vec2 to, char cableIndex);
 	void sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY,
 		float startOffset, float endOffset, levelObject objectMask,
 		glm::vec2& startPoint, glm::vec2& endPoint);

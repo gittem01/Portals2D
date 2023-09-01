@@ -58,6 +58,8 @@ public:
 	unsigned int clickSound;
 	unsigned int bopSound;
 	unsigned int removeSound;
+	unsigned int undoSound;
+	unsigned int redoSound;
 
 	Overlayer(Game* game);
 
