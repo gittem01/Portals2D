@@ -3,7 +3,7 @@
 #include <IOHelper.h>
 #include <Camera.h>
 
-#define PREFER_DISCRETE 0
+#define PREFER_DISCRETE 1
 
 void ThinDrawer::createWindow()
 {

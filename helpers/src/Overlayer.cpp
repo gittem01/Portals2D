@@ -344,7 +344,7 @@ void Overlayer::popUpdate()
             if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[0] & pop.mask >> 16))
             {
                 popShowName = "";
-                goto ifEnd;
+                return;
             }
         }
         else
@@ -352,7 +352,7 @@ void Overlayer::popUpdate()
             if (thinDrawer->wh->mouseData[2] == 2)
             {
                 popShowName = "";
-                goto ifEnd;
+                return;
             }
 
             if (!(1 << popHoverIndices[0] & pop.mask >> 16))
@@ -386,7 +386,7 @@ void Overlayer::popUpdate()
                     if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[1] & pop.mask >> 16))
                     {
                         popShowName = "";
-                        goto ifEnd;
+                        return;
                     }
                 }
                 else if (!(1 << popHoverIndices[1] & pop2.mask >> 16))
@@ -398,7 +398,6 @@ void Overlayer::popUpdate()
             }
         }
     }
-    ifEnd:
 }
 
 void Overlayer::update()

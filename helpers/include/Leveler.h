@@ -190,14 +190,14 @@ inline bool operator==(const s_gridSquare lhs, const s_gridSquare rhs)
 typedef struct GridOperation
 {
 	s_gridSquare pos;
-	operationType operationType;
+    OperationType operationType;
 	levelObject objectType;
 } s_gridOperation;
 
 typedef struct GridOperation_O
 {
 	s_objectDataGrid* objData;
-	operationType operationType;
+    OperationType operationType;
 } s_gridOperation_o;
 
 typedef struct GridOperationList
