@@ -1207,7 +1207,8 @@ void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* ob
 	currentOperation->objectOperation->objData = objectData;
 }
 
-int selectedDir = -1;
+int selectedIndex = 4;
+glm::i16vec2 setFrom = glm::i16vec2(0, 0);
 
 void Leveler::update()
 {
@@ -1217,24 +1218,24 @@ void Leveler::update()
 
 
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		if (wh->keyData[GLFW_KEY_0 + i] == 2)
 		{
-			selectedDir = i;
+			selectedIndex = i;
 			break;
 		}
 	}
 
-	if (wh->keyData[GLFW_KEY_4] == 2) selectedDir = -1;
-
-	if (wh->keyData[GLFW_KEY_ENTER] == 2)
+	if (wh->keyData[GLFW_KEY_F] == 2)
+	{
+		setFrom = mouseGrid;
+	}
+	if (wh->keyData[GLFW_KEY_T] == 2)
 	{
 		std::vector<glm::i16vec2> path;
-		getPath(path, mouseGrid, {0, 0}, 0);
+		getPath(path, setFrom, mouseGrid, selectedIndex);
 	}
-
-
 
 	std::ostringstream oss;
 	oss << "(" << mouseGrid.x << ", " << mouseGrid.y << ")";
@@ -1926,8 +1927,9 @@ short Leveler::selectDirs(const glm::i16vec2 p0, const glm::i16vec2 p1, const ch
 
 		cableDir cblDir = (cableDir)((1 << (((r + 1) % 2) * 8)) << cableIndex);
 		cableDir cblVal;
-		if (isInBoundsCable(p.x, p.y)) cblVal = getCable(p.x, p.y);
-		else cblVal = (cableDir)0xFF;
+		bool inBounds = isInBoundsCable(p.x, p.y);
+		if (inBounds) cblVal = getCable(p.x, p.y);
+		else cblVal = (cableDir)0xFFFF;
 
 		//cblVal = (cableDir)(LR_0 | DU_0);
 
@@ -1992,28 +1994,35 @@ void Leveler::getPath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 from, glm
 		dirs = nextPosDir.z;
 		if (dirs == 0)
 		{
-			visitedSquares.erase({ pos.x, pos.y });
 			backTrack.pop_back();
 			goto backTrack;
 		}
 
-		backTrack.back().z >>= 4;
+		backTrack.back().z = ((unsigned short)backTrack.back().z) >> 4;
 
 		short nextRot = getRotVal(dirs & 0xF);
+
 		glm::i16vec2 rotDir = rotationMults[nextRot];
 		glm::i16vec2 nextPos = pos + rotDir;
 
-		cableDir cblDir = (cableDir)((1 << (((nextRot + 1) % 2) * 8)) << cableIndex);
-		cableDir cblVal;
-		if (isInBoundsCable(nextPos.x, nextPos.y)) cblVal = getCable(nextPos.x, nextPos.y);
-		else cblVal = (cableDir)0xFF;
-		if (visitedSquares.find({ nextPos.x, nextPos.y }) != visitedSquares.end() || (cblVal & cblDir))
+		if (visitedSquares.find({ nextPos.x, nextPos.y }) != visitedSquares.end())
 		{
 			goto backTrack;
 		}
 
+		initDir = nextRot;
 		from = nextPos;
 	}
+
+	if (backTrack.size() == 0) return;
+
+	s_lineZUbo* lineZUbo;
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+		sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+	float plus = cableIndex * 0.125;
+	lineZUbo->points = glm::vec4(backTrack[0].x, backTrack[0].y + plus, backTrack[0].x + plus, backTrack[0].y + plus);
+	lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
 
 	for (int i = 0; i < backTrack.size(); i++)
 	{
@@ -2026,31 +2035,35 @@ void Leveler::getPath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 from, glm
 		cableDir valCable = getCable(val.x, val.y);
 		if (abs(diff0.x) > 0)
 		{
-			setCable(val.x, val.y, (cableDir)(LR_0 | valCable));
+			setCable(val.x, val.y, (cableDir)((LR_0 << cableIndex) | valCable));
 		}
 		else if (abs(diff0.y) > 0)
 		{
-			setCable(val.x, val.y, (cableDir)(DU_0 | valCable));
+			setCable(val.x, val.y, (cableDir)((DU_0 << cableIndex) | valCable));
 		}
 
+		valCable = getCable(val.x, val.y);
 		if (abs(diff1.x) > 0)
 		{
-			setCable(val.x, val.y, (cableDir)(LR_0 | valCable));
+			setCable(val.x, val.y, (cableDir)((LR_0 << cableIndex) | valCable));
 		}
 		else if (abs(diff1.y) > 0)
 		{
-			setCable(val.x, val.y, (cableDir)(DU_0 | valCable));
+			setCable(val.x, val.y, (cableDir)((DU_0 << cableIndex) | valCable));
 		}
 
-		s_lineZUbo* lineZUbo;
 		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 			sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
-		lineZUbo->points = glm::vec4(backVal.x + 0.5, backVal.y + 0.5, val.x + 0.5, val.y + 0.5);
-		lineZUbo->data = glm::vec4(0.125, 1.0, 1.0, 0.0);
+		lineZUbo->points = glm::vec4(val.x + plus, val.y + plus, nextVal.x + plus, nextVal.y + plus);
+		lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
 		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
 	}
 
-	printf("herre\n");
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+		sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+	lineZUbo->points = glm::vec4(backTrack.back().x + plus, backTrack.back().y + plus, backTrack.back().x, backTrack.back().y + plus);
+	lineZUbo->data = glm::vec4(0.125, 1.0, 0.8, 0.0);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
 }
 
 void Leveler::sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY, float startOffset, float endOffset,
