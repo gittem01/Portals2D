@@ -151,6 +151,7 @@ void Leveler::initOffsets()
 				wallUbo.dotColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
 				wallUbo.data = glm::vec4(0.2f + randVal22, 0.01f, 2.0f, 1.0f);
 				wallUbo.data2 = glm::vec4(0.0, 0.0, 0.8f, 0.0f);
+                wallUbo.sideData.x = SIDE_DISABLE;
 
 				s_gridPositionShader gridPos = thinDrawer->whiteWallShader->getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
 				s_shaderGridData* gData = &thinDrawer->whiteWallShader->renderGridUp[0][gridPos.y][gridPos.x];
