@@ -277,6 +277,7 @@ public:
 	glm::ivec2 lastGrid;
 	int selectedObjectRotation = 0;
 	std::vector<glm::ivec2> consqClickVec;
+	bool connecting = false;
 
 	/////////////////
 	const short xSize = 400;
@@ -350,6 +351,8 @@ public:
 	void update();
 	void calcMouseGrid();
 	glm::ivec2 getMouseGrid();
+
+	void handleRightClickClick();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderLasers(VkCommandBuffer cmdBuff, void* ptr);

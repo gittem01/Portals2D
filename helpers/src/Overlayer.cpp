@@ -62,6 +62,8 @@ Overlayer::Overlayer(Game* game)
     this->il = thinDrawer->itemList;
     this->mt = thinDrawer->manyTexture;
 
+    rightClickItem.ptr = nullptr;
+
     this->os = new OptionShader(thinDrawer);
     thinDrawer->shaders.push_back(os);
     os->init();
@@ -320,7 +322,7 @@ void Overlayer::popUpdate()
 
     glm::vec2 cp = cam.getMouseCoords();
 
-    if (thinDrawer->wh->mouseData[3] == 2 && !itemDir)
+    if (thinDrawer->wh->mouseData[3] == 2 && !itemDir && selectedItemIndex == -1)
     {
         popHoverIndices[0] = -1;
         popHoverIndices[1] = -1;
@@ -328,7 +330,9 @@ void Overlayer::popUpdate()
         s_pop& pop = pops[popShowName];
         popShowPos = cp;
         popShowPos = glm::vec2(std::min(cam.xSides.y - pop.size.x, popShowPos.x), std::max(cam.ySides.x + pop.size.y, popShowPos.y));
-        selectedItemIndex = -1;
+
+        glm::ivec2 levelerCamPos = game->leveler->getMouseGrid();
+        rightClickItem = game->leveler->getSquare(levelerCamPos.x, levelerCamPos.y).data;
     }
 
     if (popShowName.length() > 0)
@@ -350,16 +354,16 @@ void Overlayer::popUpdate()
         }
         else
         {
-            if (thinDrawer->wh->mouseData[2] == 2)
-            {
-                popShowName = "";
-                return;
-            }
-
             if (!(1 << popHoverIndices[0] & pop.mask >> 16))
             {
                 popHoverIndices[0] = -1;
                 popHoverIndices[1] = -1;
+            }
+
+            if (thinDrawer->wh->mouseData[2] == 2)
+            {
+                popShowName = "";
+                return;
             }
         }
 
@@ -399,6 +403,11 @@ void Overlayer::popUpdate()
             }
         }
     }
+    else
+    {
+        popHoverIndices[0] = -1;
+        popHoverIndices[1] = -1;
+    }
 }
 
 void Overlayer::update()
@@ -406,6 +415,11 @@ void Overlayer::update()
     glm::vec2 p = cam.getMouseCoords();
 
     popUpdate();
+
+    if (thinDrawer->wh->mouseData[3] == 2 || thinDrawer->wh->keyData[GLFW_KEY_ESCAPE] == 2)
+    {
+        selectedItemIndex = -1;
+    }
 
     const float mult = 6.0;
 

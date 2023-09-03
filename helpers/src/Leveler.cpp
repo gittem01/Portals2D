@@ -1214,6 +1214,8 @@ void Leveler::update()
 
 	ol->update();
 
+	handleRightClickClick();
+
 	if (wh->keyData[GLFW_KEY_T] == 2)
 	{
 		auto iter = levelObjects.begin();
@@ -1236,9 +1238,20 @@ void Leveler::update()
 
 	if (wh->mouseData[3] == 2 || wh->keyData[GLFW_KEY_ESCAPE] == 2)
 	{
-		if (item && item->objectType & CATAPULT && consqClickVec.size() > 0)
+		if (consqClickVec.size() > 0)
 		{
-			goto catapultLogic;
+			const s_levelGridData& lgd = getSquare(consqClickVec[0].x, consqClickVec[0].y);
+			if (lgd.objectType & CATAPULT)
+			{
+				takeBack(wh->keyData[GLFW_KEY_LEFT_SHIFT] != 0);
+
+				if (currentOperation->next && currentOperation->next->objectOperation &&
+					currentOperation->next->objectOperation->objData->objectType == CATAPULT && currentOperation->next->objectOperation->operationType == ADD)
+				{
+					currentOperation->next = currentOperation->next->next;
+					consqClickVec.clear();
+				}
+			}
 		}
 
 		clickStart[0] = -100000;
@@ -1376,6 +1389,14 @@ void Leveler::update()
 		double st = glfwGetTime();
 
 		takeBack(wh->keyData[GLFW_KEY_LEFT_SHIFT] != 0);
+
+		if (currentOperation->next && currentOperation->next->objectOperation &&
+			currentOperation->next->objectOperation->objData->objectType == CATAPULT && currentOperation->next->objectOperation->operationType == ADD &&
+			consqClickVec.size() != 0 && item && item->objectType == CATAPULT)
+		{
+			currentOperation->next = currentOperation->next->next;
+			consqClickVec.clear();
+		}
 
 		printf("Rev Time: %f\n", glfwGetTime() - st);
 	}
@@ -2637,15 +2658,11 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 	break;
 	case CATAPULT:
 	{
-		if (consqClickVec.size() == 0)
+		if (objectData->extraOffsets.size() > 0)
 		{
 			int index = objectData->extraOffsets[0];
 			thinDrawer->polynomShader->datas[index].shouldRender = false;
 			thinDrawer->polynomShader->freeIndices.push_back(index);
-		}
-		else
-		{
-			consqClickVec.clear();
 		}
 	}
 	break;
@@ -3312,4 +3329,40 @@ void Leveler::moveVkMem(ShaderBase* shader, int srcOffset, int destOffset, int s
 		destOffset, size, 0, (void**)&wUbo);
 	memcpy(wUbo, (void*)&wUboStager, size);
 	vkUnmapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0]->memory);
+}
+
+void Leveler::handleRightClickClick()
+{
+	if (wh->mouseData[2] == 2)
+	{
+		if (connecting && consqClickVec.size() > 0)
+		{
+			glm::ivec2 p0 = consqClickVec[0];
+			glm::ivec2 p1 = getMouseGrid();
+
+			const s_levelGridData& lgd0 = getSquare(p0.x, p0.y);
+			const s_levelGridData& lgd1 = getSquare(p1.x, p1.y);
+
+			if (lgd0.objectType & (TRANSMITTERS | RECEIVERS) && lgd1.objectType & (TRANSMITTERS | RECEIVERS))
+			{
+				s_connection* conn = connectObjects((s_objectDataGrid*)lgd0.data.ptr, (s_objectDataGrid*)lgd1.data.ptr, nullptr);
+				updateConnectionRenderData(conn);
+			}
+
+			connecting = false;
+			consqClickVec.clear();
+		}
+		if (ol->popHoverIndices[0] != -1)
+		{
+			if (ol->popHoverIndices[0] == 1 && ol->rightClickItem.ptr)
+			{
+				s_objectDataGrid* objData = (s_objectDataGrid*)ol->rightClickItem.ptr;
+				if (objData->objectType & (TRANSMITTERS | RECEIVERS))
+				{
+					consqClickVec.push_back(objData->pos);
+					connecting = true;
+				}
+			}
+		}
+	}
 }
