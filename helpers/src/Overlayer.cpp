@@ -197,7 +197,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         int j = 0;
         for (const auto& rd : pop.texts)
         {
-            ol->cd->renderDatas.push_back({ rd, { optData.posSize.x + 4.5, optData.posSize.y - 2.0 - j++ * 4.0, 3.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
+            ol->cd->renderDatas.push_back({ rd, { optData.posSize.x + 3.5, optData.posSize.y - 1.5 - j++ * 3.0, 2.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
         }
 
         i++;
@@ -279,15 +279,15 @@ int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::
     for (std::string& text : texts)
     {
         float x;
-        std::vector<s_charRenderData> rd = cd->getRenderData(text, 100, x);
+        std::vector<s_charRenderData> rd = cd->getRenderData(text, 75, x);
         
         maxSize = std::max(maxSize, x);
 
         pop.texts.push_back(rd);
 	}
 
-    pop.size.x = maxSize * 3.0 + 6.5;
-    pop.size.y = texts.size() * 4.0;
+    pop.size.x = maxSize * 2.0 + 6.5;
+    pop.size.y = texts.size() * 3.0;
 
     pops[popName] = pop;
 
@@ -320,7 +320,7 @@ void Overlayer::popUpdate()
 
     glm::vec2 cp = cam.getMouseCoords();
 
-    if (thinDrawer->wh->mouseData[3] == 2)
+    if (thinDrawer->wh->mouseData[3] == 2 && !itemDir)
     {
         popHoverIndices[0] = -1;
         popHoverIndices[1] = -1;
@@ -328,6 +328,7 @@ void Overlayer::popUpdate()
         s_pop& pop = pops[popShowName];
         popShowPos = cp;
         popShowPos = glm::vec2(std::min(cam.xSides.y - pop.size.x, popShowPos.x), std::max(cam.ySides.x + pop.size.y, popShowPos.y));
+        selectedItemIndex = -1;
     }
 
     if (popShowName.length() > 0)
@@ -337,7 +338,7 @@ void Overlayer::popUpdate()
         if (cp.x > popShowPos.x && cp.x < popShowPos.x + pop.size.x &&
             cp.y < popShowPos.y && cp.y > popShowPos.y - pop.size.y)
         {
-            int intPosY = (int)((-cp.y + popShowPos.y) / 4.0);
+            int intPosY = (int)((-cp.y + popShowPos.y) / 3.0);
             popHoverIndices[0] = intPosY;
             popHoverIndices[1] = -1;
 
@@ -370,7 +371,7 @@ void Overlayer::popUpdate()
             if (index2.length() > 0 && pops.find(index2) != pops.end())
             {
                 s_pop& pop2 = pops[index2];
-                glm::vec2 pos2 = { popShowPos.x + pop.size.x, popShowPos.y - popHoverIndices[0] * 4.0f };
+                glm::vec2 pos2 = { popShowPos.x + pop.size.x, popShowPos.y - popHoverIndices[0] * 3.0f };
                 pos2.y = std::max(cam.ySides.x + pop2.size.y, pos2.y);
 
                 if (pos2.x + pop2.size.x > cam.xSides.y)
@@ -381,7 +382,7 @@ void Overlayer::popUpdate()
                 if (cp.x > pos2.x && cp.x < pos2.x + pop2.size.x &&
                     cp.y < pos2.y && cp.y > pos2.y - pop2.size.y)
                 {
-                    int intPosY = (int)((-cp.y + pos2.y) / 4.0);
+                    int intPosY = (int)((-cp.y + pos2.y) / 3.0);
                     popHoverIndices[1] = intPosY;
                     if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[1] & pop.mask >> 16))
                     {
@@ -408,7 +409,8 @@ void Overlayer::update()
 
     const float mult = 6.0;
 
-    if (leftX + itemRatio * xSize + 1.5 < p.x || game->leveler->clickStart[0] != -100000 || game->leveler->consqClickVec.size() > 0)
+    if (leftX + itemRatio * xSize + 1.5 < p.x || game->leveler->clickStart[0] != -100000 || game->leveler->consqClickVec.size() > 0 ||
+        popShowName != "")
     {
         if (itemDir == 1)
         {

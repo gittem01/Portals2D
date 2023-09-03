@@ -50,7 +50,7 @@ float arrow(vec2 p, vec2 arrowPoint, float sizeMult)
 
 void main()
 {
-    float sizeMult = 4.0;
+    float sizeMult = 3.0;
     vec2 boxSize = pc.posSize.zw;
     vec2 p = localPos * 2.0;
     p -= boxSize;

@@ -2637,9 +2637,16 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 	break;
 	case CATAPULT:
 	{
-		int index = objectData->extraOffsets[0];
-		thinDrawer->polynomShader->datas[index].shouldRender = false;
-		thinDrawer->polynomShader->freeIndices.push_back(index);
+		if (consqClickVec.size() == 0)
+		{
+			int index = objectData->extraOffsets[0];
+			thinDrawer->polynomShader->datas[index].shouldRender = false;
+			thinDrawer->polynomShader->freeIndices.push_back(index);
+		}
+		else
+		{
+			consqClickVec.clear();
+		}
 	}
 	break;
 	default:
