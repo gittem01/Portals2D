@@ -19,41 +19,41 @@ layout (set = 0, binding = 0) uniform SharedUboData
     vec4 data;
 } sharedUboData;
 
-// credit for this shader and more: Inigo Quilez (iq) www.shadertoy.com
-
-vec2 hash( vec2 p )
+vec2 hash(vec2 p)
 {
-    p = vec2(dot(p, vec2(127.1,311.7)),
-             dot(p, vec2(269.5,183.3)));
-    return fract(sin(p) * 18.5453);
+    p = vec2(dot(p, vec2(633.7, 472.7)), dot(p, vec2(147.9, 742.1)));
+    return fract(sin(p) * 16.3561);
 }
 
-// return distance, and cell id
-vec2 voronoi(vec2 x)
+float voronoi(vec2 x)
 {
     vec2 n = floor(x);
     vec2 f = fract(x);
 
-	vec3 m = vec3(8.0);
+	float m = 8.0;
     for(int j = -1; j <= 1; j++)
-    for(int i = -1; i <= 1; i++)
     {
-        vec2 g = vec2(float(i), float(j));
-        vec2 o = hash(n + g);
-	    vec2 r = g - f + (0.5 + 0.5 * sin(sharedUboData.data.y * 2.0 + 6.0 * o));
-		float d = dot(r, r);
-        if(d < m.x)
-            m = vec3(d, o);
+        for(int i = -1; i <= 1; i++)
+        {
+            vec2 g = vec2(float(i), float(j));
+            vec2 o = hash(n + g);
+	        vec2 r = g - f + (0.5 + 0.5 * sin(sharedUboData.data.y * 2.0 + 6.0 * o));
+		    float d = dot(r, r);
+            if(d < m)
+            {
+                m = d;
+            }
+        }
     }
 
-    return vec2(sqrt(m.x), m.y + m.z);
+    return sqrt(m);
 }
 
 void main()
 {
-    vec2 c = voronoi(localPos * 10.0 + worldPos);
-    vec2 c2 = voronoi(localPos * 4.0 + worldPos);
-    float v = 1.0 - pow(c.x + c2.x, 3.0);
+    float c = voronoi(localPos * 10.0 + worldPos);
+    float c2 = voronoi(localPos * 4.0 + worldPos);
+    float v = 1.0 - pow(c + c2, 3.0);
     
     float sideMult = smoothstep(0.0, 0.5, 2.0 * (size.y * 0.5 - abs(localPos.y)) / size.y);
 

@@ -117,6 +117,8 @@ constexpr int getRotVal(int rot)
 #define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT | LIGHT_BRIDGE)
 #define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT | LIGHT_BRIDGE)
 #define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
+#define TRANSMITTERS (DOWN_BUTTON)
+#define RECEIVERS (LASERER | FUNNEL | HAZARDER | FORCE_FIELD | LIGHT_BRIDGE | PLATFORM)
 
 typedef enum OperationType
 {
@@ -167,6 +169,7 @@ typedef struct ObjectDataGrid
 {
 	glm::vec4 fullData;
 	std::vector<int> extraOffsets;
+	std::set<struct Connection*> connections;
 	levelObject objectType;
 	levelObject extraType;
 	int offset;
@@ -176,6 +179,15 @@ typedef struct ObjectDataGrid
 	glm::i16vec2 extraScale;
 	int rotation;
 } s_objectDataGrid;
+
+typedef struct Connection
+{
+	std::vector<glm::i16vec2> pathPoints;
+	std::vector<int> offsets;
+	s_objectDataGrid* transmitter;
+	s_objectDataGrid* receiver;
+	int index;
+} s_connection;
 
 inline bool operator<(const s_gridSquare lhs, const s_gridSquare rhs)
 {
@@ -255,6 +267,7 @@ public:
 	std::vector<s_gridSquare> lastOffsetPos_Hazard;
 	std::vector<s_gridSquare> lastOffsetPos_Field;
 	std::vector<s_gridSquare> lastOffsetPos_Platform;
+	std::vector<s_connection*> lastOffsetPos_Connection;
 
 	//////////////////
 	glm::ivec2 mouseGrid;
@@ -319,7 +332,11 @@ public:
 	bool isInBoundsCable(short x, short y);
 	glm::i16vec2 keepInBounds(glm::i16vec2 pos);
 
+	void updateConnectionRenderData(s_connection* connection);
+	s_connection* connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* obj2, s_connection* prevConnection);
 	short selectDirs(const glm::i16vec2 p0, const glm::i16vec2 p1, const char inDir, const char cableIndex);
+	char getAvailableCableIndices(const glm::i16vec2 p0, const glm::i16vec2 p1);
+	void getSimplePath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 from, glm::i16vec2 to, char cableIndex, char rot);
 	void getPath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 from, glm::i16vec2 to, char cableIndex);
 	void sendObjectRay(const s_gridItemData& item, short x, short y, short rotation, short scaleX, short scaleY,
 		float startOffset, float endOffset, levelObject objectMask,
