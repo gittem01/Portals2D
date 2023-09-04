@@ -1925,10 +1925,11 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 {
 	glm::i16vec2 from = connection->transmitter->pos;
 	glm::i16vec2 to = connection->receiver->pos;
+    char indices;
 
 	if (connection->pathPoints.size() > 1) goto ifIn;
 
-	char indices = getAvailableCableIndices(from, to);
+	indices = getAvailableCableIndices(from, to);
 
 	for (auto cableIndex : cableIndices)
 	{
