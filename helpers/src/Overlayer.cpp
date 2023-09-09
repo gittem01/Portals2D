@@ -84,29 +84,54 @@ Overlayer::Overlayer(Game* game)
     thinDrawer->memMapFuncs.push_back({ maper, (void*)this });
 	thinDrawer->lateDrawFuncs.push_back({ draw, (void*)this });
 
-    this->cd = new CharDrawer(thinDrawer, "NotoSans-Medium.ttf");
+    this->cd = new CharDrawer(thinDrawer);
 
     startAlloc = mt->lastAvailablePos;
     mt->lastAvailablePos += numX * numY * 4;
+
+    items.resize(getLevelObjectIndex(PLATFORM) + 1);
 
     addItem("PortallableWall", "ww.png", WHITE_WALL);
     addItem("N_PotallableWall", "bb.png", BLACK_WALL);
     addItem("GlassWall", "glassWall.png", GLASS_WALL);
     addItem("FenceWall", "fenceWall.png", FENCE_WALL);
-    addItem("DefaultCube", "cube.png", DEFAULT_CUBE, { 0.5, 0.1 }, 1, { 1.0, 1.0 }, 0.8, false, 0);
-    addItem("DownButton", "downButton.png", DOWN_BUTTON, { 1.0, +0.415 }, 1, { 1, 1 }, 1.0, true, 0);
-    addItem("Laserer", "laserer.png", LASERER, { 0.5, +0.28 }, 1, { 1.0, 1.0 }, 0.5, true, 0);
-    addItem("Funnel", "funnel.png", FUNNEL, { 0.5, +0.39 }, 1, { 2, 1 }, 2.0, true, 0);
-    addItem("HazardLaser", "hazard.png", HAZARDER, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
-    addItem("BlueField", "blueFielder.png", FORCE_FIELD, { 0.5, +0.475 }, 2, { 1, 1 }, 0.8, true, 0);
-    addItem("Catapult", "plate.png", CATAPULT, { 0.5, +0.475 }, 1, { 1, 1 }, 0.8, true, 0);
-    addItem("LightBridge", "lightBridge.png", LIGHT_BRIDGE, { 0.5, +0.402 }, 1, { 1, 1 }, 0.8, true, 0);
-    addItem("Platform", "platform.png", PLATFORM, { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
-    addItem("Remove", "x.png", ERASER);
 
-    addPop("button", { "Delete Item", "Connect to...", "Item Type", "Remove Connections" }, { "", "", "cube_select", "connection_select"}, 0x100c0000);
-    addPop("connection_select", {"Default Cube #1", "Blue Gel #1"}, {"", ""}, 0x00000000);
-    addPop("cube_select", {"Default Cube", "Companion Cube", "Laser Cube", "Sphere"}, {"", "", "", ""}, 0x000000ff);
+    addItem("", "cube.png", DEFAULT_CUBE, "remove", { 0.5, 0.1 }, 1, { 1.0, 1.0 }, 0.8, false, 0, true);
+    addItem("", "downButton.png", DOWN_BUTTON, "base_connector", { 1.0, +0.35 }, 1, { 2, 1 }, 1.6, true, 0);
+    addItem("", "laserer.png", LASERER, "activated_connector", { 0.5, +0.325 }, 1, { 1.0, 1.0 }, 0.5, true, 0);
+    addItem("", "funnel.png", FUNNEL, "activated_connector", { 0.5, +0.22 }, 1, { 2, 1 }, 2.0, true, 0);
+    addItem("", "hazard.png", HAZARDER, "activated_connector", { 0.5, +0.44 }, 2, { 1, 1 }, 0.8, true, 0);
+    addItem("", "blueFielder.png", FORCE_FIELD, "activated_connector", { 0.5, +0.43 }, 2, { 1, 1 }, 0.8, true, 0);
+    addItem("", "plate.png", CATAPULT, "remove", { 0.5, +0.42 }, 1, { 1, 1 }, 0.8, true, 0);
+    addItem("", "lightBridge.png", LIGHT_BRIDGE, "activated_connector", { 0.5, +0.32 }, 1, { 1, 1 }, 0.8, true, 0);
+
+    addItem("", "laserCube.png", LASER_CUBE, "remove", { 0.5, 0.1 }, 1, { 1.0, 1.0 }, 0.8, false, 0, true);
+    addItem("", "laserReceiverGround.png", LASER_REC_GND, "base_connector", { 1.0, +0.22 }, 1, { 1, 1 }, 0.7, true, 0);
+    addItem("", "laserReceiverWall.png", LASER_REC_WALL, "base_connector", { 0.5, +0.38 }, 1, { 1.0, 1.0 }, 0.9, true, 0);
+    addItem("", "sphere.png", SPHERE_CUBE, "remove", { 0.5, +0.13 }, 1, { 1, 1 }, 0.8, false, 0, true);
+    addItem("", "turret.png", TURRET, "remove", { 0.5, +0.23 }, 1, { 1, 2 }, 1.6, false, 0, true);
+    addItem("", "clickButton.png", CLICK_BUTTON, "base_connector", { 0.5, +0.278 }, 2, { 1, 2 }, 1.5, true, 0, true);
+    addItem("", "cubeButton.png", CUBE_BUTTON, "base_connector", { 0.5, +0.35 }, 1, { 2, 1 }, 1.6, true, 0);
+    addItem("", "circleButton.png", SPHERE_BUTTON, "base_connector", { 0.5, +0.37 }, 1, { 2, 1 }, 1.6, true, 0);
+
+    addItem("", "blueGeller.png", BLUE_GELLER, "activated_connector", { 0.5, -0.02 }, 1, { 2, 2 }, 2.0, true, 2);
+    addItem("", "orangeGeller.png", ORANGE_GELLER, "activated_connector", { 0.5, -0.02 }, 1, { 2, 2 }, 2.0, true, 2);
+    addItem("", "whiteGeller.png", WHITE_GELLER, "activated_connector", { 0.5, -0.02 }, 1, { 2, 2 }, 2.0, true, 2);
+    addItem("", "waterGeller.png", WATER_GELLER, "activated_connector", { 0.5, -0.02 }, 1, { 2, 2 }, 2.0, true, 2);
+
+    addItem("", "platform.png", PLATFORM, "platform", { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
+    addItem("", "x.png", ERASER);
+
+    getPops();
+
+    auto lines = IOHelper::loadLines("items.txt");
+    auto res = IOHelper::mapVector(lines);
+
+    for (int i = 0; i < 21; i++)
+    {
+        std::string s = "<" + std::to_string(i) + ">";
+        items[i + 4].name = res[s][cd->selectedLanguageIndex];
+    }
 }
 
 void Overlayer::maper(void* ptr)
@@ -144,7 +169,7 @@ void Overlayer::maper(void* ptr)
             vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc) * sizeof(s_manyTextureData),
                 sizeof(s_manyTextureData), 0, (void**)&mtd);
             mtd->posSize = glm::vec4(ol->leftX - ol->xSize + ol->itemRatio * ol->xSize + x * 9.0 + 5.0f, 31.5 - y * 9.0,
-                6.0 + item.extraScale, 6.0 + item.extraScale);
+                (6.0 + item.extraScale) * item.scaleRatio.x, (6.0 + item.extraScale) * item.scaleRatio.y);
 
             mtd->data.x = 0.0;
             vkUnmapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory);
@@ -199,7 +224,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         int j = 0;
         for (const auto& rd : pop.texts)
         {
-            ol->cd->renderDatas.push_back({ rd, { optData.posSize.x + 3.5, optData.posSize.y - 1.5 - j++ * 3.0, 2.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
+            ol->cd->renderDatas.push_back({ rd, { optData.posSize.x + 3.5, optData.posSize.y - 1.5 - j++ * 3.0, 2.5, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
         }
 
         i++;
@@ -242,7 +267,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         for (s_gridItemData& item : ol->items)
         {
             vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                ol->mt->pipelineLayout, 2, 1, &item.texSet, 0, VK_NULL_HANDLE);
+                ol->mt->pipelineLayout, 2, 1, &item.tex->set, 0, VK_NULL_HANDLE);
 
             vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc));
 
@@ -269,6 +294,40 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
 }
 
+void Overlayer::getPops()
+{
+    auto popNames = IOHelper::loadLines("popNames.txt");
+    for (auto& name : popNames)
+    {
+        std::string fileName = "pops/" + name + ".txt";
+        auto popLines = IOHelper::loadLines(fileName);
+        auto popMap = IOHelper::mapVector(popLines);
+        std::string langString = "<" + std::to_string(cd->selectedLanguageIndex) + ">";
+
+        auto popStrings = popMap[langString];
+        auto links = popMap["<linked_options>"];
+        auto signal_options = popMap["<signal_options>"];
+
+        int mask = 0;
+        for (int i = 0; i < signal_options.size(); i++)
+        {
+            int option = std::stoi(signal_options[i]);
+            mask |= (option << i);
+        }
+
+        for (int i = 0; i < links.size(); i++)
+        {
+            auto link = links[i];
+            if (!(link.size() == 1 && link[0] == '-'))
+            {
+                mask |= ((1 << 16) << i);
+            }
+        }
+
+        addPop(name, popStrings, links, mask);
+    }
+}
+
 int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::vector<std::string> secondaryPops, int mask)
 {
     assert(texts.size() == secondaryPops.size());
@@ -281,14 +340,14 @@ int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::
     for (std::string& text : texts)
     {
         float x;
-        std::vector<s_charRenderData> rd = cd->getRenderData(text, 75, x);
+        std::vector<s_charRenderData> rd = cd->getRenderData(text, 100, x);
         
         maxSize = std::max(maxSize, x);
 
         pop.texts.push_back(rd);
 	}
 
-    pop.size.x = maxSize * 2.0 + 6.5;
+    pop.size.x = maxSize * 2.5 + 6.5;
     pop.size.y = texts.size() * 3.0;
 
     pops[popName] = pop;
@@ -296,24 +355,40 @@ int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::
     return pops.size() - 1;
 }
 
-void Overlayer::addItem(char* name, char* fileName, levelObject objectType, glm::vec2 gridRenderTranslation, int numTextureObjects,
-    glm::ivec2 gridScale, float gridRenderScale, bool canRotate, int requiredSideFill)
+void Overlayer::addItem(const char* name, const char* fileName, levelObject objectType, std::string popName, glm::vec2 gridRenderTranslation, int numTextureObjects,
+    glm::ivec2 gridScale, float gridRenderScale, bool canRotate, int requiredSideFill, bool canMirror)
 {
     s_gridItemData itemData;
     itemData.objectType = objectType;
     itemData.name = name;
+    itemData.popName = popName;
     itemData.gridRenderTranslation = gridRenderTranslation;
     itemData.gridScale = gridScale;
     itemData.gridRenderScale = gridRenderScale;
     itemData.canRotate = canRotate;
     itemData.requiredSideFill = requiredSideFill;
     itemData.numTextureObjects = numTextureObjects;
+    itemData.canMirror = canMirror;
 
-    s_texture* tex = IOHelper::loadTexture(fileName, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
-    itemData.texSet = tex->set;
     itemData.extraScale = 0.0;
 
-    items.push_back(itemData);
+    s_texture* tex = IOHelper::loadTexture(fileName, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+    itemData.tex = tex;
+    itemData.scaleRatio = glm::vec2(tex->width / (float)tex->height, 1.0f);
+    if (itemData.scaleRatio.x > 1.0)
+    {
+		itemData.scaleRatio = glm::vec2(1.0f, 1.0f / itemData.scaleRatio.x);
+	}
+
+    if (objectType & (ERASER))
+    {
+        items.push_back(itemData);
+    }
+    else
+    {
+        int index = getLevelObjectIndex(objectType);
+        items[index] = itemData;
+    }
 }
 
 void Overlayer::popUpdate()
@@ -324,20 +399,74 @@ void Overlayer::popUpdate()
 
     if (thinDrawer->wh->mouseData[3] == 2 && !itemDir && selectedItemIndex == -1)
     {
-        popHoverIndices[0] = -1;
-        popHoverIndices[1] = -1;
-        popShowName = "button";
-        s_pop& pop = pops[popShowName];
-        popShowPos = cp;
-        popShowPos = glm::vec2(std::min(cam.xSides.y - pop.size.x, popShowPos.x), std::max(cam.ySides.x + pop.size.y, popShowPos.y));
-
         glm::ivec2 levelerCamPos = game->leveler->getMouseGrid();
-        rightClickItem = game->leveler->getSquare(levelerCamPos.x, levelerCamPos.y).data;
+        const s_levelGridData& lgd = game->leveler->getSquare(levelerCamPos.x, levelerCamPos.y);
+        if (lgd.objectType & (SINGLE_DRAWS | PLATFORM))
+        {
+            rightClickItem = lgd.data;
+            s_objectDataGrid* objectData = (s_objectDataGrid*)rightClickItem.ptr;
+
+            s_pop* ac = &pops["activated_connector"];
+            ac->mask &= 0xF0 ^ -1ll;
+
+            std::vector<std::string> connectionNames;
+            std::vector<std::string> empties;
+            for (s_connection* conn : objectData->connections)
+            {
+                int itemIndex;
+                if (conn->transmitter == objectData)
+                {
+                    itemIndex = getLevelObjectIndex(conn->receiver->objectType);
+                }
+                else
+                {
+                    itemIndex = getLevelObjectIndex(conn->transmitter->objectType);
+                }
+
+                const s_gridItemData& gid = items[itemIndex];
+                connectionNames.push_back(gid.name);
+                empties.push_back("");
+            }
+
+            addPop("connection_select", connectionNames, empties, 0);
+        }
+
+        int itemIndex = getLevelObjectIndex(lgd.objectType);
+        if (itemIndex < 0)
+        {
+            popShowName = "none";
+        }
+        else
+        {
+            const s_gridItemData& gid = items[itemIndex];
+            popShowName = gid.popName;
+        }
+        
+        if (pops.find(popShowName) != pops.end())
+        {
+            popHoverIndices[0] = -1;
+            popHoverIndices[1] = -1;
+            s_pop& pop = pops[popShowName];
+            popShowPos = cp;
+            popShowPos = glm::vec2(std::min(cam.xSides.y - pop.size.x, popShowPos.x), std::max(cam.ySides.x + pop.size.y, popShowPos.y));
+        }
     }
 
     if (popShowName.length() > 0)
     {
         s_pop& pop = pops[popShowName];
+
+        if (rightClickItem.ptr)
+        {
+            s_objectDataGrid* objectData = (s_objectDataGrid*)rightClickItem.ptr;
+            if (objectData->objectType & RECEIVERS)
+            {
+                int shift = objectData->objectType == PLATFORM ? 12 : 11;
+                pop.mask &= (3 << shift) ^ -1ll;
+                pop.mask |= objectData->startActive << shift;
+                pop.mask |= objectData->loop << (shift + 1);
+            }
+        }
 
         if (cp.x > popShowPos.x && cp.x < popShowPos.x + pop.size.x &&
             cp.y < popShowPos.y && cp.y > popShowPos.y - pop.size.y)
@@ -346,7 +475,7 @@ void Overlayer::popUpdate()
             popHoverIndices[0] = intPosY;
             popHoverIndices[1] = -1;
 
-            if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[0] & pop.mask >> 16))
+            if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[0] & pop.mask >> 16) && !(1 << popHoverIndices[0] & pop.mask))
             {
                 popShowName = "";
                 return;
@@ -360,7 +489,7 @@ void Overlayer::popUpdate()
                 popHoverIndices[1] = -1;
             }
 
-            if (thinDrawer->wh->mouseData[2] == 2)
+            if (thinDrawer->wh->mouseData[2] == 2 && popHoverIndices[1] == -1)
             {
                 popShowName = "";
                 return;
@@ -375,6 +504,17 @@ void Overlayer::popUpdate()
             if (index2.length() > 0 && pops.find(index2) != pops.end())
             {
                 s_pop& pop2 = pops[index2];
+
+                if (rightClickItem.ptr)
+                {
+                    s_objectDataGrid* objectData = (s_objectDataGrid*)rightClickItem.ptr;
+                    if (objectData->objectType == PLATFORM)
+                    {
+                        pop2.mask &= (0xF << 8) ^ -1ll;
+                        pop2.mask |= 1 << (objectData->platformType + 8);
+                    }
+                }
+
                 glm::vec2 pos2 = { popShowPos.x + pop.size.x, popShowPos.y - popHoverIndices[0] * 3.0f };
                 pos2.y = std::max(cam.ySides.x + pop2.size.y, pos2.y);
 
@@ -388,7 +528,7 @@ void Overlayer::popUpdate()
                 {
                     int intPosY = (int)((-cp.y + pos2.y) / 3.0);
                     popHoverIndices[1] = intPosY;
-                    if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[1] & pop.mask >> 16))
+                    if (thinDrawer->wh->mouseData[2] == 2 && !(1 << popHoverIndices[1] & pop2.mask >> 16) && !(1 << popHoverIndices[1] & pop2.mask))
                     {
                         popShowName = "";
                         return;
@@ -407,6 +547,7 @@ void Overlayer::popUpdate()
     {
         popHoverIndices[0] = -1;
         popHoverIndices[1] = -1;
+        rightClickItem.ptr = nullptr;
     }
 }
 
@@ -486,6 +627,7 @@ void Overlayer::update()
                         if (selectedItemIndex != hoverIndex)
                         {
                             game->leveler->selectedObjectRotation = 0;
+                            game->leveler->selectedObjectMirror = 0;
                             game->leveler->consqClickVec.clear();
                         }
 

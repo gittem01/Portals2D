@@ -1,0 +1,24 @@
+<0>
+Geri Al <<
+İleri Al >>
+<0>
+<1>
+Undo <<
+Redo >>
+<1>
+<2>
+撤消 <<
+重做 >>
+<2>
+<3>
+元に戻す <<
+やり直し >>
+<3>
+<linked_options>
+-
+-
+<linked_options>
+<signal_options>
+0
+0
+<signal_options>

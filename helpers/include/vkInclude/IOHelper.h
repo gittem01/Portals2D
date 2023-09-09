@@ -39,6 +39,8 @@ public:
 	static std::map<std::string, struct s_texture*> textureMap;
 
 	static void getAssetsFolder();
+	static std::vector<std::string> loadLines(std::string fileName);
+	static std::map<std::string, std::vector<std::string>> mapVector(std::vector<std::string> lines);
 	// file name without .glb
 	static void loadGlTF(std::string fileName);
 	static s_texture* loadTexture(std::string fileName,

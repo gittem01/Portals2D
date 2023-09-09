@@ -50,6 +50,58 @@ void IOHelper::getAssetsFolder()
 	printf("Could not find assets folder. Assigning it as '/assets'\n");
 }
 
+std::vector<std::string> IOHelper::loadLines(std::string fileName)
+{
+    fileName = assetsFolder + "texts/" + fileName;
+    std::ifstream file(fileName);
+
+    // Check if the file was opened successfully
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open the file: " << fileName << std::endl;
+        exit(-1);
+    }
+
+    std::vector<std::string> lines;
+    std::string line;
+
+    while (std::getline(file, line))
+    {
+        lines.push_back(line);
+    }
+
+    file.close();
+
+    return lines;
+}
+
+std::map<std::string, std::vector<std::string>> IOHelper::mapVector(std::vector<std::string> lines)
+{
+    std::map<std::string, std::vector<std::string>> myMap;
+    std::string currentKey;
+    int counter = 0;
+    for (const auto& line : lines)
+    {
+        if ((line.front() == '<' && line.back() == '>' && line == currentKey) || currentKey.length() == 0)
+        {
+            if (currentKey.length() > 0)
+            {
+                currentKey.clear();
+            }
+            else
+            {
+                currentKey = line;
+            }
+        }
+        else if (currentKey.length() > 0)
+        {
+            myMap[currentKey].push_back(line);
+        }
+    }
+
+    return myMap;
+}
+
 void IOHelper::loadGlTF(std::string fileName)
 {
     tinygltf::Model model;

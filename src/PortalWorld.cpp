@@ -485,23 +485,28 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
             int status = pbfData1->getPortalStatus(collPortal, side);
             int status2 = pbfData1->getPortalStatus(collPortal, side ^ 1);
-            if (status == 1){
+            if (status == 1)
+            {
                 int fixSide = collPortal->getFixtureSide(fix);
                 
                 bool rayCheck = false;
                 bool release = false;
                 if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
-                else{
+                else
+                {
                     bool check = collPortal->rayCheck(fix);
-                    if (!check){
+                    if (!check)
+                    {
                         release = true;
                     }
-                    else{
+                    else
+                    {
                         rayCheck = true;
                     }
                 }
 
-                if (rayCheck){
+                if (rayCheck)
+                {
                     fixMargin -= 1;
                     col->portal = portal2;
                     col->side = c->side2;
@@ -517,13 +522,16 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     pbfData2->pCollisions.push_back(col);
                     allOut = false;
                 }
-                else{
+                else
+                {
                     free(col);
                 }
             }
-            else if (status == 2){
+            else if (status == 2)
+            {
                 fixMargin -= 2;
-                if (status2 == 1){
+                if (status2 == 1)
+                {
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = -2;
@@ -534,7 +542,8 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
                     else rayCheck = 1;
 
-                    if (!rayCheck){
+                    if (!rayCheck)
+                    {
                         col->status++;
                     }
                 }
@@ -544,29 +553,34 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     col->status = status2 - 2;
                     pbfData2->pCollisions.push_back(col);
 
-                    if (status2 % 2 == 0){
+                    if (status2 % 2 == 0)
+                    {
                         bool rayCheck;
                         int fixSide = collPortal->getFixtureSide(fix);
                         if (fixSide == (1 ^ c->side1)) rayCheck = collPortal->rayCheck(fix);
                         else rayCheck = 1;
 
-                        if (!rayCheck){
+                        if (!rayCheck)
+                        {
                             col->status++;
                         }
                     }
                 }
-                else{
+                else
+                {
                     col->portal = portal2;
                     col->side = c->side2;
                     col->status = -1;
                     pbfData2->pCollisions.push_back(col);
                 }
             }
-            else{
+            else
+            {
                 free(col);
             }
 
-            if (status != 1 && status2 != 1){
+            if (status != 1 && status2 != 1)
+            {
                 //allOut = false;
             }
         }

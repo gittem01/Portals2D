@@ -1,0 +1,48 @@
+<0>
+Eşyayı Sil
+Eşyaya Bağla...
+Bağlantıları Kaldır
+Platform Tipi
+Aktif Başlat
+Döngü Modu
+<0>
+<1>
+Delete Item
+Connect to...
+Remove Connections
+Platform Type
+Start Active
+Loop Mode
+<1>
+<2>
+删除项目
+连接到...
+删除连接
+平台类型
+开始活动
+循环模式
+<2>
+<3>
+項目の削除
+に接続します...
+接続の削除
+プラットフォームの種類
+アクティブに開始
+ループモード
+<3>
+<linked_options>
+-
+-
+connection_select
+platform_type
+-
+-
+<linked_options>
+<signal_options>
+0
+0
+0
+0
+1
+1
+<signal_options>

@@ -61,5 +61,5 @@ void main()
         }
     }
 
-    color = vec4(data.colour.xyz, (1.0f - perctDist) * (1.0f / (1.0f - data.data.z)));
+    color = vec4(data.colour.xyz, data.colour.w * (1.0f - perctDist) * (1.0f / (1.0f - data.data.z)));
 }

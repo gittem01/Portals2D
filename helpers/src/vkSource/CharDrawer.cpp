@@ -62,26 +62,17 @@ std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 	return codePoints;
 }
 
-CharDrawer::CharDrawer(ThinDrawer* thinDrawer, const char* fontFile)
+CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 {
-	loadFontFile(fontFile, fontData, fontInfo);
+	auto languages = IOHelper::loadLines("languages.txt");
+	auto languageMap = IOHelper::mapVector(languages);
+	selectedLanguageIndex = std::stoi(languageMap["<selected_language_index>"][0]);
+	std::string s = "<" + std::to_string(selectedLanguageIndex) + ">";
+	
+	languageName = languageMap[s][0];
+	loadFontFile(languageMap[s][1], fontData, fontInfo);
 
 	this->thinDrawer = thinDrawer;
-
-	int targetWidth = 200;
-	int targetHeight = 200;
-
-	std::string file_path = IOHelper::assetsFolder + "texts/testText.txt";
-
-	// Open the file in binary mode
-	std::ifstream file(file_path, std::ios::binary);
-
-	// Read the file contents as a sequence of bytes
-	std::string utf8String((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-	/*float x;
-	std::vector<s_charRenderData> rd = getRenderData(utf8String, 110, x);
-	renderDatas.push_back({ rd, { 0.0, 0.0, 1.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });*/
 
 	fontShader = new FontShader(thinDrawer);
 	thinDrawer->shaders.push_back(fontShader);

@@ -1,0 +1,36 @@
+<0>
+Eşyayı Sil
+Eşyaya Bağla...
+Bağlantıları Kaldır
+Aktif Başlat
+<0>
+<1>
+Delete Item
+Connect to...
+Remove Connections
+Start Active
+<1>
+<2>
+删除项目
+连接到...
+删除连接
+开始活动
+<2>
+<3>
+項目の削除
+に接続します...
+接続の削除
+アクティブに開始
+<3>
+<linked_options>
+-
+-
+connection_select
+-
+<linked_options>
+<signal_options>
+0
+0
+0
+1
+<signal_options>

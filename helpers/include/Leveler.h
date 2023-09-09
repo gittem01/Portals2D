@@ -37,15 +37,33 @@ typedef enum LevelObject : long long
 	BLACK_WALL		= 0x1ll << 1,
 	GLASS_WALL		= 0x1ll << 2,
 	FENCE_WALL		= 0x1ll << 3,
-	DEFAULT_CUBE	= 0x1ll << 4,
+
+	CLICK_BUTTON	= 0x1ll << 4,
 	DOWN_BUTTON		= 0x1ll << 5,
-	LASERER			= 0x1ll << 6,
-	FUNNEL			= 0x1ll << 7,
-	HAZARDER		= 0x1ll << 8,
-	FORCE_FIELD		= 0x1ll << 9,
-	CATAPULT		= 0x1ll << 10,
-	LIGHT_BRIDGE	= 0x1ll << 11,
-	PLATFORM		= 0x1ll << 12,
+	CUBE_BUTTON		= 0x1ll << 6,
+	SPHERE_BUTTON	= 0x1ll << 7,
+
+	DEFAULT_CUBE	= 0x1ll << 8,
+	LASER_CUBE		= 0x1ll << 9,
+	SPHERE_CUBE		= 0x1ll << 10,
+	TURRET			= 0x1ll << 11,
+
+	LASERER			= 0x1ll << 12,
+	LASER_REC_GND	= 0x1ll << 13,
+	LASER_REC_WALL	= 0x1ll << 14,
+	CATAPULT		= 0x1ll << 15,
+
+	FUNNEL			= 0x1ll << 16,
+	LIGHT_BRIDGE	= 0x1ll << 17,
+	HAZARDER		= 0x1ll << 18,
+	FORCE_FIELD		= 0x1ll << 19,
+
+	BLUE_GELLER		= 0x1ll << 20,
+	ORANGE_GELLER	= 0x1ll << 21,
+	WHITE_GELLER	= 0x1ll << 22,
+	WATER_GELLER	= 0x1ll << 23,
+
+	PLATFORM		= 0x1ll << 24,
 
 	HAZARDER_MID_DU = 0x1ll << 55,
 	FIELD_MID_DU	= 0x1ll << 56,
@@ -60,39 +78,20 @@ typedef enum LevelObject : long long
 	ERASER			= 0x1ll << 63,
 } levelObject;
 
-constexpr int getLevelObjectIndex(levelObject value)
+constexpr int getLevelObjectIndex(levelObject val)
 {
-	switch (value)
-	{
-		case WHITE_WALL:
-			return 0;
-		case BLACK_WALL:
-			return 1;
-		case GLASS_WALL:
-			return 2;
-		case FENCE_WALL:
-			return 3;
-		case DEFAULT_CUBE:
-			return 4;
-		case DOWN_BUTTON:
-			return 5;
-		case LASERER:
-			return 6;
-		case FUNNEL:
-			return 7;
-		case HAZARDER:
-			return 8;
-		case FORCE_FIELD:
-			return 9;
-		case CATAPULT:
-			return 10;
-		case LIGHT_BRIDGE:
-			return 11;
-		case PLATFORM:
-			return 12;
-	default:
-		return -1;
-	}
+	int index = 0;
+	val = (LevelObject)(val & 0x1FFFFFF);
+
+	long long value = (long long)val;
+	if (value & 0xFFFFFFFF00000000) { value >>= 32; index += 32; }
+	if (value & 0xFFFF0000) { value >>= 16; index += 16; }
+	if (value & 0xFF00) { value >>= 8;  index += 8; }
+	if (value & 0xF0) { value >>= 4;  index += 4; }
+	if (value & 0xC) { value >>= 2;  index += 2; }
+	if (value & 0x2) { index += 1; }
+
+	return index;
 }
 
 constexpr int getRotVal(int rot)
@@ -114,13 +113,15 @@ constexpr int getRotVal(int rot)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS (DEFAULT_CUBE | DOWN_BUTTON | LASERER | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT | LIGHT_BRIDGE)
-#define OCCUPIERS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | DEFAULT_CUBE | DOWN_BUTTON | LASERER | PLATFORM | FUNNEL | HAZARDER | FORCE_FIELD | CATAPULT | LIGHT_BRIDGE)
-#define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
-#define TRANSMITTERS (DOWN_BUTTON)
-#define RECEIVERS (LASERER | FUNNEL | HAZARDER | FORCE_FIELD | LIGHT_BRIDGE | PLATFORM)
+#define SINGLE_DRAWS 0xFFFFF0	// all except walls and platform
+#define OCCUPIERS 0x1FFFFFF		// all
 
-typedef enum OperationType
+#define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
+#define TRANSMITTERS (CLICK_BUTTON | DOWN_BUTTON | CUBE_BUTTON | SPHERE_BUTTON | LASER_REC_GND | LASER_REC_WALL)
+#define RECEIVERS (LASERER | FUNNEL | HAZARDER | FORCE_FIELD | LIGHT_BRIDGE | PLATFORM | BLUE_GELLER | ORANGE_GELLER | WHITE_GELLER | WATER_GELLER)
+#define GELS (BLUE_GELLER | ORANGE_GELLER | WHITE_GELLER | WATER_GELLER)
+
+typedef enum OperationType																 
 {
 	ADD		= 1,
 	REMOVE	= 2,
@@ -169,7 +170,7 @@ typedef struct ObjectDataGrid
 {
 	glm::vec4 fullData;
 	std::vector<int> extraOffsets;
-	std::set<struct Connection*> connections;
+	std::vector<struct Connection*> connections;
 	levelObject objectType;
 	levelObject extraType;
 	int offset;
@@ -178,11 +179,16 @@ typedef struct ObjectDataGrid
 	glm::i16vec2 scale;
 	glm::i16vec2 extraScale;
 	int rotation;
+	char platformType;
+	bool startActive;
+	bool loop;
+	bool mirrored;
 } s_objectDataGrid;
 
 typedef struct Connection
 {
 	std::vector<glm::i16vec2> pathPoints;
+	std::vector<glm::vec2> renderPathPoints;
 	std::vector<int> offsets;
 	s_objectDataGrid* transmitter;
 	s_objectDataGrid* receiver;
@@ -216,6 +222,7 @@ typedef struct GridOperationList
 {
 	std::vector<s_gridOperation> operations;
 	s_gridOperation_o* objectOperation = nullptr;
+	s_connection* connection = nullptr;
 	GridOperationList* next = nullptr;
 	GridOperationList* prev = nullptr;
 	glm::i16vec4 region;
@@ -230,15 +237,18 @@ typedef struct PerTextureData
 typedef struct GridItemData
 {
 	std::string name;
+	std::string popName;
 	levelObject objectType;
-	VkDescriptorSet texSet;
+	struct s_texture* tex;
 	glm::vec2 gridRenderTranslation;
 	glm::ivec2 gridScale;
+	glm::vec2 scaleRatio;
 	float extraScale;
 	int numTextureObjects;
 	float gridRenderScale;
 	int requiredSideFill;
 	bool canRotate;
+	bool canMirror;
 } s_gridItemData;
 
 class Leveler
@@ -276,6 +286,7 @@ public:
 	glm::ivec2 clickStart;
 	glm::ivec2 lastGrid;
 	int selectedObjectRotation = 0;
+	int selectedObjectMirror = 0;
 	std::vector<glm::ivec2> consqClickVec;
 	bool connecting = false;
 
@@ -327,6 +338,8 @@ public:
 	void addGridSquare_E(short x, short y);
 	void addGridSquare(short x, short y, levelObject objectType);
 
+	glm::ivec2 getGridPos(glm::vec2 p);
+	bool canConnect(glm::ivec2 p0, glm::ivec2 p1);
 	short keepXInBounds(short x);
 	short keepYInBounds(short y);
 	bool isInBounds(short x, short y);
@@ -335,6 +348,7 @@ public:
 
 	void updateConnectionRenderData(s_connection* connection);
 	s_connection* connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* obj2, s_connection* prevConnection);
+	void removeConnection(s_connection* connection, s_objectDataGrid* noRemove=nullptr, bool track=true);
 	short selectDirs(const glm::i16vec2 p0, const glm::i16vec2 p1, const char inDir, const char cableIndex);
 	char getAvailableCableIndices(const glm::i16vec2 p0, const glm::i16vec2 p1);
 	void getSimplePath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 from, glm::i16vec2 to, char cableIndex, char rot);
@@ -347,7 +361,7 @@ public:
 
 	void moveVkMem(class ShaderBase* shader, int srcOffset, int destOffset, int size);
 	void removeGridSquare(short x, short y);
-	void setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData);
+	void setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData, s_connection* connection=nullptr);
 	void update();
 	void calcMouseGrid();
 	glm::ivec2 getMouseGrid();

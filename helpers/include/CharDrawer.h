@@ -29,11 +29,13 @@ public:
 	FontShader* fontShader;
 	std::vector<unsigned char> fontData;
 	stbtt_fontinfo fontInfo;
+	int selectedLanguageIndex;
+	std::string languageName;
 
 	std::vector<s_lineRenderData> renderDatas;
 	std::map<std::pair<int, int>, s_charRenderData> codepointMap;
 
-	CharDrawer(ThinDrawer* thinDrawer, const char* fontFile);
+	CharDrawer(ThinDrawer* thinDrawer);
 
 	std::vector<s_charRenderData> getRenderData(const std::string& text, float targetHeight, float& x);
 

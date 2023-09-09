@@ -12,6 +12,8 @@
 Leveler* Leveler::object;
 
 glm::i16vec2 rotationMults[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
+glm::i16vec2 connectionDirs[2] = { { +1, 0 }, { 0, +1 } };
+glm::i16vec2 connectionAdditions[4] = { { 0, 0 }, { +1, 0 }, { 0, +1 }, { 0, 0 } };
 char cableIndices[8] = { 3, 4, 2, 5, 1, 6, 0, 7 };
 const int maxPlatformDiff = 4;
 
@@ -147,7 +149,7 @@ void Leveler::initOffsets()
 				float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
 				s_wallUbo_w wallUbo;
 				wallUbo.posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
-				wallUbo.bgColour = glm::vec4(0.1f + randVal11, 0.1f + randVal11, 0.1f + randVal11, 1.0f);
+				wallUbo.bgColour = glm::vec4(0.05f + randVal11, 0.05f + randVal11, 0.05f + randVal11, 1.0f);
 				wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 				wallUbo.dotColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
 				wallUbo.data = glm::vec4(0.2f + randVal22, 0.01f, 2.0f, 1.0f);
@@ -200,7 +202,7 @@ void Leveler::initOffsets()
 			vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
 				gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
 			wallUbo->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
-			wallUbo->colour = glm::vec4(0.05, 0.05, 0.05, 1.0) * rndVal;
+			wallUbo->colour = glm::vec4(0.02, 0.02, 0.02, 1.0) * rndVal;
 			wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.8, 0.0);
 			vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
 			gData->offsetEnd++;
@@ -425,7 +427,7 @@ void renderTextureds(VkCommandBuffer cmdBuff, Leveler* leveler)
 			mt->pipelineLayout, 1, 1, &mt->descriptorSets[1], 0, VK_NULL_HANDLE);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			mt->pipelineLayout, 2, 1, &leveler->ol->items[i].texSet, 0, VK_NULL_HANDLE);
+			mt->pipelineLayout, 2, 1, &leveler->ol->items[i].tex->set, 0, VK_NULL_HANDLE);
 
 		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, data.currentOffset - data.offsetStart, 0, data.offsetStart);
 	}
@@ -540,7 +542,13 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 	float hAdd = scaleX % 2 == 1 ? 0.5 : 0.0;
 	float vAdd = scaleY % 2 == 1 ? 0.5 : 0.0;
 
-	mtd->posSize = glm::vec4(mp.x + hAdd + extraAdd.x, mp.y + vAdd + extraAdd.y, item.gridRenderScale, item.gridRenderScale);
+	mtd->posSize = glm::vec4(mp.x + hAdd + extraAdd.x, mp.y + vAdd + extraAdd.y,
+		item.gridRenderScale * item.scaleRatio.x, item.gridRenderScale * item.scaleRatio.y);
+	if (leveler->selectedObjectMirror)
+	{
+		mtd->posSize.z *= -1.0f;
+	}
+
 	mtd->data.x = leveler->selectedObjectRotation * b2_pi * 0.5;
 	vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
 
@@ -555,7 +563,7 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 		mt->pipelineLayout, 1, 1, &mt->descriptorSets[1], 0, VK_NULL_HANDLE);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		mt->pipelineLayout, 2, 1, &item.texSet, 0, VK_NULL_HANDLE);
+		mt->pipelineLayout, 2, 1, &item.tex->set, 0, VK_NULL_HANDLE);
 
 	vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, renderIndex);
 }
@@ -990,6 +998,86 @@ void renderCatapultLines(VkCommandBuffer cmdBuff, Leveler* leveler)
 	vkCmdDraw(cmdBuff, td->polynomShader->buffers[0]->count, 1, 0, 0);
 }
 
+void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
+{
+	ThinDrawer* td = leveler->thinDrawer;
+	const VkDeviceSize offsets = 0;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+
+	glm::ivec2 mp;
+	if (leveler->ol->rightClickItem.ptr != nullptr)
+		mp = ((s_objectDataGrid*)leveler->ol->rightClickItem.ptr)->pos;
+	else
+		mp = leveler->getMouseGrid();
+	const s_levelGridData& lgd = leveler->getSquare(mp.x, mp.y);
+
+	if (lgd.objectType & (SINGLE_DRAWS | PLATFORM))
+	{
+		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
+
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+		s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+		s_gridSquareData gsData;
+		gsData.positionData[0] = objectData->pos.x;
+		gsData.positionData[1] = objectData->pos.y;
+		gsData.positionData[2] = objectData->scale.x;
+		gsData.positionData[3] = 1;
+		gsData.colour = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
+
+		vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, objectData->scale.x * objectData->scale.y, 0, 0);
+	}
+
+	if (leveler->connecting && leveler->consqClickVec.size() > 0)
+	{
+		glm::vec2 p0 = leveler->consqClickVec[0];
+		p0 += 0.5;
+		glm::vec2 p1 = leveler->wh->cam->getMouseCoords();
+		
+		glm::ivec2 mouseGrid = leveler->getMouseGrid();
+
+		s_debugLineUbo* lineUbo;
+		s_debugLineUbo copyLine;
+
+		if (leveler->canConnect(leveler->consqClickVec[0], mouseGrid))
+		{
+			copyLine.colour = glm::vec4(0.0, 0.5, 1.0, 1.0);
+		}
+		else
+		{
+			copyLine.colour = glm::vec4(0.5, 0.5, 0.5, 0.1);
+		}
+		copyLine.data.y = 0.05; copyLine.data.z = 0.7;
+		copyLine.data.x = 1.0; copyLine.data.w = 0.0;
+		vkMapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory, td->debugLineShader->numLines * sizeof(s_debugLineUbo),
+			sizeof(s_debugLineUbo) * 4, 0, (void**)&lineUbo);
+		*lineUbo = copyLine;
+		lineUbo->positions = glm::vec4(p0.x, p0.y, p0.x, p1.y);
+
+		lineUbo++;
+		*lineUbo = copyLine;
+		lineUbo->positions = glm::vec4(p0.x, p1.y, p1.x, p1.y);
+
+		vkUnmapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory);
+
+		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->debugLineShader->pipelineLayout, 1, 1, &td->debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+		vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, 2, 0, td->debugLineShader->numLines);
+	}
+}
+
 void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 {
 	Leveler* leveler = (Leveler*)ptr;
@@ -1003,7 +1091,11 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 	renderPlatforms(cmdBuff, leveler);
 
-	if (leveler->ol->selectedItemIndex < 0) return;
+	if (leveler->ol->selectedItemIndex < 0)
+	{
+		renderNone(cmdBuff, leveler);
+		return;
+	}
 
 	glm::ivec2 mp = leveler->getMouseGrid();
 
@@ -1120,6 +1212,39 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 	}
 }
 
+glm::ivec2 Leveler::getGridPos(glm::vec2 p)
+{
+	return glm::ivec2(std::floor(p.x), std::floor(p.y));
+}
+
+bool Leveler::canConnect(glm::ivec2 p0, glm::ivec2 p1)
+{
+	const s_levelGridData& lgd = getSquare(p0.x, p0.y);
+	const s_levelGridData& lgd2 = getSquare(p1.x, p1.y);
+
+	s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+	s_objectDataGrid* objectData2 = (s_objectDataGrid*)lgd2.data.ptr;
+
+	if (objectData && objectData2 && (lgd.objectType & (SINGLE_DRAWS | PLATFORM)) && (lgd2.objectType & (SINGLE_DRAWS | PLATFORM)) &&
+		(((objectData->objectType & TRANSMITTERS) != 0) ^ ((objectData2->objectType & TRANSMITTERS) != 0)) != 0 &&
+		objectData->connections.size() < 8 && objectData2->connections.size() < 8)
+	{
+		for (auto conn : objectData->connections)
+		{
+			for (auto conn2 : objectData2->connections)
+			{
+				if (conn == conn2) return false;
+			}
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void Leveler::calcMouseGrid()
 {
 	wh->cam->pos.x = std::min(std::max(wh->cam->pos.x, (float)-xSize_H + 0.5f), xSize_H - 0.5f);
@@ -1189,7 +1314,7 @@ inline cableDir Leveler::getCable(short x, short y)
 	return cableMap[y + ySize_H + extraCable][x + xSize_H + extraCable];
 }
 
-void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData)
+void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData, s_connection* connection)
 {
 	s_gridOperationList* tempNextOp = currentOperation->next;
 	currentOperation->next = new s_gridOperationList();
@@ -1206,6 +1331,7 @@ void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* ob
 	currentOperation->objectOperation = new s_gridOperation_o();
 	currentOperation->objectOperation->operationType = opType;
 	currentOperation->objectOperation->objData = objectData;
+	currentOperation->connection = connection;
 }
 
 void Leveler::update()
@@ -1215,16 +1341,6 @@ void Leveler::update()
 	ol->update();
 
 	handleRightClickClick();
-
-	if (wh->keyData[GLFW_KEY_T] == 2)
-	{
-		auto iter = levelObjects.begin();
-		auto first = *(iter++);
-		auto second = *iter;
-
-		s_connection* conn = connectObjects(first, second, nullptr);
-		updateConnectionRenderData(conn);
-	}
 
 	std::ostringstream oss;
 	oss << "(" << mouseGrid.x << ", " << mouseGrid.y << ")";
@@ -1328,6 +1444,7 @@ void Leveler::update()
 			inData.scale.x = scaleX;
 			inData.scale.y = scaleY;
 			inData.rotation = selectedObjectRotation;
+			inData.mirrored = selectedObjectMirror;
 			inData.fullData.w = 0.0;
 
 			s_objectDataGrid* objectData = putObject(item, &inData);
@@ -1361,9 +1478,9 @@ void Leveler::update()
 					mp = getMouseGrid();
 				}
 
+				glm::i16vec2 p = consqClickVec[0];
 				if (consqClickVec.size() > 0 && abs(consqClickVec[0].x - mp.x) < 0.6)
 				{
-					glm::i16vec2 p = consqClickVec[0];
 					putCatapult({ p }, glm::vec4(mp.x, mp.y, 0.0, 0.0));
 					consqClickVec.clear();
 				}
@@ -1390,7 +1507,7 @@ void Leveler::update()
 
 		takeBack(wh->keyData[GLFW_KEY_LEFT_SHIFT] != 0);
 
-		if (currentOperation->next && currentOperation->next->objectOperation &&
+		if (currentOperation->next && !currentOperation->next->connection && currentOperation->next->objectOperation &&
 			currentOperation->next->objectOperation->objData->objectType == CATAPULT && currentOperation->next->objectOperation->operationType == ADD &&
 			consqClickVec.size() != 0 && item && item->objectType == CATAPULT)
 		{
@@ -1404,6 +1521,16 @@ void Leveler::update()
 	if (wh->keyData[GLFW_KEY_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS && consqClickVec.size() == 0)
 	{
 		selectedObjectRotation = (selectedObjectRotation + 1) % 4;
+		
+		if (item->objectType & GELS && selectedObjectRotation == 2)
+		{
+			selectedObjectRotation = 3;
+		}
+	}
+
+	if (wh->keyData[GLFW_KEY_E] == 2 && item && item->canMirror)
+	{
+		selectedObjectMirror ^= 1;
 	}
 }
 
@@ -1455,6 +1582,21 @@ void Leveler::putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData)
 	lastPos = constrainEndPos(p0, lastPos, selectedObjectRotation);
 
 	glm::vec2 diff = lastPos - p0;
+	glm::vec2 norm = (glm::vec2)rotationMults[objectData->rotation];
+
+	b2Vec2 b2P0 = b2Vec2(p0.x, p0.y);
+	b2Vec2 b2P1 = b2Vec2(p0.x - norm.x, p0.y - norm.y);
+
+	if(PortalWorld::isLeft(b2P0, b2P1, b2Vec2(lastPos.x, lastPos.y), 0.0))
+	{
+		s_manyTextureData* mtd;
+		vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, objectData->offset * sizeof(s_manyTextureData),
+			sizeof(s_manyTextureData), 0, (void**)&mtd);
+		mtd->posSize.z *= -1.0f;
+		vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
+
+		objectData->mirrored = true;
+	}
 
 	bool vert = abs(diff.x) > 0.5;
 	float start = vert ? p0.x : p0.y;
@@ -1844,13 +1986,20 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 	float hAdd = scaleX % 2 == 1 ? 0.5 : 0.0;
 	float vAdd = scaleY % 2 == 1 ? 0.5 : 0.0;
 
-	mtd->posSize = glm::vec4(centerX + hAdd + extraAdd.x, centerY + vAdd + extraAdd.y, item.gridRenderScale, item.gridRenderScale);
+	mtd->posSize = glm::vec4(centerX + hAdd + extraAdd.x, centerY + vAdd + extraAdd.y,
+		item.gridRenderScale * item.scaleRatio.x, item.gridRenderScale * item.scaleRatio.y);
+	if (inData->mirrored)
+	{
+		mtd->posSize.z *= -1.0f;
+	}
+
 	mtd->data.x = rotation * b2_pi * 0.5;
 	vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
 
 	objectData->offset = pdData->currentOffset;
 	objectData->objectType = item.objectType;
 	objectData->rotation = rotation;
+	objectData->mirrored = inData->mirrored;
 	objectData->pos = { startX, startY };
 	objectData->scale = { scaleX, scaleY };
 
@@ -1923,11 +2072,34 @@ s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short start
 
 void Leveler::updateConnectionRenderData(s_connection* connection)
 {
+	if (!connection) return;
+
 	glm::i16vec2 from = connection->transmitter->pos;
 	glm::i16vec2 to = connection->receiver->pos;
-    char indices;
+    char indices = 0;
 
-	if (connection->pathPoints.size() > 1) goto ifIn;
+	if (connection->pathPoints.size() > 1)
+	{
+		for (int i = 0; i < connection->renderPathPoints.size() - 1; i++)
+		{
+			lastOffsetPos_Connection.push_back(connection);
+			connection->offsets.push_back(thinDrawer->lineZ->numZs);
+
+			glm::vec2 p0 = connection->renderPathPoints[i];
+			glm::vec2 p1 = connection->renderPathPoints[i + 1];
+
+			s_lineZUbo* lineZUbo;
+			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+				sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+			lineZUbo->points = glm::vec4(p0.x, p0.y, p1.x, p1.y);
+			lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
+			if (i == 0) lineZUbo->data.z = 1.0;
+			else if (i == connection->renderPathPoints.size() - 2) lineZUbo->data.y = 1.0;
+			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+		}
+
+		goto setMap;
+	}
 
 	indices = getAvailableCableIndices(from, to);
 
@@ -1937,7 +2109,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 		{
 			getSimplePath(connection->pathPoints, from, to, cableIndex, 0);
 			connection->index = cableIndex;
-			if (connection->pathPoints.size() > 1) goto pathFound;
+			if (connection->pathPoints.size() > 1) goto ifIn;
 			connection->pathPoints.clear();
 		}
 	}
@@ -1948,12 +2120,10 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 		{
 			getPath(connection->pathPoints, from, to, cableIndex);
 			connection->index = cableIndex;
-			if (connection->pathPoints.size() > 1) goto pathFound;
+			if (connection->pathPoints.size() > 1) goto ifIn;
 			connection->pathPoints.clear();
 		}
 	}
-
-pathFound:
 
 	if (connection->pathPoints.size() > 1)
 	{
@@ -1964,11 +2134,21 @@ pathFound:
 		s_lineZUbo* lineZUbo;
 		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 			sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
-		float plus = connection->index * 0.125;
-		lineZUbo->points = glm::vec4(connection->pathPoints[0].x, connection->pathPoints[0].y + plus,
-			connection->pathPoints[0].x + plus, connection->pathPoints[0].y + plus);
+		float plus = connection->index * (1.0f / 8.0f) + 0.5f * (1.0f / 8.0f);
+
+		char rot = connection->transmitter->rotation;
+		const s_gridItemData& gid = ol->items[(int)getLevelObjectIndex(connection->transmitter->objectType)];
+		glm::vec2 sp = connection->pathPoints.front() + connectionAdditions[rot];
+		glm::vec2 indexAdder = (glm::vec2)connectionDirs[rot % 2] * (float)gid.gridScale.x;
+		glm::vec2 plus2 = sp + indexAdder * plus;
+
+		lineZUbo->points = glm::vec4(plus2.x, plus2.y,
+			connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus);
 		lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
 		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+
+		connection->renderPathPoints.push_back({ plus2.x, plus2.y });
+		connection->renderPathPoints.push_back({ connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus });
 
 		for (int i = 1; i < connection->pathPoints.size(); i++)
 		{
@@ -1983,6 +2163,8 @@ pathFound:
 			lineZUbo->points = glm::vec4(backVal.x + plus, backVal.y + plus, val.x + plus, val.y + plus);
 			lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
 			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+
+			connection->renderPathPoints.push_back({ val.x + plus, val.y + plus });
 		}
 
 		connection->offsets.push_back(thinDrawer->lineZ->numZs);
@@ -1990,11 +2172,22 @@ pathFound:
 
 		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 			sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+
+		rot = connection->receiver->rotation;
+		if (connection->receiver->objectType == PLATFORM && (rot == 1 || rot == 2)) rot = (rot + 2) % 4;
+		const s_gridItemData& gid2 = ol->items[(int)getLevelObjectIndex(connection->receiver->objectType)];
+		sp = connection->pathPoints.back() + connectionAdditions[rot];
+		indexAdder = (glm::vec2)connectionDirs[rot % 2] * (float)gid2.gridScale.x;
+		plus2 = sp + indexAdder * plus;
+
 		lineZUbo->points = glm::vec4(connection->pathPoints.back().x + plus, connection->pathPoints.back().y + plus,
-			connection->pathPoints.back().x, connection->pathPoints.back().y + plus);
+			plus2.x, plus2.y);
 		lineZUbo->data = glm::vec4(0.125, 1.0, 0.8, 0.0);
 		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
 
+		connection->renderPathPoints.push_back({ plus2.x, plus2.y });
+
+	setMap:
 		for (int i = 0; i < connection->pathPoints.size() - 1; i++)
 		{
 			glm::i16vec2 p0 = connection->pathPoints[i];
@@ -2020,6 +2213,11 @@ pathFound:
 
 s_connection* Leveler::connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* obj2, s_connection* prevConnection)
 {
+	if (!canConnect(obj1->pos, obj2->pos))
+	{
+		return nullptr;
+	}
+
 	// undo protection
 	obj1 = (s_objectDataGrid*)getSquare(obj1->pos.x, obj1->pos.y).data.ptr;
 	obj2 = (s_objectDataGrid*)getSquare(obj2->pos.x, obj2->pos.y).data.ptr;
@@ -2038,16 +2236,90 @@ s_connection* Leveler::connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* 
 	}
 
 	s_connection* connection;
-	if (prevConnection) connection = prevConnection;
-	else connection = new s_connection();
+	if (prevConnection)
+	{
+		connection = prevConnection;
+	}
+	else
+	{
+		connection = new s_connection();
+		setObjectOperationTrack(ADD, nullptr, connection);
+	}
 
 	connection->transmitter = transmitter;
 	connection->receiver = receiver;
 	
-	obj1->connections.insert(connection);
-	obj2->connections.insert(connection);
+	obj1->connections.push_back(connection);
+	obj2->connections.push_back(connection);
 
 	return connection;
+}
+
+void Leveler::removeConnection(s_connection* connection, s_objectDataGrid* noRemove, bool track)
+{
+	if (track)
+	{
+		setObjectOperationTrack(REMOVE, nullptr, connection);
+	}
+
+	if (connection->transmitter != noRemove)
+	{
+		for (auto iter = connection->transmitter->connections.begin(); iter != connection->transmitter->connections.end(); iter++)
+		{
+			if ((*iter) == connection)
+			{
+				connection->transmitter->connections.erase(iter);
+				break;
+			}
+		}
+	}
+
+	if (connection->receiver != noRemove)
+	{
+		for (auto iter = connection->receiver->connections.begin(); iter != connection->receiver->connections.end(); iter++)
+		{
+			if ((*iter) == connection)
+			{
+				connection->receiver->connections.erase(iter);
+				break;
+			}
+		}
+	}
+
+	thinDrawer->lineZ->numZs -= connection->offsets.size();
+
+	int offsetIndex = -1;
+	for (int offset : connection->offsets)
+	{
+		connection->offsets[++offsetIndex] = -1;
+		s_connection* lastOffsetConnection = lastOffsetPos_Connection.back();
+		lastOffsetPos_Connection.pop_back();
+
+		if (lastOffsetConnection == connection)
+		{
+			continue;
+		}
+
+		int maxOffset = -1;
+		int maxOffsetIndex = -1;
+		for (int i = 0; i < lastOffsetConnection->offsets.size(); i++)
+		{
+			if (lastOffsetConnection->offsets[i] > maxOffset)
+			{
+				maxOffset = lastOffsetConnection->offsets[i];
+				maxOffsetIndex = i;
+			}
+		}
+
+		assert(maxOffsetIndex != -1);
+
+		moveVkMem(thinDrawer->lineZ, maxOffset * sizeof(s_lineZUbo), offset * sizeof(s_lineZUbo), sizeof(s_lineZUbo));
+
+		lastOffsetConnection->offsets[maxOffsetIndex] = offset;
+		lastOffsetPos_Connection[offset] = lastOffsetConnection;
+	}
+
+	connection->offsets.clear();
 }
 
 char Leveler::getAvailableCableIndices(const glm::i16vec2 p0, const glm::i16vec2 p1)
@@ -2093,7 +2365,11 @@ void Leveler::getSimplePath(std::vector<glm::i16vec2>& fillVec, glm::i16vec2 fro
 			{
 				if (p[d2] == to[d2])
 				{
-					fillVec.push_back(p);
+					if (fillVec.size() > 0 && fillVec[0] != p)
+					{
+						fillVec.push_back(p);
+					}
+
 					break;
 				}
 
@@ -2452,7 +2728,8 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		glm::vec2 extraAdd = (glm::vec2)rotationMults[objRot] * item.gridRenderTranslation.y;
 
 		glm::vec2 p = endPoint + extraAdd - sToE * 0.5f;
-		mtd->posSize = glm::vec4(p.x, p.y, item.gridRenderScale, item.gridRenderScale);
+		mtd->posSize = glm::vec4(p.x, p.y,
+			item.gridRenderScale * item.scaleRatio.x, item.gridRenderScale * item.scaleRatio.y);
 		mtd->data.x = objRot * b2_pi * 0.5;
 		vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
 	}
@@ -2461,6 +2738,12 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 void Leveler::removeObject(short x, short y)
 {
 	const s_levelGridData& lgd = getSquare(x, y);
+	s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
+
+	for (s_connection* conn : objectData->connections)
+	{
+		removeConnection(conn, objectData, false);
+	}
 
 	if (lgd.objectType & PLATFORM)
 	{
@@ -2475,7 +2758,6 @@ void Leveler::removeObject(short x, short y)
 
 	putBarrierOnMemories({ thinDrawer->manyTexture });
 
-	s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
 	int objIndex = getLevelObjectIndex(objectData->objectType);
 
 	const s_gridItemData& item = ol->items[objIndex];
@@ -2762,25 +3044,44 @@ void Leveler::takeBack(bool shiftPressed)
 			}
 			else
 			{
-				glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
-				switch (currentOperation->objectOperation->operationType)
+				if (currentOperation->objectOperation->objData)
 				{
-				case REMOVE:
-					removeObject(sq.x, sq.y);
+					glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
+					switch (currentOperation->objectOperation->operationType)
+					{
+					case REMOVE:
+						removeObject(sq.x, sq.y);
+						break;
+
+					case ADD:
+					{
+						s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
+						int objIndex = getLevelObjectIndex(objectData->objectType);
+						const s_gridItemData& item = ol->items[objIndex];
+
+						putObject(item, objectData);
+						for (s_connection* conn : objectData->connections)
+						{
+							connectObjects(conn->transmitter, conn->receiver, conn);
+						}
+					}
 					break;
 
-				case ADD:
-				{
-					s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
-					int objIndex = getLevelObjectIndex(objectData->objectType);
-					const s_gridItemData& item = ol->items[objIndex];
-
-					putObject(item, objectData);
+					default:
+						break;
+					}
 				}
-				break;
-
-				default:
-					break;
+				else if (currentOperation->connection)
+				{
+					if (currentOperation->objectOperation->operationType == REMOVE)
+					{
+						removeConnection(currentOperation->connection, nullptr, false);
+					}
+					else
+					{
+						connectObjects(currentOperation->connection->transmitter, currentOperation->connection->receiver, currentOperation->connection);
+						updateConnectionRenderData(currentOperation->connection);
+					}
 				}
 			}
 		}
@@ -2817,25 +3118,46 @@ void Leveler::takeBack(bool shiftPressed)
 		}
 		else
 		{
-			glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
-			switch (currentOperation->objectOperation->operationType)
+			if (currentOperation->objectOperation->objData)
 			{
-			case REMOVE:
-			{
-				s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
-				int objIndex = getLevelObjectIndex(objectData->objectType);
-				const s_gridItemData& item = ol->items[objIndex];
+				glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
+				switch (currentOperation->objectOperation->operationType)
+				{
+				case REMOVE:
+				{
+					s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
+					int objIndex = getLevelObjectIndex(objectData->objectType);
+					const s_gridItemData& item = ol->items[objIndex];
 
-				putObject(item, objectData);
+					putObject(item, objectData);
+
+					for (s_connection* conn : objectData->connections)
+					{
+						connectObjects(conn->transmitter, conn->receiver, conn);
+						updateConnectionRenderData(conn);
+					}
+				}
+				break;
+
+				case ADD:
+					removeObject(sq.x, sq.y);
+					break;
+
+				default:
+					break;
+				}
 			}
-			break;
-
-			case ADD:
-				removeObject(sq.x, sq.y);
-				break;
-
-			default:
-				break;
+			else if (currentOperation->connection)
+			{
+				if (currentOperation->objectOperation->operationType == REMOVE)
+				{
+					connectObjects(currentOperation->connection->transmitter, currentOperation->connection->receiver, currentOperation->connection);
+					updateConnectionRenderData(currentOperation->connection);
+				}
+				else
+				{
+					removeConnection(currentOperation->connection, nullptr, false);
+				}
 			}
 		}
 
@@ -3353,16 +3675,52 @@ void Leveler::handleRightClickClick()
 			connecting = false;
 			consqClickVec.clear();
 		}
+
 		if (ol->popHoverIndices[0] != -1)
 		{
-			if (ol->popHoverIndices[0] == 1 && ol->rightClickItem.ptr)
+			if (ol->rightClickItem.ptr)
 			{
-				s_objectDataGrid* objData = (s_objectDataGrid*)ol->rightClickItem.ptr;
-				if (objData->objectType & (TRANSMITTERS | RECEIVERS))
+				s_objectDataGrid* objectData = (s_objectDataGrid*)ol->rightClickItem.ptr;
+
+				if (ol->popHoverIndices[0] == 1)
 				{
-					consqClickVec.push_back(objData->pos);
-					connecting = true;
+					if (objectData->objectType & (TRANSMITTERS | RECEIVERS))
+					{
+						consqClickVec.push_back(objectData->pos);
+						connecting = true;
+					}
 				}
+				else if (ol->popHoverIndices[0] == 3 && objectData->objectType & (RECEIVERS ^ PLATFORM) ||
+					ol->popHoverIndices[0] == 4 && objectData->objectType == PLATFORM)
+				{
+					objectData->startActive ^= 1;
+				}
+				else if (ol->popHoverIndices[0] == 5 && objectData->objectType == PLATFORM)
+				{
+					objectData->loop ^= 1;
+				}
+				else if (ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
+				{
+					objectData->platformType = ol->popHoverIndices[1];
+				}
+				
+				if (ol->popHoverIndices[0] == 2 && ol->popHoverIndices[1] > -1 && ol->popHoverIndices[1] < objectData->connections.size())
+				{
+					removeConnection(objectData->connections[ol->popHoverIndices[1]]);
+				}
+
+				if (ol->popHoverIndices[0] == 0)
+				{
+					removeObject(objectData->pos.x, objectData->pos.y);
+					setObjectOperationTrack(REMOVE, objectData);
+
+					ALuint source = ol->sounder->playSound(ol->removeSound, 0.01);
+					alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+				}
+			}
+			else
+			{
+				takeBack(ol->popHoverIndices[0]);
 			}
 		}
 	}

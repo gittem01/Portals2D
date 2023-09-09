@@ -1,0 +1,63 @@
+<0>
+Zamanlı Düğme
+<0>
+<1>
+Zemin Düğmesi
+<1>
+<2>
+Küp Butonu
+<2>
+<3>
+Küre Butonu
+<3>
+<4>
+Standart Küp
+<4>
+<5>
+Lazer Küpü
+<5>
+<6>
+Küre Top
+<6>
+<7>
+Taret
+<7>
+<8>
+Laser Yayıcı
+<8>
+<9>
+Lazer Alıcı Duvar
+<9>
+<10>
+Lazer Alıcı Yer
+<10>
+<11>
+Güven Plakası
+<11>
+<12>
+Gezinim Borusu
+<12>
+<13>
+Işık Köprüsü
+<13>
+<14>
+Cesaret Kırıcı Işın
+<14>
+<15>
+Serbest Bırakma Igarası
+<15>
+<16>
+Mavi Jel
+<16>
+<17>
+Turuncu Jel
+<17>
+<18>
+Beyaz Jel
+<18>
+<19>
+Su Jel
+<19>
+<20>
+Platform
+<20>
