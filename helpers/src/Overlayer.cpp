@@ -565,8 +565,8 @@ void Overlayer::update()
 
     const float mult = 6.0;
 
-    if (leftX + itemRatio * xSize + 1.5 < p.x || game->leveler->clickStart[0] != -100000 || game->leveler->consqClickVec.size() > 0 ||
-        popShowName != "")
+    if ((leftX + itemRatio * xSize + 1.5 < p.x && !wh->keyData[GLFW_KEY_TAB]) || game->leveler->clickStart[0] != -100000 ||
+        game->leveler->consqClickVec.size() > 0 || popShowName != "")
     {
         if (itemDir == 1)
         {
