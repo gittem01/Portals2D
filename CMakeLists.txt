@@ -75,7 +75,7 @@ target_link_libraries(${APP_NAME} imgui)
 target_link_libraries(${APP_NAME} OpenAL)
 
 if (APPLE)
-	target_link_libraries(${APP_NAME} libvulkan.1.3.216.dylib)
+	target_link_libraries(${APP_NAME} libvulkan.1.dylib)
 elseif (UNIX)
 	target_link_libraries(${APP_NAME} vulkanUnx)
 elseif (WIN32)

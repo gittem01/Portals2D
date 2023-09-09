@@ -2124,66 +2124,67 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 
 	if (connection->pathPoints.size() > 1)
 	{
-	ifIn:
-		connection->offsets.push_back(thinDrawer->lineZ->numZs);
-		lastOffsetPos_Connection.push_back(connection);
-
-		s_lineZUbo* lineZUbo;
-		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
-			sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
-		float plus = connection->index * (1.0f / 8.0f) + 0.5f * (1.0f / 8.0f);
-
-		char rot = connection->transmitter->rotation;
-		const s_gridItemData& gid = ol->items[(int)getLevelObjectIndex(connection->transmitter->objectType)];
-		glm::vec2 sp = connection->pathPoints.front() + connectionAdditions[rot];
-		glm::vec2 indexAdder = (glm::vec2)connectionDirs[rot % 2] * (float)gid.gridScale.x;
-		glm::vec2 plus2 = sp + indexAdder * plus;
-
-		lineZUbo->points = glm::vec4(plus2.x, plus2.y,
-			connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus);
-		lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
-		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
-
-		connection->renderPathPoints.push_back({ plus2.x, plus2.y });
-		connection->renderPathPoints.push_back({ connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus });
-
-		for (int i = 1; i < connection->pathPoints.size(); i++)
 		{
+		ifIn:
 			connection->offsets.push_back(thinDrawer->lineZ->numZs);
 			lastOffsetPos_Connection.push_back(connection);
 
-			auto val = connection->pathPoints[i];
-			auto backVal = connection->pathPoints[std::max(i - 1, 0)];
+			s_lineZUbo* lineZUbo;
+			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+				sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+			float plus = connection->index * (1.0f / 8.0f) + 0.5f * (1.0f / 8.0f);
+
+			char rot = connection->transmitter->rotation;
+			const s_gridItemData& gid = ol->items[(int)getLevelObjectIndex(connection->transmitter->objectType)];
+			glm::vec2 sp = connection->pathPoints.front() + connectionAdditions[rot];
+			glm::vec2 indexAdder = (glm::vec2)connectionDirs[rot % 2] * (float)gid.gridScale.x;
+			glm::vec2 plus2 = sp + indexAdder * plus;
+
+			lineZUbo->points = glm::vec4(plus2.x, plus2.y,
+				connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus);
+			lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
+			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+
+			connection->renderPathPoints.push_back({ plus2.x, plus2.y });
+			connection->renderPathPoints.push_back({ connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus });
+
+			for (int i = 1; i < connection->pathPoints.size(); i++)
+			{
+				connection->offsets.push_back(thinDrawer->lineZ->numZs);
+				lastOffsetPos_Connection.push_back(connection);
+
+				auto val = connection->pathPoints[i];
+				auto backVal = connection->pathPoints[std::max(i - 1, 0)];
+
+				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+					sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+				lineZUbo->points = glm::vec4(backVal.x + plus, backVal.y + plus, val.x + plus, val.y + plus);
+				lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
+				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+
+				connection->renderPathPoints.push_back({ val.x + plus, val.y + plus });
+			}
+
+			connection->offsets.push_back(thinDrawer->lineZ->numZs);
+			lastOffsetPos_Connection.push_back(connection);
 
 			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 				sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
-			lineZUbo->points = glm::vec4(backVal.x + plus, backVal.y + plus, val.x + plus, val.y + plus);
-			lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
+
+			rot = connection->receiver->rotation;
+			if (connection->receiver->objectType == PLATFORM && (rot == 1 || rot == 2)) rot = (rot + 2) % 4;
+			const s_gridItemData& gid2 = ol->items[(int)getLevelObjectIndex(connection->receiver->objectType)];
+			sp = connection->pathPoints.back() + connectionAdditions[rot];
+			indexAdder = (glm::vec2)connectionDirs[rot % 2] * (float)gid2.gridScale.x;
+			plus2 = sp + indexAdder * plus;
+
+			lineZUbo->points = glm::vec4(connection->pathPoints.back().x + plus, connection->pathPoints.back().y + plus,
+				plus2.x, plus2.y);
+			lineZUbo->data = glm::vec4(0.125, 1.0, 0.8, 0.0);
 			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
 
-			connection->renderPathPoints.push_back({ val.x + plus, val.y + plus });
+			connection->renderPathPoints.push_back({ plus2.x, plus2.y });
 		}
-
-		connection->offsets.push_back(thinDrawer->lineZ->numZs);
-		lastOffsetPos_Connection.push_back(connection);
-
-		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
-			sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
-
-		rot = connection->receiver->rotation;
-		if (connection->receiver->objectType == PLATFORM && (rot == 1 || rot == 2)) rot = (rot + 2) % 4;
-		const s_gridItemData& gid2 = ol->items[(int)getLevelObjectIndex(connection->receiver->objectType)];
-		sp = connection->pathPoints.back() + connectionAdditions[rot];
-		indexAdder = (glm::vec2)connectionDirs[rot % 2] * (float)gid2.gridScale.x;
-		plus2 = sp + indexAdder * plus;
-
-		lineZUbo->points = glm::vec4(connection->pathPoints.back().x + plus, connection->pathPoints.back().y + plus,
-			plus2.x, plus2.y);
-		lineZUbo->data = glm::vec4(0.125, 1.0, 0.8, 0.0);
-		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
-
-		connection->renderPathPoints.push_back({ plus2.x, plus2.y });
-
 	setMap:
 		for (int i = 0; i < connection->pathPoints.size() - 1; i++)
 		{
