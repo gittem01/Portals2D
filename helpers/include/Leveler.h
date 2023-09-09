@@ -7,6 +7,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
+#include <PlatformRectangle.h>
 
 typedef union GridData
 {
@@ -322,7 +323,7 @@ public:
 	void putBarrierOnMemories(std::vector<class ShaderBase*> shaders);
 	void afterFillRayCheck(short minX, short minY, short maxX, short maxY);
 	void putPlatformOnClick();
-	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation);
+	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation, int platformType);
 	void putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData);
 	s_objectDataGrid* putObject(const s_gridItemData& item, s_objectDataGrid* inData);
 	s_objectDataGrid* extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
@@ -366,6 +367,7 @@ public:
 	void calcMouseGrid();
 	glm::ivec2 getMouseGrid();
 
+	void fillPlatformData(int platformType, s_platformRectUbo* platformUbo);
 	void handleRightClickClick();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);

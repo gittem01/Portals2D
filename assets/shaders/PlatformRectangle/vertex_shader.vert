@@ -3,10 +3,11 @@
 layout (location = 0) in vec2 vertex;
 
 layout (location = 0) out vec2 localPos;
-layout (location = 1) flat out vec2 size;
-layout (location = 2) flat out vec4 inColour;
-layout (location = 3) flat out vec4 outColour;
-layout (location = 4) flat out vec4 outData;
+layout (location = 1) out vec2 worldPos;
+layout (location = 2) flat out vec2 size;
+layout (location = 3) flat out vec4 inColour;
+layout (location = 4) flat out vec4 outColour;
+layout (location = 5) flat out vec4 outData;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -38,6 +39,7 @@ void main()
     outColour = data.outColour;
     outData = data.data;
     localPos = vertex * size;
+    worldPos = localPos + data.posSize.xy;
 
-    gl_Position = sharedUboData.orthoMatrix * vec4(localPos + data.posSize.xy, 0.0, 1.0);
+    gl_Position = sharedUboData.orthoMatrix * vec4(worldPos, 0.0, 1.0);
 }

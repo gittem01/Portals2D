@@ -708,9 +708,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		vkMapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory, td->platformRectangle->numPlatforms * sizeof(s_platformRectUbo),
 			sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
 		platformUbo->posSize = glm::vec4(midX, midY, xSize, ySize);
-		platformUbo->inColour = glm::vec4(0.6, 0.6, 0.6, 0.5);
-		platformUbo->outColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
-		platformUbo->data = glm::vec4(0.0, 0.1, 1.0, 1.0);
+		leveler->fillPlatformData(0, platformUbo);
 		vkUnmapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory);
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
@@ -1713,7 +1711,7 @@ void Leveler::putPlatformOnClick()
 			pos = { (short)(leftX - maxDiff), downY }; size = { (short)(maxDiff + rightX - leftX + 1), (short)(upY - downY + 1) }; pSize = rightX - leftX + 1; rotation = 3;
 		}
 
-		s_objectDataGrid* objectData = putPlatform(pos, size, pSize, rotation);
+		s_objectDataGrid* objectData = putPlatform(pos, size, pSize, rotation, 0);
 
 		setObjectOperationTrack(ADD, objectData);
 
@@ -1721,7 +1719,7 @@ void Leveler::putPlatformOnClick()
 	}
 }
 
-s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation)
+s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation, int platformType)
 {
 	glm::vec2 lineStart;
 	glm::vec2 lineEnd;
@@ -1757,9 +1755,7 @@ s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int 
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory,
 		thinDrawer->platformRectangle->numPlatforms * sizeof(s_platformRectUbo), sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
 	platformUbo->posSize = glm::vec4(platformPos.x, platformPos.y, platformSize.x, platformSize.y);
-	platformUbo->inColour = glm::vec4(0.6, 0.6, 0.6, 0.5);
-	platformUbo->outColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
-	platformUbo->data = glm::vec4(0.0, 0.1, 1.0, 1.0);
+	fillPlatformData(platformType, platformUbo);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory);
 
 	s_debugLineUbo* lineUbo;
@@ -1803,6 +1799,7 @@ s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int 
 	objectData->scale = { size.x, size.y };
 	objectData->extraScale = { pSize, 0 };
 	objectData->extraOffsets.push_back(thinDrawer->debugLineShader->numLines);
+	objectData->platformType = platformType;
 
 	levelObjects.insert(objectData);
 
@@ -1877,7 +1874,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 
 	if (item.objectType & PLATFORM)
 	{
-		return putPlatform({ startX, startY }, { scaleX, scaleY }, inData->extraScale.x, rotation);
+		return putPlatform({ startX, startY }, { scaleX, scaleY }, inData->extraScale.x, rotation, inData->platformType);
 	}
 
 	glm::vec2 extraAdd = (glm::vec2)rotationMults[rotation] * item.gridRenderTranslation.y;
@@ -3059,7 +3056,9 @@ void Leveler::takeBack(bool shiftPressed)
 						int objIndex = getLevelObjectIndex(objectData->objectType);
 						const s_gridItemData& item = ol->items[objIndex];
 
-						putObject(item, objectData);
+						s_objectDataGrid* newObjectData = putObject(item, objectData);
+						newObjectData->startActive = objectData->startActive;
+						newObjectData->loop = objectData->loop;
 						for (s_connection* conn : objectData->connections)
 						{
 							connectObjects(conn->transmitter, conn->receiver, conn);
@@ -3129,7 +3128,9 @@ void Leveler::takeBack(bool shiftPressed)
 					int objIndex = getLevelObjectIndex(objectData->objectType);
 					const s_gridItemData& item = ol->items[objIndex];
 
-					putObject(item, objectData);
+					s_objectDataGrid* newObjectData = putObject(item, objectData);
+					newObjectData->startActive = objectData->startActive;
+					newObjectData->loop = objectData->loop;
 
 					for (s_connection* conn : objectData->connections)
 					{
@@ -3654,6 +3655,35 @@ void Leveler::moveVkMem(ShaderBase* shader, int srcOffset, int destOffset, int s
 	vkUnmapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0]->memory);
 }
 
+void Leveler::fillPlatformData(int platformType, s_platformRectUbo* platformUbo)
+{
+	switch (platformType)
+	{
+	case 0:
+		platformUbo->inColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+		platformUbo->outColour = glm::vec4(0.4, 0.4, 0.4, 1.0);
+		platformUbo->data = glm::vec4(0.05, 0.1, 1.0, 1.0);
+		break;
+	case 1:
+		platformUbo->inColour = glm::vec4(0.05, 0.05, 0.05, 1.0);
+		platformUbo->outColour = glm::vec4(0.0, 0.0, 0.0, 1.0);
+		platformUbo->data = glm::vec4(0.05, 0.1, 1.0, 1.0);
+		break;
+	case 2:
+		platformUbo->inColour = glm::vec4(0.0, 0.1, 0.2, 0.5);
+		platformUbo->outColour = glm::vec4(0.0, 0.0, 0.0, 0.7);
+		platformUbo->data = glm::vec4(0.15, 0.1, 1.0, 1.0);
+		break;
+	case 3:
+		platformUbo->inColour = glm::vec4(0.0, 0.0, 0.0, 0.0);
+		platformUbo->outColour = glm::vec4(0.5, 0.2, 0.0, 1.0);
+		platformUbo->data = glm::vec4(0.15, 0.1, 1.0, 1.0);
+		break;
+	default:
+		break;
+	}
+}
+
 void Leveler::handleRightClickClick()
 {
 	if (wh->mouseData[2] == 2)
@@ -3701,7 +3731,21 @@ void Leveler::handleRightClickClick()
 				}
 				else if (ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
 				{
-					objectData->platformType = ol->popHoverIndices[1];
+					if (objectData->platformType != ol->popHoverIndices[1])
+					{
+						objectData->platformType = ol->popHoverIndices[1];
+
+						putBarrierOnMemories({ thinDrawer->platformRectangle });
+
+						s_platformRectUbo* platformUbo;
+						vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory,
+							objectData->offset * sizeof(s_platformRectUbo),
+							sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
+
+						fillPlatformData(objectData->platformType, platformUbo);
+
+						vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory);
+					}
 				}
 				
 				if (ol->popHoverIndices[0] == 2 && ol->popHoverIndices[1] > -1 && ol->popHoverIndices[1] < objectData->connections.size())

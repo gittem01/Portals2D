@@ -64,8 +64,9 @@ public:
 
 	Overlayer(Game* game);
 
-	void addItem(const char* name, const char* fileName, levelObject objectType, std::string popName="none", glm::vec2 gridRenderTranslation = glm::vec2(0.0, 0.0), int numTextureObjects = 1,
-		glm::ivec2 gridScale=glm::ivec2(1, 1), float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1, bool canMirror=false);
+	void addItem(const char* name, const char* fileName, levelObject objectType, std::string popName="none",
+		glm::vec2 gridRenderTranslation = glm::vec2(0.0, 0.0), int numTextureObjects = 1, glm::ivec2 gridScale=glm::ivec2(1, 1),
+		float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1, bool canMirror=false);
 	void getPops();
 	int addPop(std::string popName, std::vector<std::string> texts, std::vector<std::string> secondaryPops, int mask);
 	void popUpdate();

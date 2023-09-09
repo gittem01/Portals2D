@@ -355,8 +355,9 @@ int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::
     return pops.size() - 1;
 }
 
-void Overlayer::addItem(const char* name, const char* fileName, levelObject objectType, std::string popName, glm::vec2 gridRenderTranslation, int numTextureObjects,
-    glm::ivec2 gridScale, float gridRenderScale, bool canRotate, int requiredSideFill, bool canMirror)
+void Overlayer::addItem(const char* name, const char* fileName, levelObject objectType,
+    std::string popName,glm::vec2 gridRenderTranslation, int numTextureObjects, glm::ivec2 gridScale,
+    float gridRenderScale, bool canRotate, int requiredSideFill, bool canMirror)
 {
     s_gridItemData itemData;
     itemData.objectType = objectType;
