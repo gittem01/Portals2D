@@ -44,10 +44,7 @@ typedef struct dRenderPlayerUbo
 
 class PlayerShader : public ShaderBase
 {
-    friend class ThinDrawer;
-    friend class TestPlayer;
-
-private:
+public:
     PlayerShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     int alignedSize;

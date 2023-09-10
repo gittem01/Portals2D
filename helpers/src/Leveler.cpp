@@ -208,6 +208,26 @@ void Leveler::initOffsets()
 			gData->offsetEnd++;
 		}
 	}
+
+	startRenderData.edgeColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
+
+	startRenderData.topMargin = 0.0;
+	startRenderData.headRatio = 0.25;
+	startRenderData.bodyRatio = 0.4;
+	startRenderData.legRatio = 0.25;
+	startRenderData.margin1 = (1.0 - startRenderData.headRatio - startRenderData.bodyRatio - startRenderData.legRatio) * 0.5;
+	startRenderData.margin2 = (1.0 - startRenderData.headRatio - startRenderData.bodyRatio - startRenderData.legRatio) * 0.5;
+	startRenderData.lineSize = 0.035;
+	startRenderData.headCircles = glm::vec2(0.07, 0.07);
+	startRenderData.bodyCircles = 0.1;
+
+	startRenderData.ld.legThick = 0.1;
+	startRenderData.ld.circR = startRenderData.legRatio * 1000.5;
+	startRenderData.ld.legLen = 0.25 * 0.5;
+	startRenderData.ld.legOuterCircAng = 0.0;
+	startRenderData.ld.legAngle = startRenderData.ld.legOuterCircAng;
+	startRenderData.ld.legCircleSize = 0.025;
+	startRenderData.size = glm::vec2(0.75, 1.5);
 }
 
 void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
@@ -1088,6 +1108,65 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 	renderTextureds(cmdBuff, leveler);
 
 	renderPlatforms(cmdBuff, leveler);
+
+	// Start Player Render
+	{
+		float differ = sin(Game::object->gameTime * 3.0) * 0.05 - 0.02;
+		leveler->startRenderData.bodyRatio = 0.35 + differ;
+		differ = sin(Game::object->gameTime * 3.0) * 0.01;
+		leveler->startRenderData.headCircles = glm::vec2(0.05 + differ, 0.05 - differ);
+		leveler->startRenderData.bodyCircles = 0.07 + differ * 3.0;
+		leveler->startRenderData.ld.legCircleSize = 0.03 + differ;
+
+		s_renderPlayerUbo* ru;
+
+		leveler->startRenderData.bodyColour1 = glm::vec4(0.0, 0.0, 1.0, 1.0);
+		leveler->startRenderData.bodyColour2 = glm::vec4(0.0, 1.0, 0.0, 1.0);
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory, 0,
+			td->playerShader->alignedSize2, 0, (void**)&ru);
+		memcpy((void*)ru, &leveler->startRenderData, sizeof(s_renderPlayerUbo));
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory);
+
+		leveler->startRenderData.bodyColour1 = glm::vec4(1.0, 0.0, 0.0, 1.0);
+		leveler->startRenderData.bodyColour2 = glm::vec4(1.0, 0.4, 0.0, 1.0);
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory, td->playerShader->alignedSize2,
+			td->playerShader->alignedSize2, 0, (void**)&ru);
+		memcpy((void*)ru, &leveler->startRenderData, sizeof(s_renderPlayerUbo));
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory);
+
+		s_dRenderPlayerUbo* ru2;
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory,
+			td->playerShader->alignedSize * td->lastSwapChainImageIndex * 2, td->playerShader->alignedSize, 0, (void**)&ru2);
+
+		ru2->posRotD = glm::vec4(leveler->startSquare.x + 0.5, leveler->startSquare.y + 0.75, 0.0, 0.0);
+
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory);
+
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory,
+			td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2 + 1), td->playerShader->alignedSize, 0, (void**)&ru2);
+
+		ru2->posRotD = glm::vec4(leveler->endSquare.x + 0.5, leveler->endSquare.y + 0.75, 0.0, 0.0);
+
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory);
+
+		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->playerShader->pipeline);
+
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->playerShader->buffers[0]->buffer, &offsets);
+
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->playerShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+		uint32_t dynOffsets[2];
+		dynOffsets[0] = td->playerShader->alignedSize * td->lastSwapChainImageIndex * 2; dynOffsets[1] = 0;
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->playerShader->pipelineLayout, 1, 1, &td->playerShader->descriptorSets[1], 2, dynOffsets);
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+		dynOffsets[0] = td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2+ 1); dynOffsets[1] = td->playerShader->alignedSize2;
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->playerShader->pipelineLayout, 1, 1, &td->playerShader->descriptorSets[1], 2, dynOffsets);
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+	}
 
 	if (leveler->ol->selectedItemIndex < 0)
 	{
@@ -2052,7 +2131,7 @@ s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short start
 			for (; midStart != midEnd; midStart += dir)
 			{
 				const s_levelGridData& lgdLoop = getSquare(midStart.x, midStart.y);
-				setSquare(midStart.x, midStart.y, { (levelObject)((item.objectType << (47 + (rotation % 2) * 2)) | lgdLoop.objectType), lgdLoop.data });
+				setSquare(midStart.x, midStart.y, { (levelObject)((item.objectType << (37 + (rotation % 2) * 2)) | lgdLoop.objectType), lgdLoop.data });
 			}
 
 			return objectData;
@@ -3685,6 +3764,44 @@ void Leveler::fillPlatformData(int platformType, s_platformRectUbo* platformUbo)
 	}
 }
 
+glm::i16vec2 Leveler::getBestVert(glm::i16vec2 checkStart, int desiredSize, levelObject mask)
+{
+	int startY = checkStart.y;
+	int maxY = -ySize;
+	for (int i = 0; i < desiredSize; i++)
+	{
+		if (!isInBounds(checkStart.x, startY + i)) break;
+
+		const s_levelGridData& lgd = getSquare(checkStart.x, startY + i);
+		if (lgd.objectType & mask)
+		{
+			break;
+		}
+		else
+		{
+			maxY = startY + i;
+		}
+	}
+
+	int minY = ySize;
+	for (int i = 0; i < desiredSize; i++)
+	{
+		if (!isInBounds(checkStart.x, startY - i)) break;
+
+		const s_levelGridData& lgd = getSquare(checkStart.x, startY - i);
+		if (lgd.objectType & mask)
+		{
+			break;
+		}
+		else
+		{
+			minY = startY - i;
+		}
+	}
+
+	return { std::min(maxY, startY + desiredSize - 1), std::min(minY, startY) };
+}
+
 void Leveler::handleRightClickClick()
 {
 	if (wh->mouseData[2] == 2)
@@ -3765,7 +3882,18 @@ void Leveler::handleRightClickClick()
 			}
 			else
 			{
-				takeBack(ol->popHoverIndices[0]);
+				if (ol->popHoverIndices[0] >= 0 && ol->popHoverIndices[0] < 2)
+				{
+					takeBack(ol->popHoverIndices[0]);
+				}
+				else if (ol->popHoverIndices[0] == 2)
+				{
+					startSquare = { (short)ol->levelerRCPos.x, (short)ol->levelerRCPos.y };
+				}
+				else if (ol->popHoverIndices[0] == 3)
+				{
+					endSquare = { (short)ol->levelerRCPos.x, (short)ol->levelerRCPos.y };
+				}
 			}
 		}
 	}

@@ -52,6 +52,7 @@ public:
 	std::string popShowName = std::string("");
 	int popHoverIndices[2] = { -1, -1 };
 	glm::vec2 popShowPos;
+	glm::ivec2 levelerRCPos;
 	s_gridData rightClickItem;
 	int startAlloc;
 	

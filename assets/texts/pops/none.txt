@@ -1,6 +1,8 @@
 <0>
 Geri Al <<
 İleri Al >>
+Başlangıç Ayarla
+Bitiş Ayarla
 <0>
 <1>
 Undo <<
@@ -17,8 +19,12 @@ Redo >>
 <linked_options>
 -
 -
+-
+-
 <linked_options>
 <signal_options>
+0
+0
 0
 0
 <signal_options>

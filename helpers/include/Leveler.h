@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 #include <PlatformRectangle.h>
+#include <TestPlayer.h>
 
 typedef union GridData
 {
@@ -115,7 +116,7 @@ constexpr int getRotVal(int rot)
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
 #define SINGLE_DRAWS 0xFFFFF0	// all except walls and platform
-#define OCCUPIERS 0x1FFFFFF		// all
+#define OCCUPIERS 0x7FFFFFF		// all
 
 #define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
 #define TRANSMITTERS (CLICK_BUTTON | DOWN_BUTTON | CUBE_BUTTON | SPHERE_BUTTON | LASER_REC_GND | LASER_REC_WALL)
@@ -307,7 +308,10 @@ public:
 
 	int numSwapChainImages;
 
+	s_renderPlayerUbo startRenderData;
 	std::set<s_objectDataGrid*> levelObjects;
+	s_gridSquare startSquare = { -10, 1 };
+	s_gridSquare endSquare = { 10, 1 };
 
 	Leveler(Game* game);
 	~Leveler();
@@ -368,6 +372,7 @@ public:
 	glm::ivec2 getMouseGrid();
 
 	void fillPlatformData(int platformType, s_platformRectUbo* platformUbo);
+	glm::i16vec2 getBestVert(glm::i16vec2 checkStart, int desiredSize, levelObject mask); // returns y0, y1
 	void handleRightClickClick();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);

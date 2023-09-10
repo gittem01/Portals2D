@@ -400,8 +400,8 @@ void Overlayer::popUpdate()
 
     if (thinDrawer->wh->mouseData[3] == 2 && !itemDir && selectedItemIndex == -1)
     {
-        glm::ivec2 levelerCamPos = game->leveler->getMouseGrid();
-        const s_levelGridData& lgd = game->leveler->getSquare(levelerCamPos.x, levelerCamPos.y);
+        levelerRCPos = game->leveler->getMouseGrid();
+        const s_levelGridData& lgd = game->leveler->getSquare(levelerRCPos.x, levelerRCPos.y);
         if (lgd.objectType & (SINGLE_DRAWS | PLATFORM))
         {
             rightClickItem = lgd.data;
