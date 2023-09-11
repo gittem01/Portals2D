@@ -182,7 +182,7 @@ typedef struct ObjectDataGrid
 	glm::i16vec2 extraScale;
 	int rotation;
 	char platformType;
-	bool startActive;
+	bool startActive = true;
 	bool loop;
 	bool mirrored;
 } s_objectDataGrid;
@@ -372,6 +372,7 @@ public:
 	void calcMouseGrid();
 	glm::ivec2 getMouseGrid();
 
+	void setRealTimeActivation(s_objectDataGrid* objectData);
 	void fillPlatformData(int platformType, s_platformRectUbo* platformUbo);
 	glm::i16vec2 getBestVert(glm::i16vec2 checkStart, int desiredSize, levelObject mask); // returns y0, y1
 	void handleRightClickClick();

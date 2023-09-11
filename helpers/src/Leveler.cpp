@@ -353,7 +353,7 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
 		vkMapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0]->memory,
 			bridgeOffset * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 		bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-		bridgeUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
+		bridgeUbo->data = glm::vec4(0.4, 11.0, 1.0, 0.0);
 
 		vkUnmapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0]->memory);
 
@@ -1023,7 +1023,7 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
 
 	glm::ivec2 mp;
-	if (leveler->ol->rightClickItem.ptr != nullptr)
+	if (leveler->ol->rightClickItem.ptr != nullptr && leveler->ol->popShowName != "")
 		mp = ((s_objectDataGrid*)leveler->ol->rightClickItem.ptr)->pos;
 	else
 		mp = leveler->getMouseGrid();
@@ -2082,6 +2082,9 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 	objectData->fullData = inData->fullData;
 	objectData->extraScale = inData->extraScale;
 
+	objectData->startActive = inData->startActive;
+	objectData->loop = inData->loop;
+
 	afterPutObject(item, objectData, scaleX, scaleY, rotation);
 
 	levelObjects.insert(objectData);
@@ -2679,7 +2682,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
 			objectData->extraOffsets[0] * sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
 		laserUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-		laserUbo->colour = glm::vec4(1.0, 0.0, 0.0, 1.0);
+		laserUbo->colour = glm::vec4(1.0, 0.0, 0.0, objectData->startActive ? 1.0 : 0.3);
 		laserUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
 
@@ -2701,7 +2704,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
 			objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 		bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-		bridgeUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
+		bridgeUbo->data = glm::vec4(0.4, 11.0, objectData->startActive ? 1.0 : 0.3, 0.0);
 		bridgeUbo->portal.x = -45263872644141.1361783f;
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
 
@@ -2725,7 +2728,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		funnelUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		float diffLen = glm::length(endPoint - startPoint);
-		funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 1.0);
+		funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
 		funnelUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
 		funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -1.0);
 		funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, game->gameTime);
@@ -2749,8 +2752,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 			objectData->extraOffsets[0] * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
 
 		hazardUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-		hazardUbo->colour = glm::vec4(1.0, 0.0, 0.0, 1.0);
-		//hazardUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
+		hazardUbo->colour = glm::vec4(1.0, 0.0, 0.0, objectData->startActive ? 1.0 : 0.15);
 		hazardUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
@@ -2772,8 +2774,8 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 			objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 
 		blueFieldUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-		blueFieldUbo->colour = glm::vec4(0.0, 0.3, 1.0, 1.0);
-		blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, 1.0);
+		blueFieldUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
+		blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, objectData->startActive ? 1.0 : 0.15);
 		blueFieldUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
@@ -3085,6 +3087,8 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 
 void Leveler::takeBack(bool shiftPressed)
 {
+	ol->popShowName = "";
+
 	if (shiftPressed)
 	{
 		if (currentOperation->next)
@@ -3143,6 +3147,10 @@ void Leveler::takeBack(bool shiftPressed)
 						{
 							connectObjects(conn->transmitter, conn->receiver, conn);
 						}
+
+						delete currentOperation->objectOperation->objData;
+						currentOperation->objectOperation->objData = newObjectData;
+
 					}
 					break;
 
@@ -3217,6 +3225,9 @@ void Leveler::takeBack(bool shiftPressed)
 						connectObjects(conn->transmitter, conn->receiver, conn);
 						updateConnectionRenderData(conn);
 					}
+
+					delete currentOperation->objectOperation->objData;
+					currentOperation->objectOperation->objData = newObjectData;
 				}
 				break;
 
@@ -3802,6 +3813,69 @@ glm::i16vec2 Leveler::getBestVert(glm::i16vec2 checkStart, int desiredSize, leve
 	return { std::min(maxY, startY + desiredSize - 1), std::min(minY, startY) };
 }
 
+void Leveler::setRealTimeActivation(s_objectDataGrid* objectData)
+{
+	switch (objectData->objectType & SINGLE_DRAWS)
+	{
+	case LASERER:
+	{
+		putBarrierOnMemories({ thinDrawer->laserShader });
+		s_laserUbo* laserUbo;
+		vkMapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory,
+			objectData->extraOffsets[0] * sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
+		laserUbo->colour.w = objectData->startActive ? 1.0 : 0.25;
+		vkUnmapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory);
+	}
+	break;
+
+	case LIGHT_BRIDGE:
+	{
+		putBarrierOnMemories({ thinDrawer->lightBridge });
+		s_bridgeUbo* bridgeUbo;
+		vkMapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory,
+			objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
+		bridgeUbo->data.z = objectData->startActive ? 1.0 : 0.25;
+		vkUnmapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory);
+	}
+	break;
+
+	case FUNNEL:
+	{
+		putBarrierOnMemories({ thinDrawer->funnelShader });
+		s_funnelUbo* funnelUbo;
+		vkMapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory,
+			objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+		funnelUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
+		funnelUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
+		vkUnmapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+	}
+	break;
+	case HAZARDER:
+	{
+		putBarrierOnMemories({ thinDrawer->hazardShader });
+		s_hazardUbo* hazardUbo;
+		vkMapMemory(thinDrawer->hazardShader->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory,
+			objectData->extraOffsets[0] * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
+		hazardUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
+		vkUnmapMemory(thinDrawer->hazardShader->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory);
+	}
+	break;
+	case FORCE_FIELD:
+	{
+		putBarrierOnMemories({ thinDrawer->blueField });
+		s_blueFieldUbo* blueFieldUbo;
+		vkMapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory,
+			objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
+		blueFieldUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
+		blueFieldUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
+		vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
+	}
+	break;
+	default:
+		break;
+	}
+}
+
 void Leveler::handleRightClickClick()
 {
 	if (wh->mouseData[2] == 2)
@@ -3856,6 +3930,7 @@ void Leveler::handleRightClickClick()
 					ol->popHoverIndices[0] == 4 && objectData->objectType == PLATFORM)
 				{
 					objectData->startActive ^= 1;
+					setRealTimeActivation(objectData);
 				}
 				else if (ol->popHoverIndices[0] == 5 && objectData->objectType == PLATFORM)
 				{

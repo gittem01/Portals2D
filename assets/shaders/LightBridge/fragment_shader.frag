@@ -4,7 +4,8 @@ layout (location = 0) out vec4 FragColour;
 
 layout (location = 0) in vec2 localPos;
 layout (location = 1) flat in vec2 size;
-layout (location = 2) flat in vec4 portal;
+layout (location = 2) flat in vec4 outData;
+layout (location = 3) flat in vec4 portal;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -15,8 +16,8 @@ layout (set = 0, binding = 0) uniform SharedUboData
 
 void main()
 {
-    vec4 outerColour = vec4(1.0, 1.0, 1.0, 1.0);
-    vec4 innerColour = vec4(0.0, 0.4, 1.0, 0.65);
+    vec4 outerColour = vec4(1.0, 1.0, 1.0, 1.0) * outData.z;
+    vec4 innerColour = vec4(0.0, 0.4, 1.0, 0.65) * outData.z;
     
     float iTime = sharedUboData.data.y;
     float absY = abs(localPos.y);
