@@ -1,0 +1,42 @@
+<0>
+Eşyayı Sil
+Eşyaya Bağla...
+Bağlantıları Kaldır
+Aktif Başlat
+Polarize Başlat
+<0>
+<1>
+Delete Item
+Connect to...
+Remove Connections
+Start Active
+Start Polarized
+<1>
+<2>
+删除项目
+连接到...
+删除连接
+开始活动
+开始偏光
+<2>
+<3>
+項目の削除
+に接続します...
+接続の削除
+アクティブに開始
+スタート偏光
+<3>
+<linked_options>
+-
+-
+connection_select
+-
+-
+<linked_options>
+<signal_options>
+0
+0
+0
+1
+1
+<signal_options>

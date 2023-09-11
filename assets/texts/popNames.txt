@@ -1,5 +1,6 @@
 base_connector
 activated_connector
+activated_connector_funnel
 platform
 platform_type
 remove

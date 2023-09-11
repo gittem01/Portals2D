@@ -2084,6 +2084,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 
 	objectData->startActive = inData->startActive;
 	objectData->loop = inData->loop;
+	objectData->startPolarized = inData->startPolarized;
 
 	afterPutObject(item, objectData, scaleX, scaleY, rotation);
 
@@ -2728,10 +2729,20 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		funnelUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		float diffLen = glm::length(endPoint - startPoint);
-		funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
-		funnelUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
-		funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -1.0);
-		funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, game->gameTime);
+		if (objectData->startPolarized)
+		{
+			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 0.0);
+			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, objectData->startActive ? 1.0 : 0.15);
+			funnelUbo->data2 = glm::vec4(std::min(50.0f, diffLen), diffLen - 1.0, diffLen, game->gameTime);
+			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, 1.0);
+		}
+		else
+		{
+			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
+			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, 0.0);
+			funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, game->gameTime);
+			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -1.0);
+		}
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
 
@@ -3935,6 +3946,27 @@ void Leveler::handleRightClickClick()
 				else if (ol->popHoverIndices[0] == 5 && objectData->objectType == PLATFORM)
 				{
 					objectData->loop ^= 1;
+				}
+				else if (ol->popHoverIndices[0] == 4 && objectData->objectType == FUNNEL)
+				{
+					objectData->startPolarized ^= 1;
+
+					putBarrierOnMemories({ thinDrawer->funnelShader });
+
+					s_funnelUbo* funnelUbo;
+					vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory,
+						objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+					float colorSplitPos = std::max(std::min(funnelUbo->data2.x + funnelUbo->data.w * ((float)game->gameTime - funnelUbo->data2.w) *
+						-200.0f, std::min(funnelUbo->data2.z + 10.0f, 60.0f)), -10.0f);
+					funnelUbo->data.y += (game->gameTime - funnelUbo->data2.w) * funnelUbo->data.w;
+					funnelUbo->data2.x = colorSplitPos;
+					funnelUbo->data2.w = game->gameTime;
+
+					funnelUbo->data.w = objectData->startPolarized ? 1.0 : -1.0;
+					funnelUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
+					funnelUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
+
+					vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
 				}
 				else if (ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
 				{

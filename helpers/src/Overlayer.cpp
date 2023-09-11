@@ -99,7 +99,7 @@ Overlayer::Overlayer(Game* game)
     addItem("", "cube.png", DEFAULT_CUBE, "remove", { 0.5, 0.1 }, 1, { 1.0, 1.0 }, 0.8, false, 0, true);
     addItem("", "downButton.png", DOWN_BUTTON, "base_connector", { 1.0, +0.35 }, 1, { 2, 1 }, 1.6, true, 0);
     addItem("", "laserer.png", LASERER, "activated_connector", { 0.5, +0.325 }, 1, { 1.0, 1.0 }, 0.5, true, 0);
-    addItem("", "funnel.png", FUNNEL, "activated_connector", { 0.5, +0.22 }, 1, { 2, 1 }, 2.0, true, 0);
+    addItem("", "funnel.png", FUNNEL, "activated_connector_funnel", { 0.5, +0.22 }, 1, { 2, 1 }, 2.0, true, 0);
     addItem("", "hazard.png", HAZARDER, "activated_connector", { 0.5, +0.44 }, 2, { 1, 1 }, 0.8, true, 0);
     addItem("", "blueFielder.png", FORCE_FIELD, "activated_connector", { 0.5, +0.43 }, 2, { 1, 1 }, 0.8, true, 0);
     addItem("", "plate.png", CATAPULT, "remove", { 0.5, +0.42 }, 1, { 1, 1 }, 0.8, true, 0);
@@ -467,7 +467,7 @@ void Overlayer::popUpdate()
                 int shift = objectData->objectType == PLATFORM ? 12 : 11;
                 pop.mask &= (3 << shift) ^ -1ll;
                 pop.mask |= objectData->startActive << shift;
-                pop.mask |= objectData->loop << (shift + 1);
+                pop.mask |= (objectData->objectType == PLATFORM ? objectData->loop : objectData->startPolarized) << (shift + 1);
             }
         }
 

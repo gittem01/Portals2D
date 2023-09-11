@@ -183,6 +183,7 @@ typedef struct ObjectDataGrid
 	int rotation;
 	char platformType;
 	bool startActive = true;
+	bool startPolarized;
 	bool loop;
 	bool mirrored;
 } s_objectDataGrid;
