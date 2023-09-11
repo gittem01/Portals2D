@@ -1950,6 +1950,8 @@ void Leveler::removePlatform(short x, short y)
 
 	lastObjectData->offset = objectData->offset;
 	lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
+
+	objectData->extraOffsets.clear();
 }
 
 bool Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
@@ -2912,6 +2914,8 @@ void Leveler::removeObject(short x, short y)
 	levelObjects.erase(objectData);
 
 	afterRemoveObject(item, objectData, sizeX, sizeY);
+
+	objectData->extraOffsets.clear();
 
 	auto& reqVec = lastOffsetPos_M[objIndex - 4];
 	s_gridSquare lastOffsetSquare = reqVec.back();
