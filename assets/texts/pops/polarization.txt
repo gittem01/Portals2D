@@ -1,0 +1,24 @@
+<0>
+Aç/Kapat
+Kutuplaştırmayı Değiştir
+<0>
+<1>
+Enable/Disable
+Change Polarization
+<1>
+<2>
+启用/禁用
+改变极化
+<2>
+<3>
+有効化/無効化
+偏光を変更する
+<3>
+<linked_options>
+-
+-
+<linked_options>
+<signal_options>
+0
+0
+<signal_options>

@@ -3818,6 +3818,20 @@ void Leveler::handleRightClickClick()
 			{
 				s_connection* conn = connectObjects((s_objectDataGrid*)lgd0.data.ptr, (s_objectDataGrid*)lgd1.data.ptr, nullptr);
 				updateConnectionRenderData(conn);
+
+				if (conn && conn->receiver->objectType == FUNNEL)
+				{
+					ol->popShowName = "polarization";
+					ol->lastPopName = ol->popShowName;
+					ol->popHoverIndices[0] = -1;
+					ol->popHoverIndices[1] = -1;
+					s_pop& pop = ol->pops[ol->popShowName];
+					ol->popShowPos = ol->cam.getMouseCoords();
+					ol->popShowPos = glm::vec2(	std::min(ol->cam.xSides.y - pop.size.x, ol->popShowPos.x),
+												std::max(ol->cam.ySides.x + pop.size.y, ol->popShowPos.y));
+
+					ol->rightClickItem.ptr = conn->receiver;
+				}
 			}
 
 			connecting = false;
@@ -3830,7 +3844,7 @@ void Leveler::handleRightClickClick()
 			{
 				s_objectDataGrid* objectData = (s_objectDataGrid*)ol->rightClickItem.ptr;
 
-				if (ol->popHoverIndices[0] == 1)
+				if (ol->popHoverIndices[0] == 1 && ol->lastPopName != "polarization")
 				{
 					if (objectData->objectType & (TRANSMITTERS | RECEIVERS))
 					{
@@ -3871,13 +3885,17 @@ void Leveler::handleRightClickClick()
 					removeConnection(objectData->connections[ol->popHoverIndices[1]]);
 				}
 
-				if (ol->popHoverIndices[0] == 0)
+				if (ol->popHoverIndices[0] == 0 && ol->lastPopName != "polarization")
 				{
 					removeObject(objectData->pos.x, objectData->pos.y);
 					setObjectOperationTrack(REMOVE, objectData);
 
 					ALuint source = ol->sounder->playSound(ol->removeSound, 0.01);
 					alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+				}
+				else if (ol->lastPopName == "polarization")
+				{
+					objectData->connections.back()->changePolarization = ol->popHoverIndices[0];
 				}
 			}
 			else

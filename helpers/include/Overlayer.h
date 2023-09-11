@@ -49,6 +49,7 @@ public:
 
 	float itemRatio = 0.0;
 	bool itemDir = 0;
+	std::string lastPopName = std::string("");
 	std::string popShowName = std::string("");
 	int popHoverIndices[2] = { -1, -1 };
 	glm::vec2 popShowPos;

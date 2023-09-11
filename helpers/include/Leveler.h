@@ -195,6 +195,7 @@ typedef struct Connection
 	s_objectDataGrid* transmitter;
 	s_objectDataGrid* receiver;
 	int index;
+	bool changePolarization;
 } s_connection;
 
 inline bool operator<(const s_gridSquare lhs, const s_gridSquare rhs)

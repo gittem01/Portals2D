@@ -34,6 +34,7 @@ public:
 
 	std::vector<s_lineRenderData> renderDatas;
 	std::map<std::pair<int, int>, s_charRenderData> codepointMap;
+	std::map<int, std::string> polarizationString;
 
 	CharDrawer(ThinDrawer* thinDrawer);
 

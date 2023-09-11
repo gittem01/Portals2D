@@ -26,7 +26,7 @@ Game::Game()
 
 	sounder = new Sounder();
 
-    gameStater = &Game::LevelerState;
+    gameStater = &Game::TestState;
 
     glfwShowWindow(thinDrawer->wh->window);
 }

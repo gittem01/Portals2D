@@ -425,7 +425,7 @@ void Overlayer::popUpdate()
                 }
 
                 const s_gridItemData& gid = items[itemIndex];
-                connectionNames.push_back(gid.name);
+                connectionNames.push_back(gid.name + (conn->changePolarization ? (" - " + cd->polarizationString[cd->selectedLanguageIndex]) : ""));
                 empties.push_back("");
             }
 
@@ -443,6 +443,8 @@ void Overlayer::popUpdate()
             popShowName = gid.popName;
         }
         
+        lastPopName = popShowName;
+
         if (pops.find(popShowName) != pops.end())
         {
             popHoverIndices[0] = -1;

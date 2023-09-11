@@ -4,3 +4,4 @@ platform
 platform_type
 remove
 none
+polarization

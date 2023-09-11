@@ -82,6 +82,8 @@ std::map<std::string, std::vector<std::string>> IOHelper::mapVector(std::vector<
     int counter = 0;
     for (const auto& line : lines)
     {
+        if (line.size() == 0) continue;
+
         if ((line.front() == '<' && line.back() == '>' && line == currentKey) || currentKey.length() == 0)
         {
             if (currentKey.length() > 0)
