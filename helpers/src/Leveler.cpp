@@ -3159,7 +3159,6 @@ void Leveler::takeBack(bool shiftPressed)
 							connectObjects(conn->transmitter, conn->receiver, conn);
 						}
 
-						delete currentOperation->objectOperation->objData;
 						currentOperation->objectOperation->objData = newObjectData;
 
 					}
@@ -3237,7 +3236,6 @@ void Leveler::takeBack(bool shiftPressed)
 						updateConnectionRenderData(conn);
 					}
 
-					delete currentOperation->objectOperation->objData;
 					currentOperation->objectOperation->objData = newObjectData;
 				}
 				break;
