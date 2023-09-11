@@ -329,10 +329,10 @@ public:
 	void putBarrierOnMemories(std::vector<class ShaderBase*> shaders);
 	void afterFillRayCheck(short minX, short minY, short maxX, short maxY);
 	void putPlatformOnClick();
-	s_objectDataGrid* putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation, int platformType);
+	void putPlatform(s_objectDataGrid* inData);
 	void putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData);
-	s_objectDataGrid* putObject(const s_gridItemData& item, s_objectDataGrid* inData);
-	s_objectDataGrid* extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation);
+	bool putObject(const s_gridItemData& item, s_objectDataGrid* inData);
+	bool extraPutCheck(const s_gridItemData& item, s_objectDataGrid* objectData);
 	void afterPutObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY, int rotation);
 	void afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* objectData, short scaleX, short scaleY);
 	void removeObject(short x, short y);
@@ -354,7 +354,7 @@ public:
 	glm::i16vec2 keepInBounds(glm::i16vec2 pos);
 
 	void updateConnectionRenderData(s_connection* connection);
-	s_connection* connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* obj2, s_connection* prevConnection);
+	s_connection* connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* obj2, s_connection* prevConnection, s_objectDataGrid* noAddObject=nullptr);
 	void removeConnection(s_connection* connection, s_objectDataGrid* noRemove=nullptr, bool track=true);
 	short selectDirs(const glm::i16vec2 p0, const glm::i16vec2 p1, const char inDir, const char cableIndex);
 	char getAvailableCableIndices(const glm::i16vec2 p0, const glm::i16vec2 p1);

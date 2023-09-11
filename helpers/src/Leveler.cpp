@@ -1515,25 +1515,29 @@ void Leveler::update()
 			short scaleX = item.gridScale[selectedObjectRotation % 2];
 			short scaleY = item.gridScale[(selectedObjectRotation % 2) ^ 1];
 
-			s_objectDataGrid inData;
-			inData.pos.x = mousePos.x - scaleX / 2;
-			inData.pos.y = mousePos.y - scaleY / 2;
-			inData.scale.x = scaleX;
-			inData.scale.y = scaleY;
-			inData.rotation = selectedObjectRotation;
-			inData.mirrored = selectedObjectMirror;
-			inData.fullData.w = 0.0;
+			s_objectDataGrid* inData = new s_objectDataGrid();
+			inData->pos.x = mousePos.x - scaleX / 2;
+			inData->pos.y = mousePos.y - scaleY / 2;
+			inData->scale.x = scaleX;
+			inData->scale.y = scaleY;
+			inData->rotation = selectedObjectRotation;
+			inData->mirrored = selectedObjectMirror;
+			inData->fullData.w = 0.0;
 
-			s_objectDataGrid* objectData = putObject(item, &inData);
+			bool isPut = putObject(item, inData);
 
-			if (objectData)
+			if (isPut)
 			{
-				if (objectData->objectType & CATAPULT)
+				if (inData->objectType & CATAPULT)
 				{
-					consqClickVec.push_back(objectData->pos);
+					consqClickVec.push_back(inData->pos);
 				}
 
-				setObjectOperationTrack(ADD, objectData);
+				setObjectOperationTrack(ADD, inData);
+			}
+			else
+			{
+				delete inData;
 			}
 		}
 		else if (item->objectType & PLATFORM)
@@ -1790,16 +1794,29 @@ void Leveler::putPlatformOnClick()
 			pos = { (short)(leftX - maxDiff), downY }; size = { (short)(maxDiff + rightX - leftX + 1), (short)(upY - downY + 1) }; pSize = rightX - leftX + 1; rotation = 3;
 		}
 
-		s_objectDataGrid* objectData = putPlatform(pos, size, pSize, rotation, 0);
+		s_objectDataGrid* inData = new s_objectDataGrid();
+		inData->pos = pos.asGlm();
+		inData->scale = size.asGlm();
+		inData->rotation = rotation;
+		inData->fullData.w = 0.0;
+		inData->extraScale.x = pSize;
 
-		setObjectOperationTrack(ADD, objectData);
+		putPlatform(inData);
+
+		setObjectOperationTrack(ADD, inData);
 
 		consqClickVec.clear();
 	}
 }
 
-s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int pSize, int rotation, int platformType)
+void Leveler::putPlatform(s_objectDataGrid* inData)
 {
+	int rotation = inData->rotation;
+	glm::i16vec2 pos = inData->pos;
+	glm::i16vec2 size = inData->scale;
+	int pSize = inData->extraScale.x;
+	int platformType = inData->platformType;
+
 	glm::vec2 lineStart;
 	glm::vec2 lineEnd;
 	float lineWidth;
@@ -1858,8 +1875,7 @@ s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int 
 
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->debugLineShader->uniformBuffers[0]->memory);
 
-	s_objectDataGrid* objectData = new s_objectDataGrid();
-	s_gridData uData; uData.ptr = (void*)objectData;
+	s_gridData uData; uData.ptr = (void*)inData;
 
 	for (int i = 0; i < size.y; i++)
 	{
@@ -1871,23 +1887,16 @@ s_objectDataGrid* Leveler::putPlatform(s_gridSquare pos, s_gridSquare size, int 
 		}
 	}
 
-	objectData->offset = thinDrawer->platformRectangle->numPlatforms;
-	objectData->objectType = PLATFORM;
-	objectData->rotation = rotation;
-	objectData->pos = { pos.x, pos.y };
-	objectData->scale = { size.x, size.y };
-	objectData->extraScale = { pSize, 0 };
-	objectData->extraOffsets.push_back(thinDrawer->debugLineShader->numLines);
-	objectData->platformType = platformType;
+	inData->offset = thinDrawer->platformRectangle->numPlatforms;
+	inData->objectType = PLATFORM;
+	inData->extraOffsets.push_back(thinDrawer->debugLineShader->numLines);
 
-	levelObjects.insert(objectData);
+	levelObjects.insert(inData);
 
 	lastOffsetPos_Platform.push_back({ pos.x, pos.y });
 
 	thinDrawer->platformRectangle->numPlatforms++;
 	thinDrawer->debugLineShader->numLines += 3;
-
-	return objectData;
 }
 
 void Leveler::removePlatform(short x, short y)
@@ -1943,7 +1952,7 @@ void Leveler::removePlatform(short x, short y)
 	lastObjectData->extraOffsets[0] = objectData->extraOffsets[0];
 }
 
-s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
+bool Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
 {
 	short startX = inData->pos.x;
 	short startY = inData->pos.y;
@@ -1953,7 +1962,8 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 
 	if (item.objectType & PLATFORM)
 	{
-		return putPlatform({ startX, startY }, { scaleX, scaleY }, inData->extraScale.x, rotation, inData->platformType);
+		putPlatform(inData);
+		return true;
 	}
 
 	glm::vec2 extraAdd = (glm::vec2)rotationMults[rotation] * item.gridRenderTranslation.y;
@@ -1972,7 +1982,7 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 		{
 			if (checkGridOccupancy(x, y))
 			{
-				return nullptr;
+				return false;
 			}
 		}
 	}
@@ -2017,19 +2027,19 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 				}
 				else
 				{
-					return nullptr;
+					return false;
 				}
 			}
 		}
 	}
 
-	s_objectDataGrid* objectData = extraPutCheck(item, startX, startY, scaleX, scaleY, rotation);
-	if (!objectData)
+	bool canPut = extraPutCheck(item, inData);
+	if (!canPut)
 	{
-		return nullptr;
+		return false;
 	}
 
-	s_gridData uData; uData.ptr = (void*)objectData;
+	s_gridData uData; uData.ptr = (void*)inData;
 	for (int y = startY; y < endY; y++)
 	{
 		for (int x = startX; x < endX; x++)
@@ -2072,29 +2082,18 @@ s_objectDataGrid* Leveler::putObject(const s_gridItemData& item, s_objectDataGri
 	mtd->data.x = rotation * b2_pi * 0.5;
 	vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
 
-	objectData->offset = pdData->currentOffset;
-	objectData->objectType = item.objectType;
-	objectData->rotation = rotation;
-	objectData->mirrored = inData->mirrored;
-	objectData->pos = { startX, startY };
-	objectData->scale = { scaleX, scaleY };
+	inData->offset = pdData->currentOffset;
+	inData->objectType = item.objectType;
 
-	objectData->fullData = inData->fullData;
-	objectData->extraScale = inData->extraScale;
+	afterPutObject(item, inData, scaleX, scaleY, rotation);
 
-	objectData->startActive = inData->startActive;
-	objectData->loop = inData->loop;
-	objectData->startPolarized = inData->startPolarized;
-
-	afterPutObject(item, objectData, scaleX, scaleY, rotation);
-
-	levelObjects.insert(objectData);
+	levelObjects.insert(inData);
 	pdData->currentOffset += item.numTextureObjects;
 
-	return objectData;
+	return true;
 }
 
-s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short startX, short startY, short scaleX, short scaleY, int rotation)
+bool Leveler::extraPutCheck(const s_gridItemData& item, s_objectDataGrid* objectData)
 {
 	switch (item.objectType)
 	{
@@ -2103,12 +2102,13 @@ s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short start
 	{
 		glm::vec2 startPoint;
 		glm::vec2 endPoint;
-		sendObjectRay(item, startX, startY, rotation, scaleX, scaleY, 0.5, -0.5, (levelObject)(BLACK_WALL | WHITE_WALL | GLASS_WALL), startPoint, endPoint);
+		sendObjectRay(item, objectData->pos.x, objectData->pos.y, objectData->rotation, objectData->scale.x, objectData->scale.y,
+			0.5, -0.5, (levelObject)(BLACK_WALL | WHITE_WALL | GLASS_WALL), startPoint, endPoint);
 		glm::vec2 sToE = glm::normalize(endPoint - startPoint);
 
 		if (abs(endPoint.x) > (float)xSize_H || abs(endPoint.y) > (float)ySize_H)
 		{
-			return nullptr;
+			return false;
 		}
 
 		int px = std::floor(endPoint.x);
@@ -2121,12 +2121,11 @@ s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short start
 
 		if (lgd.objectType & (BLACK_WALL | WHITE_WALL) && !(lgd2.objectType & OCCUPIERS))
 		{
-			s_objectDataGrid* objectData = new s_objectDataGrid();
 			objectData->extraPos = glm::i16vec2(px2, py2);
 			s_gridData uData; uData.ptr = (void*)objectData;
 			setSquare(px2, py2, { (levelObject)(item.objectType | lgd2.objectType), uData });
 
-			setSquare(px, py, { (levelObject)(lgd.objectType | (DOWN_DEPENDENT << ((rotation + 2) % 4))), lgd.data });
+			setSquare(px, py, { (levelObject)(lgd.objectType | (DOWN_DEPENDENT << ((objectData->rotation + 2) % 4))), lgd.data });
 
 			glm::i16vec2 midStart = { std::floor(startPoint.x + sToE.x), std::floor(startPoint.y + sToE.y) };
 			glm::i16vec2 midEnd = { px2, py2 };
@@ -2135,19 +2134,18 @@ s_objectDataGrid* Leveler::extraPutCheck(const s_gridItemData& item, short start
 			for (; midStart != midEnd; midStart += dir)
 			{
 				const s_levelGridData& lgdLoop = getSquare(midStart.x, midStart.y);
-				setSquare(midStart.x, midStart.y, { (levelObject)((item.objectType << (37 + (rotation % 2) * 2)) | lgdLoop.objectType), lgdLoop.data });
+				setSquare(midStart.x, midStart.y,
+					{ (levelObject)((item.objectType << (37 + (objectData->rotation % 2) * 2)) | lgdLoop.objectType), lgdLoop.data });
 			}
 
-			return objectData;
+			return true;
 		}
 	}
 	break;
 
 	default:
-		return new s_objectDataGrid();
+		return true;
 	}
-
-	return nullptr;
 }
 
 void Leveler::updateConnectionRenderData(s_connection* connection)
@@ -2292,7 +2290,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 	}
 }
 
-s_connection* Leveler::connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* obj2, s_connection* prevConnection)
+s_connection* Leveler::connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* obj2, s_connection* prevConnection, s_objectDataGrid* noAddObject)
 {
 	if (!canConnect(obj1->pos, obj2->pos))
 	{
@@ -2330,8 +2328,15 @@ s_connection* Leveler::connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* 
 	connection->transmitter = transmitter;
 	connection->receiver = receiver;
 	
-	obj1->connections.push_back(connection);
-	obj2->connections.push_back(connection);
+
+	if (transmitter != noAddObject)
+	{
+		transmitter->connections.push_back(connection);
+	}
+	if (receiver != noAddObject)
+	{
+		receiver->connections.push_back(connection);
+	}
 
 	return connection;
 }
@@ -3151,16 +3156,12 @@ void Leveler::takeBack(bool shiftPressed)
 						int objIndex = getLevelObjectIndex(objectData->objectType);
 						const s_gridItemData& item = ol->items[objIndex];
 
-						s_objectDataGrid* newObjectData = putObject(item, objectData);
-						newObjectData->startActive = objectData->startActive;
-						newObjectData->loop = objectData->loop;
+						putObject(item, objectData);
 						for (s_connection* conn : objectData->connections)
 						{
-							connectObjects(conn->transmitter, conn->receiver, conn);
+							connectObjects(conn->transmitter, conn->receiver, conn, objectData);
+							updateConnectionRenderData(conn);
 						}
-
-						currentOperation->objectOperation->objData = newObjectData;
-
 					}
 					break;
 
@@ -3226,17 +3227,12 @@ void Leveler::takeBack(bool shiftPressed)
 					int objIndex = getLevelObjectIndex(objectData->objectType);
 					const s_gridItemData& item = ol->items[objIndex];
 
-					s_objectDataGrid* newObjectData = putObject(item, objectData);
-					newObjectData->startActive = objectData->startActive;
-					newObjectData->loop = objectData->loop;
-
+					putObject(item, objectData);
 					for (s_connection* conn : objectData->connections)
 					{
-						connectObjects(conn->transmitter, conn->receiver, conn);
+						connectObjects(conn->transmitter, conn->receiver, conn, objectData);
 						updateConnectionRenderData(conn);
 					}
-
-					currentOperation->objectOperation->objData = newObjectData;
 				}
 				break;
 
