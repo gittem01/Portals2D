@@ -108,9 +108,8 @@ void Camera::update()
 		this->changeZoom(this->zoomInc * this->neededZoom);
 		this->neededZoom -= zoomInc * this->neededZoom;
 	}
-	
 
-	Sounder::object->listenerPos = glm::vec3(pos.x, pos.y, 16.0f / (zoom * zoom));
+	Sounder::object->listenerPos = glm::vec3(pos.x, pos.y, 32.0f / sqrt(zoom));
 
 	updateOrtho();
 }

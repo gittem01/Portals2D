@@ -1759,18 +1759,26 @@ void TestPlayer::update(float dt, int totalIter)
     if (!contactBody) onAirFor += dt;
     else onAirFor = 0.0f;
 
+    static double jumpPressTime = 0.0;
+
     grounded = ((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) || (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f);
-    if (wh->keyData[GLFW_KEY_W] == 2 && grounded)
+
+    if (wh->keyData[GLFW_KEY_W] == 2)
     {
-        lv.y = 10.0f * (float)pBody->size();
+        jumpPressTime = gameTime;
+    }
+
+    if (grounded && gameTime < jumpPressTime + 0.04)
+    {
+        lv.y = 7.5f * (float)pBody->size();
 
         ALuint source = Sounder::object->playSound(jumpBuffer, 1.0);
         b2Vec2 pPos = pb->body->GetPosition();
         Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
     }
-
+    
     lv.y = std::fmax(lv.y, -34.0);
-
+    printf("%f, %f\n", lv.x, lv.y);
     pb->body->SetLinearVelocity(lv);
 
     handleBodyRotation();

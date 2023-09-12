@@ -83,7 +83,7 @@ public:
         srand(2);
         srand(glfwGetTime() * 1000);
         g->pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
-        g->pWorld->SetGravity(b2Vec2(0.0f, -15.0f));
+        g->pWorld->SetGravity(b2Vec2(0.0f, -12.5f));
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
 
@@ -285,7 +285,7 @@ public:
             counter++;
         }
 
-        printf("%d\n", counter);
+        //printf("%d\n", counter);
 
         bodyToMove->SetLinearVelocity(setSpeed);
         bodyToMove->SetAngularVelocity(setAngle);

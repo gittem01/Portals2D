@@ -1334,7 +1334,7 @@ void Leveler::calcMouseGrid()
 	mouseGrid = glm::ivec2(px, py);
 }
 
-inline glm::ivec2 Leveler::getMouseGrid()
+glm::ivec2 Leveler::getMouseGrid()
 {
 	return mouseGrid;
 }
@@ -1376,7 +1376,7 @@ inline void Leveler::setSquare(short x, short y, s_levelGridData data)
 	gridMap[y + ySize_H][x + xSize_H] = data;
 }
 
-inline s_levelGridData Leveler::getSquare(short x, short y)
+s_levelGridData Leveler::getSquare(short x, short y)
 {
 	return gridMap[y + ySize_H][x + xSize_H];
 }

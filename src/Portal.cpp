@@ -283,9 +283,11 @@ void Portal::createPortalBody(b2Body* onBody)
 
     shape.SetTwoSided(leftPoint, leftPoint);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
+    yFix[0]->SetRestitution(0.0f);
 
     shape.SetTwoSided(rightPoint, rightPoint);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
+    yFix[1]->SetRestitution(0.0f);
 
     fixtureData* mainFixData = new fixtureData();
     mainFixData->type = F_PORTAL;

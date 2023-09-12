@@ -191,7 +191,7 @@ public:
             g->pWorld->PortalStep(dt, 1, 1);
         }
 
-        printf("dt: %f\n", glfwGetTime() - physicsTickTime);
+        //printf("dt: %f\n", glfwGetTime() - physicsTickTime);
     }
 
     void keyHandler(WindowHandler* wh)
