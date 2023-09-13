@@ -43,10 +43,12 @@ enum PortalCollisionType
 
 enum FixtureDataType
 {
-    F_OTHER = 0x0001,
-    F_PORTAL = 0x0002,
-    F_PORTAL_BODY = 0x0004,
-    F_END = 0x0008,
+    F_OTHER         = 0x1 << 0,
+    F_PORTAL        = 0x1 << 1, 
+    F_PORTAL_BODY   = 0x1 << 2,
+    F_EDGE          = 0x1 << 3,
+
+    F_END           = 0x1 << 30,
 };
 
 typedef struct

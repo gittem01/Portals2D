@@ -345,7 +345,7 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
                 glm::vec4 colorToRender = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
                 glm::vec4 gelColor = colorToRender;
                 fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
-                if (fixData)
+                /*if (fixData)
                 {
                     g_PhysicsData* pData = (g_PhysicsData*)fixData->extraData;
                     if (pData && pData->type == EDGE)
@@ -381,7 +381,7 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
                             break;
                         }
                     }
-                }
+                }*/
 
                 b2Vec2 v1 = body->GetWorldPoint(edgeShape->m_vertex1);
                 b2Vec2 v2 = body->GetWorldPoint(edgeShape->m_vertex2);

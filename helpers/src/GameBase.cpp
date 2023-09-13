@@ -2,102 +2,33 @@
 #include <PortalBody.h>
 #include <Portal.h>
 
-void createEdgeData(fixtureData** fData, g_EdgeData** eData)
+b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world)
 {
-	fixtureData* fixData = (fixtureData*)malloc(sizeof(fixtureData));
-	g_PhysicsData* phyData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-	g_EdgeData*	edgData = (g_EdgeData*)malloc(sizeof(g_EdgeData));
+    float length = (p1 - p0).Length();
+    b2Vec2 diff = p1 - p0;
 
-	fixData->extraData = (void*)phyData;
-    fixData->type = F_OTHER;
-	phyData->type = EDGE;
-	phyData->data = edgData;
+    b2BodyDef bDef;
+    bDef.type = b2_staticBody;
+    bDef.position = b2Vec2(0.0, 0.0);
+    b2Body* body = world->CreateBody(&bDef);
 
-	edgData->edges[0] = nullptr;
-	edgData->edges[1] = nullptr;
-
-	*fData = fixData;
-	*eData = edgData;
-}
-
-g_EdgeData* createEdge(b2Vec2 p1, b2Vec2 p2, b2World* world, b2Body* body)
-{
-    b2Vec2 v1 = body->GetLocalPoint(p1);
-    b2Vec2 v2 = body->GetLocalPoint(p2);
-
-    b2Vec2 dir = v1 - v2;
     b2EdgeShape shape;
-    //shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
-    
-    shape.SetTwoSided(v1, v2);
+    //shape.SetOneSided(p0, p0, p1, p1);
 
-    fixtureData* fData;
-    g_EdgeData* eData;
+    shape.SetTwoSided(p0, p1);
 
-    createEdgeData(&fData, &eData);
+    fixtureData* fData = new fixtureData();
+    fData->type = F_EDGE;
+
+    s_edgeGlobalData* eGlobalData = new s_edgeGlobalData(p0, p1);
+    s_edgeLocalData* eLocalData = new s_edgeLocalData(eGlobalData);
+
+    fData->data = eLocalData;
 
     b2FixtureDef fixDef;
     fixDef.userData.pointer = (uintptr_t)fData;
     fixDef.shape = &shape;
     b2Fixture* fix = body->CreateFixture(&fixDef);
 
-    eData->fix = fix;
-
-    return eData;
-}
-
-g_EdgeData* createEdge(createDestrData* cdData)
-{
-    b2Vec2 v1 = cdData->body->GetLocalPoint(cdData->vertexPositions[0]);
-    b2Vec2 v2 = cdData->body->GetLocalPoint(cdData->vertexPositions[1]);
-    
-    b2Vec2 dir = v1 - v2;
-    b2EdgeShape shape;
-    //shape.SetOneSided(v1 + dir, v1, v2, v2 - dir);
-    
-    shape.SetTwoSided(v1, v2);
-
-    fixtureData* fData;
-    g_EdgeData* eData;
-
-    createEdgeData(&fData, &eData);
-    
-    b2FixtureDef fixDef;
-    fixDef.restitution = cdData->restitution;
-    fixDef.friction = cdData->friction;
-    fixDef.userData.pointer = (uintptr_t)fData;
-    fixDef.shape = &shape;
-    b2Fixture* fix = cdData->body->CreateFixture(&fixDef);
-
-    eData->fix = fix;
-    eData->gel = cdData->gel;
-    eData->wall = cdData->wall;
-
-    return eData;
-}
-
-b2Vec2 getVertexByIndex(g_EdgeData* edgeData, int vertexNum)
-{
-    b2Fixture* eFix = edgeData->fix;
-    b2EdgeShape* eShape = (b2EdgeShape*)eFix->GetShape();
-    if (vertexNum)
-    {
-        return eFix->GetBody()->GetWorldPoint(eShape->m_vertex2);
-    }
-    else
-    {
-        return eFix->GetBody()->GetWorldPoint(eShape->m_vertex1);
-    }
-}
-
-void fillCdData(createDestrData* cdData, g_EdgeData* edgeData)
-{
-    cdData->body = edgeData->fix->GetBody();
-    cdData->friction = edgeData->fix->GetFriction();
-    cdData->restitution = edgeData->fix->GetRestitution();
-    cdData->gel = edgeData->gel;
-    cdData->wall = edgeData->wall;
-
-    cdData->vertexPositions[0] = getVertexByIndex(edgeData, 0);
-    cdData->vertexPositions[1] = getVertexByIndex(edgeData, 1);
+    return body;
 }

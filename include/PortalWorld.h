@@ -27,10 +27,12 @@ enum ContactType
 
 enum BodyDataType
 {
-	B_OTHER = 0x1,
-	B_PORTAL = 0x2,
-	B_PORTAL_BODY = 0x4,
-	B_MOUSE = 0x8,
+	B_OTHER         = 0x1 << 0,
+	B_PORTAL_BODY   = 0x1 << 1,
+    B_EDGE          = 0x1 << 2,
+
+
+	B_MOUSE         = 0x1 << 30,
 };
 
 typedef struct rayData

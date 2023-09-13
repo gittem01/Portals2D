@@ -23,8 +23,7 @@ public:
 
     Portal* portalA;
     Portal* portalB;
-    float lastPortalCreationTimeA;
-    float lastPortalCreationTimeB;
+    float lastPortalCreationTime;
 
     PortalBody* holdBody;
     PortalBody* holdGun;
@@ -113,7 +112,7 @@ public:
 
     void handleGunRotation();
 
-    bool canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size, Portal* oldPortal);
+    b2Fixture* canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size, Portal* oldPortal);
 
     void getBodyOut();
 

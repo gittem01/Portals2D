@@ -138,11 +138,7 @@ public:
             clicks[1] = clicks[0];
             clicks[0] = new glm::vec2(mp.x, mp.y);
         }
-        if (clicks[1]) {
-            fixtureData* fData;
-            g_EdgeData* eData;
-            createEdgeData(&fData, &eData);
-            
+        if (clicks[1]) {            
             b2EdgeShape shape;
             b2BodyDef bDef;
             b2Body* edgeBody = world->CreateBody(&bDef);
@@ -150,14 +146,6 @@ public:
             shape.SetTwoSided(b2Vec2(clicks[1]->x, clicks[1]->y), b2Vec2(clicks[0]->x, clicks[0]->y));
 
             b2Fixture* edgeFix = edgeBody->CreateFixture(&shape, 0.0f);
-
-            edgeFix->GetUserData().pointer = (uintptr_t)fData;
-
-            eData->edges[0] = nullptr;
-            eData->edges[1] = nullptr;
-            eData->fix = edgeFix;
-            eData->wall = NOT_PORTALLABLE;
-            eData->gel = WHITE;
 
             delete(clicks[0]);
             delete(clicks[1]);

@@ -23,23 +23,6 @@ public:
 	virtual bool ReportFixture(b2Fixture* fixture);
 };
 
-typedef struct createDestrData
-{
-    b2Body* body;
-    createDestrData* datas[2];
-    b2Vec2 vertexPositions[2];
-    GEL_TYPE gel;
-    WALL_TYPE wall;
-    float friction;
-    float restitution;
-} createDestrData;
-
-typedef struct
-{
-    // first and lastDatas
-    createDestrData* datas[2];
-} destructonCreatorData;
-
 class Portal{
 
 friend class PortalWorld;
@@ -65,7 +48,8 @@ public:
     b2Vec2 rotDir;
     float size;
 
-    destructonCreatorData* destructionData = nullptr;
+    int range[2];
+    b2Fixture* sideFixtures[2];
     PortalWorldQuery* queryClass;
     b2Vec2 boxMin;
     b2Vec2 boxMax;
@@ -90,7 +74,6 @@ private:
     PortalWorld* pWorld;
     
     b2Fixture* midFixture;
-    b2Fixture* dumbFix;
     b2Fixture* yFix[2];
 
     b2RayCastInput rcInp1;
@@ -99,6 +82,8 @@ private:
     std::set<PortalBody*> collidingBodies[2];
 
     ~Portal();
+
+    b2Fixture* getPreDestructionFixture();
 
     int getPointSide(b2Vec2 point);
     int getPointSideVertical(b2Vec2 point);

@@ -33,8 +33,7 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
 
     portalA = nullptr;
     portalB = nullptr;
-    lastPortalCreationTimeA = -1.0f;
-    lastPortalCreationTimeB = -1.0f;
+    lastPortalCreationTime = -1.0f;
 
     grounded = false;
     contactBody = nullptr;
@@ -713,133 +712,115 @@ void TestPlayer::handleGunRotation()
     }
 }
 
-bool TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size, Portal* oldPortal)
+b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size, Portal* oldPortal)
 {
-    fixtureData* pFixData = (fixtureData*)edgeFix->GetUserData().pointer;
-    if (pFixData && pFixData->type == F_PORTAL)
-    {
-        Portal* portal = (Portal*)pFixData->data;
-        edgeFix = portal->dumbFix;
-    }
-
-    float maxReqSize = size + 0.5f;
-    float rightSize = 0.0f;
-    float leftSize = 0.0f;
-
-    b2Vec2 rightPosCopy = pos;
-    b2Vec2 leftPosCopy = pos;
-
-    g_EdgeData* edgeData = nullptr;
     fixtureData* fixData = (fixtureData*)edgeFix->GetUserData().pointer;
-    if (fixData && fixData->extraData)
+
+    b2Fixture* checkFixture;
+
+    if (!fixData) return nullptr;
+    else if (fixData->data == (void*)oldPortal)
     {
-        g_PhysicsData* pData = (g_PhysicsData*)fixData->extraData;
-        if (pData && pData->type == EDGE && pData->data)
-        {
-            edgeData = (g_EdgeData*)pData->data;
-        }
-    }
-
-    g_EdgeData* rightEdgeData = edgeData;
-    g_EdgeData* leftEdgeData = edgeData;
-
-    bool rightDone = false;
-    bool leftDone = false;
-
-    for (; !rightDone || !leftDone;)
+		return oldPortal->midFixture;
+	}
+    else if (fixData->type == F_PORTAL)
     {
-        if (!rightDone && rightEdgeData && (rightEdgeData->wall == PORTALLABLE || rightEdgeData->gel == WHITE))
+        Portal* p = (Portal*)fixData->data;
+        if (p->getPointSideVertical(pos) == 1)
         {
-            b2Fixture* fix = rightEdgeData->fix;
-            b2EdgeShape* eShape = (b2EdgeShape*)fix->GetShape();
-            b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex1);
-            float dist = (rightPosCopy - vertexPos).Length();
-            rightPosCopy = vertexPos;
-            rightSize += dist;
-            if (rightSize > maxReqSize)
-            {
-                rightSize = maxReqSize;
-                rightDone = true;
-            }
-            else
-            {
-                g_EdgeData* eData = rightEdgeData->edges[0];
-                if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
-                {
-                    rightEdgeData = eData;
-                    rightDone = true;
-                }
-                else
-                {
-                    rightEdgeData = eData;
-                }
-            }
+            checkFixture = p->sideFixtures[0];
         }
         else
         {
-            rightDone = true;
-        }
+			checkFixture = p->sideFixtures[1];
+		}
 
-        if (!leftDone && leftEdgeData && (leftEdgeData->wall == PORTALLABLE || leftEdgeData->gel & WHITE))
+        if (!checkFixture) return nullptr;
+    }
+    else if (fixData->type == F_EDGE)
+    {
+        checkFixture = edgeFix;
+    }
+    else
+    {
+        return nullptr;
+    }
+
+    fixData = (fixtureData*)checkFixture->GetUserData().pointer;
+    s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (eLocalData->prevNextFixtures[i])
         {
-            b2Fixture* fix = leftEdgeData->fix;
-            b2EdgeShape* eShape = (b2EdgeShape*)fix->GetShape();
-            b2Vec2 vertexPos = fix->GetBody()->GetWorldPoint(eShape->m_vertex2);
-            float dist = (leftPosCopy - vertexPos).Length();
-            leftPosCopy = vertexPos;
-            leftSize += dist;
-            if (leftSize > maxReqSize)
+            fixtureData* fData = (fixtureData*)eLocalData->prevNextFixtures[i]->GetUserData().pointer;
+            if (fData && fData->type == F_PORTAL && fData->data == oldPortal)
             {
-                leftSize = maxReqSize;
-                leftDone = true;
-            }
-            else
-            {
-                g_EdgeData* eData = leftEdgeData->edges[1];
-                if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
-                {
-                    leftEdgeData = eData;
-                    leftDone = true;
-                }
-                else
-                {
-                    leftEdgeData = eData;
-                }
+                return oldPortal->midFixture;
             }
         }
-        else
-        {
-            leftDone = true;
-        }
     }
 
-    if (leftEdgeData && leftEdgeData->wall == PORTAL_ITSELF)
+    s_edgeGlobalData* eGlobalData = eLocalData->globalData;
+    int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
+
+    int requiredRangeSize = std::ceil(size / eGlobalData->perWallSize);
+    requiredRangeSize += requiredRangeSize % 2;
+
+    if (rangeSize < requiredRangeSize)
     {
-        b2Fixture* nextFix = leftEdgeData->fix->GetNext();
-        fixtureData* fData = (fixtureData*)nextFix->GetUserData().pointer;
-        if ((Portal*)fData->data == oldPortal)
-        {
-            return true;
-        }
+        return nullptr;
     }
-    if (rightEdgeData && rightEdgeData->wall == PORTAL_ITSELF)
+
+    b2EdgeShape* eShape = (b2EdgeShape*)checkFixture->GetShape();
+    pos = checkFixture->GetBody()->GetLocalPoint(pos);
+    float dist = (pos - eGlobalData->localPoints[0]).Length() / eGlobalData->perWallSize;
+
+    int startIndex = std::min(std::max((int)std::floor(dist), eLocalData->globalRange[0]), eLocalData->globalRange[1]);
+
+    int leftCount = 0;
+    int rightCount = 0;
+    int lastSum = 0;
+
+    while (true)
     {
-        b2Fixture* nextFix = rightEdgeData->fix->GetNext();
-        fixtureData* fData = (fixtureData*)nextFix->GetUserData().pointer;
-        if ((Portal*)fData->data == oldPortal)
+        if (startIndex + leftCount + 1 <= eLocalData->globalRange[1])
         {
-            return true;
+            s_unitWallData& uData = eGlobalData->unitWalls[startIndex + leftCount + 1];
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            {
+                leftCount++;
+
+                if (leftCount + rightCount == requiredRangeSize)
+                {
+                    break;
+                }
+            }
         }
+
+        if (startIndex - rightCount - 1 >= eLocalData->globalRange[0])
+        {
+            s_unitWallData& uData = eGlobalData->unitWalls[startIndex - rightCount - 1];
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            {
+                rightCount++;
+
+                if (leftCount + rightCount == requiredRangeSize)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (lastSum == rightCount + leftCount)
+        {
+            return nullptr;
+        }
+
+        lastSum = leftCount + rightCount;
     }
 
-    float totalLen = rightSize + leftSize;
-
-    if (totalLen < size - 0.000001f)
-    {
-        return false;
-    }
-
-    return true;
+    return checkFixture;
 }
 
 void TestPlayer::getBodyOut()
@@ -955,8 +936,8 @@ void TestPlayer::handlePortalCD(float dt)
 
     if (rayCaster.found && !wh->keyData[GLFW_KEY_LEFT_CONTROL])
     {
-        bool canCreateBlue = canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA);
-        bool canCreateRed = canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB);
+        b2Fixture* canCreateBlue = canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA);
+        b2Fixture* canCreateRed = canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB);
 
         setXColor(canCreateBlue, canCreateRed);
 
@@ -973,145 +954,141 @@ void TestPlayer::handlePortalCD(float dt)
         gData.positions.x = np0.x;
         gData.positions.y = np0.y;
 
-        if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTimeA > 0.4f)
+        if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
             if (canCreateBlue)
             {
-                b2Body* fixBody = rayCaster.edgeFix->GetBody();
                 if (portalA)
                 {
                     getBodyOut();
+                    b2Fixture* remFix = portalA->getPreDestructionFixture();
+                    if (canCreateBlue == portalA->midFixture)
+                    {
+                        canCreateBlue = remFix;
+                    }
+
                     pWorld->destroyPortal(portalA);
-                    b2Vec2 dir = rayPoint2 - rayPoint1;
-                    dir.Normalize();
-                    dir *= 0.1f;
-                    rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
                     portalA = nullptr;
                 }
 
-                Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+                Portal* portal = pWorld->createPortalWithChecks(canCreateBlue, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
-                shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 0.0, 0.5f, 1.0f, 1.0f },
-                                       { NAN, 0.0f, 0.0f, 0.0f },                      { 1.0f, 0.0f, 0.0f, 0.0f } });
+                shootDatas.push_back({  { p0.x, p0.y, portal->pos.x, portal->pos.y },   { 0.0, 0.5f, 1.0f, 1.0f },
+                                        { NAN, 0.0f, 0.0f, 0.0f },                      { 1.0f, 0.0f, 0.0f, 0.0f } });
 
-                if (portal)
+                ALuint source = Sounder::object->playSound(blueShootBuffer, 1.0);
+                b2Vec2 pPos = rayCaster.rayPoint;
+                Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+                portal->reviveAround();
+                portalA = portal;
+
+                auto iter = thinDrawer->renderPortalData.find(portal);
+                for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
                 {
-                    ALuint source = Sounder::object->playSound(blueShootBuffer, 1.0);
-                    b2Vec2 pPos = rayCaster.rayPoint;
-                    Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+                    s_portalUbo* pUbo;
+                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
+                        iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                    pUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
+                }
 
-                    portal->reviveAround();
-                    portalA = portal;
+                if (portalB)
+                {
+                    portalA->connect(portalB, true);
+                    portalB->reviveAround();
 
-                    auto iter = thinDrawer->renderPortalData.find(portal);
+                    auto iter2 = thinDrawer->renderPortalData.find(portalB);
+
                     for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
                     {
-                        s_portalUbo* pUbo;
-                        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
-                            iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-                        pUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-                        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
-                    }
+                        s_portalParticleUbo* ppUbo;
+                        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                            iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                        ppUbo->data0.z = thinDrawer->gameTime;
+                        ppUbo->data1.z = thinDrawer->gameTime;
+                        ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
 
-                    if (portalB)
-                    {
-                        portalA->connect(portalB, true);
-                        portalB->reviveAround();
-
-                        auto iter2 = thinDrawer->renderPortalData.find(portalB);
-
-                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-                        {
-                            s_portalParticleUbo* ppUbo;
-                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                            ppUbo->data0.z = thinDrawer->gameTime;
-                            ppUbo->data1.z = thinDrawer->gameTime;
-                            ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
-
-                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                            ppUbo->data0.z = thinDrawer->gameTime;
-                            ppUbo->data1.z = thinDrawer->gameTime;
-                            ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
-                        }
+                        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                            iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                        ppUbo->data0.z = thinDrawer->gameTime;
+                        ppUbo->data1.z = thinDrawer->gameTime;
+                        ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
                     }
                 }
             }
 
-            lastPortalCreationTimeA = gameTime;
+            lastPortalCreationTime = gameTime;
         }
-        else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTimeB > 0.4f)
+        else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
             if (canCreateRed)
             {
-                b2Body* fixBody = rayCaster.edgeFix->GetBody();
                 if (portalB)
                 {
                     getBodyOut();
+                    b2Fixture* remFix = portalB->getPreDestructionFixture();
+                    if (canCreateRed == portalB->midFixture)
+                    {
+                        canCreateRed = remFix;
+                    }
                     pWorld->destroyPortal(portalB);
-                    b2Vec2 dir = rayPoint2 - rayPoint1;
-                    dir.Normalize();
-                    dir *= 0.1f;
-                    rayCaster.cast(rayCaster.rayPoint - dir, rayCaster.rayPoint + dir);
                     portalB = nullptr;
                 }
 
-                Portal* portal = pWorld->createPortalWithChecks(rayCaster.edgeFix, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+                Portal* portal = pWorld->createPortalWithChecks(canCreateRed, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
 
-                shootDatas.push_back({ { p0.x, p0.y, portal->pos.x, portal->pos.y }, { 1.0, 0.5f, 0.0f, 1.0f },
-                                       { NAN, 0.0f, 0.0f, 0.0f },                    { 1.0f, 0.0f, 0.0f, 0.0f } });
 
-                if (portal)
+                shootDatas.push_back({  { p0.x, p0.y, portal->pos.x, portal->pos.y },   { 1.0, 0.5f, 0.0f, 1.0f },
+                                        { NAN, 0.0f, 0.0f, 0.0f },                      { 1.0f, 0.0f, 0.0f, 0.0f } });
+
+                ALuint source = Sounder::object->playSound(orangeShootBuffer, 1.0);
+                b2Vec2 pPos = rayCaster.rayPoint;
+                Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+                portal->reviveAround();
+                portalB = portal;
+
+                auto iter = thinDrawer->renderPortalData.find(portal);
+                for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
                 {
-                    ALuint source = Sounder::object->playSound(orangeShootBuffer, 1.0);
-                    b2Vec2 pPos = rayCaster.rayPoint;
-                    Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+                    s_portalUbo* pUbo;
+                    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
+                        iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
+                    pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
+                }
 
-                    portal->reviveAround();
-                    portalB = portal;
+                if (portalA)
+                {
+                    portalB->connect(portalA);
+                    portalA->reviveAround();
 
-                    auto iter = thinDrawer->renderPortalData.find(portal);
+                    auto iter2 = thinDrawer->renderPortalData.find(portalA);
+
                     for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
                     {
-                        s_portalUbo* pUbo;
-                        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory,
-                            iter->second.dynamicOffsets[i], thinDrawer->portalShader->alignedSize, 0, (void**)&pUbo);
-                        pUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader->uniformBuffers[0]->memory);
-                    }
+                        s_portalParticleUbo* ppUbo;
+                        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                            iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                        ppUbo->data0.z = thinDrawer->gameTime;
+                        ppUbo->data1.z = thinDrawer->gameTime;
+                        ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
 
-                    if (portalA)
-                    {
-                        portalB->connect(portalA);
-                        portalA->reviveAround();
-
-                        auto iter2 = thinDrawer->renderPortalData.find(portalA);
-
-                        for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-                        {
-                            s_portalParticleUbo* ppUbo;
-                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                iter->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                            ppUbo->data0.z = thinDrawer->gameTime;
-                            ppUbo->data1.z = thinDrawer->gameTime;
-                            ppUbo->color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
-
-                            vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
-                                iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
-                            ppUbo->data0.z = thinDrawer->gameTime;
-                            ppUbo->data1.z = thinDrawer->gameTime;
-                            ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-                            vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
-                        }
+                        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory,
+                            iter2->second.particleDynamicOffsets[i], thinDrawer->portalParticleShader->alignedSize, 0, (void**)&ppUbo);
+                        ppUbo->data0.z = thinDrawer->gameTime;
+                        ppUbo->data1.z = thinDrawer->gameTime;
+                        ppUbo->color = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+                        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalParticleShader->uniformBuffers[0]->memory);
                     }
                 }
             }
 
-            lastPortalCreationTimeB = gameTime;
+            lastPortalCreationTime = gameTime;
         }
     }
 }

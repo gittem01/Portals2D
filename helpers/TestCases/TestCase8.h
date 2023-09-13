@@ -87,40 +87,13 @@ public:
 
         b2Vec2 startPos = b2Vec2(-10.0f, -10.0f);
 
-        int n = 0;
         b2Body* body;
         b2Body* lastBody = nullptr;
-        g_EdgeData* lastData = nullptr;
-        for (int i = 0; i < n; i++)
-        {
-            float inc = 0.1f + getRand() * 0.2f + 0.08f;
-            body = createEdge(startPos + b2Vec2(inc, 0.0f), startPos, g->pWorld, b2_staticBody, true);
-            startPos.x += inc;
-            fixtureData* fixData;
-            g_EdgeData* edgeData;
-            createEdgeData(&fixData, &edgeData);
-            edgeData->gel = (GEL_TYPE)(NONE << (int)(getRand() * 4.0f + 2.0f));
-            //edgeData->gel = WHITE;
-            edgeData->wall = getRand() > -0.45f ? PORTALLABLE : NOT_PORTALLABLE;
-            //edgeData->wall = PORTALLABLE;
-            edgeData->fix = body->GetFixtureList();
 
-            edgeData->fix->GetUserData().pointer = (uintptr_t)fixData;
-
-            edgeData->edges[1] = lastData;
-            edgeData->edges[0] = nullptr;
-            if (lastData)
-            {
-                lastData->edges[0] = edgeData;
-            }
-
-            lastData = edgeData;
-        }
-
-        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), g->pWorld, b2_staticBody, true);
-        createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), g->pWorld, b2_staticBody, true);
-        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(-10.0f, -10.0f), g->pWorld, b2_staticBody, true);
-        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), g->pWorld, b2_staticBody, true);
+        createEdge(b2Vec2(-10.0f, -10.0f), b2Vec2(-10.0f, 10.0f), g->pWorld);
+        createEdge(b2Vec2(+40.0f, +10.0f), b2Vec2(+40.0f, -10.0f), g->pWorld);
+        createEdge(b2Vec2(+40.0f, -10.0f), b2Vec2(-10.0f, -10.0f), g->pWorld);
+        createEdge(b2Vec2(-10.0f, +10.0f), b2Vec2(+40.0f, 10.0f), g->pWorld);
 
         const float bSize = 0.1;
         for (float i = -30; i < 30; i+=3)
@@ -143,13 +116,6 @@ public:
         bodyToMove = body;
         /*body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
         body->SetAngularVelocity(0.1f);*/
-        fixtureData* fixData;
-        g_EdgeData* edgeData;
-        createEdgeData(&fixData, &edgeData);
-        edgeData->gel = NONE;
-        edgeData->wall = PORTALLABLE;
-        edgeData->fix = body->GetFixtureList();
-        edgeData->fix->GetUserData().pointer = (uintptr_t)fixData;
 
         portal1 = g->pWorld->createPortal(b2Vec2(-2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
         portal2 = g->pWorld->createPortal(b2Vec2(-2.0f, -3.0f), portal1->dir, portal1->size);

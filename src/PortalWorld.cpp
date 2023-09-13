@@ -765,448 +765,165 @@ void PortalWorld::DestroyCustomJoint(b2Joint* cj){
 
 Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Vec2 dir, float size)
 {
-    if (!edgeFix)
-    {
-        return nullptr;
-    }
-
-    float maxReqSize = size + 0.5f;
-    float rightSize = 0.0f;
-    float leftSize = 0.0f;
-
-    b2Vec2 rightPosCopy = pos;
-    b2Vec2 leftPosCopy = pos;
-
-    g_EdgeData* edgeData = nullptr;
     fixtureData* fixData = (fixtureData*)edgeFix->GetUserData().pointer;
-    if (fixData && fixData->extraData)
+    s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
+    s_edgeGlobalData* eGlobalData = eLocalData->globalData;
+
+    int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
+    int requiredRangeSize = std::ceil(size / eGlobalData->perWallSize);
+    requiredRangeSize += requiredRangeSize % 2;
+
+    b2EdgeShape* eShape = (b2EdgeShape*)edgeFix->GetShape();
+    pos = edgeFix->GetBody()->GetLocalPoint(pos);
+    float dist = (pos - eGlobalData->localPoints[0]).Length() / eGlobalData->perWallSize;
+
+    int startIndex = std::min(std::max((int)std::floor(dist), eLocalData->globalRange[0]), eLocalData->globalRange[1]);
+
+    int leftCount = 0;
+    int rightCount = 0;
+
+    while (true)
     {
-        g_PhysicsData* pData = (g_PhysicsData*)fixData->extraData;
-        if (pData && pData->type == EDGE && pData->data)
+        if (startIndex + leftCount + 1 <= eLocalData->globalRange[1])
         {
-            edgeData = (g_EdgeData*)pData->data;
+            s_unitWallData& uData = eGlobalData->unitWalls[startIndex + leftCount + 1];
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            {
+                leftCount++;
+
+                if (leftCount + rightCount == requiredRangeSize)
+                {
+                    break;
+                }
+            }
         }
+
+        if (startIndex - rightCount - 1 >= eLocalData->globalRange[0])
+        {
+			s_unitWallData& uData = eGlobalData->unitWalls[startIndex - rightCount - 1];
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            {
+				rightCount++;
+
+                if (leftCount + rightCount == requiredRangeSize)
+                {
+                    break;
+                }
+			}
+		}
     }
 
-    g_EdgeData* rightEdgeData = edgeData;
-    g_EdgeData* leftEdgeData = edgeData;
+    int range[2] = { startIndex - rightCount, startIndex + leftCount };
+    int prevRange[2] = { eLocalData->globalRange[0], eLocalData->globalRange[1] };
+    b2Fixture* prevPNFixs[2] = { eLocalData->prevNextFixtures[0], eLocalData->prevNextFixtures[1] };
 
-    bool rightDone = false;
-    bool leftDone = false;
-
-    for (; !rightDone || !leftDone;)
+    b2Vec2 portalCreatePos;
+    if (leftCount == rightCount)
     {
-        if (!rightDone && rightEdgeData && (rightEdgeData->wall == PORTALLABLE || rightEdgeData->gel == WHITE))
+        portalCreatePos = pos;
+    }
+    else
+    {
+        if (range[0] == eLocalData->globalRange[0])
         {
-            b2Vec2 vertexPos = getVertexByIndex(rightEdgeData, 0);
-            float dist = (rightPosCopy - vertexPos).Length();
-            rightPosCopy = vertexPos;
-            rightSize += dist;
-            if (rightSize > maxReqSize)
-            {
-                rightSize = maxReqSize;
-                rightDone = true;
-            }
-            else
-            {
-                g_EdgeData* eData = rightEdgeData->edges[0];
-                if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
-                {
-                    rightDone = true;
-                }
-                else
-                {
-                    rightEdgeData = eData;
-                }
-            }
+            float oneDimensionLen = (range[0] + 0.5f) * eGlobalData->perWallSize + size * 0.5;
+            portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
+        }
+        else if (range[1] == eLocalData->globalRange[1])
+        {
+            float oneDimensionLen = (range[1] + 0.5f) * eGlobalData->perWallSize - size * 0.5;
+            portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
         else
         {
-            rightDone = true;
-        }
-
-        if (!leftDone && leftEdgeData && (leftEdgeData->wall == PORTALLABLE || leftEdgeData->gel & WHITE))
-        {
-            b2Vec2 vertexPos = getVertexByIndex(leftEdgeData, 1);
-            float dist = (leftPosCopy - vertexPos).Length();
-            leftPosCopy = vertexPos;
-            leftSize += dist;
-            if (leftSize > maxReqSize)
-            {
-                leftSize = maxReqSize;
-                leftDone = true;
-            }
-            else
-            {
-                g_EdgeData* eData = leftEdgeData->edges[1];
-                if (eData == nullptr || (eData->wall != PORTALLABLE && eData->gel != WHITE))
-                {
-                    leftDone = true;
-                }
-                else
-                {
-                    leftEdgeData = eData;
-                }
-            }
-        }
-        else
-        {
-            leftDone = true;
+            assert(false);
         }
     }
 
-    float totalLen = rightSize + leftSize;
+    portalCreatePos = edgeFix->GetBody()->GetWorldPoint(portalCreatePos);
 
-    if (totalLen < size - 0.000001f)
+    Portal* portal = createPortal(portalCreatePos, dir, size * 0.5f, edgeFix->GetBody());
+    portal->range[0] = range[0];
+    portal->range[1] = range[1];
+
     {
-        return nullptr;
+        b2EdgeShape newShape;
+        newShape.m_vertex1 = eShape->m_vertex1;
+        newShape.m_vertex2 = ((b2EdgeShape*)portal->yFix[0]->GetShape())->m_vertex1;
+
+        b2Fixture* fix = edgeFix->GetBody()->CreateFixture(&newShape, 0.0f);
+        
+        eLocalData->globalRange[0] = prevRange[0];
+        eLocalData->globalRange[1] = range[0];
+        
+        fix->GetUserData().pointer = (uintptr_t)fixData;
+
+        eLocalData->prevNextFixtures[1] = portal->midFixture;
+        portal->sideFixtures[0] = fix;
+
+        if (eLocalData->prevNextFixtures[0])
+        {
+            fixtureData* nextFData = (fixtureData*)eLocalData->prevNextFixtures[0]->GetUserData().pointer;
+            if (nextFData && nextFData->type == F_PORTAL)
+            {
+                Portal* p = (Portal*)nextFData->data;
+                p->sideFixtures[1] = fix;
+                p->range[1] = range[0];
+            }
+            else if (nextFData && nextFData->type == F_EDGE)
+            {
+                s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+                nextELocal->prevNextFixtures[1] = fix;
+                nextELocal->globalRange[1] = range[0];
+            }
+        }
+
+        fixData = nullptr;
     }
 
-    destructonCreatorData* destrData = (destructonCreatorData*)malloc(sizeof(destructonCreatorData));
-    createDestrData* cdData = (createDestrData*)malloc(sizeof(createDestrData));
-    createDestrData* lastCdData = nullptr;
-    destrData->datas[1] = cdData;
-    cdData->datas[0] = nullptr;
-    cdData->datas[1] = nullptr;
-
-    fixtureData* portalFixData;
-    g_EdgeData* portalEdgeData;
-    createEdgeData(&portalFixData, &portalEdgeData);
-    portalEdgeData->gel = NONE;
-    portalEdgeData->wall = PORTAL_ITSELF;
-
-    float reqLeft = rightSize > size * 0.5f ? fmin(leftSize, size * 0.5f) : size - rightSize;
-    float remDist;
-
-    b2Vec2 leftPortalPoint;
-    g_EdgeData* leftEdge = edgeData;
-    b2Vec2 lastVertexPos = pos;
-    for (;;)
     {
-        b2Vec2 vertexPos = getVertexByIndex(leftEdge, 1);
-        float dist = (lastVertexPos - vertexPos).Length();
-        reqLeft -= dist;
-
-        if (reqLeft < 0.0f)
+        if (!fixData)
         {
-            float innerLen = dist + reqLeft;
-            b2Vec2 rightVertex = getVertexByIndex(leftEdge, 0);
-            b2Vec2 origRightVertex = rightVertex;
-
-            if (lastVertexPos == pos)
-            {
-                rightVertex = lastVertexPos;
-            }
-
-            b2Body* edgeBody = leftEdge->fix->GetBody();
-            fillCdData(cdData, leftEdge);
-
-            edgeBody->DestroyFixture(leftEdge->fix);
-
-            b2Vec2 dir = vertexPos - rightVertex;
-            dir.Normalize();
-            b2Vec2 newVertexPos = rightVertex + innerLen * dir;
-            
-            g_EdgeData* newFixDL = createEdge(newVertexPos, vertexPos, this, edgeBody);
-            newFixDL->gel = leftEdge->gel;
-            newFixDL->wall = leftEdge->wall;
-
-            portalEdgeData->edges[1] = newFixDL;
-            newFixDL->edges[0] = portalEdgeData;
-            newFixDL->edges[1] = leftEdge->edges[1];
-            if (leftEdge->edges[1])
-            {
-                leftEdge->edges[1]->edges[0] = newFixDL;
-            }
-
-            if (lastVertexPos == pos)
-            {
-                b2Vec2 dir = vertexPos - lastVertexPos;
-                dir.Normalize();
-                b2Vec2 newVertexPos = lastVertexPos + innerLen * dir;
-
-                dir *= -1.0f;
-
-                float edgeSize = (origRightVertex - newVertexPos).Length();
-                if (edgeSize > size)
-                {
-                    b2Vec2 newLeftVertex = newVertexPos + size * dir;
-
-                    g_EdgeData* newFixDR = createEdge(origRightVertex, newLeftVertex, this, edgeBody);
-                    newFixDR->gel = leftEdge->gel;
-                    newFixDR->wall = leftEdge->wall;
-
-                    portalEdgeData->edges[0] = newFixDR;
-                    newFixDR->edges[1] = portalEdgeData;
-                    newFixDR->edges[0] = leftEdge->edges[0];
-                    if (leftEdge->edges[0])
-                    {
-                        leftEdge->edges[0]->edges[1] = newFixDR;
-                    }
-
-                    destrData->datas[0] = cdData;
-
-                    b2Vec2 diff = newLeftVertex - newVertexPos;
-                    diff.Normalize();
-                    b2Vec2 mid = newVertexPos + size * 0.5f * diff;
-                    b2Vec2 dir = rotateVec(diff, b2_pi * 0.5f);
-
-                    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
-                    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
-                    portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
-                    portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
-
-                    portalEdgeData->fix = portal->dumbFix;
-
-                    portal->destructionData = destrData;
-                    //portal->body->SetLinearVelocity(edgeBody->GetLinearVelocity());
-
-                    return portal;
-                }
-            }
-
-            lastCdData = cdData;
-            cdData->datas[0] = (createDestrData*)malloc(sizeof(createDestrData));
-            cdData->datas[0]->datas[1] = cdData;
-            cdData = cdData->datas[0];
-
-            leftEdge = leftEdge->edges[0];
-
-            remDist = size - (newVertexPos - origRightVertex).Length();
-
-            leftPortalPoint = newVertexPos;
-
-            break;
+            fixData = new fixtureData();
+            fixData->type = F_EDGE;
+            eLocalData = new s_edgeLocalData(eGlobalData);
+            fixData->data = eLocalData;
         }
 
-        if (!leftEdge->edges[1])
-        {    
-            b2Vec2 v1 = getVertexByIndex(leftEdge, 1);
-            if (lastVertexPos == pos)
-            {
-                b2Vec2 rightVertex = getVertexByIndex(leftEdge, 0);
-                b2Vec2 dir = rightVertex - vertexPos;
-                float edgeSize = dir.Length();
+        b2EdgeShape newShape;
+        newShape.m_vertex1 = ((b2EdgeShape*)portal->yFix[1]->GetShape())->m_vertex1;
+        newShape.m_vertex2 = eShape->m_vertex2;
+        
+        b2Fixture* fix = edgeFix->GetBody()->CreateFixture(&newShape, 0.0f);
 
-                if (edgeSize > size)
-                {
-                    b2Body* leftBody = leftEdge->fix->GetBody();
-                    leftBody->DestroyFixture(leftEdge->fix);
+        eLocalData->globalRange[0] = range[1];
+        eLocalData->globalRange[1] = prevRange[1];
 
-                    dir.Normalize();
-                    b2Vec2 newLeftVertex = vertexPos + size * dir;
+        fix->GetUserData().pointer = (uintptr_t)fixData;
 
-                    g_EdgeData* newFixD = createEdge(rightVertex, newLeftVertex, this, leftBody);
-                    newFixD->gel = leftEdge->gel;
-                    newFixD->wall = leftEdge->wall;
+        eLocalData->prevNextFixtures[0] = portal->midFixture;
+        eLocalData->prevNextFixtures[1] = prevPNFixs[1];
+        portal->sideFixtures[1] = fix;
 
-                    portalEdgeData->edges[0] = newFixD;
-                    newFixD->edges[1] = portalEdgeData;
-                    newFixD->edges[0] = leftEdge->edges[0];
-                    if (leftEdge->edges[0])
-                    {
-                        leftEdge->edges[0]->edges[1] = newFixD;
-                    }
-
-                    fillCdData(cdData, leftEdge);
-                    destrData->datas[0] = cdData;
-
-                    b2Vec2 diff = newLeftVertex - v1;
-                    diff.Normalize();
-                    b2Vec2 mid = v1 + size * 0.5f * diff;
-                    b2Vec2 dir = rotateVec(diff, b2_pi * 0.5f);
-
-                    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
-                    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
-                    portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
-                    portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
-
-                    portalEdgeData->fix = portal->dumbFix;
-
-                    portal->destructionData = destrData;
-                    //portal->body->SetLinearVelocity(leftBody->GetLinearVelocity());
-
-                    return portal;
-                }
-            }
-
-            remDist = size;
-
-            leftPortalPoint = v1;
-
-            break;
-        }
-
-        leftEdge = leftEdge->edges[1];
-
-        if (leftEdge->gel != WHITE && leftEdge->wall != PORTALLABLE)
+        if (eLocalData->prevNextFixtures[1])
         {
-            b2Vec2 v2 = getVertexByIndex(leftEdge, 0);
-            g_EdgeData* nextEdgeData = leftEdge->edges[0];
-
-            b2Body* nextBody = nextEdgeData->fix->GetBody();
-            b2Vec2 rightVertex = getVertexByIndex(nextEdgeData, 0);
-
-            g_EdgeData* leftEdgeTemp = leftEdge;
-            leftEdge = leftEdge->edges[0];
-            leftEdgeTemp->edges[0] = portalEdgeData;
-            portalEdgeData->edges[1] = leftEdgeTemp;
-
-            if (lastVertexPos == pos)
+            fixtureData* nextFData = (fixtureData*)eLocalData->prevNextFixtures[1]->GetUserData().pointer;
+            if (nextFData && nextFData->type == F_PORTAL)
             {
-                b2Vec2 dir = rightVertex - vertexPos;
-                float edgeSize = dir.Length();
-                if (edgeSize > size)
-                {
-                    nextBody->DestroyFixture(nextEdgeData->fix);
-
-                    dir.Normalize();
-                    b2Vec2 newLeftVertex = vertexPos + size * dir;
-
-                    g_EdgeData* newFixD = createEdge(rightVertex, newLeftVertex, this, nextBody);
-                    newFixD->gel = nextEdgeData->gel;
-                    newFixD->wall = nextEdgeData->wall;
-
-                    portalEdgeData->edges[0] = newFixD;
-                    newFixD->edges[1] = portalEdgeData;
-                    newFixD->edges[0] = nextEdgeData->edges[0];
-                    if (nextEdgeData->edges[0])
-                    {
-                        nextEdgeData->edges[0]->edges[1] = newFixD;
-                    }
-
-                    fillCdData(cdData, nextEdgeData);
-                    destrData->datas[0] = cdData;
-
-                    b2Vec2 diff = newLeftVertex - v2;
-                    diff.Normalize();
-                    b2Vec2 mid = v2 + size * 0.5f * diff;
-                    b2Vec2 dir = rotateVec(diff, b2_pi * 0.5f);
-
-                    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
-                    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
-                    portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
-                    portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
-
-                    portalEdgeData->fix = portal->dumbFix;
-
-                    portal->destructionData = destrData;
-                    //portal->body->SetLinearVelocity(nextBody->GetLinearVelocity());
-
-                    return portal;
-                }
+                Portal* p = (Portal*)nextFData->data;
+                p->sideFixtures[0] = fix;
+                p->range[0] = range[1];
             }
-
-            remDist = size;
-
-            leftPortalPoint = v2;
-
-            break;
+            else if (nextFData && nextFData->type == F_EDGE)
+            {
+                s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+                nextELocal->prevNextFixtures[0] = fix;
+                nextELocal->globalRange[0] = range[1];
+            }
         }
-
-        lastVertexPos = vertexPos;
     }
 
-    bool forIn = true;
-
-    if (!leftEdge)
-    {
-        forIn = false;
-    }
-    else if (leftEdge->wall != PORTALLABLE && leftEdge->gel != WHITE)
-    {
-        portalEdgeData->edges[0] = leftEdge;
-        leftEdge->edges[1] = portalEdgeData;
-        forIn = false;
-    }
-
-    for (;forIn;)
-    {
-        b2Fixture* fix = leftEdge->fix;
-        b2Body* fixBody = fix->GetBody();
-        b2Vec2 v1 = getVertexByIndex(leftEdge, 1);
-        b2Vec2 v2 = getVertexByIndex(leftEdge, 0);
-        b2Vec2 dir = v2 - v1;
-        float len = dir.Length();
-
-        fillCdData(cdData, leftEdge);
-
-        cdData->datas[1] = lastCdData;
-        if (lastCdData)
-        {
-            lastCdData->datas[0] = cdData;
-        }
-
-        remDist -= len;
-
-        if (remDist < 0.0f)
-        {
-            dir.Normalize();
-            b2Vec2 newVertex = v2 + remDist * dir;
-            fixBody->DestroyFixture(fix);
-            g_EdgeData* eData = createEdge(v2, newVertex, this, fixBody);
-            eData->edges[1] = portalEdgeData;
-            eData->edges[0] = leftEdge->edges[0];
-            if (leftEdge->edges[0])
-            {
-                leftEdge->edges[0]->edges[1] = eData;
-            }
-            portalEdgeData->edges[0] = eData;
-
-            eData->gel = leftEdge->gel;
-            eData->wall = leftEdge->wall;
-
-            lastVertexPos = newVertex;
-
-            break;
-        }
-        else
-        {
-            fixBody->DestroyFixture(fix);
-        }
-
-        if (!leftEdge->edges[0])
-        {
-            lastVertexPos = v2;
-            break;
-        }
-        if (leftEdge->edges[0]->wall != PORTALLABLE && leftEdge->edges[0]->gel != WHITE)
-        {
-            portalEdgeData->edges[0] = leftEdge->edges[0];
-            leftEdge->edges[0]->edges[1] = portalEdgeData;
-            lastVertexPos = v2;
-            break;
-        }
-
-        lastCdData = cdData;
-        cdData->datas[0] = (createDestrData*)malloc(sizeof(createDestrData));
-        cdData = cdData->datas[0];
-
-        leftEdge = leftEdge->edges[0];
-    }
-
-    if (!forIn)
-    {
-        cdData = cdData->datas[1];
-    }
-
-    cdData->datas[0] = nullptr;
-    destrData->datas[0] = cdData;
-
-    b2Vec2 diff = lastVertexPos - leftPortalPoint;
-    diff.Normalize();
-    b2Vec2 mid = leftPortalPoint + size * 0.5f * diff;
-    dir = rotateVec(diff, b2_pi * 0.5f);
-
-    Portal* portal = createPortal(mid, dir, size * 0.5, cdData->body);
-    portal->dumbFix->GetUserData().pointer = (uintptr_t)portalFixData;
-    portal->yFix[1]->GetUserData().pointer = (uintptr_t)portalFixData;
-    portal->yFix[0]->GetUserData().pointer = (uintptr_t)portalFixData;
-
-    portalEdgeData->fix = portal->dumbFix;
-
-    portal->destructionData = destrData;
-    //portal->body->SetLinearVelocity(cdData->body->GetLinearVelocity());
+    edgeFix->GetBody()->DestroyFixture(edgeFix);
 
     return portal;
 }

@@ -4,7 +4,8 @@
 #include <chrono>
 #include <thread>
 
-Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld, b2Body* onBody){
+Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld, b2Body* onBody)
+{
     dir.Normalize();
 
     this->pWorld = pWorld;
@@ -13,13 +14,17 @@ Portal::Portal(b2Vec2 pos, b2Vec2 dir, float size, PortalWorld* pWorld, b2Body* 
     this->size = size;
     this->isVoid[0] = false; this->isVoid[1] = false;
 
+    this->sideFixtures[0] = nullptr;
+    this->sideFixtures[1] = nullptr;
+
     createPortalBody(onBody);
     calculatePoints();
 
     this->queryClass = new PortalWorldQuery(this);
 }
 
-Portal::~Portal(){
+Portal::~Portal()
+{
     delete queryClass;
 
     std::set<pbWorldData*> handledIndices;
@@ -133,73 +138,89 @@ Portal::~Portal(){
         }
     }
 
-    if (destructionData)
+    body->DestroyFixture(midFixture);
+    body->DestroyFixture(yFix[0]);
+    body->DestroyFixture(yFix[1]);
+}
+
+b2Fixture* Portal::getPreDestructionFixture()
+{
+    fixtureData* newFixtureData = nullptr;
+    int newRange[2] = { 0, 0 };
+    b2Vec2 newPoints[2] = { points[1], points[0] };
+    b2Fixture* newSideFixtures[2] = { nullptr, nullptr };
+
+
+    fixtureData* fixData = (fixtureData*)sideFixtures[0]->GetUserData().pointer;
+    newFixtureData = fixData;
+    s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
+    newRange[0] = eLocalData->globalRange[0];
+
+    newSideFixtures[0] = eLocalData->prevNextFixtures[0];
+
+    b2EdgeShape* eShape = (b2EdgeShape*)sideFixtures[0]->GetShape();
+    newPoints[0] = eShape->m_vertex1;
+    body->DestroyFixture(sideFixtures[0]);
+
+    fixtureData* fixData2 = (fixtureData*)sideFixtures[1]->GetUserData().pointer;
+    s_edgeLocalData* eLocalData2 = (s_edgeLocalData*)fixData2->data;
+    newRange[1] = eLocalData2->globalRange[1];
+
+    newSideFixtures[1] = eLocalData2->prevNextFixtures[1];
+
+    delete eLocalData2;
+    delete fixData2;
+
+    eShape = (b2EdgeShape*)sideFixtures[1]->GetShape();
+    newPoints[1] = eShape->m_vertex2;
+    body->DestroyFixture(sideFixtures[1]);
+
+    eLocalData->prevNextFixtures[0] = newSideFixtures[0];
+    eLocalData->prevNextFixtures[1] = newSideFixtures[1];
+
+    eLocalData->globalRange[0] = newRange[0];
+    eLocalData->globalRange[1] = newRange[1];
+
+    b2EdgeShape newShape;
+    newShape.SetTwoSided(newPoints[0], newPoints[1]);
+    b2Fixture* newFix = body->CreateFixture(&newShape, 0.0f);
+    newFix->GetUserData().pointer = (uintptr_t)newFixtureData;
+
+    if (newSideFixtures[0])
     {
-        createDestrData* leftCrtData = destructionData->datas[1];
-        createDestrData* rightCrtData = destructionData->datas[0];
-        fixtureData* fData = (fixtureData*)dumbFix->GetUserData().pointer;
-        g_PhysicsData* pData = (g_PhysicsData*)fData->extraData;
-        g_EdgeData* eData = (g_EdgeData*)pData->data;
-
-        g_EdgeData* leftEdge = eData->edges[1];
-        g_EdgeData* rightEdge = eData->edges[0];
-
-
-        if (!leftEdge || (leftEdge->gel != WHITE && leftEdge->wall != PORTALLABLE) || (leftEdge->gel != leftCrtData->gel))
+        fixtureData* nextFData = (fixtureData*)newSideFixtures[0]->GetUserData().pointer;
+        if (nextFData && nextFData->type == F_PORTAL)
         {
-            leftCrtData->vertexPositions[1] = points[0];
+            Portal* p = (Portal*)nextFData->data;
+            p->sideFixtures[1] = newFix;
+            p->range[1] = range[0];
         }
-        else if (leftEdge)
+        else if (nextFData && nextFData->type == F_EDGE)
         {
-            leftCrtData->vertexPositions[1] = getVertexByIndex(leftEdge, 1);
-            leftEdge->fix->GetBody()->DestroyFixture(leftEdge->fix);
-            leftEdge = leftEdge->edges[1];
-        }
-
-        if (!rightEdge || (rightEdge->gel != WHITE && rightEdge->wall != PORTALLABLE) || (rightEdge->gel != rightCrtData->gel))
-        {
-            rightCrtData->vertexPositions[0] = points[1];
-        }
-        else if (rightEdge)
-        {
-            rightCrtData->vertexPositions[0] = getVertexByIndex(rightEdge, 0);
-            rightEdge->fix->GetBody()->DestroyFixture(rightEdge->fix);
-            rightEdge = rightEdge->edges[0];
-        }
-
-        for (; leftCrtData; leftCrtData = leftCrtData->datas[0])
-        {
-            g_EdgeData* eData = createEdge(leftCrtData);
-            eData->edges[1] = leftEdge;
-            if (leftEdge)
-            {
-                leftEdge->edges[0] = eData;
-            }
-
-            leftEdge = eData;
-        }
-
-        leftEdge->edges[0] = rightEdge;
-        if (rightEdge)
-        {
-            rightEdge->edges[1] = leftEdge;
+            s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+            nextELocal->prevNextFixtures[1] = newFix;
+            nextELocal->globalRange[1] = range[0];
         }
     }
-    
-    free((void*)body->GetUserData().pointer);
 
-    if (body->GetType() == b2_staticBody)
+    if (newSideFixtures[1])
     {
-        pWorld->DestroyBody(body);
+        fixtureData* nextFData = (fixtureData*)newSideFixtures[1]->GetUserData().pointer;
+        if (nextFData && nextFData->type == F_PORTAL)
+        {
+            Portal* p = (Portal*)nextFData->data;
+            p->sideFixtures[0] = newFix;
+            p->range[0] = range[1];
+        }
+        else if (nextFData && nextFData->type == F_EDGE)
+        {
+            s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+            nextELocal->prevNextFixtures[0] = newFix;
+            nextELocal->globalRange[0] = range[1];
+        }
     }
-    else
-    {
-        body->GetUserData().pointer = (uintptr_t)nullptr;
-        body->DestroyFixture(midFixture);
-        body->DestroyFixture(dumbFix);
-        body->DestroyFixture(yFix[0]);
-        body->DestroyFixture(yFix[1]);
-    }
+
+    return newFix;
 }
 
 void Portal::reviveAround()
@@ -240,7 +261,7 @@ void Portal::calculatePoints()
 
 void Portal::createPortalBody(b2Body* onBody)
 {
-    if (onBody && onBody->GetType() != b2_staticBody && (void*)onBody->GetUserData().pointer == nullptr)
+    if (onBody)
     {
         body = onBody;
         posOffset = onBody->GetLocalPoint(pos);
@@ -272,11 +293,6 @@ void Portal::createPortalBody(b2Body* onBody)
     midPortal.isSensor = false;
     
     midFixture = body->CreateFixture(&midPortal);
-
-    shape.SetTwoSided(leftPoint, rightPoint);
-    dumbFix = body->CreateFixture(&shape, 0.0f);
-    // for now
-    dumbFix->SetSensor(true);
 
     b2Vec2 pVec = points[1] - points[0];
     pWorld->normalize(&pVec);
