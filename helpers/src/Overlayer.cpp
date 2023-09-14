@@ -81,10 +81,9 @@ Overlayer::Overlayer(Game* game)
     undoSound = sounder->loadSound("undo.wav");
     redoSound = sounder->loadSound("redo.wav");
 
-    thinDrawer->memMapFuncs.push_back({ maper, (void*)this });
-	thinDrawer->lateDrawFuncs.push_back({ draw, (void*)this });
-
     this->cd = new CharDrawer(thinDrawer);
+
+    pushRenderFunctions();
 
     startAlloc = mt->lastAvailablePos;
     mt->lastAvailablePos += numX * numY * 4;
@@ -132,6 +131,19 @@ Overlayer::Overlayer(Game* game)
         std::string s = "<" + std::to_string(i) + ">";
         items[i + 4].name = res[s][cd->selectedLanguageIndex];
     }
+}
+
+void Overlayer::pushRenderFunctions()
+{
+    thinDrawer->memMapFuncs.push_back({ maper, (void*)this });
+    thinDrawer->lateDrawFuncs.push_back({ draw, (void*)this });
+    thinDrawer->lateDrawFuncs.push_back({ CharDrawer::draw, cd });
+}
+
+void Overlayer::eraseRenderFunctions()
+{
+    thinDrawer->eraseFromMaperFunctions(thinDrawer->memMapFuncs, (void*)this);
+    thinDrawer->eraseFromRenderFunctions(thinDrawer->lateDrawFuncs, (void*)this);
 }
 
 void Overlayer::maper(void* ptr)
@@ -605,7 +617,7 @@ void Overlayer::handleHoverPlay()
 
     if (wh->mouseData[2] == 0)
     {
-        if (clickStartOnPlay && hoveringPlay)
+        if (clickStartOnPlay && hoveringPlay && selectedItemIndex == -1)
         {
             clickedPlay = true;
         }

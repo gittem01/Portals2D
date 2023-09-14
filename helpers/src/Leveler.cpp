@@ -5,6 +5,7 @@
 #include <Overlayer.h>
 #include <Sounder.h>
 #include <SwapChain.h>
+#include <LevelerTestCase.h>
 
 // for math things
 #include <PortalWorld.h>
@@ -37,11 +38,7 @@ Leveler::Leveler(Game* game)
 	thinDrawer->wallLight->recreateUniforms(numWhiteWall * 2);
 	thinDrawer->diagonalLiner->recreateUniforms(numWhiteWall * 2);
 
-	//thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
-	thinDrawer->midDrawFuncs.push_back({ renderLasers, (void*)this });
-	thinDrawer->midDrawFuncs.push_back({ renderFunnels, (void*)this });
-	thinDrawer->midDrawFuncs.push_back({ renderBridges, (void*)this });
-	thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
+	pushRenderFunctions();
 
 	ol = new Overlayer(game);
 
@@ -63,6 +60,15 @@ Leveler::~Leveler()
 			break;
 		}
 	}
+}
+
+void Leveler::pushRenderFunctions()
+{
+	//thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
+	thinDrawer->midDrawFuncs.push_back({ renderLasers, (void*)this });
+	thinDrawer->midDrawFuncs.push_back({ renderFunnels, (void*)this });
+	thinDrawer->midDrawFuncs.push_back({ renderBridges, (void*)this });
+	thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
 }
 
 void rupFiller(std::vector<std::vector<std::vector<s_shaderGridData>>>& renderGridUp)
@@ -1416,6 +1422,12 @@ void Leveler::update()
 	calcMouseGrid();
 
 	ol->update();
+
+	if (ol->clickedPlay)
+	{
+		createLevel();
+		return;
+	}
 
 	handleRightClickClick();
 
@@ -4024,5 +4036,25 @@ void Leveler::handleRightClickClick()
 
 void Leveler::createLevel()
 {
+	const s_levelGridData& lgd1 = getSquare(startSquare.x, startSquare.y);
+	const s_levelGridData& lgd2 = getSquare(startSquare.x, startSquare.y + 1);
+
+	const s_levelGridData& lgd3 = getSquare(endSquare.x, endSquare.y);
+	const s_levelGridData& lgd4 = getSquare(endSquare.x, endSquare.y + 1);
+
+	if (lgd1.objectType & START_END_CHECKER || lgd2.objectType & START_END_CHECKER ||
+		lgd3.objectType & START_END_CHECKER || lgd4.objectType & START_END_CHECKER)
+	{
+		return;
+	}
+
 	shouldQuit = true;
+
+	thinDrawer->eraseFromRenderFunctions(thinDrawer->earlyDrawFuncs, (void*)this);
+	thinDrawer->eraseFromRenderFunctions(thinDrawer->midDrawFuncs, (void*)this);
+	thinDrawer->eraseFromRenderFunctions(thinDrawer->lateDrawFuncs, (void*)this);
+
+	ol->eraseRenderFunctions();
+
+	game->testCase = new LevelerTestCase(game);
 }

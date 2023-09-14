@@ -117,6 +117,7 @@ constexpr int getRotVal(int rot)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
 #define SINGLE_DRAWS 0xFFFFF0	// all except walls and platform
 #define OCCUPIERS 0x7FFFFFF		// all
+#define START_END_CHECKER (OCCUPIERS | HAZARDER_MID_DU | HAZARDER_MID_LR)
 
 #define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
 #define TRANSMITTERS (CLICK_BUTTON | DOWN_BUTTON | CUBE_BUTTON | SPHERE_BUTTON | LASER_REC_GND | LASER_REC_WALL)
@@ -155,11 +156,18 @@ typedef struct GridSquare_S
 	short x;
 	short y;
 
+	GridSquare_S() { }
+
+	GridSquare_S(short x, short y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
 	glm::i16vec2 asGlm() const
 	{
 		return glm::i16vec2(x, y);
 	}
-
 } s_gridSquare;
 
 typedef struct GridData_S
@@ -202,6 +210,11 @@ typedef struct Connection
 inline bool operator<(const s_gridSquare lhs, const s_gridSquare rhs)
 {
 	return (lhs.y < rhs.y) || (lhs.y == rhs.y && lhs.x < rhs.x);
+}
+
+inline s_gridSquare operator + (const s_gridSquare& a, const s_gridSquare& b)
+{
+	return s_gridSquare(a.x + b.x, a.y + b.y);
 }
 
 inline bool operator==(const s_gridSquare lhs, const s_gridSquare rhs)
@@ -379,6 +392,7 @@ public:
 	glm::i16vec2 getBestVert(glm::i16vec2 checkStart, int desiredSize, levelObject mask); // returns y0, y1
 	void handleRightClickClick();
 
+	void pushRenderFunctions();
 	void createLevel();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);

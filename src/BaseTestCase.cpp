@@ -116,7 +116,7 @@ void BaseTestCase::imguiRender()
     td->drawData = ImGui::GetDrawData();
 }
 
-void BaseTestCase::beforeCreate()
+void BaseTestCase::beforeCreate(bool createTP)
 {
     td->debugLineRegistry.clear();
 
@@ -135,7 +135,10 @@ void BaseTestCase::beforeCreate()
     td->pWorld = g->pWorld;
     td->beforeCreate();
 
-    tp = new TestPlayer(g);
+    if (createTP)
+    {
+        tp = new TestPlayer(g);
+    }
 }
 
 void BaseTestCase::afterCreate()

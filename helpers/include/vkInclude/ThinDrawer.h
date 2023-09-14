@@ -107,8 +107,8 @@ public:
     ThinDrawer(PortalWorld* pWorld);
 
     bool drawReleases = false;
-    bool drawDebugBodies = true;
-    bool drawDebugEdges = true;
+    bool drawDebugBodies = false;
+    bool drawDebugEdges = false;
     bool drawDebugPortals = false;
 
     void initImgui();
@@ -261,6 +261,8 @@ public:
     void debug_addPortalBody(PortalBody* portalBody);
     void addPortalBody(PortalBody* portalBody, std::vector<std::string> textures);
     void releaseRenderResources();
+    void eraseFromMaperFunctions(std::vector<std::pair<void (*) (void*), void*>>& vec, void* ptr);
+    void eraseFromRenderFunctions(std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>>& vec, void* ptr);
 
     static bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
 

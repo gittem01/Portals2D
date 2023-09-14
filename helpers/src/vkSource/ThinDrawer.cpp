@@ -1775,10 +1775,46 @@ void ThinDrawer::debug_portalBodyDestroyCallback(PortalBody* portalBody, void* d
     }
 }
 
+void ThinDrawer::eraseFromMaperFunctions(std::vector<std::pair<void (*) (void*), void*>>& vec, void* ptr)
+{
+    for (auto iter = vec.begin(); iter < vec.end(); )
+    {
+        if (iter->second == ptr)
+        {
+            iter = vec.erase(iter);
+        }
+        else
+        {
+            iter++;
+        }
+    }
+}
+
+void ThinDrawer::eraseFromRenderFunctions(std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>>& vec, void* ptr)
+{
+    for (auto iter = vec.begin(); iter < vec.end(); )
+    {
+        if (iter->second == ptr)
+        {
+            iter = vec.erase(iter);
+        }
+        else
+        {
+            iter++;
+        }
+    }
+}
+
 void ThinDrawer::releaseRenderResources()
 {
     memMapFuncs.clear();
+
+    earlyDrawFuncs.clear();
+    midDrawFuncs.clear();
     drawFuncs.clear();
+    lateDrawFuncs.clear();
+
+    drawData = nullptr;
 
     vkDeviceWaitIdle(logicalDevice);
 

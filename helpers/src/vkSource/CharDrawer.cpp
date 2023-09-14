@@ -87,8 +87,6 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 	fontShader = new FontShader(thinDrawer);
 	thinDrawer->shaders.push_back(fontShader);
 	fontShader->init();
-
-	thinDrawer->lateDrawFuncs.push_back({ draw, this });
 }
 
 void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)

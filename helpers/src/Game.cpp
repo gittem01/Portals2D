@@ -2,6 +2,7 @@
 #include <TestCaseIncludes.h>
 #include <Sounder.h>
 #include <Leveler.h>
+#include <Overlayer.h>
 
 Game* Game::object;
 
@@ -40,7 +41,7 @@ void Game::LevelerState()
     }
 
     lastTime = glfwGetTime();
-    while (!glfwWindowShouldClose(thinDrawer->wh->window) || leveler->shouldQuit)
+    while (!glfwWindowShouldClose(thinDrawer->wh->window) && !leveler->shouldQuit)
     {
         thinDrawer->wh->looper();
         thinDrawer->wh->cam->update();
@@ -72,7 +73,7 @@ void Game::LevelerState()
 
 void Game::TestState()
 {
-    if (!testCase)
+    if (!leveler)
     {
         testCase = newTest(this, 8);
 
@@ -83,7 +84,7 @@ void Game::TestState()
     }
 
     lastTime = glfwGetTime();
-    while (!glfwWindowShouldClose(thinDrawer->wh->window))
+    while (!glfwWindowShouldClose(thinDrawer->wh->window) && (testCase && !testCase->shouldQuit || !testCase))
     {
         thinDrawer->wh->looper();
         thinDrawer->wh->cam->update();
@@ -119,13 +120,32 @@ void Game::TestState()
                 delete testCase;
                 testCase = newTest(this, nextTestCase);
             }
+        
+            testCase->perFrameUpdate();
         }
 
         thinDrawer->gameTime = gameTime;
         thinDrawer->renderLoop();
     }
     
-    gameStater = nullptr;
+    if (leveler)
+    {
+        gameStater = &Game::LevelerState;
+        if (testCase)
+        {
+            testCase->shouldQuit = false;
+
+            testCase->destroy();
+            delete testCase;
+        }
+
+        leveler->pushRenderFunctions();
+        leveler->ol->pushRenderFunctions();
+    }
+    else
+    {
+        gameStater = nullptr;
+    }
 }
 
 void Game::loop()

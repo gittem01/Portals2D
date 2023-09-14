@@ -22,6 +22,7 @@ public:
 	int refreshItem;
     const char* name;
     bool followPlayer = false;
+    bool shouldQuit = false;
 
     class Game* g;
     class ThinDrawer* td;
@@ -35,15 +36,15 @@ public:
 
     BaseTestCase(Game* game, const char* name = "Test Debug Window");
 
-    virtual ~BaseTestCase() { }
-
     void imguiRender();
 
-    void beforeCreate();
+    void beforeCreate(bool createTP=true);
 
     void afterCreate();
 
-    virtual void onUpdate();
+    void onUpdate();
+
+    virtual void perFrameUpdate() {}
 
     void keyHandler(class WindowHandler* wh);
 
