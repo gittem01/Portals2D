@@ -47,6 +47,10 @@ public:
 	char selectedItemIndex = -1;
 	char lastHoverIndex = -1;
 
+	bool clickStartOnPlay = false;
+	bool hoveringPlay = false;
+	bool clickedPlay = false;
+
 	float itemRatio = 0.0;
 	bool itemDir = 0;
 	std::string lastPopName = std::string("");
@@ -72,6 +76,7 @@ public:
 	void getPops();
 	int addPop(std::string popName, std::vector<std::string> texts, std::vector<std::string> secondaryPops, int mask);
 	void popUpdate();
+	void handleHoverPlay();
 	void update();
 
 	static void maper(void* ptr);

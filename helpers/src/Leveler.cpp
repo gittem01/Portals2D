@@ -4021,3 +4021,8 @@ void Leveler::handleRightClickClick()
 		}
 	}
 }
+
+void Leveler::createLevel()
+{
+	shouldQuit = true;
+}

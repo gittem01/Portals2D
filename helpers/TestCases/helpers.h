@@ -8,21 +8,6 @@
 #include <chrono>
 #include <random>
 
-const char* testCases[] =   { 
-                                "Random Portals",
-                                "Squares",
-                                "Circles",
-                                "Speeder",
-                                "Elevator",
-                                "Squisher and Spirals",
-                                "Mixer",
-                                "ShootShoot Place",
-                            };
-
-const int numTestCases = sizeof(testCases) / sizeof(testCases[0]);
-
-std::vector<PortalBody*>* indexToTrack;
-
 float getRand()
 {
     return ((double)rand() / RAND_MAX) - 0.5f;

@@ -16,6 +16,7 @@ Game::Game()
     lastTime = 0.0;
     gameTime = 0.0;
     testCase = nullptr;
+    leveler = nullptr;
     pWorld = nullptr;
 
     contactListener = nullptr;
@@ -33,10 +34,13 @@ Game::Game()
 
 void Game::LevelerState()
 {
-    leveler = new Leveler(this);
+    if (!leveler)
+    {
+        leveler = new Leveler(this);
+    }
 
     lastTime = glfwGetTime();
-    while (!glfwWindowShouldClose(thinDrawer->wh->window))
+    while (!glfwWindowShouldClose(thinDrawer->wh->window) || leveler->shouldQuit)
     {
         thinDrawer->wh->looper();
         thinDrawer->wh->cam->update();
@@ -54,17 +58,29 @@ void Game::LevelerState()
         thinDrawer->renderLoop();
     }
 
-    gameStater = nullptr;
+    if (leveler->shouldQuit)
+    {
+        leveler->shouldQuit = false;
+
+        gameStater = &Game::TestState;
+    }
+    else
+    {
+        gameStater = nullptr;
+    }
 }
 
 void Game::TestState()
 {
-    testCase = newTest(this, 8);
+    if (!testCase)
+    {
+        testCase = newTest(this, 8);
 
-    thinDrawer->whiteWallShader->testFill();
-    thinDrawer->blackWallShader->testFill();
-    thinDrawer->wallLight->testFill();
-    thinDrawer->diagonalLiner->testFill();
+        thinDrawer->whiteWallShader->testFill();
+        thinDrawer->blackWallShader->testFill();
+        thinDrawer->wallLight->testFill();
+        thinDrawer->diagonalLiner->testFill();
+    }
 
     lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(thinDrawer->wh->window))

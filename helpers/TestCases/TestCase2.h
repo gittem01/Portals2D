@@ -1,4 +1,5 @@
 #include <BaseTestCase.h>
+#include <helpers.h>
 
 class TestCase2 : public BaseTestCase
 {

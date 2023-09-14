@@ -265,6 +265,7 @@ public:
 	class WindowHandler* wh;
 	class Overlayer* ol;
 	class ManyTexture* mt;
+	bool shouldQuit = false;
 
 	//////////////////
 	s_gridOperationList* currentOperation;
@@ -377,6 +378,8 @@ public:
 	void fillPlatformData(int platformType, s_platformRectUbo* platformUbo);
 	glm::i16vec2 getBestVert(glm::i16vec2 checkStart, int desiredSize, levelObject mask); // returns y0, y1
 	void handleRightClickClick();
+
+	void createLevel();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);
 	static void renderLasers(VkCommandBuffer cmdBuff, void* ptr);

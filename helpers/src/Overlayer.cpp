@@ -230,7 +230,6 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         i++;
     }
 
-    // arrow
     if (ol->itemRatio > 0.0)
     {
         char hoverGridX = ol->selectedItemIndex % ol->numX;
@@ -292,6 +291,33 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdPushConstants(cmdBuff, ol->as->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_arrowData), (void*)&aData);
 
     vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+
+    if (ol->selectedItemIndex == -1)
+    {
+        static float addition = 0.0f;
+
+        if (ol->hoveringPlay)
+        {
+            addition += ol->game->deltaTime * 10.0;
+        }
+        else
+        {
+            addition -= ol->game->deltaTime * 10.0;
+        }
+
+        addition = std::max(std::min(addition, 1.0f), 0.0f);
+
+        // topArrow
+        aData.posSize.x = 0.0;
+        aData.posSize.y = ol->cam.ySides.y - 2.0;
+        aData.color = glm::vec4(1.0f, 1.0f, 0.0f, 0.5 + addition * 0.5);
+        aData.data = { -0.2f - 0.3 * addition, 0.5f, -0.5f, 0.5f };
+        aData.data2 = { 0.0, 0.3 - addition * 0.15, 0.3 - addition * 0.15, 0.3 };
+
+        vkCmdPushConstants(cmdBuff, ol->as->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_arrowData), (void*)&aData);
+
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+    }
 }
 
 void Overlayer::getPops()
@@ -554,9 +580,45 @@ void Overlayer::popUpdate()
     }
 }
 
+void Overlayer::handleHoverPlay()
+{
+    glm::vec2 playPos = { 0.0f, cam.ySides.y - 2.0 };
+    glm::vec2 p = cam.getMouseCoords();
+    clickedPlay = false;
+
+    if (glm::length(p - playPos) < 1.5)
+    {
+        hoveringPlay = true;
+    }
+    else
+    {
+        hoveringPlay = false;
+    }
+
+    if (wh->mouseData[2] == 2)
+    {
+        if (hoveringPlay)
+        {
+            clickStartOnPlay = true;
+        }
+    }
+
+    if (wh->mouseData[2] == 0)
+    {
+        if (clickStartOnPlay && hoveringPlay)
+        {
+            clickedPlay = true;
+        }
+
+        clickStartOnPlay = false;
+    }
+}
+
 void Overlayer::update()
 {
     glm::vec2 p = cam.getMouseCoords();
+
+    handleHoverPlay();
 
     popUpdate();
 

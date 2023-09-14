@@ -12,6 +12,8 @@ public:
 	double deltaTime;
 	double lastTime;
 
+	class BaseTestCase* testCase;
+
 	class PortalWorld* pWorld;
 	class mouseJointHandler* mjh;
 	class ContactListener* contactListener;
