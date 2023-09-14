@@ -4011,11 +4011,11 @@ void Leveler::handleRightClickClick()
 				}
 				else if (ol->popHoverIndices[0] == 2)
 				{
-					startSquare = { (short)ol->levelerRCPos.x, (short)ol->levelerRCPos.y };
+					startSquare = { (short)ol->levelerRCPos.x, (short)std::min(ol->levelerRCPos.y, ySize_H - 2) };
 				}
 				else if (ol->popHoverIndices[0] == 3)
 				{
-					endSquare = { (short)ol->levelerRCPos.x, (short)ol->levelerRCPos.y };
+					endSquare = { (short)ol->levelerRCPos.x, (short)std::min(ol->levelerRCPos.y, ySize_H - 2) };
 				}
 			}
 		}

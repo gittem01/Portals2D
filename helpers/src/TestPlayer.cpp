@@ -963,7 +963,7 @@ void TestPlayer::handlePortalCD(float dt)
         gData.positions.x = np0.x;
         gData.positions.y = np0.y;
 
-        if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTime >= 0.0f)
+        if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
             if (canCreateBlue)
             {
@@ -1031,7 +1031,7 @@ void TestPlayer::handlePortalCD(float dt)
 
             lastPortalCreationTime = gameTime;
         }
-        else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTime >= 0.0f)
+        else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
             if (canCreateRed)
             {
