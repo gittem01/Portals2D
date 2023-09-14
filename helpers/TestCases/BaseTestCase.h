@@ -167,9 +167,9 @@ public:
     virtual void onUpdate()
     {
         double physicsTickTime = glfwGetTime();
-
+        
         td->debugLineRegistry.clear();
-
+        
         int requiredIters = std::max((int)std::round(g->deltaTime / requestedDtPerStep), 1);
         double requiredDt = g->deltaTime / requiredIters;
         requiredIters = std::min(requiredIters, 20);
@@ -180,11 +180,12 @@ public:
         {
             return;
         }
-
+        
         for (int i = 0; i < requiredIters; i++)
         {
             float dt = requiredDt * 2.0;
             g->mjh->mouseHandler(g->frame, requiredIters);
+            
 #if ENABLE_TESTPLAYER
             tp->update(dt, requiredIters);
 #endif

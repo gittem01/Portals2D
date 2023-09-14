@@ -763,7 +763,7 @@ void PortalWorld::DestroyCustomJoint(b2Joint* cj){
 	}
 }
 
-Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Vec2 dir, float size)
+Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, float size)
 {
     fixtureData* fixData = (fixtureData*)edgeFix->GetUserData().pointer;
     s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
@@ -836,13 +836,14 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
         }
         else
         {
-            assert(false);
+            float oneDimensionLen = (range[0] + 0.5f) * eGlobalData->perWallSize + size * 0.5;
+            portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
     }
 
     portalCreatePos = edgeFix->GetBody()->GetWorldPoint(portalCreatePos);
 
-    Portal* portal = createPortal(portalCreatePos, dir, size * 0.5f, edgeFix->GetBody());
+    Portal* portal = createPortal(portalCreatePos, rotateVec(eGlobalData->perpDir, edgeFix->GetBody()->GetAngle()), size * 0.5f, edgeFix->GetBody());
     portal->range[0] = range[0];
     portal->range[1] = range[1];
 
@@ -854,7 +855,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
         b2Fixture* fix = edgeFix->GetBody()->CreateFixture(&newShape, 0.0f);
         
         eLocalData->globalRange[0] = prevRange[0];
-        eLocalData->globalRange[1] = range[0];
+        eLocalData->globalRange[1] = range[0] - 1;
         
         fix->GetUserData().pointer = (uintptr_t)fixData;
 
@@ -896,7 +897,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Ve
         
         b2Fixture* fix = edgeFix->GetBody()->CreateFixture(&newShape, 0.0f);
 
-        eLocalData->globalRange[0] = range[1];
+        eLocalData->globalRange[0] = range[1] + 1;
         eLocalData->globalRange[1] = prevRange[1];
 
         fix->GetUserData().pointer = (uintptr_t)fixData;

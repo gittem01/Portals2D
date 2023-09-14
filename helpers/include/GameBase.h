@@ -41,6 +41,7 @@ typedef struct EdgeGlobalData
     b2Vec2 localPoints[2];
     EdgeGlobalData* sideEdges[2];
     b2Vec2 dir;
+    b2Vec2 perpDir;
     float totalSize;
     float perWallSize;
 
@@ -50,6 +51,7 @@ typedef struct EdgeGlobalData
         this->localPoints[1] = p1;
         this->dir = p1 - p0;
         this->dir.Normalize();
+        this->perpDir = b2Vec2(dir.y, -dir.x);
         this->totalSize = (p1 - p0).Length();
 
         this->unitWalls.resize(std::round(totalSize * unitWallPerMeter));

@@ -108,8 +108,9 @@ public:
             }
         }
 
-        body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), g->pWorld, b2_kinematicBody, true);
+        body = createEdge(b2Vec2(0.0f, +3.0f), b2Vec2(0.0f, -3.0f), g->pWorld);
         body->SetTransform(b2Vec2(6.0f, 0.0f), -b2_pi * 0.0f);
+        body->SetType(b2_kinematicBody);
 
         createEdge(b2Vec2(12.0f, +3.0f), b2Vec2(6.0f, +3.0f), g->pWorld, b2_kinematicBody, true);
 

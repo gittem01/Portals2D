@@ -181,7 +181,7 @@ private:
     PortalRay* rayHandler;
     EvaluationRay* evalRayHandler;
 
-    Portal* createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, b2Vec2 dir, float size);
+    Portal* createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, float size);
 
     std::set<PortalBody*> destroyBodies;
     std::set<pbWorldData*> handledBodies;

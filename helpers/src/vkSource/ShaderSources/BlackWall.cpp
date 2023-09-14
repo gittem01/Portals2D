@@ -39,7 +39,7 @@ void BlackWall::testFill()
         }
     }
 
-    recreateUniforms(2000000);
+    recreateUniforms(400 * 400 * 2);
 
     int alignedSizeFS = sizeof(s_wallUbo_b);
 

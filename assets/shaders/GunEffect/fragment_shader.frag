@@ -106,5 +106,5 @@ void main()
         lastMult = (size.x - uv.x) / 5.0f;
     }
 
-    FragColour = vec4(sumLen * 2.0) * fracter * lastMult * wavColor;
+    FragColour = sumLen * 2.0 * fracter * lastMult * wavColor;
 }

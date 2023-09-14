@@ -138,6 +138,8 @@ Portal::~Portal()
         }
     }
 
+    free((void*)midFixture->GetUserData().pointer);
+
     body->DestroyFixture(midFixture);
     body->DestroyFixture(yFix[0]);
     body->DestroyFixture(yFix[1]);
@@ -149,7 +151,6 @@ b2Fixture* Portal::getPreDestructionFixture()
     int newRange[2] = { 0, 0 };
     b2Vec2 newPoints[2] = { points[1], points[0] };
     b2Fixture* newSideFixtures[2] = { nullptr, nullptr };
-
 
     fixtureData* fixData = (fixtureData*)sideFixtures[0]->GetUserData().pointer;
     newFixtureData = fixData;

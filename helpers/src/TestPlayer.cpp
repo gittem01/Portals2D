@@ -749,28 +749,11 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
     fixData = (fixtureData*)checkFixture->GetUserData().pointer;
     s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
 
-    for (int i = 0; i < 2; i++)
-    {
-        if (eLocalData->prevNextFixtures[i])
-        {
-            fixtureData* fData = (fixtureData*)eLocalData->prevNextFixtures[i]->GetUserData().pointer;
-            if (fData && fData->type == F_PORTAL && fData->data == oldPortal)
-            {
-                return oldPortal->midFixture;
-            }
-        }
-    }
-
     s_edgeGlobalData* eGlobalData = eLocalData->globalData;
     int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
 
     int requiredRangeSize = std::ceil(size / eGlobalData->perWallSize);
     requiredRangeSize += requiredRangeSize % 2;
-
-    if (rangeSize < requiredRangeSize)
-    {
-        return nullptr;
-    }
 
     b2EdgeShape* eShape = (b2EdgeShape*)checkFixture->GetShape();
     pos = checkFixture->GetBody()->GetLocalPoint(pos);
@@ -778,13 +761,39 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
 
     int startIndex = std::min(std::max((int)std::floor(dist), eLocalData->globalRange[0]), eLocalData->globalRange[1]);
 
+    if (startIndex > -1 && startIndex < eGlobalData->unitWalls.size())
+    {
+        s_unitWallData ud = eGlobalData->unitWalls[startIndex];
+
+        if (ud.wallType != PORTALLABLE && (ud.gelAmount <= 3 || ud.gelType != WHITE))
+        {
+            return nullptr;
+        }
+    }
+
+    int checkRange[2] = { eLocalData->globalRange[0], eLocalData->globalRange[1] };
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (eLocalData->prevNextFixtures[i])
+        {
+            fixtureData* fData = (fixtureData*)eLocalData->prevNextFixtures[i]->GetUserData().pointer;
+            if (fData && fData->data == oldPortal)
+            {
+                checkRange[i] = i == 0 ? std::min(checkRange[0], oldPortal->range[0]) : std::max(checkRange[1], oldPortal->range[1]);
+                checkFixture = oldPortal->midFixture;
+                break;
+            }
+        }
+    }
+
     int leftCount = 0;
     int rightCount = 0;
     int lastSum = 0;
 
     while (true)
     {
-        if (startIndex + leftCount + 1 <= eLocalData->globalRange[1])
+        if (startIndex + leftCount + 1 <= checkRange[1])
         {
             s_unitWallData& uData = eGlobalData->unitWalls[startIndex + leftCount + 1];
             if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
@@ -798,7 +807,7 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
             }
         }
 
-        if (startIndex - rightCount - 1 >= eLocalData->globalRange[0])
+        if (startIndex - rightCount - 1 >= checkRange[0])
         {
             s_unitWallData& uData = eGlobalData->unitWalls[startIndex - rightCount - 1];
             if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
@@ -954,7 +963,7 @@ void TestPlayer::handlePortalCD(float dt)
         gData.positions.x = np0.x;
         gData.positions.y = np0.y;
 
-        if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTime > 0.4f)
+        if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTime >= 0.0f)
         {
             if (canCreateBlue)
             {
@@ -971,7 +980,7 @@ void TestPlayer::handlePortalCD(float dt)
                     portalA = nullptr;
                 }
 
-                Portal* portal = pWorld->createPortalWithChecks(canCreateBlue, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+                Portal* portal = pWorld->createPortalWithChecks(canCreateBlue, rayCaster.rayPoint, portalSize);
 
                 shootDatas.push_back({  { p0.x, p0.y, portal->pos.x, portal->pos.y },   { 0.0, 0.5f, 1.0f, 1.0f },
                                         { NAN, 0.0f, 0.0f, 0.0f },                      { 1.0f, 0.0f, 0.0f, 0.0f } });
@@ -1022,7 +1031,7 @@ void TestPlayer::handlePortalCD(float dt)
 
             lastPortalCreationTime = gameTime;
         }
-        else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTime > 0.4f)
+        else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTime >= 0.0f)
         {
             if (canCreateRed)
             {
@@ -1038,7 +1047,7 @@ void TestPlayer::handlePortalCD(float dt)
                     portalB = nullptr;
                 }
 
-                Portal* portal = pWorld->createPortalWithChecks(canCreateRed, rayCaster.rayPoint, rayCaster.rayNormal, portalSize);
+                Portal* portal = pWorld->createPortalWithChecks(canCreateRed, rayCaster.rayPoint, portalSize);
 
 
                 shootDatas.push_back({  { p0.x, p0.y, portal->pos.x, portal->pos.y },   { 1.0, 0.5f, 0.0f, 1.0f },
@@ -1749,19 +1758,22 @@ void TestPlayer::update(float dt, int totalIter)
     {
         lv.y = 7.5f * (float)pBody->size();
 
+        jumpPressTime = 0.0;
+
         ALuint source = Sounder::object->playSound(jumpBuffer, 1.0);
         b2Vec2 pPos = pb->body->GetPosition();
         Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
     }
-    
+
     lv.y = std::fmax(lv.y, -34.0);
-    printf("%f, %f\n", lv.x, lv.y);
+    //printf("%f, %f\n", lv.x, lv.y);
+
     pb->body->SetLinearVelocity(lv);
 
     handleBodyRotation();
 
     handleGunRotation();
-
+    
     handlePortalCD(dt);
 
     updateReset();
