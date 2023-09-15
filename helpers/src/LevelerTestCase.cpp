@@ -65,19 +65,11 @@ void LevelerTestCase::fillReachableMap()
         nextVisitIndex = nextVisitIndex ^ 1;
     }
 
-    int countReachable = 0;
-    for (int i = 0; i < reachableMap.size(); i++)
+    s_gridSquare es = g->leveler->endSquare;
+    if (!reachableMap[es.y + g->leveler->ySize_H][es.x + g->leveler->xSize_H])
     {
-        for (int j = 0; j < reachableMap[i].size(); j++)
-        {
-            if (reachableMap[i][j])
-            {
-				countReachable++;
-			}
-		}
-    }
-
-    printf("Reachable squares: %d\n", countReachable);
+		shouldQuit = true;
+	}
 }
 
 void LevelerTestCase::createDefaultEdges()
@@ -101,8 +93,9 @@ void LevelerTestCase::createDefaultEdges()
 			}
 
             bool topOK = !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & (BLACK_WALL | WHITE_WALL));
+            topOK &= gridY + 1 < g->leveler->ySize && reachableMap[gridY + 1][gridX];
             bool isBW = g->leveler->getSquare(x, y).objectType & (BLACK_WALL | WHITE_WALL);
-
+            
             if (topOK && isBW)
             {
                 walkArndAndCreateEdge(x, y);
@@ -137,7 +130,7 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
 
         std::reverse_copy(wallData.begin(), wallData.end(), eGlobalData->unitWalls.begin());
 
-        if (nextPos.x == x && nextPos.y == y && startDir == endDir)
+        if (nextPos.x == x && nextPos.y == y && nextDir == 1)
         {
             break;
         }
@@ -196,7 +189,10 @@ void LevelerTestCase::onCreate()
 
     fillReachableMap();
 
-    createDefaultEdges();
+    if (!shouldQuit)
+    {
+        createDefaultEdges();
+    }
 }
 
 void LevelerTestCase::perFrameUpdate()
