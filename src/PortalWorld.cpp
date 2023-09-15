@@ -826,12 +826,12 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     {
         if (range[0] == eLocalData->globalRange[0])
         {
-            float oneDimensionLen = (range[0] + 0.5f) * eGlobalData->perWallSize + size * 0.5;
+            float oneDimensionLen = (range[0]) * eGlobalData->perWallSize + size * 0.5;
             portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
         else if (range[1] == eLocalData->globalRange[1])
         {
-            float oneDimensionLen = (range[1] + 0.5f) * eGlobalData->perWallSize - size * 0.5;
+            float oneDimensionLen = (range[1] + 1.0f) * eGlobalData->perWallSize - size * 0.5;
             portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
         else

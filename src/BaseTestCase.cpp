@@ -26,7 +26,8 @@ void BaseTestCase::destroy()
     delete g->pWorld;
     delete tp;
 
-    g->pWorld = NULL;
+    g->pWorld = nullptr;
+    td->pWorld = nullptr;
 }
 
 void BaseTestCase::imguiRender()
@@ -170,7 +171,7 @@ void BaseTestCase::onUpdate()
 
         tp->update(dt, requiredIters);
 
-        g->pWorld->PortalStep(dt, 1, 1);
+        g->pWorld->PortalStep(dt, 8, 3);
     }
 
     //printf("dt: %f\n", glfwGetTime() - physicsTickTime);
