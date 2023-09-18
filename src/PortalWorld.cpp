@@ -7,7 +7,6 @@
 PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f))
 {
     this->rayHandler = new PortalRay(this);
-    this->evalRayHandler = new EvaluationRay(this);
 }
 
 PortalWorld::~PortalWorld()
@@ -45,7 +44,6 @@ PortalWorld::~PortalWorld()
     }
 
     delete rayHandler;
-    delete evalRayHandler;
 }
 
 Portal* PortalWorld::createPortal(b2Vec2 pos, b2Vec2 dir, float size, b2Body* onBody)

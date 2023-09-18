@@ -86,28 +86,6 @@ typedef struct
     std::vector<std::pair<void (*) (PortalBody*, void*), void*>> destroyCallbacks;
 } pbWorldData;
 
-class EvaluationRay : public b2RayCastCallback
-{
-
-private:
-    
-    PortalWorld* pWorld;
-    b2Fixture* closestFixture_i{};
-    float minFraction_i = 1.0f;
-
-public:
-
-    std::vector<std::pair<b2Fixture*, b2Vec2>> hitFixtures;
-
-    b2Fixture* closestFixture{};
-    float minFraction = 1.0f;
-    b2Vec2 rayNormal;
-
-    EvaluationRay(PortalWorld* pWorld);
-    void rayCast(b2Vec2 point1, b2Vec2 point2);
-    float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction);
-};
-
 class PortalRay : public b2RayCastCallback
 {
 public:
@@ -179,7 +157,6 @@ public:
 
 private:
     PortalRay* rayHandler;
-    EvaluationRay* evalRayHandler;
 
     Portal* createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, float size);
 

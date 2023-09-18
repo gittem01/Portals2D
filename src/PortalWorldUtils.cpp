@@ -419,6 +419,7 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
         fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
         closestPortal = (Portal*)fData->data;
     }
+
     if (fraction <= minFraction)
     {
         minFraction = fraction;

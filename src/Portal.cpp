@@ -824,51 +824,6 @@ void Portal::setVoid(int side){
     connections[side].push_back(c1);
 }
 
-
-EvaluationRay::EvaluationRay(PortalWorld* pWorld){
-    this->pWorld = pWorld;
-}
-
-void EvaluationRay::rayCast(b2Vec2 p1, b2Vec2 p2){
-    closestFixture = NULL;
-
-    hitFixtures.clear();
-    
-    pWorld->RayCast(this, p1, p2);
-
-    if (closestFixture_i){
-        closestFixture = closestFixture_i;
-        minFraction = minFraction_i;
-    }
-    
-    closestFixture_i = NULL;
-    minFraction_i = 1.0f;
-}
-
-float EvaluationRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction){
-    if (fixture->IsSensor() || fixture->GetBody()->GetType() != b2_staticBody) return 1.0f;
-
-    fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
-    if (fData){
-        switch (fData->type)
-        {
-        case F_PORTAL:
-            return 1.0f;
-
-        default:
-            break;
-        }
-    }
-    hitFixtures.push_back(std::pair<b2Fixture*, b2Vec2>(fixture, normal));
-    if (fraction < minFraction_i){
-        minFraction_i = fraction;
-        closestFixture_i = fixture;
-        rayNormal = normal;
-    }
-
-    return 1.0f;
-}
-
 bool Portal::isParallel(b2Vec2 p1, b2Vec2 p2){
     float d1 = abs(PortalWorld::getRealDist(points[0], points[1], p1));
     float d2 = abs(PortalWorld::getRealDist(points[0], points[1], p2));
