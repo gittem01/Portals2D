@@ -4,9 +4,6 @@
 
 b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world)
 {
-    float length = (p1 - p0).Length();
-    b2Vec2 diff = p1 - p0;
-
     b2BodyDef bDef;
     bDef.type = b2_staticBody;
     bDef.position = b2Vec2(0.0, 0.0);
@@ -24,6 +21,29 @@ b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world)
     s_edgeLocalData* eLocalData = new s_edgeLocalData(eGlobalData);
 
     fData->data = eLocalData;
+
+    b2FixtureDef fixDef;
+    fixDef.userData.pointer = (uintptr_t)fData;
+    fixDef.shape = &shape;
+    b2Fixture* fix = body->CreateFixture(&fixDef);
+
+    return body;
+}
+
+b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, enum FixtureDataType type, PortalWorld* world)
+{
+    b2BodyDef bDef;
+    bDef.type = b2_staticBody;
+    bDef.position = b2Vec2(0.0, 0.0);
+    b2Body* body = world->CreateBody(&bDef);
+
+    b2EdgeShape shape;
+    //shape.SetOneSided(p0, p0, p1, p1);
+
+    shape.SetTwoSided(p0, p1);
+
+    fixtureData* fData = new fixtureData();
+    fData->type = type;
 
     b2FixtureDef fixDef;
     fixDef.userData.pointer = (uintptr_t)fData;

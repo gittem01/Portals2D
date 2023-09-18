@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <box2d/box2d.h>
 #include <vector>
+#include <PortalBody.h>
 
 class Portal;
 class fixtureData;
@@ -87,3 +88,4 @@ typedef struct
 } g_PhysicsData;
 
 b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world);
+b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, enum FixtureDataType type, PortalWorld* world);

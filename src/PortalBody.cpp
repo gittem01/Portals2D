@@ -752,9 +752,6 @@ b2Vec2 PortalBody::findPolygonCentroid(b2Vec2* vertices, int numVertices){
     return b2Vec2(rv1, rv2);
 }
 
-// may add an option to enable advanced gravity since it is relatively expensive to calculate it
-// other easy to implement option may check for side of the center of mass and apply gravity to
-// the one that is outside the collision side (same side it entered)
 void PortalBody::applyPartialGravity(b2Fixture* fixture){
     fixtureData* fixData = (fixtureData*)fixture->GetUserData().pointer;
     PBFixtureData* pbfData = (PBFixtureData*)fixData->data;

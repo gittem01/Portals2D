@@ -719,7 +719,7 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
     b2Fixture* checkFixture;
 
     if (!fixData) return nullptr;
-    else if (fixData->data == (void*)oldPortal)
+    else if (fixData->data == (void*)oldPortal && oldPortal)
     {
 		return oldPortal->midFixture;
 	}
@@ -1756,7 +1756,7 @@ void TestPlayer::update(float dt, int totalIter)
 
     if (grounded && gameTime < jumpPressTime + 0.04)
     {
-        lv.y = 7.5f * (float)pBody->size();
+        lv.y = 6.0f * (float)pBody->size();
 
         jumpPressTime = 0.0;
 
@@ -1765,7 +1765,7 @@ void TestPlayer::update(float dt, int totalIter)
         Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
     }
 
-    lv.y = std::fmax(lv.y, -34.0);
+    lv.y = std::fmax(lv.y, -20.0);
     //printf("%f, %f\n", lv.x, lv.y);
 
     pb->body->SetLinearVelocity(lv);

@@ -1,4 +1,5 @@
 #include <box2d/box2d.h>
+#include <PortalBody.h>
 
 class PortalGunRayCast : public b2RayCastCallback
 {
@@ -19,11 +20,19 @@ public:
     {
         if (fixture->GetType() == b2Shape::e_edge && fraction < closestFraction)
         {
+            fixtureData* fixData = (fixtureData*)fixture->GetUserData().pointer;
+            if (fixData && fixData->type & F_FEDGE)
+            {
+				return -1.0f;
+			}
+
             found = true;
             rayNormal = normal;
             rayPoint = point;
             edgeFix = fixture;
             closestFraction = fraction;
+
+            return fraction;
         }
 
         return -1.0f;

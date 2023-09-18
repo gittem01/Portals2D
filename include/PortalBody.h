@@ -47,6 +47,8 @@ enum FixtureDataType
     F_PORTAL        = 0x1 << 1, 
     F_PORTAL_BODY   = 0x1 << 2,
     F_EDGE          = 0x1 << 3,
+    F_GEDGE         = 0x1 << 4,
+    F_FEDGE         = 0x1 << 5,
 
     F_END           = 0x1 << 30,
 };
@@ -103,8 +105,8 @@ typedef struct PBFixtureData
 typedef class fixtureData
 {
 public:
-    void* data;
-    void* extraData;
+    void* data = nullptr;
+    void* extraData = nullptr;
     FixtureDataType type;
 
     fixtureData()

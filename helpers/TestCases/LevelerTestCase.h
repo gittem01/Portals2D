@@ -1,19 +1,61 @@
 #include <BaseTestCase.h>
 #include <GameBase.h>
 #include <DefaultObjects/DefaultCube.h>
+#include <Leveler.h>
+
+enum ReachableType
+{
+    NOT_REACHABLE = 0x0,
+    BW_REACHABLE = 0x1,
+    GBW_REACHABLE = 0x2,
+};
+
+enum EdgeUse
+{
+    DOWN_W      = 0x1 << 0,
+    RIGHT_W     = 0x1 << 1,
+    UP_W        = 0x1 << 2,
+    LEFT_W      = 0x1 << 3,
+
+    DOWN_G      = 0x1 << 4,
+    RIGHT_G     = 0x1 << 5,
+    UP_G        = 0x1 << 6,
+    LEFT_G      = 0x1 << 7,
+
+    DOWN_F      = 0x1 << 8,
+    RIGHT_F     = 0x1 << 9,
+    UP_F        = 0x1 << 10,
+    LEFT_F      = 0x1 << 11,
+};
+
+inline ReachableType& operator |=(ReachableType& a, ReachableType b)
+{
+    return a = (ReachableType)(a | b);
+}
+
+inline EdgeUse& operator |=(EdgeUse& a, EdgeUse b)
+{
+    return a = (EdgeUse)(a | b);
+}
 
 class LevelerTestCase : public BaseTestCase
 {
 public:
-    std::vector<std::vector<bool>> reachableMap;
-    std::vector<std::vector<bool>> edgeUsedMap;
+    std::vector<s_gridSquare> nextVisitSquares[2];
+    std::vector<std::vector<ReachableType>> reachableMap;
+    std::vector<std::vector<EdgeUse>> edgeUsedMap;
 
     LevelerTestCase(Game* game);
 
+    void reachableFillFrom(s_gridSquare from, LevelObject mask, ReachableType reachFiller);
     void fillReachableMap();
     void createDefaultEdges();
     void walkArndAndCreateEdge(short x, short y);
     void walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, std::vector<s_unitWallData>& wallData);
+
+    void walkArndAndCreateEdgeGF(short x, short y, LevelObject wallType);
+    void walkFwrdAndCreateEdgeGF(   glm::i16vec2 pos, char dir, LevelObject wallMask, ReachableType empMask, int extraShift,
+                                    glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, bool* emptyFound);
 
     void perFrameUpdate();
     void onUpdate();

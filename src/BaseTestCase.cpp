@@ -171,7 +171,7 @@ void BaseTestCase::onUpdate()
 
         tp->update(dt, requiredIters);
 
-        g->pWorld->PortalStep(dt, 8, 3);
+        g->pWorld->PortalStep(dt, 10, 1);
     }
 
     //printf("dt: %f\n", glfwGetTime() - physicsTickTime);
