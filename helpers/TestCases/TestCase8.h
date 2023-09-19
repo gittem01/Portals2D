@@ -126,7 +126,8 @@ public:
 
         portal1->connect(portal2, true, 0, 0);
 
-        lastBody = createBox(b2Vec2(10.0f, 0.0f), b2Vec2(0.49, 0.49), g->pWorld, b2_dynamicBody, 1.0);
+        lastBody = createBox(b2Vec2(10.0f, 0.0f), b2Vec2(0.49, 0.49), g->pWorld, b2_dynamicBody, 10.0);
+        lastBody->SetBullet(true);
 
         Portal* portalDown = g->pWorld->createPortal(b2Vec2(10.0f, -0.5f), b2Vec2(0.0f, -1.0f), 0.5f, lastBody);
         Portal* portalUp = g->pWorld->createPortal(b2Vec2(10.0f, +0.5f), b2Vec2(0.0f, +1.0f), 0.5f, lastBody);
