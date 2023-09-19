@@ -20,6 +20,7 @@ typedef enum WALL_TYPE_N : char
 {
     PORTALLABLE = 0x1,
     NOT_PORTALLABLE = 0x2,
+    NOT_PORTALLABLE_2 = 0x4,
 } WALL_TYPE;
 
 typedef enum

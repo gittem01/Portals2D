@@ -1,6 +1,9 @@
 #include <BaseTestCase.h>
 #include <GameBase.h>
 #include <DefaultObjects/DefaultCube.h>
+#include <Game.h>
+#include <Portal.h>
+#include <helpers.h>
 
 class TestCase8 : public BaseTestCase
 {
@@ -123,36 +126,16 @@ public:
 
         portal1->connect(portal2, true, 0, 0);
 
-        /*
-        Portal* portal3 = g->pWorld->createPortal(b2Vec2(-0.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
-        Portal* portal4 = g->pWorld->createPortal(b2Vec2(-0.0f, -3.0f), portal1->dir, portal1->size);
+        lastBody = createBox(b2Vec2(10.0f, 0.0f), b2Vec2(0.49, 0.49), g->pWorld, b2_dynamicBody, 1.0);
 
-        Portal* portal5 = g->pWorld->createPortal(b2Vec2(+2.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
-        Portal* portal6 = g->pWorld->createPortal(b2Vec2(+2.0f, -3.0f), portal1->dir, portal1->size);
+        Portal* portalDown = g->pWorld->createPortal(b2Vec2(10.0f, -0.5f), b2Vec2(0.0f, -1.0f), 0.5f, lastBody);
+        Portal* portalUp = g->pWorld->createPortal(b2Vec2(10.0f, +0.5f), b2Vec2(0.0f, +1.0f), 0.5f, lastBody);
 
-        Portal* portal7 = g->pWorld->createPortal(b2Vec2(+4.0f, +3.0f), b2Vec2(1.0f, 0.0f), 2.0f);
-        Portal* portal8 = g->pWorld->createPortal(b2Vec2(+4.0f, -3.0f), portal1->dir, portal1->size);
+        Portal* portalRight = g->pWorld->createPortal(b2Vec2(10.5f, 0.0f), b2Vec2(1.0f, 0.0f), 0.5f, lastBody);
+        Portal* portalLeft = g->pWorld->createPortal(b2Vec2(9.5f, 0.0f), b2Vec2(-1.0f, 0.0f), 0.5f, lastBody);
 
-        portal1->connect(portal2, true, 0, 0);
-        portal1->connect(portal2, false, 1, 1);
-
-        portal3->connect(portal4, true, 0, 0);
-        portal3->connect(portal4, false, 1, 1);
-
-        portal5->connect(portal6, true, 0, 0);
-        portal5->connect(portal6, false, 1, 1);
-
-        portal7->connect(portal8, true, 0, 0);
-        portal7->connect(portal8, false, 1, 1);
-
-        makePortalDynamic(portal1);
-        makePortalDynamic(portal2);
-        makePortalDynamic(portal3);
-        makePortalDynamic(portal4);
-        makePortalDynamic(portal5);
-        makePortalDynamic(portal6);
-        makePortalDynamic(portal7);
-        makePortalDynamic(portal8);*/
+        portalDown->connect(portalRight);
+        portalUp->connect(portalLeft);
 
         b2Vec2 p = b2Vec2(1.0f, -3.0f);
         b2Vec2 s = b2Vec2(0.4f, 0.4f);

@@ -67,8 +67,7 @@ void Camera::changeZoom(float inc)
 
 	this->pos.x += (xPerctAfter - xPerctBefore) * (xSidesAfter.y - xSidesAfter.x);
 	this->pos.y += (yPerctAfter - yPerctBefore) * (ySidesAfter.y - ySidesAfter.x);
-	this->zoom += inc;
-	this->zoom = this->limitZoom(zoom);
+	this->zoom = zoomAfter;
 }
 
 float Camera::limitZoom(float inZoom)

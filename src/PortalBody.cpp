@@ -158,8 +158,12 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
     {
         for (portalCollision* coll1 : collidingPortals1)
         {
-            if (fix2 == coll1->portal->yFix[0] || fix2 == coll1->portal->yFix[1]) return true;
+            if (fix2 == coll1->portal->yFix[0] || fix2 == coll1->portal->yFix[1])
+            {
+                return true;
+            }
         }
+
         Portal* portal = (Portal*)fData->data;
         if (fix2 != portal->yFix[0] && fix2 != portal->yFix[1])
         {

@@ -43,8 +43,7 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
 
 void Gun::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
-    b2Body* body = fix2->GetBody();
-    if (body->GetType() == b2_dynamicBody && body->GetMass() > 0.0f)
+    if (fix2->GetShape()->GetType() != b2Shape::e_edge)
     {
         contact->SetEnabled(false);
     }

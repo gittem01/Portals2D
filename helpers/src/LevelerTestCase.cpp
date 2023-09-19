@@ -187,14 +187,14 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
     {
         edgeUsedMap[pos.y + g->leveler->ySize_H][pos.x + g->leveler->xSize_H] |= (EdgeUse)((int)DOWN_W << dir);
 
+        glm::i16vec2 fwdPos = pos + dirs[dir].asGlm();
+        glm::i16vec2 fwdUpPos = fwdPos + upDir;
+
         for (int i = 0; i < unitWallPerMeter; i++)
         {
             const s_levelGridData& lgd = g->leveler->getSquare(pos.x, pos.y);
-            wallData.push_back({NONE, (WALL_TYPE)lgd.objectType, 0 });
+            wallData.push_back({ NONE, (WALL_TYPE)lgd.objectType, 0 });
         }
-
-        glm::i16vec2 fwdPos = pos + dirs[dir].asGlm();
-        glm::i16vec2 fwdUpPos = fwdPos + upDir;
 
         bool fwdEmp = !g->leveler->isInBounds(fwdPos.x, fwdPos.y) || !(g->leveler->getSquare(fwdPos.x, fwdPos.y).objectType & (BLACK_WALL | WHITE_WALL));
         bool upEmp = !g->leveler->isInBounds(fwdUpPos.x, fwdUpPos.y) || !(g->leveler->getSquare(fwdUpPos.x, fwdUpPos.y).objectType & (BLACK_WALL | WHITE_WALL));

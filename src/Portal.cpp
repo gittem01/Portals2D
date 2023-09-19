@@ -295,17 +295,11 @@ void Portal::createPortalBody(b2Body* onBody)
     
     midFixture = body->CreateFixture(&midPortal);
 
-    b2Vec2 pVec = points[1] - points[0];
-    pWorld->normalize(&pVec);
-
     shape.SetTwoSided(leftPoint, leftPoint);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
-    yFix[0]->SetRestitution(0.0f);
 
     shape.SetTwoSided(rightPoint, rightPoint);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
-    yFix[1]->SetRestitution(0.0f);
-
     fixtureData* mainFixData = new fixtureData();
     mainFixData->type = F_PORTAL;
     mainFixData->data = (void*)this;
@@ -702,8 +696,6 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
             collPointB = center2 - ((b2CircleShape*)fix2->GetShape())->m_radius * diff;
         }
 
-        // ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(collPointA, 5.0f, b2Color(0, 1, 1, 1));
-        // ((DebugDrawer*)pWorld->getDebugDraw())->addPointToQueue(collPointB, 5.0f, b2Color(1, 0, 1, 1));
         if (coll2){
             if (pWorld->isLeft(points[1 ^ coll1->side], points[coll1->side], collPointA, tHold) ||
                 pWorld->isLeft(coll2->portal->points[1 ^ coll2->side], coll2->portal->points[coll2->side], collPointA, tHold) ||
