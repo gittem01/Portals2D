@@ -114,7 +114,7 @@ void LevelerTestCase::createDefaultEdges()
             if (!(edgeUsedMap[gridY][gridX] & RIGHT_W) && g->leveler->getSquare(x, y).objectType & (BLACK_WALL | WHITE_WALL))
             {
                 bool topOK = !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & (BLACK_WALL | WHITE_WALL));
-                topOK &= gridY + 1 < g->leveler->ySize && (reachableMap[gridY + 1][gridX] & BW_REACHABLE);
+                topOK = topOK && (gridY + 1 < g->leveler->ySize && (reachableMap[gridY + 1][gridX] & BW_REACHABLE));
 
                 if (topOK)
                 {
@@ -133,6 +133,7 @@ void LevelerTestCase::createDefaultEdges()
             else if (!(edgeUsedMap[gridY][gridX] & RIGHT_F) && g->leveler->getSquare(x, y).objectType & FENCE_WALL)
             {
                 bool topOK = !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & FENCE_WALL);
+                topOK = topOK && (reachableMap[gridY][gridX] & GBW_REACHABLE);
 
                 if (topOK)
                 {
@@ -223,6 +224,7 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
 
 void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wallType)
 {
+    const float exUp = 0.002f;
     char startDir = 1;
     char endDir = 2;
 
@@ -238,8 +240,41 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
 
         if (emptyFound)
         {
-            b2Vec2 p0 = b2Vec2(pos.x, pos.y) + dirAdditionsStart[startDir];
+            glm::i16vec2 fwdDir = dirs[startDir].asGlm();
+            glm::i16vec2 upDir = dirs[(startDir + 1) % 4].asGlm();
+
+            bool isUpFree = !g->leveler->isInBounds(pos.x + upDir.x, pos.y + upDir.y) ||
+                !(g->leveler->getSquare(pos.x + upDir.x, pos.y + upDir.y).objectType & (WHITE_WALL | BLACK_WALL | GLASS_WALL));
+            glm::i16vec2 lastChangePos = pos;
+            for (glm::i16vec2 p = pos; ; p += fwdDir)
+            {
+                bool thisUpFree = !g->leveler->isInBounds(p.x + upDir.x, p.y + upDir.y) ||
+                    !(g->leveler->getSquare(p.x + upDir.x, p.y + upDir.y).objectType & (WHITE_WALL | BLACK_WALL | GLASS_WALL));
+
+                if (isUpFree != thisUpFree)
+                {
+                    b2Vec2 p0 = b2Vec2(p.x, p.y) + dirAdditionsStart[startDir];
+                    b2Vec2 p1 = b2Vec2(lastChangePos.x, lastChangePos.y) + dirAdditionsStart[startDir];
+                    if (!isUpFree)
+                    {
+                        p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
+                    }
+
+                    createBasicEdge(p0, p1, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+
+                    isUpFree = thisUpFree;
+                    lastChangePos = p;
+                }
+
+                if (p == endPos) break;
+            }
+
+            b2Vec2 p0 = b2Vec2(lastChangePos.x, lastChangePos.y) + dirAdditionsStart[startDir];
             b2Vec2 p1 = b2Vec2(endPos.x, endPos.y) + dirAdditionsEnd[startDir];
+            if (!isUpFree)
+            {
+                p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
+            }
             createBasicEdge(p1, p0, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
         }
 
@@ -257,19 +292,36 @@ void LevelerTestCase::walkFwrdAndCreateEdgeGF(  glm::i16vec2 pos, char dir, Leve
                                                 glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, bool* emptyFound)
 {
     glm::i16vec2 upDir = dirs[(dir + 1) % 4].asGlm();
+    glm::i16vec2 fwdDir = dirs[dir].asGlm();
+
+    glm::i16vec2 backPos = pos - fwdDir;
+    glm::i16vec2 backPosD = backPos + upDir;
+    if ((wallMask & GLASS_WALL) &&
+        (!g->leveler->isInBounds(backPos.x, backPos.y) || (reachableMap[backPos.y + g->leveler->ySize_H][backPos.x + g->leveler->xSize_H] & GBW_REACHABLE)) &&
+        (g->leveler->isInBounds(backPosD.x, backPosD.y) && (g->leveler->getSquare(backPosD.x, backPosD.y).objectType & (WHITE_WALL | BLACK_WALL))))
+    {
+        *emptyFound = true;
+    }
 
     while (1)
     {
         edgeUsedMap[pos.y + g->leveler->ySize_H][pos.x + g->leveler->xSize_H] |= (EdgeUse)((int)DOWN_G << (dir + extraShift));
 
-        glm::i16vec2 fwdPos = pos + dirs[dir].asGlm();
+        glm::i16vec2 fwdPos = pos + fwdDir;
         glm::i16vec2 fwdUpPos = fwdPos + upDir;
         glm::i16vec2 upPos = pos + upDir;
 
         bool fwdEmp = !g->leveler->isInBounds(fwdPos.x, fwdPos.y) || !(g->leveler->getSquare(fwdPos.x, fwdPos.y).objectType & wallMask);
         bool upEmp = !g->leveler->isInBounds(fwdUpPos.x, fwdUpPos.y) || !(g->leveler->getSquare(fwdUpPos.x, fwdUpPos.y).objectType & wallMask);
 
-        *emptyFound |= !g->leveler->isInBounds(upPos.x, upPos.y) || (reachableMap[upPos.y + g->leveler->ySize_H][upPos.x + g->leveler->xSize_H] & GBW_REACHABLE);
+        if (wallMask == GLASS_WALL)
+        {
+            *emptyFound |= !g->leveler->isInBounds(upPos.x, upPos.y) || (reachableMap[upPos.y + g->leveler->ySize_H][upPos.x + g->leveler->xSize_H] & GBW_REACHABLE);
+        }
+        else
+        {
+            *emptyFound |= !g->leveler->isInBounds(upPos.x, upPos.y) || !(g->leveler->getSquare(upPos.x, upPos.y).objectType & GLASS_WALL);
+        }
 
         if (fwdEmp || (!upEmp && !fwdEmp))
         {
@@ -290,6 +342,15 @@ void LevelerTestCase::walkFwrdAndCreateEdgeGF(  glm::i16vec2 pos, char dir, Leve
         }
 
         pos = fwdPos;
+    }
+
+    glm::i16vec2 endNextPos = *endPos + fwdDir;
+    glm::i16vec2 endNextPosD = endNextPos + upDir;
+    if ((wallMask & GLASS_WALL) &&
+        (!g->leveler->isInBounds(endNextPos.x, endNextPos.y) || (reachableMap[endNextPos.y + g->leveler->ySize_H][endNextPos.x + g->leveler->xSize_H] & GBW_REACHABLE)) &&
+        (g->leveler->isInBounds(endNextPosD.x, endNextPosD.y) && (g->leveler->getSquare(endNextPosD.x, endNextPosD.y).objectType & (WHITE_WALL | BLACK_WALL))))
+    {
+        *emptyFound = true;
     }
 }
 
