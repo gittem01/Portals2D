@@ -57,6 +57,8 @@ public:
     void walkFwrdAndCreateEdgeGF(   glm::i16vec2 pos, char dir, LevelObject wallMask, ReachableType empMask, int extraShift,
                                     glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, bool* emptyFound);
 
+    void createDynamics();
+
     void perFrameUpdate();
     void onUpdate();
     void onCreate();

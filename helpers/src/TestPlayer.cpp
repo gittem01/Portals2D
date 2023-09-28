@@ -916,7 +916,7 @@ void TestPlayer::handlePortalCD(float dt)
 {
     ThinDrawer* thinDrawer = ThinDrawer::object;
 
-    const float portalSize = 2.5f;
+    const float portalSize = 2.6f;
     const float rayLength = 100.0f;
 
     PortalBody* portalGun = getOuterGun();

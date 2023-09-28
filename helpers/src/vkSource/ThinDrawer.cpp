@@ -816,8 +816,8 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
             vkMapMemory(logicalDevice, portalParticleShader->uniformBuffers[0]->memory,
                 pr->particleDynamicOffsets[lastSwapChainImageIndex], portalParticleShader->alignedSize, 0, (void**)&ppUbo);
             ppUbo->portalPoints = glm::vec4(p0.x, p0.y, p1.x, p1.y);
-            ppUbo->data0 = glm::vec4(0.6f, 1.0f, ppUbo->data0.z, 3.0f);
-            ppUbo->data1 = glm::vec4(0.2f, 0.2f, ppUbo->data1.z, 50.0f);
+            ppUbo->data0 = glm::vec4(0.2f, 1.0f, ppUbo->data0.z, 1.0f);
+            ppUbo->data1 = glm::vec4(0.1f, 0.1f, ppUbo->data1.z, 50.0f);
             vkUnmapMemory(logicalDevice, portalParticleShader->uniformBuffers[0]->memory);
         }
     }

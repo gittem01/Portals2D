@@ -151,10 +151,10 @@ public:
         };
 
         startPos = b2Vec2(10.0f, 4.0f);
-        lastBody = createCircle(startPos, 0.5f, g->pWorld, b2_dynamicBody);
+        lastBody = createCircle(startPos, 0.4f, g->pWorld, b2_dynamicBody);
         PortalBody* lastPb = g->pWorld->createPortalBody(lastBody);
         td->debug_addPortalBody(lastPb);
-        td->addPortalBody(lastPb, {"circle.png"});
+        td->addPortalBody(lastPb, {"sphereEnabled.png"});
 
         lastBody->SetLinearDamping(0.0f);
 
@@ -167,7 +167,6 @@ public:
         td->debug_addPortalBody(lastPb);
         td->addPortalBody(lastPb, {"grad2.png"});
         names = {};
-        td->addPortalBody_3d(lastPb, names);
 
         /*b2Body* bdy = randomBody();
         lastPb = g->pWorld->createPortalBody(bdy);

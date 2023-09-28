@@ -354,6 +354,35 @@ void LevelerTestCase::walkFwrdAndCreateEdgeGF(  glm::i16vec2 pos, char dir, Leve
     }
 }
 
+void LevelerTestCase::createDynamics()
+{
+    for (s_objectDataGrid* objectData : g->leveler->levelObjects)
+    {
+        glm::i16vec2 pos = objectData->pos;
+
+        switch (objectData->objectType)
+        {
+        case DEFAULT_CUBE:
+        {
+            DefaultCube* dc = new DefaultCube(g->pWorld);
+            dc->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+        }   
+        break;
+        
+        case SPHERE_CUBE:
+        {
+            b2Body* body = createCircle(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.4f, g->pWorld, b2_dynamicBody);
+            PortalBody* pb = g->pWorld->createPortalBody(body);
+            td->addPortalBody(pb, { "sphere.png" });
+        }
+        break;
+        
+        default:
+            break;
+        }
+    }
+}
+
 void LevelerTestCase::onCreate()
 {
     g->pWorld->SetGravity(b2Vec2(0.0f, -10.0f));
@@ -364,6 +393,20 @@ void LevelerTestCase::onCreate()
     {
         createDefaultEdges();
     }
+
+    createDynamics();
+
+    /*b2Body* lastBody = createBox(b2Vec2(10.0f, 0.0f), b2Vec2(2.49, 2.49), g->pWorld, b2_dynamicBody, 1.0);
+    lastBody->SetBullet(true);
+
+    Portal* portalDown = g->pWorld->createPortal(b2Vec2(10.0f, -2.5f), b2Vec2(0.0f, -1.0f), 2.51f, lastBody);
+    Portal* portalUp = g->pWorld->createPortal(b2Vec2(10.0f, +2.5f), b2Vec2(0.0f, +1.0f), 2.51f, lastBody);
+
+    Portal* portalRight = g->pWorld->createPortal(b2Vec2(12.5f, 0.0f), b2Vec2(1.0f, 0.0f), 2.51f, lastBody);
+    Portal* portalLeft = g->pWorld->createPortal(b2Vec2(7.5f, 0.0f), b2Vec2(-1.0f, 0.0f), 2.51f, lastBody);
+
+    portalDown->connect(portalUp);
+    portalRight->connect(portalLeft, true);*/
 }
 
 void LevelerTestCase::perFrameUpdate()

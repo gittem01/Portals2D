@@ -9,8 +9,9 @@ b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world)
     bDef.position = b2Vec2(0.0, 0.0);
     b2Body* body = world->CreateBody(&bDef);
 
+    //b2Vec2 dir = p1 - p0;
     b2EdgeShape shape;
-    //shape.SetOneSided(p0, p0, p1, p1);
+    //shape.SetOneSided(p0 - dir, p0, p1, p1 + dir);
 
     shape.SetTwoSided(p0, p1);
 
@@ -37,8 +38,9 @@ b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, enum FixtureDataType type, PortalW
     bDef.position = b2Vec2(0.0, 0.0);
     b2Body* body = world->CreateBody(&bDef);
 
+    //b2Vec2 dir = p1 - p0;
     b2EdgeShape shape;
-    //shape.SetOneSided(p0, p0, p1, p1);
+    //shape.SetOneSided(p0 - dir, p0, p1, p1 + dir);
 
     shape.SetTwoSided(p0, p1);
 
