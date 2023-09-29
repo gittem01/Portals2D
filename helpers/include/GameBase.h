@@ -28,6 +28,33 @@ typedef enum
     DEFAULT_OBJECT = 0x1 << 0,
 } g_DataType;
 
+enum FixtureDataType
+{
+    F_OTHER         = 0x1 << 0,
+    F_PORTAL        = 0x1 << 1, 
+    F_PORTAL_BODY   = 0x1 << 2,
+    F_EDGE          = 0x1 << 3,
+    F_GEDGE         = 0x1 << 4,
+    F_FEDGE         = 0x1 << 5,
+
+    F_END           = 0x1 << 30,
+};
+
+typedef class fixtureData
+{
+public:
+    void* data = nullptr;
+    void* extraData = nullptr;
+    FixtureDataType type;
+
+    fixtureData()
+    {
+        extraData = nullptr;
+        type = F_END;
+    }
+
+} fixtureData;
+
 typedef struct UnitWallData
 {
     GEL_TYPE gelType = NONE;
@@ -89,4 +116,4 @@ typedef struct
 } g_PhysicsData;
 
 b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world);
-b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, enum FixtureDataType type, PortalWorld* world);
+b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, FixtureDataType type, PortalWorld* world);

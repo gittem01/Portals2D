@@ -41,18 +41,6 @@ enum PortalCollisionType
     DEFAULT_COLLISION = 1 << 31,
 };
 
-enum FixtureDataType
-{
-    F_OTHER         = 0x1 << 0,
-    F_PORTAL        = 0x1 << 1, 
-    F_PORTAL_BODY   = 0x1 << 2,
-    F_EDGE          = 0x1 << 3,
-    F_GEDGE         = 0x1 << 4,
-    F_FEDGE         = 0x1 << 5,
-
-    F_END           = 0x1 << 30,
-};
-
 typedef struct
 {
     Portal* portal;
@@ -101,21 +89,6 @@ typedef struct PBFixtureData
         return pCollisions.end();
     }
 } PBFixtureData;
-
-typedef class fixtureData
-{
-public:
-    void* data = nullptr;
-    void* extraData = nullptr;
-    FixtureDataType type;
-
-    fixtureData()
-    {
-        extraData = nullptr;
-        type = F_END;
-    }
-
-} fixtureData;
 
 typedef struct
 {
@@ -167,7 +140,7 @@ private:
     void destroyCheck(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     bool shouldCreate(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     int shouldCollideHelper(portalCollision* coll, PBFixtureData* pbfData1, PBFixtureData* pbfData2, PortalBody* pb);
-    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, fixtureData* fData);
+    bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, class fixtureData* fData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out);
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     void releaseOut2(b2Fixture* fix, Portal* portal);
