@@ -43,6 +43,7 @@ public:
     void destroy();
 
     BaseTestCase(Game* game, const char* name = "Test Debug Window");
+    virtual ~BaseTestCase() {}
 
     void imguiRender();
 
