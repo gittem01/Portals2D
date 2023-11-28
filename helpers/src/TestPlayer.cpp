@@ -546,6 +546,7 @@ void TestPlayer::camHandle()
     diff1.y += diff2.y;
     wh->cam->pos += glm::f64vec2(diff1.x, -diff1.y);
 
+    wh->cam->pos = glm::f64vec2(bp.x, -bp.y);
     wh->cam->updateOrtho();
 }
 

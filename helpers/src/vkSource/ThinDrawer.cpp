@@ -111,7 +111,6 @@ void ThinDrawer::uniformFiller()
     sharedData->data.z = worldMouse.x;
     sharedData->data.w = worldMouse.y;
 
-    
     vkUnmapMemory(logicalDevice, ShaderBase::sharedOrthoUniform->memory);
 }
 

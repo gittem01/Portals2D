@@ -157,22 +157,22 @@ void BaseTestCase::onUpdate()
     double requiredDt = g->deltaTime / requiredIters;
     requiredIters = std::min(requiredIters, 20);
 
-    if (followPlayer) tp->camHandle();
-
     if (!g->pWorld)
     {
         return;
     }
 
+    float dt = requiredDt * 2.0;
     for (int i = 0; i < requiredIters; i++)
     {
-        float dt = requiredDt * 2.0;
         g->mjh->mouseHandler(g->frame, requiredIters);
 
         tp->update(dt, requiredIters);
 
         g->pWorld->PortalStep(dt, 10, 1);
     }
+    
+    if (followPlayer) tp->camHandle();
 
     //printf("dt: %f\n", glfwGetTime() - physicsTickTime);
 }
