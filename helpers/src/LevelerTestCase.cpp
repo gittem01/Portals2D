@@ -111,29 +111,64 @@ void LevelerTestCase::createDefaultEdges()
             int gridX = x + g->leveler->xSize_H;
             int gridY = y + g->leveler->ySize_H;
 
-            if (!(edgeUsedMap[gridY][gridX] & RIGHT_W) && g->leveler->getSquare(x, y).objectType & (BLACK_WALL | WHITE_WALL))
+            if (!(edgeUsedMap[gridY][gridX] & 0xF) && g->leveler->getSquare(x, y).objectType & (BLACK_WALL | WHITE_WALL))
             {
-                bool topOK = !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & (BLACK_WALL | WHITE_WALL));
-                topOK = topOK && (gridY + 1 < g->leveler->ySize && (reachableMap[gridY + 1][gridX] & BW_REACHABLE));
+                bool topOK = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    const s_gridSquare dir = dirs[i];
+                    bool ok =   !g->leveler->isInBounds(x + dir.x, y + dir.y) ||
+                                !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & (BLACK_WALL | WHITE_WALL));
+                    ok = ok && (g->leveler->isInBounds(x + dir.x, y + dir.y) && (reachableMap[gridY + dir.y][gridX + dir.x] & BW_REACHABLE));
+
+                    if (ok)
+                    {
+                        topOK = true;
+                        break;
+                    }
+                }
 
                 if (topOK)
                 {
                     walkArndAndCreateEdge(x, y);
                 }
 			}
-            else if (!(edgeUsedMap[gridY][gridX] & RIGHT_G) && g->leveler->getSquare(x, y).objectType & GLASS_WALL)
+            else if (!(edgeUsedMap[gridY][gridX] & (0xF << 4)) && g->leveler->getSquare(x, y).objectType & GLASS_WALL)
             {
-                bool topOK = !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & GLASS_WALL);
+                // may need to check less
+                bool topOK = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    const s_gridSquare dir = dirs[i];
+                    bool ok = !g->leveler->isInBounds(x + dir.x, y + dir.y) || !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & GLASS_WALL);
+
+                    if (ok)
+                    {
+                        topOK = true;
+                        break;
+                    }
+                }
 
                 if (topOK)
                 {
                     walkArndAndCreateEdgeGF(x, y, GLASS_WALL);
                 }
             }
-            else if (!(edgeUsedMap[gridY][gridX] & RIGHT_F) && g->leveler->getSquare(x, y).objectType & FENCE_WALL)
+            else if (!(edgeUsedMap[gridY][gridX] & (0xF << 8)) && g->leveler->getSquare(x, y).objectType & FENCE_WALL)
             {
-                bool topOK = !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & FENCE_WALL);
-                topOK = topOK && (reachableMap[gridY][gridX] & GBW_REACHABLE);
+                // may need to check less
+                bool topOK = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    const s_gridSquare dir = dirs[i];
+                    bool ok = !g->leveler->isInBounds(x + dir.x, y + dir.y) || !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & FENCE_WALL);
+                    ok = ok && (reachableMap[gridY][gridX] & GBW_REACHABLE);
+                    if (ok)
+                    {
+                        topOK = true;
+                        break;
+                    }
+                }
 
                 if (topOK)
                 {
@@ -160,6 +195,11 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
 
         b2Vec2 p0 = b2Vec2(pos.x, pos.y) + dirAdditionsStart[startDir];
         b2Vec2 p1 = b2Vec2(endPos.x, endPos.y) + dirAdditionsEnd[startDir];
+
+        // b2Vec2 p3 = b2Vec2(p1.x + dirs[(startDir + 3) % 4].x, p1.y + dirs[(startDir + 3) % 4].y);
+        // b2Vec2 p00 = b2Vec2(p0.x + dirs[(startDir + 3) % 4].x, p0.y + dirs[(startDir + 3) % 4].y);
+        // b2Body* body = createEdgeOneSided(p3, p1, p0, p00, g->pWorld);
+
         b2Body* body = createEdge(p1, p0, g->pWorld);
 
         fixtureData* fixData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
@@ -224,7 +264,7 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
 
 void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wallType)
 {
-    const float exUp = 0.002f;
+    const float exUp = 0.02f;
     char startDir = 1;
     char endDir = 2;
 
@@ -275,6 +315,7 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
             {
                 p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
             }
+
             createBasicEdge(p1, p0, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
         }
 

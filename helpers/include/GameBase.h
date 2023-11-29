@@ -116,4 +116,5 @@ typedef struct
 } g_PhysicsData;
 
 b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world);
+b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, PortalWorld* world);
 b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, FixtureDataType type, PortalWorld* world);

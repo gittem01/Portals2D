@@ -32,7 +32,7 @@ void BaseTestCase::destroy()
 
 void BaseTestCase::imguiRender()
 {
-    ImGuiIO io = ImGui::GetIO();
+    const ImGuiIO io = ImGui::GetIO();
 
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
