@@ -847,8 +847,11 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
 
     {
         b2EdgeShape newShape;
+        newShape.m_oneSided = true;
+        newShape.m_vertex0 = eShape->m_vertex0;
         newShape.m_vertex1 = eShape->m_vertex1;
         newShape.m_vertex2 = ((b2EdgeShape*)portal->yFix[0]->GetShape())->m_vertex1;
+        newShape.m_vertex3 = ((b2EdgeShape*)portal->yFix[1]->GetShape())->m_vertex1;
 
         b2Fixture* fix = edgeFix->GetBody()->CreateFixture(&newShape, 0.0f);
         
@@ -890,9 +893,12 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
         }
 
         b2EdgeShape newShape;
+        newShape.m_oneSided = true;
+        newShape.m_vertex0 = ((b2EdgeShape*)portal->yFix[0]->GetShape())->m_vertex1;
         newShape.m_vertex1 = ((b2EdgeShape*)portal->yFix[1]->GetShape())->m_vertex1;
         newShape.m_vertex2 = eShape->m_vertex2;
-        
+        newShape.m_vertex3 = eShape->m_vertex3;
+
         b2Fixture* fix = edgeFix->GetBody()->CreateFixture(&newShape, 0.0f);
 
         eLocalData->globalRange[0] = range[1] + 1;

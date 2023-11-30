@@ -149,7 +149,8 @@ b2Fixture* Portal::getPreDestructionFixture()
 {
     fixtureData* newFixtureData = nullptr;
     int newRange[2] = { 0, 0 };
-    b2Vec2 newPoints[2] = { points[1], points[0] };
+    b2Vec2 newPoints[2];
+    b2Vec2 outerPoints[2];
     b2Fixture* newSideFixtures[2] = { nullptr, nullptr };
 
     fixtureData* fixData = (fixtureData*)sideFixtures[0]->GetUserData().pointer;
@@ -161,6 +162,7 @@ b2Fixture* Portal::getPreDestructionFixture()
 
     b2EdgeShape* eShape = (b2EdgeShape*)sideFixtures[0]->GetShape();
     newPoints[0] = eShape->m_vertex1;
+    outerPoints[0] = eShape->m_vertex0;
     body->DestroyFixture(sideFixtures[0]);
 
     fixtureData* fixData2 = (fixtureData*)sideFixtures[1]->GetUserData().pointer;
@@ -174,6 +176,7 @@ b2Fixture* Portal::getPreDestructionFixture()
 
     eShape = (b2EdgeShape*)sideFixtures[1]->GetShape();
     newPoints[1] = eShape->m_vertex2;
+    outerPoints[1] = eShape->m_vertex3;
     body->DestroyFixture(sideFixtures[1]);
 
     eLocalData->prevNextFixtures[0] = newSideFixtures[0];
@@ -183,7 +186,7 @@ b2Fixture* Portal::getPreDestructionFixture()
     eLocalData->globalRange[1] = newRange[1];
 
     b2EdgeShape newShape;
-    newShape.SetTwoSided(newPoints[0], newPoints[1]);
+    newShape.SetOneSided(outerPoints[0], newPoints[0], newPoints[1], outerPoints[1]);
     b2Fixture* newFix = body->CreateFixture(&newShape, 0.0f);
     newFix->GetUserData().pointer = (uintptr_t)newFixtureData;
 
