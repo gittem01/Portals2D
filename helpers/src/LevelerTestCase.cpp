@@ -179,6 +179,32 @@ void LevelerTestCase::createDefaultEdges()
     }
 }
 
+short LevelerTestCase::getDirs(glm::i16vec2 p0, glm::i16vec2 p1, short dir)
+{
+    short ret = 0;
+
+    s_gridSquare dirVec = dirs[dir];
+    s_gridSquare upDirVec = dirs[(dir + 1) % 4];
+    glm::i16vec2 p00 = { p0.x - dirVec.x, p0.y - dirVec.y };
+    glm::i16vec2 p11 = { p1.x + dirVec.x, p1.y + dirVec.y };
+
+    glm::i16vec2 p0Up = { p0.x + upDirVec.x, p0.y + upDirVec.y };
+    glm::i16vec2 p1Up = { p1.x + upDirVec.x, p1.y + upDirVec.y };
+
+    bool b0 =   g->leveler->isInBounds(p00.x, p00.y) && (g->leveler->getSquare(p00.x, p00.y).objectType & 0xF) || 
+                g->leveler->isInBounds(p0Up.x, p0Up.y) && (g->leveler->getSquare(p0Up.x, p0Up.y).objectType & 0xF);
+    bool b1 =   g->leveler->isInBounds(p11.x, p11.y) && (g->leveler->getSquare(p11.x, p11.y).objectType & 0xF) ||
+                g->leveler->isInBounds(p1Up.x, p1Up.y) && (g->leveler->getSquare(p1Up.x, p1Up.y).objectType & 0xF);
+
+    if (b0) ret |= (dir + 2) % 4;
+    else ret |= (dir + 3) % 4;
+
+    if (b1) ret |= dir << 8;
+    else ret |= ((dir + 3) % 4) << 8;
+    
+    return ret;
+}
+
 void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
 {
     char startDir = 1;
@@ -196,11 +222,13 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
         b2Vec2 p0 = b2Vec2(pos.x, pos.y) + dirAdditionsStart[startDir];
         b2Vec2 p1 = b2Vec2(endPos.x, endPos.y) + dirAdditionsEnd[startDir];
 
-        // b2Vec2 p3 = b2Vec2(p1.x + dirs[(startDir + 3) % 4].x, p1.y + dirs[(startDir + 3) % 4].y);
-        // b2Vec2 p00 = b2Vec2(p0.x + dirs[(startDir + 3) % 4].x, p0.y + dirs[(startDir + 3) % 4].y);
-        // b2Body* body = createEdgeOneSided(p3, p1, p0, p00, g->pWorld);
+        short cDirs = getDirs(pos, endPos, startDir);
 
-        b2Body* body = createEdge(p1, p0, g->pWorld);
+        b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
+        b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
+        b2Body* body = createEdgeOneSided(p11, p1, p0, p00, g->pWorld);
+
+        //b2Body* body = createEdge(p1, p0, g->pWorld);
 
         fixtureData* fixData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
         s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
@@ -300,7 +328,12 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
                         p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
                     }
 
-                    createBasicEdge(p0, p1, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+                    short cDirs = getDirs(p, lastChangePos, startDir);
+                    b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
+                    b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
+                    b2Body* body = createBasicEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+
+                    //createBasicEdge(p0, p1, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
 
                     isUpFree = thisUpFree;
                     lastChangePos = p;
@@ -316,7 +349,12 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
                 p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
             }
 
-            createBasicEdge(p1, p0, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+            short cDirs = getDirs(lastChangePos, endPos, startDir);
+            b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
+            b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
+            b2Body* body = createBasicEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+
+            //createBasicEdge(p1, p0, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
         }
 
         if (nextPos.x == x && nextPos.y == y && nextDir == 1)
@@ -462,5 +500,5 @@ void LevelerTestCase::onUpdate()
 {
     BaseTestCase::onUpdate();
 
-    
+
 }

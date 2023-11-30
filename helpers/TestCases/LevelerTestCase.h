@@ -53,6 +53,7 @@ public:
     void walkArndAndCreateEdge(short x, short y);
     void walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, std::vector<s_unitWallData>& wallData);
 
+    short getDirs(glm::i16vec2 p0, glm::i16vec2 p1, short dir);
     void walkArndAndCreateEdgeGF(short x, short y, LevelObject wallType);
     void walkFwrdAndCreateEdgeGF(   glm::i16vec2 pos, char dir, LevelObject wallMask, ReachableType empMask, int extraShift,
                                     glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, bool* emptyFound);
