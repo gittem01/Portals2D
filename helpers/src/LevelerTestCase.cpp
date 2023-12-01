@@ -188,13 +188,19 @@ short LevelerTestCase::getDirs(glm::i16vec2 p0, glm::i16vec2 p1, short dir)
     glm::i16vec2 p00 = { p0.x - dirVec.x, p0.y - dirVec.y };
     glm::i16vec2 p11 = { p1.x + dirVec.x, p1.y + dirVec.y };
 
+    glm::i16vec2 p00Up = { p00.x + upDirVec.x, p00.y + upDirVec.y };
+    glm::i16vec2 p11Up = { p11.x + upDirVec.x, p11.y + upDirVec.y };
+
     glm::i16vec2 p0Up = { p0.x + upDirVec.x, p0.y + upDirVec.y };
     glm::i16vec2 p1Up = { p1.x + upDirVec.x, p1.y + upDirVec.y };
 
-    bool b0 =   g->leveler->isInBounds(p00.x, p00.y) && (g->leveler->getSquare(p00.x, p00.y).objectType & 0xF) || 
-                g->leveler->isInBounds(p0Up.x, p0Up.y) && (g->leveler->getSquare(p0Up.x, p0Up.y).objectType & 0xF);
-    bool b1 =   g->leveler->isInBounds(p11.x, p11.y) && (g->leveler->getSquare(p11.x, p11.y).objectType & 0xF) ||
-                g->leveler->isInBounds(p1Up.x, p1Up.y) && (g->leveler->getSquare(p1Up.x, p1Up.y).objectType & 0xF);
+    bool b0 =   (g->leveler->isInBounds(p00.x, p00.y) && (g->leveler->getSquare(p00.x, p00.y).objectType & 0xF) || 
+                g->leveler->isInBounds(p0Up.x, p0Up.y) && (g->leveler->getSquare(p0Up.x, p0Up.y).objectType & 0xF)) &&
+                !(g->leveler->isInBounds(p00Up.x, p00Up.y) && (g->leveler->getSquare(p00Up.x, p00Up.y).objectType & 0xF));
+    
+    bool b1 =   (g->leveler->isInBounds(p11.x, p11.y) && (g->leveler->getSquare(p11.x, p11.y).objectType & 0xF) ||
+                g->leveler->isInBounds(p1Up.x, p1Up.y) && (g->leveler->getSquare(p1Up.x, p1Up.y).objectType & 0xF)) &&
+                !(g->leveler->isInBounds(p11Up.x, p11Up.y) && (g->leveler->getSquare(p11Up.x, p11Up.y).objectType & 0xF));
 
     if (b0) ret |= (dir + 2) % 4;
     else ret |= (dir + 3) % 4;
