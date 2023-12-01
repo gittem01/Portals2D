@@ -321,8 +321,8 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
 
                 if (isUpFree != thisUpFree)
                 {
-                    b2Vec2 p0 = b2Vec2(p.x, p.y) + dirAdditionsStart[startDir];
-                    b2Vec2 p1 = b2Vec2(lastChangePos.x, lastChangePos.y) + dirAdditionsStart[startDir];
+                    b2Vec2 p0 = b2Vec2(lastChangePos.x, lastChangePos.y) + dirAdditionsStart[startDir];
+                    b2Vec2 p1 = b2Vec2(p.x, p.y) + dirAdditionsStart[startDir];
                     if (!isUpFree)
                     {
                         p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);

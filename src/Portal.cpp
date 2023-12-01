@@ -151,7 +151,7 @@ b2Fixture* Portal::getPreDestructionFixture()
     int newRange[2] = { 0, 0 };
     b2Vec2 newPoints[2];
     b2Vec2 outerPoints[2];
-    b2Fixture* newSideFixtures[2] = { nullptr, nullptr };
+    b2Fixture* newSideFixtures[2];
 
     fixtureData* fixData = (fixtureData*)sideFixtures[0]->GetUserData().pointer;
     newFixtureData = fixData;

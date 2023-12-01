@@ -455,7 +455,6 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
-    b2Vec2 normal = wManifold.normal;
 
     PortalBody* contactingPBody = (PortalBody*)((bodyData*)thisBody->GetUserData().pointer)->data;
     float tHold = 0.2f;
@@ -466,11 +465,13 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
     float botY = bodyPos.y + (bodySize.y / 2.0f) * botVector.y;
     if (wManifold.points[0].y < botY + tHold && wManifold.points[0].y > botY - tHold)
     {
+        b2Vec2 normal = pWorld->rotateVec(wManifold.normal, -contactingPBody->body->GetAngle());
         if (abs(normal.x) <= normXToWalk)
         {
             contact->SetFriction(setFriction);
         }
     }
+
     contact->SetRestitution(0.0f);
 }
 
@@ -485,7 +486,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
 
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
-    b2Vec2 normal = wManifold.normal;
+    b2Vec2 normal = pWorld->rotateVec(wManifold.normal, -contactingPBody->body->GetAngle());
 
     b2Vec2 cPos = wManifold.points[0];
 
