@@ -118,8 +118,7 @@ void LevelerTestCase::createDefaultEdges()
                 {
                     const s_gridSquare dir = dirs[i];
                     bool ok =   !g->leveler->isInBounds(x + dir.x, y + dir.y) ||
-                                !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & (BLACK_WALL | WHITE_WALL));
-                    ok = ok && (g->leveler->isInBounds(x + dir.x, y + dir.y) && (reachableMap[gridY + dir.y][gridX + dir.x] & BW_REACHABLE));
+                                (reachableMap[gridY + dir.y][gridX + dir.x] & GBW_REACHABLE);
 
                     if (ok)
                     {
@@ -127,6 +126,8 @@ void LevelerTestCase::createDefaultEdges()
                         break;
                     }
                 }
+
+                topOK &= !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & (BLACK_WALL | WHITE_WALL));
 
                 if (topOK)
                 {
@@ -135,12 +136,12 @@ void LevelerTestCase::createDefaultEdges()
 			}
             else if (!(edgeUsedMap[gridY][gridX] & (0xF << 4)) && g->leveler->getSquare(x, y).objectType & GLASS_WALL)
             {
-                // may need to check less
                 bool topOK = false;
                 for (int i = 0; i < 4; i++)
                 {
                     const s_gridSquare dir = dirs[i];
-                    bool ok = !g->leveler->isInBounds(x + dir.x, y + dir.y) || !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & GLASS_WALL);
+                    bool ok =   !g->leveler->isInBounds(x + dir.x, y + dir.y) ||
+                                !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & GLASS_WALL);
 
                     if (ok)
                     {
@@ -148,6 +149,8 @@ void LevelerTestCase::createDefaultEdges()
                         break;
                     }
                 }
+                
+                topOK &= !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & GLASS_WALL);
 
                 if (topOK)
                 {
@@ -156,19 +159,23 @@ void LevelerTestCase::createDefaultEdges()
             }
             else if (!(edgeUsedMap[gridY][gridX] & (0xF << 8)) && g->leveler->getSquare(x, y).objectType & FENCE_WALL)
             {
-                // may need to check less
                 bool topOK = false;
                 for (int i = 0; i < 4; i++)
                 {
                     const s_gridSquare dir = dirs[i];
-                    bool ok = !g->leveler->isInBounds(x + dir.x, y + dir.y) || !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & FENCE_WALL);
+                    bool ok =   !g->leveler->isInBounds(x + dir.x, y + dir.y) ||
+                                !(g->leveler->getSquare(x + dir.x, y + dir.y).objectType & FENCE_WALL);
+                    
                     ok = ok && (reachableMap[gridY][gridX] & GBW_REACHABLE);
+                    
                     if (ok)
                     {
                         topOK = true;
                         break;
                     }
                 }
+
+                topOK &= !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & FENCE_WALL);
 
                 if (topOK)
                 {
@@ -214,7 +221,6 @@ short LevelerTestCase::getDirs(glm::i16vec2 p0, glm::i16vec2 p1, short dir)
 void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
 {
     char startDir = 1;
-    char endDir = 2;
 
     glm::i16vec2 pos = { x, y };
     while (1)
