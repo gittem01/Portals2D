@@ -896,21 +896,23 @@ PortalBody* TestPlayer::getOuterGun()
 
 void TestPlayer::setXColor(bool canBlue, bool canRed)
 {
-    if (canBlue && canRed)
+    char control = canBlue | (canRed << 1);
+    switch (control)
     {
-        gData.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    }
-    else if (canBlue)
-    {
-        gData.color = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
-    }
-    else if (canRed)
-    {
-        gData.color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
-    }
-    else
-    {
+    case 0:
         gData.color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        break;
+    case 1:
+        gData.color = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
+        break;
+    case 2:
+        gData.color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+        break;
+    case 3:
+        gData.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        break;
+    default:
+        break;
     }
 }
 
