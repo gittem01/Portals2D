@@ -1,6 +1,7 @@
 #include <BaseTestCase.h>
 #include <GameBase.h>
 #include <DefaultObjects/DefaultCube.h>
+#include <DefaultObjects/Sphere.h>
 #include <Leveler.h>
 
 enum ReachableType

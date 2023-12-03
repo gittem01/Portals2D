@@ -462,9 +462,8 @@ void LevelerTestCase::createDynamics()
         
         case SPHERE_CUBE:
         {
-            b2Body* body = createCircle(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.4f, g->pWorld, b2_dynamicBody);
-            PortalBody* pb = g->pWorld->createPortalBody(body);
-            td->addPortalBody(pb, { "sphere.png" });
+            Sphere* sp = new Sphere(g->pWorld);
+            sp->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
         }
         break;
         
