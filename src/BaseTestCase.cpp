@@ -169,7 +169,7 @@ void BaseTestCase::onUpdate()
 
         tp->update(dt, requiredIters);
 
-        g->pWorld->PortalStep(dt, 10, 1);
+        g->pWorld->PortalStep(dt, 8, 3);
     }
     
     if (followPlayer) tp->camHandle();

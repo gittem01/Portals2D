@@ -1273,8 +1273,8 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
         }
     }
     
-    glm::vec2 minPoint = glm::vec2(+7654456743.3252f, +34566432345.76543345f);
-    glm::vec2 maxPoint = glm::vec2(-3743463456.8765f, -45356456465.23456764f);
+    glm::vec2 minPoint = glm::vec2(+7654443.3252f, +34566345.76543345f);
+    glm::vec2 maxPoint = glm::vec2(-3743456.8765f, -45356465.23456764f);
     glm::vec2 size;
 
     for (int i = 0; i < numFixtures; i++)
@@ -1311,12 +1311,11 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
             for (int j = 0; j < polyShape->m_count; j++)
             {
                 b2Vec2 vertex = polyShape->m_vertices[j];
-
                 if (vertex.x < minPoint.x)
                 {
                     minPoint.x = vertex.x;
                 }
-                else if (vertex.x > maxPoint.x)
+                if (vertex.x > maxPoint.x)
                 {
                     maxPoint.x = vertex.x;
                 }
@@ -1324,7 +1323,7 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
                 {
                     minPoint.y = vertex.y;
                 }
-                else if (vertex.y > maxPoint.y)
+                if (vertex.y > maxPoint.y)
                 {
                     maxPoint.y = vertex.y;
                 }

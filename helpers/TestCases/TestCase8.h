@@ -1,6 +1,7 @@
 #include <BaseTestCase.h>
 #include <GameBase.h>
 #include <DefaultObjects/DefaultCube.h>
+#include <DefaultObjects/Cyber.h>
 #include <Game.h>
 #include <Portal.h>
 #include <helpers.h>
@@ -193,6 +194,8 @@ public:
         DefaultCube* dc1 = new DefaultCube(g->pWorld);
         DefaultCube* dc2 = new DefaultCube(g->pWorld);
         dc2->pBody->at(0)->body->SetTransform(b2Vec2(5.0, 0.0), 0.0);
+
+        Cyber* cyb = new Cyber(g->pWorld);
     }
 
     void onUpdate()
