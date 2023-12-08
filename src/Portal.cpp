@@ -643,7 +643,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 			const float angleThold = 0.0001f;
 			float angle = pWorld->vecAngle(wManifold.normal, dir);
 			if (coll1->side == 0) {
-				if (angle < (b2_pi + angleThold) && angle >(b2_pi - angleThold)) {
+				if (angle < (b2_pi + angleThold) && angle > (b2_pi - angleThold)) {
 					return false;
 				}
 				else {

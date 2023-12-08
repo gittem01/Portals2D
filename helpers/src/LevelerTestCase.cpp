@@ -471,6 +471,8 @@ void LevelerTestCase::createDynamics()
             break;
         }
     }
+
+    Cyber* cyb = new Cyber(g->pWorld);
 }
 
 void LevelerTestCase::onCreate()

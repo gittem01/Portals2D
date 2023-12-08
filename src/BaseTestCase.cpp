@@ -162,6 +162,8 @@ void BaseTestCase::onUpdate()
         return;
     }
 
+    //requiredDt = 1.0 / 60.0;
+    //requiredIters = 1;
     float dt = requiredDt * 2.0;
     for (int i = 0; i < requiredIters; i++)
     {
