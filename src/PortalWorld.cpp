@@ -847,11 +847,11 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
 
     {
         b2EdgeShape newShape;
-        newShape.m_oneSided = true;
+        newShape.m_oneSided = false;
         newShape.m_vertex0 = eShape->m_vertex0;
         newShape.m_vertex1 = eShape->m_vertex1;
         newShape.m_vertex2 = ((b2EdgeShape*)portal->yFix[0]->GetShape())->m_vertex1;
-        newShape.m_vertex3 = eShape->m_vertex1;
+        //newShape.m_vertex3 = eShape->m_vertex1;
 
         b2Fixture* fix = edgeFix->GetBody()->CreateFixture(&newShape, 0.0f);
         
@@ -872,12 +872,12 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
                 p->sideFixtures[1] = fix;
                 p->range[1] = range[0];
             }
-            else if (nextFData && nextFData->type == F_EDGE)
-            {
-                s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
-                nextELocal->prevNextFixtures[1] = fix;
-                nextELocal->globalRange[1] = range[0];
-            }
+            // else if (nextFData && nextFData->type == F_EDGE)
+            // {
+            //     s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+            //     nextELocal->prevNextFixtures[1] = fix;
+            //     nextELocal->globalRange[1] = range[0];
+            // }
         }
 
         fixData = nullptr;
@@ -893,8 +893,8 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
         }
 
         b2EdgeShape newShape;
-        newShape.m_oneSided = true;
-        newShape.m_vertex0 = eShape->m_vertex2;
+        newShape.m_oneSided = false;
+        //newShape.m_vertex0 = eShape->m_vertex2;
         newShape.m_vertex1 = ((b2EdgeShape*)portal->yFix[1]->GetShape())->m_vertex1;
         newShape.m_vertex2 = eShape->m_vertex2;
         newShape.m_vertex3 = eShape->m_vertex3;
@@ -919,12 +919,13 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
                 p->sideFixtures[0] = fix;
                 p->range[0] = range[1];
             }
-            else if (nextFData && nextFData->type == F_EDGE)
-            {
-                s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
-                nextELocal->prevNextFixtures[0] = fix;
-                nextELocal->globalRange[0] = range[1];
-            }
+            // else if (nextFData && nextFData->type == F_EDGE)
+            // {
+            //     printf("herere\n");
+            //     s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+            //     nextELocal->prevNextFixtures[0] = fix;
+            //     nextELocal->globalRange[0] = range[1];
+            // }
         }
     }
 

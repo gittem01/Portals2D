@@ -187,6 +187,11 @@ b2Fixture* Portal::getPreDestructionFixture()
 
     b2EdgeShape newShape;
     newShape.SetOneSided(outerPoints[0], newPoints[0], newPoints[1], outerPoints[1]);
+    if (eLocalData->prevNextFixtures[0] || eLocalData->prevNextFixtures[1])
+    {
+        newShape.m_oneSided = false;
+    }
+
     b2Fixture* newFix = body->CreateFixture(&newShape, 0.0f);
     newFix->GetUserData().pointer = (uintptr_t)newFixtureData;
 
@@ -199,12 +204,13 @@ b2Fixture* Portal::getPreDestructionFixture()
             p->sideFixtures[1] = newFix;
             p->range[1] = range[0];
         }
-        else if (nextFData && nextFData->type == F_EDGE)
-        {
-            s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
-            nextELocal->prevNextFixtures[1] = newFix;
-            nextELocal->globalRange[1] = range[0];
-        }
+        // else if (nextFData && nextFData->type == F_EDGE)
+        // {
+        //     printf("hehehe\n");
+        //     s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+        //     nextELocal->prevNextFixtures[1] = newFix;
+        //     nextELocal->globalRange[1] = range[0];
+        // }
     }
 
     if (newSideFixtures[1])
@@ -216,12 +222,13 @@ b2Fixture* Portal::getPreDestructionFixture()
             p->sideFixtures[0] = newFix;
             p->range[0] = range[1];
         }
-        else if (nextFData && nextFData->type == F_EDGE)
-        {
-            s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
-            nextELocal->prevNextFixtures[0] = newFix;
-            nextELocal->globalRange[0] = range[1];
-        }
+        // else if (nextFData && nextFData->type == F_EDGE)
+        // {
+        //     printf("hehehe\n");
+        //     s_edgeLocalData* nextELocal = (s_edgeLocalData*)nextFData->data;
+        //     nextELocal->prevNextFixtures[0] = newFix;
+        //     nextELocal->globalRange[0] = range[1];
+        // }
     }
 
     return newFix;

@@ -473,6 +473,25 @@ void LevelerTestCase::createDynamics()
     }
 
     Cyber* cyb = new Cyber(g->pWorld);
+
+    // create a 2d ragdoll
+    b2Body* body = createBox(b2Vec2(0.0f, 0.0f), b2Vec2(0.1f, 0.2f), g->pWorld, b2_dynamicBody, 100.0);
+    body->SetBullet(true);
+    PortalBody* pbx = g->pWorld->createPortalBody(body);
+    td->addPortalBody(pbx, {});
+
+    body = createBox(b2Vec2(0.0f, 0.0f), b2Vec2(0.2f, 0.075f), g->pWorld, b2_dynamicBody, 100.0);
+    body->SetBullet(true);
+    body->SetTransform(b2Vec2(0.2f, 0.0f), 0.0);
+    b2RevoluteJointDef jd;
+    jd.Initialize(pbx->body, body, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(0.1f, 0.15f);
+    jd.localAnchorB.Set(-0.15f, 0.0f);
+    jd.calculateAnchorHelpers();
+    //create
+    g->pWorld->CreateJoint(&jd);
+    pbx = g->pWorld->createPortalBody(body);
+    td->addPortalBody(pbx, {});
 }
 
 void LevelerTestCase::onCreate()

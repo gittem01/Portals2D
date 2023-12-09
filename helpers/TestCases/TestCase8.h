@@ -118,6 +118,13 @@ public:
 
         createEdge(b2Vec2(12.0f, +3.0f), b2Vec2(6.0f, +3.0f), g->pWorld, b2_kinematicBody, true);
 
+        b2EdgeShape eShape;
+        eShape.SetOneSided(b2Vec2(-7.5f, -10.0f), b2Vec2(-8.0f, +5.0f), b2Vec2(-8.0f, -5.0f), b2Vec2(-7.5f, +10.0f));
+        b2BodyDef bDef;
+        bDef.type = b2_staticBody;
+        b2Body* eb = g->pWorld->CreateBody(&bDef);
+        eb->CreateFixture(&eShape, 0.0f);
+
         bodyToMove = body;
         /*body->SetLinearVelocity(b2Vec2(3.0f, 0.0f));
         body->SetAngularVelocity(0.1f);*/
