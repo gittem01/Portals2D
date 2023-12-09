@@ -2,6 +2,8 @@
 
 #include <DefaultObject.h>
 
+b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, float density = 1.0f);
+
 class DefaultCube : public DefaultObject
 {
 private:

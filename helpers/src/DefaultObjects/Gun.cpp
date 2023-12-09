@@ -33,7 +33,7 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
 
     bodyData* bData = (bodyData*)gBody->GetUserData().pointer;
     g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = DEFAULT_OBJECT;
+    physicsData->type = DEFAULT_OBJECT_O;
     physicsData->data = this;
     bData->extraData = physicsData;
 

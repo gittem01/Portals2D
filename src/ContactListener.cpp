@@ -119,7 +119,7 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
     if (bDataA && bDataA->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
-        if (physicsData->type == DEFAULT_OBJECT)
+        if (physicsData->type & DEFAULT_OBJECT_O)
         {
             ((DefaultObject*)physicsData->data)->preSolve(contact, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
         }
@@ -127,7 +127,7 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
     if (bDataB && bDataB->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
-        if (physicsData->type == DEFAULT_OBJECT)
+        if (physicsData->type & DEFAULT_OBJECT_O)
         {
             ((DefaultObject*)physicsData->data)->preSolve(contact, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
         }
@@ -142,7 +142,7 @@ void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impu
     if (bDataA && bDataA->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
-        if (physicsData->type == DEFAULT_OBJECT)
+        if (physicsData->type & DEFAULT_OBJECT_O)
         {
             ((DefaultObject*)physicsData->data)->reportContact(contact, impulse, contact->GetFixtureA()->GetBody(), contact->GetFixtureB());
         }
@@ -150,7 +150,7 @@ void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impu
     if (bDataB && bDataB->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
-        if (physicsData->type == DEFAULT_OBJECT)
+        if (physicsData->type & DEFAULT_OBJECT_O)
         {
             ((DefaultObject*)physicsData->data)->reportContact(contact, impulse, contact->GetFixtureB()->GetBody(), contact->GetFixtureA());
         }

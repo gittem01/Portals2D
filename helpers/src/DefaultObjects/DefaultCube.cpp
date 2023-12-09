@@ -1,7 +1,8 @@
 #include <DefaultObjects/DefaultCube.h>
 #include <ThinDrawer.h>
 
-b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, float density = 1.0f) {
+b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, float density)
+{
     const float mult = (1.0f / 1.2f);
     std::vector<b2Vec2> vertices =
     {
@@ -64,7 +65,7 @@ DefaultCube::DefaultCube(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
     g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = DEFAULT_OBJECT;
+    physicsData->type = (g_DataType)(DEFAULT_OBJECT_O | DEFAULT_CUBE_O);
     physicsData->data = this;
     bData->extraData = physicsData;
     
