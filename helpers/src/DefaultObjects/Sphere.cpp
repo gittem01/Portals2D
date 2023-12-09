@@ -21,7 +21,7 @@ Sphere::Sphere(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
     g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = DEFAULT_OBJECT;
+    physicsData->type = (g_DataType)(DEFAULT_OBJECT_O | SPHERE_CUBE_O);
     physicsData->data = this;
     bData->extraData = physicsData;
     

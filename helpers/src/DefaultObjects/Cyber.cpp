@@ -43,7 +43,7 @@ Cyber::Cyber(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
     g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = DEFAULT_OBJECT;
+    physicsData->type = DEFAULT_OBJECT_O;
     physicsData->data = this;
     bData->extraData = physicsData;
     

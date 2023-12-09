@@ -558,7 +558,12 @@ void LevelerTestCase::createDynamics()
             dc->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
         }   
         break;
-        
+        case LASER_CUBE:
+        {
+			LaserCube* lc = new LaserCube(g->pWorld);
+			lc->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+		}
+        break;
         case SPHERE_CUBE:
         {
             Sphere* sp = new Sphere(g->pWorld);

@@ -414,7 +414,7 @@ void TestPlayer::createBody(b2Vec2 pos)
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
     g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = DEFAULT_OBJECT;
+    physicsData->type = DEFAULT_OBJECT_O;
     physicsData->data = this;
     bData->extraData = physicsData;
 
@@ -1302,7 +1302,7 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
                 if (bData && bData->extraData && bData->type == B_PORTAL_BODY && bData2 != bData)
                 {
                     g_PhysicsData* pData = (g_PhysicsData*)bData->extraData;
-                    if (pData && pData->type == DEFAULT_OBJECT)
+                    if (pData && pData->type & PICKABLES)
                     {
                         PortalBody* pb = (PortalBody*)bData->data;
                         holdB(pb, gunBody);

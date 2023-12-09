@@ -23,10 +23,15 @@ typedef enum WALL_TYPE_N : char
     NOT_PORTALLABLE_2 = 0x4,
 } WALL_TYPE;
 
-typedef enum
+typedef enum GameDataType
 {
-    DEFAULT_OBJECT = 0x1 << 0,
+    DEFAULT_OBJECT_O = 0x1 << 0,
+    DEFAULT_CUBE_O = 0x1 << 1,
+    LASER_CUBE_O = 0x1 << 2,
+    SPHERE_CUBE_O = 0x1 << 3,
 } g_DataType;
+
+#define PICKABLES (DEFAULT_CUBE_O | LASER_CUBE_O | SPHERE_CUBE_O)
 
 enum FixtureDataType
 {
