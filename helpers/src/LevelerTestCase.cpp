@@ -445,6 +445,105 @@ void LevelerTestCase::walkFwrdAndCreateEdgeGF(  glm::i16vec2 pos, char dir, Leve
     }
 }
 
+void createRagDoll(PortalWorld* pw, ThinDrawer* td)
+{
+    // create a 2d ragdoll
+    b2Body* body = createBox(b2Vec2(0.0f, 0.0f), b2Vec2(0.15f, 0.35f), pw, b2_dynamicBody, 1.0);
+    PortalBody* pbx = pw->createPortalBody(body);
+    td->addPortalBody(pbx, {});
+
+    // right arm1
+    b2Body* body1 = createBox(b2Vec2(0.3f, 0.0f), b2Vec2(0.3f, 0.075f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body1);
+    td->addPortalBody(pbx, {});
+    b2RevoluteJointDef jd;
+    jd.Initialize(body, body1, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(0.1f, 0.1f);
+    jd.localAnchorB.Set(-0.25f, 0.0f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // right arm2
+    b2Body* body2 = createBox(b2Vec2(0.6f, 0.0f), b2Vec2(0.3f, 0.075f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body2);
+    td->addPortalBody(pbx, {});
+    jd.Initialize(body1, body2, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(0.25f, 0.0f);
+    jd.localAnchorB.Set(-0.25f, 0.0f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // left arm1
+    b2Body* body3 = createBox(b2Vec2(-0.3f, 0.0f), b2Vec2(0.3f, 0.075f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body3);
+    td->addPortalBody(pbx, {});
+    jd.Initialize(body, body3, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(-0.1f, 0.1f);
+    jd.localAnchorB.Set(0.25f, 0.0f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // left arm2
+    b2Body* body4 = createBox(b2Vec2(-0.6f, 0.0f), b2Vec2(0.3f, 0.075f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body4);
+    td->addPortalBody(pbx, {});
+    jd.Initialize(body3, body4, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(-0.25f, 0.0f);
+    jd.localAnchorB.Set(0.25f, 0.0f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // head
+    b2Body* body5 = createCircle(b2Vec2(0.0f, 0.5f), 0.3f, pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body5);
+    td->addPortalBody(pbx, {"sphere.png"});
+    jd.Initialize(body, body5, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(0.0f, 0.5f);
+    jd.localAnchorB.Set(0.0f, 0.0f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // right leg1
+    b2Body* body6 = createBox(b2Vec2(0.1f, -0.5f), b2Vec2(0.075f, 0.3f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body6);
+    td->addPortalBody(pbx, {});
+    jd.Initialize(body, body6, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(0.1f, -0.35f);
+    jd.localAnchorB.Set(0.0f, 0.25f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // right leg2
+    b2Body* body7 = createBox(b2Vec2(0.1f, -0.8f), b2Vec2(0.075f, 0.3f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body7);
+    td->addPortalBody(pbx, {});
+    jd.Initialize(body6, body7, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(0.0f, -0.25f);
+    jd.localAnchorB.Set(0.0f, 0.25f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // left leg1
+    b2Body* body8 = createBox(b2Vec2(-0.1f, -0.5f), b2Vec2(0.075f, 0.3f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body8);
+    td->addPortalBody(pbx, {});
+    jd.Initialize(body, body8, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(-0.1f, -0.35f);
+    jd.localAnchorB.Set(0.0f, 0.25f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+
+    // left leg2
+    b2Body* body9 = createBox(b2Vec2(-0.1f, -0.8f), b2Vec2(0.075f, 0.3f), pw, b2_dynamicBody, 1.0);
+    pbx = pw->createPortalBody(body9);
+    td->addPortalBody(pbx, {});
+    jd.Initialize(body8, body9, b2Vec2(0.0f, 0.0f));
+    jd.localAnchorA.Set(0.0f, -0.25f);
+    jd.localAnchorB.Set(0.0f, 0.25f);
+    jd.calculateAnchorHelpers();
+    pw->CreateJoint(&jd);
+}
+
 void LevelerTestCase::createDynamics()
 {
     for (s_objectDataGrid* objectData : g->leveler->levelObjects)
@@ -472,26 +571,9 @@ void LevelerTestCase::createDynamics()
         }
     }
 
-    Cyber* cyb = new Cyber(g->pWorld);
+    Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0f, 4.0f));
 
-    // create a 2d ragdoll
-    b2Body* body = createBox(b2Vec2(0.0f, 0.0f), b2Vec2(0.1f, 0.2f), g->pWorld, b2_dynamicBody, 100.0);
-    body->SetBullet(true);
-    PortalBody* pbx = g->pWorld->createPortalBody(body);
-    td->addPortalBody(pbx, {});
-
-    body = createBox(b2Vec2(0.0f, 0.0f), b2Vec2(0.2f, 0.075f), g->pWorld, b2_dynamicBody, 100.0);
-    body->SetBullet(true);
-    body->SetTransform(b2Vec2(0.2f, 0.0f), 0.0);
-    b2RevoluteJointDef jd;
-    jd.Initialize(pbx->body, body, b2Vec2(0.0f, 0.0f));
-    jd.localAnchorA.Set(0.1f, 0.15f);
-    jd.localAnchorB.Set(-0.15f, 0.0f);
-    jd.calculateAnchorHelpers();
-    //create
-    g->pWorld->CreateJoint(&jd);
-    pbx = g->pWorld->createPortalBody(body);
-    td->addPortalBody(pbx, {});
+    createRagDoll(g->pWorld, td);
 }
 
 void LevelerTestCase::onCreate()

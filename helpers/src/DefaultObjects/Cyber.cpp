@@ -2,7 +2,7 @@
 #include <ThinDrawer.h>
 
 
-Cyber::Cyber(PortalWorld* portalWorld) : DefaultObject(portalWorld)
+Cyber::Cyber(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
 {
 	this->pWorld = portalWorld;
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
@@ -10,7 +10,7 @@ Cyber::Cyber(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
-    bodyDef.position = b2Vec2(0.0, 0.0);
+    bodyDef.position = pos;
     
 	b2Body* body = portalWorld->CreateBody(&bodyDef);
     b2Body* mainBody = body;
@@ -52,7 +52,7 @@ Cyber::Cyber(PortalWorld* portalWorld) : DefaultObject(portalWorld)
     ThinDrawer::object->addPortalBody(portalBody, {"cyber.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);
 
-    bodyDef.position = b2Vec2(-1.18, -0.3);
+    bodyDef.position = b2Vec2(-1.18, -0.3) + pos;
     bodyDef.angularDamping = 0.1f;
     body = portalWorld->CreateBody(&bodyDef);
     b2CircleShape cShape;
@@ -67,7 +67,7 @@ Cyber::Cyber(PortalWorld* portalWorld) : DefaultObject(portalWorld)
     jointDef.calculateAnchorHelpers();
     portalWorld->CreateJoint(&jointDef);
 
-    bodyDef.position = b2Vec2(+1.0, -0.3);
+    bodyDef.position = b2Vec2(+1.0, -0.3) + pos;
     body = portalWorld->CreateBody(&bodyDef);
     body->CreateFixture(&cShape, 0.5f);
     portalBody = portalWorld->createPortalBody(body);

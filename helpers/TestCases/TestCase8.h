@@ -202,7 +202,7 @@ public:
         DefaultCube* dc2 = new DefaultCube(g->pWorld);
         dc2->pBody->at(0)->body->SetTransform(b2Vec2(5.0, 0.0), 0.0);
 
-        Cyber* cyb = new Cyber(g->pWorld);
+        Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0, 0.0));
     }
 
     void onUpdate()
