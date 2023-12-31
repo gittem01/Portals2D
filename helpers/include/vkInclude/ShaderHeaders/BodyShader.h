@@ -5,17 +5,12 @@
 #define UNIFORM_ALLOC_COUNT_BODY 2500
 #define UNIFORM_ALLOC_COUNT_FIXTURE UNIFORM_ALLOC_COUNT_BODY * 4
 
-typedef struct
+typedef struct RenderBodyPush
 {
-    glm::mat4 modelMatrix;
-    int isMirrored;
-} s_renderBodyUbo;
-
-typedef struct
-{
+    glm::vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
     glm::vec4 portals[4];
     int numPortals;
-} s_renderFixtureUbo;
+} s_renderBodyPsh;
 
 class BodyShader : public ShaderBase
 {
@@ -23,14 +18,6 @@ class BodyShader : public ShaderBase
 
 private:
     BodyShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
-
-    int lastAllocationPos_body;
-    int alignedSize_body;
-    uint32_t availableOffsets_body[UNIFORM_ALLOC_COUNT_BODY];
-
-    int lastAllocationPos_fixture;
-    int alignedSize_fixture;
-    uint32_t availableOffsets_fixture[UNIFORM_ALLOC_COUNT_FIXTURE];
 
     void prepareVertexData();
     void prepareUniforms();

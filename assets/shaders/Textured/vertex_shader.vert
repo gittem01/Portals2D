@@ -13,21 +13,29 @@ layout (set = 0, binding = 0) uniform SharedUboData
     vec4 data; // zoom, unused, unused, unused
 } sharedUboData;
 
-layout (set = 2, binding = 0) uniform UBO
+layout (push_constant) uniform PC
 {
-	mat4 modelMatrix;
-	int isMirrored;
-} ubo;
+    vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
+	vec4 portals[4];
+	int numPortals;
+} pc;
 
 void main() 
 {
 	o_texCoord = i_texCoord;
-	vec2 pos = inPos.xy;
-	if (ubo.isMirrored == 1)
+	
+	// construct 2x2 rotation matrix
+	mat2 rotMat =	mat2(
+							+cos(pc.posRot.z),	sin(pc.posRot.z),
+							-sin(pc.posRot.z),	cos(pc.posRot.z)
+						);
+	vec2 pos = inPos;
+	if (pc.posRot.w < 0)
 	{
 		pos.x *= -1.0;;
 	}
-	vec4 wp = ubo.modelMatrix * vec4(pos, 0.0, 1.0f);
+
+	vec4 wp = vec4(rotMat * pos + pc.posRot.xy, 0.0, 1.0);
 	worldPosition = wp.xy;
 
 	gl_Position = sharedUboData.orthoMatrix * wp;

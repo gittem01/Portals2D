@@ -471,51 +471,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
 {
-    for (s_renderGroup* renderGroup : renderGroups)
-    {
-        for (s_renderBody* renderBody : renderGroup->renderBodies)
-        {
-            s_renderBodyUbo* uboVS;
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader->uniformBuffers[0]->memory,
-                renderBody->renderFixtures[0]->dynamicOffsets[lastSwapChainImageIndex].bodyOffsets,
-                bodyShader->alignedSize_body, 0, (void**)&uboVS));
-            uboVS->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(renderBody->portalBody->body->GetPosition().x, renderBody->portalBody->body->GetPosition().y, 0.0f));
-            uboVS->modelMatrix = glm::rotate(uboVS->modelMatrix, renderBody->portalBody->body->GetAngle(), glm::vec3(0.0f, 0.0f, 1.0f));
-            uboVS->isMirrored = renderBody->portalBody->isMirrored;
-            vkUnmapMemory(logicalDevice, bodyShader->uniformBuffers[0]->memory);
-
-            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
-            {
-                renderStruct->renderDisabled = false;
-                s_renderFixtureUbo* fixUbo;
-                CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader->uniformBuffers[1]->memory,
-                    renderStruct->dynamicOffsets[lastSwapChainImageIndex].fixtureOffsets, bodyShader->alignedSize_fixture, 0, (void**)&fixUbo));
-                if (renderStruct->pbfData->pCollisions.size() > 0)
-                {
-                    for (int i = 0; i < renderStruct->pbfData->pCollisions.size(); i++)
-                    {
-                        portalCollision* pc = renderStruct->pbfData->pCollisions[i];
-                        if (pc->status < 0)
-                        {
-                            renderStruct->renderDisabled = true;
-                            break;
-                        }
-
-                        fixUbo->portals[i] = glm::vec4(
-                            pc->portal->points[pc->side ^ 1].x, pc->portal->points[pc->side ^ 1].y,
-                            pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
-                    }
-                    fixUbo->numPortals = renderStruct->pbfData->pCollisions.size();
-                }
-                else
-                {
-                    fixUbo->numPortals = 0;
-                }
-                vkUnmapMemory(logicalDevice, bodyShader->uniformBuffers[1]->memory);
-            }
-        }
-    }
-
     const VkDeviceSize offsets = 0;
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, bodyShader->pipeline);
@@ -532,20 +487,45 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
         for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
             int i = 0;
-            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
+            for (PBFixtureData* pFixData : renderBody->renderFixtures)
             {
-                if (renderStruct->renderDisabled)
+                s_renderBodyPsh pshConst;
+                pshConst.posRot = glm::vec4(renderBody->portalBody->body->GetPosition().x, renderBody->portalBody->body->GetPosition().y,
+                    renderBody->portalBody->body->GetAngle(), renderBody->portalBody->isMirrored * -1);
+
+                bool renderDisabled = false;
+                if (pFixData->pCollisions.size() > 0)
                 {
-                    i++;
-                    continue;
+                    for (int i = 0; i < pFixData->pCollisions.size(); i++)
+                    {
+                        portalCollision* pc = pFixData->pCollisions[i];
+                        if (pc->status < 0)
+                        {
+                            renderDisabled = true; i++;
+                            break;
+                        }
+
+                        pshConst.portals[i] = glm::vec4(
+                            pc->portal->points[pc->side ^ 1].x, pc->portal->points[pc->side ^ 1].y,
+                            pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+                    }
+                    pshConst.numPortals = pFixData->pCollisions.size();
+                }
+                else
+                {
+                    pshConst.numPortals = 0;
                 }
 
-                vkCmdBindVertexBuffers(frames[lastSwapChainImageIndex].commandBuffer, 0, 1, &renderGroup->vertexBuffers[i]->buffer, &offsets);
-             
-                uint32_t deviceOffsets[] = { renderStruct->dynamicOffsets[lastSwapChainImageIndex].bodyOffsets, renderStruct->dynamicOffsets[lastSwapChainImageIndex].fixtureOffsets };
-                vkCmdBindDescriptorSets(frames[lastSwapChainImageIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    bodyShader->pipelineLayout, 2, 1, &bodyShader->descriptorSets[1], 2, deviceOffsets);
-                vkCmdDraw(frames[lastSwapChainImageIndex].commandBuffer, renderGroup->vertexBuffers[i]->count, 1, 0, 0);
+                if (!renderDisabled)
+                {
+                    vkCmdBindVertexBuffers(frames[lastSwapChainImageIndex].commandBuffer, 0, 1, &renderGroup->vertexBuffers[i]->buffer, &offsets);
+
+                    vkCmdPushConstants(frames[lastSwapChainImageIndex].commandBuffer, bodyShader->pipelineLayout,
+                        						VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &pshConst);
+
+                    vkCmdDraw(frames[lastSwapChainImageIndex].commandBuffer, renderGroup->vertexBuffers[i]->count, 1, 0, 0);
+                }
+                
                 i++;
             }
         }
@@ -1250,28 +1230,6 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
     renderBody->renderFixtures.resize(numFixtures);
 
     renderBody->portalBody = portalBody;
-
-    for (int i = 0; i < numFixtures; i++)
-    {
-        s_renderStruct* renderStruct = new s_renderStruct;
-        renderStruct->dynamicOffsets.resize(swapChain->imageCount);
-        renderBody->renderFixtures[i] = renderStruct;
-    }
-
-    for (int i = 0; i < swapChain->imageCount; i++)
-    {
-        uint32_t portalBodyDynamicOffset = bodyShader->availableOffsets_body[bodyShader->lastAllocationPos_body++];
-        
-        for (int j = 0; j < numFixtures; j++)
-        {
-            s_renderStruct* renderStruct = renderBody->renderFixtures[j];
-
-            uint32_t fixtureDynamicOffset = bodyShader->availableOffsets_fixture[bodyShader->lastAllocationPos_fixture++];
-
-            renderStruct->dynamicOffsets[i].bodyOffsets = portalBodyDynamicOffset;
-            renderStruct->dynamicOffsets[i].fixtureOffsets = fixtureDynamicOffset;
-        }
-    }
     
     glm::vec2 minPoint = glm::vec2(+7654443.3252f, +34566345.76543345f);
     glm::vec2 maxPoint = glm::vec2(-3743456.8765f, -45356465.23456764f);
@@ -1336,11 +1294,10 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
     for (int i = 0; i < numFixtures; i++)
     {
         b2Fixture* fix = portalBody->fixtures.at(i);
-        s_renderStruct* renderStruct = renderBody->renderFixtures[i];
 
         fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
         PBFixtureData* pbfData = (PBFixtureData*)fData->data;
-        renderStruct->pbfData = pbfData;
+        renderBody->renderFixtures[i] = pbfData;
 
         std::vector<s_vertex> initialVertices;
         std::vector<s_vertex> finalVertices;
@@ -1669,25 +1626,7 @@ void ThinDrawer::portalBodyCreateCallback(PortalBody* portalBody, void* data)
         fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
         PBFixtureData* pbfData = (PBFixtureData*)fData->data;
 
-        s_renderStruct* renderStruct = new s_renderStruct;
-        renderStruct->pbfData = pbfData;
-        renderStruct->dynamicOffsets.resize(thinDrawer->swapChain->imageCount);
-        renderBody->renderFixtures[i] = renderStruct;
-    }
-
-    for (int i = 0; i < thinDrawer->swapChain->imageCount; i++)
-    {
-        uint32_t portalBodyDynamicOffset = thinDrawer->bodyShader->availableOffsets_body[thinDrawer->bodyShader->lastAllocationPos_body++];
-
-        for (int j = 0; j < numFixtures; j++)
-        {
-            s_renderStruct* renderStruct = renderBody->renderFixtures[j];
-
-            uint32_t fixtureDynamicOffset = thinDrawer->bodyShader->availableOffsets_fixture[thinDrawer->bodyShader->lastAllocationPos_fixture++];
-
-            renderStruct->dynamicOffsets[i].bodyOffsets = portalBodyDynamicOffset;
-            renderStruct->dynamicOffsets[i].fixtureOffsets = fixtureDynamicOffset;
-        }
+        renderBody->renderFixtures[i] = pbfData;
     }
 }
 
@@ -1702,21 +1641,6 @@ void ThinDrawer::portalBodyDestroyCallback(PortalBody* portalBody, void* data)
         if ((*iter)->portalBody == portalBody)
         {
             renderGroup->renderBodies.erase(iter);
-
-            for (int j = 0; j < thinDrawer->swapChain->imageCount; j++)
-            {
-                thinDrawer->bodyShader->lastAllocationPos_body--;
-                thinDrawer->bodyShader->availableOffsets_body[thinDrawer->bodyShader->lastAllocationPos_body] = renderBody->renderFixtures[0]->dynamicOffsets[j].bodyOffsets;
-                for (s_renderStruct* renderStruct : renderBody->renderFixtures)
-                {
-                    thinDrawer->bodyShader->lastAllocationPos_fixture--;
-                    thinDrawer->bodyShader->availableOffsets_fixture[thinDrawer->bodyShader->lastAllocationPos_fixture] = renderStruct->dynamicOffsets[j].fixtureOffsets;
-                }
-            }
-            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
-            {
-                delete renderStruct;
-            }
 
             delete renderBody;
 
@@ -1841,31 +1765,15 @@ void ThinDrawer::releaseRenderResources()
 
     for (s_renderGroup* renderGroup : renderGroups)
     {
-        int i = 0;
-        for (s_renderStruct* renderStruct : (*renderGroup->renderBodies.begin())->renderFixtures)
+        for (int i = 0; i < (*renderGroup->renderBodies.begin())->renderFixtures.size(); i++)
         {
-            s_buffers* buffer0 = renderGroup->vertexBuffers[i++];
+            s_buffers* buffer0 = renderGroup->vertexBuffers[i];
             vkDestroyBuffer(logicalDevice, buffer0->buffer, nullptr);
             vkFreeMemory(logicalDevice, buffer0->memory, nullptr);
             free(buffer0);
         }
         for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
-            for (int j = 0; j < swapChain->imageCount; j++)
-            {
-                bodyShader->lastAllocationPos_body--;
-                bodyShader->availableOffsets_body[bodyShader->lastAllocationPos_body] = renderBody->renderFixtures[0]->dynamicOffsets[j].bodyOffsets;
-                for (s_renderStruct* renderStruct : renderBody->renderFixtures)
-                {
-                    bodyShader->lastAllocationPos_fixture--;
-                    bodyShader->availableOffsets_fixture[bodyShader->lastAllocationPos_fixture] = renderStruct->dynamicOffsets[j].fixtureOffsets;
-                }
-            }
-
-            for (s_renderStruct* renderStruct : renderBody->renderFixtures)
-            {
-                delete renderStruct;
-            }
             delete renderBody;
         }
 

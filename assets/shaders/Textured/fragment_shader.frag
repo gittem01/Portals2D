@@ -7,11 +7,12 @@ layout (location = 1) in vec2 worldPosition;
 
 layout(set = 1, binding = 0) uniform sampler2D tex;
 
-layout (set = 2, binding = 1) uniform PortalData
+layout (push_constant) uniform PC
 {
+    vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
 	vec4 portals[4];
 	int numPortals;
-} portalData;
+} pc;
 
 float lineRel(vec2 a, vec2 b, vec2 c)
 {
@@ -20,9 +21,9 @@ float lineRel(vec2 a, vec2 b, vec2 c)
 
 void main()
 {
-	for (int i = 0; i < portalData.numPortals; i++)
+	for (int i = 0; i < pc.numPortals; i++)
 	{
-		if (lineRel(portalData.portals[i].xy, portalData.portals[i].zw, worldPosition) > 0)
+		if (lineRel(pc.portals[i].xy, pc.portals[i].zw, worldPosition) > 0)
 		{
 			outFragColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 			return;

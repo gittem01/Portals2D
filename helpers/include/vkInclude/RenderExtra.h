@@ -87,18 +87,11 @@ typedef struct renderOffsets
     uint32_t fixtureOffsets;
 } renderOffsets;
 
-// per fixture
-typedef struct s_renderStruct
-{
-    std::vector<renderOffsets> dynamicOffsets;
-    struct PBFixtureData* pbfData;
-    bool renderDisabled;
-} s_renderStruct;
 
 // per fixture
 typedef struct
 {
-    std::vector<s_renderStruct*> renderFixtures;
+    std::vector<struct PBFixtureData*> renderFixtures;
     class PortalBody* portalBody;
 } s_renderBody;
 

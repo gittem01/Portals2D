@@ -34,62 +34,33 @@ void BodyShader::prepareVertexData()
 
 void BodyShader::prepareUniforms()
 {
-    const int bufferSize = 2;
-
-    alignedSize_body = thinDrawer->pad_uniform_buffer_size(sizeof(s_renderBodyUbo));
-    alignedSize_fixture = thinDrawer->pad_uniform_buffer_size(sizeof(s_renderFixtureUbo));
-
-    lastAllocationPos_body = 0;
-    lastAllocationPos_fixture = 0;
-
-    for (int i = 0; i < UNIFORM_ALLOC_COUNT_BODY; i++)
-    {
-        availableOffsets_body[i] = i * alignedSize_body;
-    }
-    for (int i = 0; i < UNIFORM_ALLOC_COUNT_FIXTURE; i++)
-    {
-        availableOffsets_fixture[i] = i * alignedSize_fixture;
-    }
+    const int bufferSize = 0;
 
     uniformBuffers.resize(bufferSize);
-
-    for (int j = 0; j < bufferSize; j++)
-    {
-        uniformBuffers[j] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-    }
-
-    s_uniformBuffer* uniformBufferVS = uniformBuffers[0];
-    s_uniformBuffer* uniformBufferFS1 = uniformBuffers[1];
-
-    thinDrawer->uniformHelper(alignedSize_body * UNIFORM_ALLOC_COUNT_BODY, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_BODY);
-    thinDrawer->uniformHelper(alignedSize_fixture * UNIFORM_ALLOC_COUNT_FIXTURE, uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_FIXTURE);
 }
 
 void BodyShader::setupDescriptorSetLayout()
 {
-    const int descriptorSetLayoutCount = 3;
+    const int descriptorSetLayoutCount = 2;
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
     descriptorSetLayouts[0] = ShaderBase::sharedLayout;
-
-    VkDescriptorSetLayoutBinding layoutBinding1 =
-        vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1, 0);
-
-    VkDescriptorSetLayoutBinding layoutBinding2 =
-        vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1);
-
-    VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding1, layoutBinding2 };
 
     VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
     VkDescriptorSetLayoutCreateInfo setInfo = vkinit::descriptorSetLayoutCreateInfo(&textureBind, 1);
     CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &setInfo, VK_NULL_HANDLE, &descriptorSetLayouts[1]));
 
-    VkDescriptorSetLayoutCreateInfo setInfo2 = vkinit::descriptorSetLayoutCreateInfo(bindings2, 2);
-    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &setInfo2, VK_NULL_HANDLE, &descriptorSetLayouts[2]));
-
     VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo(
         descriptorSetLayouts.data(), descriptorSetLayouts.size());
+
+    VkPushConstantRange pushConstant;
+    pushConstant.offset = 0;
+    pushConstant.size = sizeof(s_renderBodyPsh);
+    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    pPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+    pPipelineLayoutCreateInfo.pPushConstantRanges = &pushConstant;
+
     CHECK_RESULT_VK(vkCreatePipelineLayout(logicalDevice, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &pipelineLayout));
 }
 
@@ -146,26 +117,5 @@ void BodyShader::preparePipeline()
 
 void BodyShader::setupDescriptorSet()
 {
-    descriptorSets.resize(2);
-
-    VkDescriptorSetAllocateInfo allocInfo;
-
-    VkWriteDescriptorSet writeDescriptorSet = { };
-    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.dstBinding = 0;
-
-    allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[2], 1);
-    CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
-
-    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-
-    for (int j = 0; j < uniformBuffers.size(); j++)
-    {
-        writeDescriptorSet.dstSet = descriptorSets[1];
-        writeDescriptorSet.pBufferInfo = &uniformBuffers[j]->descriptor;
-        writeDescriptorSet.dstBinding = j;
-
-        vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
-    }
+    descriptorSets.resize(1);
 }
