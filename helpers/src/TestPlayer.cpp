@@ -261,7 +261,7 @@ void TestPlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
         vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-        i += 1;
+        i++;
     }
 }
 

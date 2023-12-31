@@ -324,7 +324,7 @@ public:
 
 	int numSwapChainImages;
 
-	s_renderPlayerUbo startRenderData;
+	s_renderPlayerUbo startRenderData {};
 	std::set<s_objectDataGrid*> levelObjects;
 	s_gridSquare startSquare = { -10, 1 };
 	s_gridSquare endSquare = { 10, 1 };

@@ -1145,6 +1145,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 			td->playerShader->alignedSize * td->lastSwapChainImageIndex * 2, td->playerShader->alignedSize, 0, (void**)&ru2);
 
 		ru2->posRotD = glm::vec4(leveler->startSquare.x + 0.5, leveler->startSquare.y + 0.75, 0.0, 0.0);
+		ru2->numPortals = 0;
 
 		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory);
 
@@ -1152,6 +1153,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 			td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2 + 1), td->playerShader->alignedSize, 0, (void**)&ru2);
 
 		ru2->posRotD = glm::vec4(leveler->endSquare.x + 0.5, leveler->endSquare.y + 0.75, 0.0, 0.0);
+		ru2->numPortals = 0;
 
 		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory);
 
@@ -1168,7 +1170,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 			td->playerShader->pipelineLayout, 1, 1, &td->playerShader->descriptorSets[1], 2, dynOffsets);
 		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-		dynOffsets[0] = td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2+ 1); dynOffsets[1] = td->playerShader->alignedSize2;
+		dynOffsets[0] = td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2 + 1); dynOffsets[1] = td->playerShader->alignedSize2;
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->playerShader->pipelineLayout, 1, 1, &td->playerShader->descriptorSets[1], 2, dynOffsets);
 		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
