@@ -16,13 +16,13 @@ layout (set = 0, binding = 0) uniform SharedUboData
     vec4 data;
 } sharedUboData;
 
-layout (std140, set = 1, binding = 0) uniform UBO
+layout (push_constant) uniform PC
 {
     vec4 portalPoints;
     vec4 color;
     vec4 data0; // dist, speed, time, upSize
     vec4 data1; // sizex, sizey, randomization, instanceCount
-} ubo;
+} pc;
 
 float editorFunc(float val)
 {
@@ -36,7 +36,7 @@ float lineRel(vec2 a, vec2 b, vec2 c)
 
 void main()
 {
-    if (lineRel(ubo.portalPoints.zw, ubo.portalPoints.xy, worldPos) > 0.0)
+    if (lineRel(pc.portalPoints.zw, pc.portalPoints.xy, worldPos) > 0.0)
     {
         FragColour = vec4(0.0);
         return;

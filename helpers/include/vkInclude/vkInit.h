@@ -100,4 +100,13 @@ namespace vkinit
 
         return fenceCreateInfo;
     }
+
+    inline VkPushConstantRange initPushConstantRange(uint32_t size, VkShaderStageFlags flags)
+    {
+        VkPushConstantRange pushConstant;
+        pushConstant.offset = 0;
+        pushConstant.size = size;
+        pushConstant.stageFlags = flags;
+        return pushConstant;
+    }
 }

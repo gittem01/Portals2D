@@ -34,36 +34,22 @@ void PortalShader::prepareVertexData()
 
 void PortalShader::prepareUniforms()
 {
-    alignedSize = thinDrawer->pad_uniform_buffer_size(sizeof(s_portalUbo));
-
-    lastAllocationPos = 0;
-    for (int i = 0; i < UNIFORM_ALLOC_COUNT; i++)
-    {
-        availableOffsets[i] = i * alignedSize;
-    }
-
-
-    uniformBuffers.resize(1);
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-    thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);
+    uniformBuffers.resize(0);
 }
 
 void PortalShader::setupDescriptorSetLayout()
 {
-    const int descriptorSetLayoutCount = 2;
+    const int descriptorSetLayoutCount = 1;
 
     descriptorSetLayouts.resize(descriptorSetLayoutCount);
     descriptorSetLayouts[0] = ShaderBase::sharedLayout;
 
-    VkDescriptorSetLayoutBinding layoutBinding10 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
-
-    VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding10 };
-
-    VkDescriptorSetLayoutCreateInfo descriptorLayout2 = vkinit::descriptorSetLayoutCreateInfo(bindings2, sizeof(bindings2) / sizeof(bindings2[0]));
-    CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout2, VK_NULL_HANDLE, &descriptorSetLayouts[1]));
-
     VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo(descriptorSetLayouts.data(), descriptorSetLayouts.size());
+
+    VkPushConstantRange pushConstant = vkinit::initPushConstantRange(sizeof(s_portalPsh), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+    pPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+    pPipelineLayoutCreateInfo.pPushConstantRanges = &pushConstant;
+
     CHECK_RESULT_VK(vkCreatePipelineLayout(logicalDevice, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &pipelineLayout));
 }
 
@@ -110,19 +96,4 @@ void PortalShader::preparePipeline()
 void PortalShader::setupDescriptorSet()
 {
     descriptorSets.resize(descriptorSetLayouts.size());
-
-    VkDescriptorSetAllocateInfo allocInfo;
-
-    VkWriteDescriptorSet writeDescriptorSet = { };
-    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.dstBinding = 0;
-
-    allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
-    CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
-    writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
-    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-
-    vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 }

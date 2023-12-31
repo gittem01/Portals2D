@@ -14,12 +14,12 @@ layout (set = 0, binding = 0) uniform SharedUboData
     vec4 data;
 } sharedUboData;
 
-layout (std140, set = 1, binding = 0) uniform UBO
+layout (push_constant) uniform PC
 {
     vec4 posSize; // pos.x, pos.y, size.x, size.y
     vec4 color;
     vec4 data0; // dirAngle, pixeler, midThick, xDropSize
-} ubo;
+} pc;
 
 float editorFunc(float val)
 {
@@ -28,22 +28,22 @@ float editorFunc(float val)
 
 void main()
 {
-    float xSize = ubo.posSize.z;
-    float ySize = ubo.posSize.w;
+    float xSize = pc.posSize.z;
+    float ySize = pc.posSize.w;
  
     float xRatio = localPos.x / xSize;
-    if (ubo.color.w > 0.5) xRatio *= -1.0f;
-    vec3 color = ubo.color.xyz + vec3(1.0) * xRatio * 0.75;
+    if (pc.color.w > 0.5) xRatio *= -1.0f;
+    vec3 color = pc.color.xyz + vec3(1.0) * xRatio * 0.75;
 
-    float pixeller = ubo.data0.y;
+    float pixeller = pc.data0.y;
 
     vec2 pixelledPos = localPos;
 //    pixelledPos.x = int(pixelledPos.x / pixeller) * pixeller;
 //    pixelledPos.y = int(pixelledPos.y / pixeller) * pixeller;
 
     // ySize plus
-    float midThick = ubo.data0.z;
-    float xDropSize = max(ubo.data0.w, ySize * 0.5);
+    float midThick = pc.data0.z;
+    float xDropSize = max(pc.data0.w, ySize * 0.5);
         
     float a = ySize * 0.5;
     float b = ySize * 0.5 + xDropSize;

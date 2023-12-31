@@ -15,13 +15,13 @@ layout (set = 0, binding = 0) uniform SharedUboData
     vec4 data;
 } sharedUboData;
 
-layout (std140, set = 1, binding = 0) uniform UBO
+layout (push_constant) uniform PC
 {
     vec4 portalPoints;
     vec4 color;
     vec4 data0; // dist, speed, time, upSize
     vec4 data1; // sizex, sizey, randomization, instanceCount
-} ubo;
+} pc;
 
 vec2 rotatePoint(vec2 point, float angle)
 {
@@ -38,54 +38,54 @@ vec2 rotate90(vec2 v)
 
 float randRange(vec2 seed)
 {
-    float random = fract(sin(dot(seed, vec2(13.8695 + ubo.data1.z, 17.1371))) * 73714.38361);
+    float random = fract(sin(dot(seed, vec2(13.8695 + pc.data1.z, 17.1371))) * 73714.38361);
     
     return random;
 }
 
 void main()
 {
-    float timeToEnd = 1.0 / ubo.data0.y;
-    float instanceRatio = (gl_InstanceIndex / ubo.data1.w) * timeToEnd;
+    float timeToEnd = 1.0 / pc.data0.y;
+    float instanceRatio = (gl_InstanceIndex / pc.data1.w) * timeToEnd;
     float instanceSpecificRand = randRange(vec2(gl_InstanceIndex, gl_InstanceIndex));
-    float time = (sharedUboData.data.y - ubo.data0.z) - instanceRatio;
-    float loopTime = fract(time * (ubo.data0.y + instanceSpecificRand));
-    int loopInt = int(time * (ubo.data0.y + instanceSpecificRand));
+    float time = (sharedUboData.data.y - pc.data0.z) - instanceRatio;
+    float loopTime = fract(time * (pc.data0.y + instanceSpecificRand));
+    int loopInt = int(time * (pc.data0.y + instanceSpecificRand));
     float loopSpecificRand1 = randRange(vec2(gl_InstanceIndex, loopInt));
     float loopSpecificRand2 = randRange(vec2(loopInt, gl_InstanceIndex));
-    vec2 p0 = ubo.portalPoints.xy;
-    vec2 p1 = ubo.portalPoints.zw;
+    vec2 p0 = pc.portalPoints.xy;
+    vec2 p1 = pc.portalPoints.zw;
     vec2 midPos = (p0 + p1) * 0.5;
     vec2 pointsDiff = p1 - p0;
     float portalSize = length(pointsDiff);
     vec2 normPointDiff = pointsDiff / portalSize;
     vec2 dirVec = rotate90(normPointDiff);
 
-    portalSize -= ubo.data1.x;
-    p0 += normPointDiff * ubo.data1.x * 0.5;
-    p1 -= normPointDiff * ubo.data1.x * 0.5;
+    portalSize -= pc.data1.x;
+    p0 += normPointDiff * pc.data1.x * 0.5;
+    p1 -= normPointDiff * pc.data1.x * 0.5;
     pointsDiff = p1 - p0;
 
     vec2 fromPos;
     vec2 toPos;
-    if (ubo.color.w > 0.0)
+    if (pc.color.w > 0.0)
     {
         fromPos = p0 + pointsDiff * loopSpecificRand1;
-        toPos = midPos + dirVec * (ubo.data0.x + (instanceSpecificRand - 0.5) * 0.2) + normPointDiff * (loopSpecificRand1 - 0.5) * ubo.data0.w;
+        toPos = midPos + dirVec * (pc.data0.x + (instanceSpecificRand - 0.5) * 0.2) + normPointDiff * (loopSpecificRand1 - 0.5) * pc.data0.w;
     }
     else
     {
         fromPos = p1 - pointsDiff * loopSpecificRand1;
-        toPos = midPos + dirVec * (ubo.data0.x + (instanceSpecificRand - 0.5) * 0.2) + normPointDiff * (loopSpecificRand1 - 0.5) * ubo.data0.w * -1.0;
+        toPos = midPos + dirVec * (pc.data0.x + (instanceSpecificRand - 0.5) * 0.2) + normPointDiff * (loopSpecificRand1 - 0.5) * pc.data0.w * -1.0;
     }
 
     vec2 currentPos = fromPos + (toPos - fromPos) * loopTime;
 
-    worldPos = vertex * ubo.data1.xy + currentPos;
+    worldPos = vertex * pc.data1.xy + currentPos;
     gl_Position = sharedUboData.cameraMatrix * vec4(worldPos, 0.0, 1.0);
     
     localPos = vertex;
-    colour = ubo.color + (instanceSpecificRand - 0.5) * 0.75;
+    colour = pc.color + (instanceSpecificRand - 0.5) * 0.75;
 
     if (time < 0.0)
     {

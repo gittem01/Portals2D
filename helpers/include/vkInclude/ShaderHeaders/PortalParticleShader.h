@@ -4,13 +4,13 @@
 #include <PortalShader.h>
 #include <glm/glm.hpp>
 
-typedef struct s_portalParticleUbo
+typedef struct s_portalParticlePsh
 {
     glm::vec4 portalPoints;
     glm::vec4 color;
     glm::vec4 data0; // dist, speed, time, upSize
     glm::vec4 data1; // sizex, sizey, randomization, instanceCount
-} s_portalParticleUbo;
+} s_portalParticlePsh;
 
 class PortalParticleShader : public ShaderBase
 {
@@ -18,10 +18,6 @@ class PortalParticleShader : public ShaderBase
     friend class TestPlayer;
 
 private:
-    int alignedSize;
-    int lastAllocationPos;
-    uint32_t availableOffsets[UNIFORM_ALLOC_COUNT];
-
     PortalParticleShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     void prepareUniforms();

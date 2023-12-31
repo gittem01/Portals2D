@@ -108,11 +108,10 @@ typedef struct
 
 typedef struct PortalRender
 {
-    std::vector<uint32_t> dynamicOffsets;
-    std::vector<uint32_t> particleDynamicOffsets;
-    glm::vec4 data0;
     class Portal* portal;
     AnimGroup* animGroup;
+    s_portalPsh portalPsh;
+    s_portalParticlePsh particlePsh;
     glm::vec2 scale;
 } s_portalRender;
 
