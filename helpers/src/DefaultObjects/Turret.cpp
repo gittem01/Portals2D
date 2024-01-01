@@ -129,12 +129,18 @@ void Turret::createRenderings()
 	ThinDrawer::object->bufferStage(coverVertices.data(), coverVertices.size() * sizeof(s_vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, coverVertexBuffer);
 
 	ThinDrawer::object->drawFuncs.push_back({ draw, this });
+
+	ALuint buffer = Sounder::object->loadSound("firee.wav");
+	soundBuffers.push_back(buffer);
 }
 
 void Turret::shoot()
 {
 	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer)
 	{
+		ALuint source = Sounder::object->playSound(soundBuffers[0], 0.2 + 0.2 * rand() / (float)RAND_MAX);
+		Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
+
 		lastShootTime = ThinDrawer::object->gameTime;
 		shootTimes[shootGundex] = ThinDrawer::object->gameTime;
 		shootGundex = (shootGundex + 1) % 2;

@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <ShaderBase.h>
 
-const float shootTimer = 0.08f;
+const float shootTimer = 0.04f;
 const float fullBackInTime = shootTimer;
 
 class Turret : public DefaultObject
@@ -21,8 +21,9 @@ public:
 	s_texture* gunTex;
 
 	s_buffers* coverVertexBuffer;
-
 	uint32_t bodyFixDataIndex;
+
+	std::vector<uint32_t> soundBuffers;
 
 	Turret(PortalWorld* portalWorld);
 
