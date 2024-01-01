@@ -1265,17 +1265,25 @@ s_renderGroup* ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std
         std::vector<s_vertex> finalVertices;
         if (fix->GetType() == b2Shape::e_circle)
         {
-            initialVertices.resize(4);
-            finalVertices.resize(6);
+            const int vertexCount = 32;
+            initialVertices.resize(vertexCount);
+            finalVertices.resize((vertexCount - 2) * 3);
 
             b2CircleShape* circShape = (b2CircleShape*)fix->GetShape();
             b2Vec2 centerPos = circShape->m_p;
-            float r = circShape->m_radius;
+            float r = circShape->m_radius * 1.01;
 
-            initialVertices[0].pos = glm::vec2(centerPos.x - r, centerPos.y - r);
-            initialVertices[1].pos = glm::vec2(centerPos.x - r, centerPos.y + r);
-            initialVertices[2].pos = glm::vec2(centerPos.x + r, centerPos.y + r);
-            initialVertices[3].pos = glm::vec2(centerPos.x + r, centerPos.y - r);
+            for (int j = 0; j < vertexCount; j++)
+            {
+				float angle = j * 2.0f * b2_pi / vertexCount;
+				initialVertices[j].pos = glm::vec2(centerPos.x + r * cos(angle), centerPos.y + r * sin(angle));
+			}
+
+            // render circles as squares
+            //initialVertices[0].pos = glm::vec2(centerPos.x - r, centerPos.y - r);
+            //initialVertices[1].pos = glm::vec2(centerPos.x - r, centerPos.y + r);
+            //initialVertices[2].pos = glm::vec2(centerPos.x + r, centerPos.y + r);
+            //initialVertices[3].pos = glm::vec2(centerPos.x + r, centerPos.y - r);
         }
         else if (fix->GetType() == b2Shape::e_polygon)
         {

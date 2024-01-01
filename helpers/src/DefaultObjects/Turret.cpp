@@ -52,8 +52,8 @@ void Turret::createBody()
 	b2Vec2 bodyPoints[8] =
 	{
 		b2Vec2(0.1, -0.27 * ySize),
-		b2Vec2(0.21, -0.02 * ySize),
-		b2Vec2(0.19, 0.22 * ySize),
+		b2Vec2(0.24, -0.05 * ySize),
+		b2Vec2(0.24, 0.22 * ySize),
 		b2Vec2(0.1, 0.37 * ySize),
 		b2Vec2(-0.195, 0.37 * ySize),
 		b2Vec2(-0.284, 0.22 * ySize),
@@ -61,9 +61,9 @@ void Turret::createBody()
 		b2Vec2(-0.194, -0.27 * ySize)
 	};
 
-	midY = -0.045;
-	b2Vec2 bottomCirclePos = b2Vec2(midY, -0.235 * ySize);
-	b2Vec2 topCirclePos = b2Vec2(midY, ySize - r - 0.1 - 0.5 * ySize);
+	midX = -0.045;
+	b2Vec2 bottomCirclePos = b2Vec2(midX, -0.235 * ySize);
+	b2Vec2 topCirclePos = b2Vec2(midX, ySize - r - 0.1 - 0.5 * ySize);
 
 	b2BodyDef bodyDef;
 	bodyDef.type = b2_dynamicBody;
@@ -131,6 +131,14 @@ void Turret::createRenderings()
 	ThinDrawer::object->drawFuncs.push_back({ draw, this });
 }
 
+void Turret::shoot()
+{
+	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer)
+	{
+		// fill later
+	}
+}
+
 glm::vec2 rotateArroundPoint(glm::vec2 c, glm::vec2 p, float angle)
 {
 	glm::vec2 v = p - c;
@@ -155,17 +163,18 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		drawer->bodyShader->pipelineLayout, 1, 1, &trt->coverTex->set, 0, VK_NULL_HANDLE);
 
-	float rightAmount = sin(drawer->gameTime * 3.0f) * 0.02f + 0.02f;
+	trt->openAmount = sin(drawer->gameTime * 3.0f) * 0.5f + 0.5f;
+	trt->rotation = sin(drawer->gameTime * 1.0f) * 0.5f;
+	trt->rotation *= trt->openAmount;
+	
 	for (auto pBody : *trt->pBody)
 	{
 		s_renderBodyPsh pshData;
-		pshData.movScale = glm::vec4(-0.035f + rightAmount, 0.115f, 0.32f * (1.0 + rightAmount * 3), 0.55f * (1.0 + rightAmount * 3));
 
-		rightAmount = 0.04;
-		float rotAmount = sin(drawer->gameTime) * 0.5;
-
+		float mirrMult = pBody->isMirrored ? -1.0f : 1.0f;
+		float effectiveRotation = trt->rotation * mirrMult;
 		pshData.numPortals;
-		pshData.posRot = glm::vec4(pBody->body->GetPosition().x, pBody->body->GetPosition().y, pBody->body->GetAngle() + rotAmount, pBody->isMirrored * -1.0f);
+		pshData.posRot = glm::vec4(pBody->body->GetPosition().x, pBody->body->GetPosition().y, pBody->body->GetAngle() + effectiveRotation, pBody->isMirrored * -1.0f);
 		bool renderDisabled = false;
 		fixtureData* fixData = (fixtureData*)pBody->fixtures[trt->bodyFixDataIndex]->GetUserData().pointer;
 		PBFixtureData* pbfData = (PBFixtureData*)fixData->data;
@@ -194,18 +203,18 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 		if (!renderDisabled)
 		{
-			glm::vec2 center = glm::vec2(-0.035f, 0.115f);
+			glm::vec2 center = glm::vec2((trt->midX + trt->openAmount * 0.05) * mirrMult, 0.115f);
 			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &trt->coverVertexBuffer->buffer, &offsets);
 
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				drawer->bodyShader->pipelineLayout, 1, 1, &trt->gunTex->set, 0, VK_NULL_HANDLE);
 
-			glm::vec2 newCenter = rotateArroundPoint(glm::vec2(0.0f, 0.0f), center, -rotAmount);;
+			glm::vec2 newCenter = rotateArroundPoint(glm::vec2(0.0f, 0.0f), center, -effectiveRotation);
 
-			pshData.movScale = glm::vec4(-0.15f - rightAmount, 0.24f, 0.275, 0.275 * 0.234);
+			pshData.movScale = glm::vec4((-0.05f - trt->openAmount * 0.125) * mirrMult, 0.24f, 0.275, 0.275 * 0.234);
 			glm::vec2 p = glm::vec2(pshData.movScale.x, pshData.movScale.y);
-			p = rotateArroundPoint(glm::vec2(0.0f, 0.0f), p, -rotAmount);
-			p = rotateArroundPoint(newCenter, p, rotAmount);
+			p = rotateArroundPoint(glm::vec2(0.0f, 0.0f), p, -effectiveRotation);
+			p = rotateArroundPoint(newCenter, p, effectiveRotation);
 			pshData.movScale.x = p.x; pshData.movScale.y = p.y;
 
 			vkCmdPushConstants(cmdBuff, drawer->bodyShader->pipelineLayout,
@@ -213,11 +222,11 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-			pshData.movScale.x = -0.15f - rightAmount;
+			pshData.movScale.x = (-0.05f - trt->openAmount * 0.125) * mirrMult;
 			pshData.movScale.y = 0.0f;
 			p = glm::vec2(pshData.movScale.x, pshData.movScale.y);
-			p = rotateArroundPoint(glm::vec2(0.0f, 0.0f), p, -rotAmount);
-			p = rotateArroundPoint(newCenter, p, rotAmount);
+			p = rotateArroundPoint(glm::vec2(0.0f, 0.0f), p, -effectiveRotation);
+			p = rotateArroundPoint(newCenter, p, effectiveRotation);
 			pshData.movScale.x = p.x; pshData.movScale.y = p.y;
 
 			vkCmdPushConstants(cmdBuff, drawer->bodyShader->pipelineLayout,
@@ -225,7 +234,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-			pshData.movScale = glm::vec4(newCenter.x, newCenter.y, 0.32f * (1.0 + rightAmount * 3), 0.55f * (1.0 + rightAmount * 3));
+			pshData.movScale = glm::vec4(newCenter.x, newCenter.y, 0.32f * (1.0 + trt->openAmount * 0.125), 0.55f * (1.0 + trt->openAmount * 0.125));
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				drawer->bodyShader->pipelineLayout, 1, 1, &trt->coverTex->set, 0, VK_NULL_HANDLE);
 
