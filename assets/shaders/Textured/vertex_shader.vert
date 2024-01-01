@@ -16,6 +16,7 @@ layout (set = 0, binding = 0) uniform SharedUboData
 layout (push_constant) uniform PC
 {
     vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
+	vec4 movScale; // xMov, yMov, xScale, yScale (movement and scaling before rotation)
 	vec4 portals[4];
 	int numPortals;
 } pc;
@@ -32,10 +33,12 @@ void main()
 	vec2 pos = inPos;
 	if (pc.posRot.w < 0)
 	{
-		pos.x *= -1.0;;
+		pos.x *= -1.0;
 	}
 
-	vec4 wp = vec4(rotMat * pos + pc.posRot.xy, 0.0, 1.0);
+	pos = rotMat * (pos * pc.movScale.zw + pc.movScale.xy);
+
+	vec4 wp = vec4(pos + pc.posRot.xy, 0.0, 1.0);
 	worldPosition = wp.xy;
 
 	gl_Position = sharedUboData.orthoMatrix * wp;

@@ -185,10 +185,10 @@ void PortalWorld::calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<
     for (;;)
     {
         float minAngle = b2_pi * 2.345763;
-        point addVertex;
+        point addVertex{};
         b2Vec2 addVec;
-        float addAngle;
-        glm::vec4 addRes;
+        float addAngle = 0.0f;
+        glm::vec4 addRes {};
         for (point p : allPoints)
         {
             if (startPoint.pos.x == p.pos.x && startPoint.pos.y == p.pos.y)

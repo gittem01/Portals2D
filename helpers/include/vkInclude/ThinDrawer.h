@@ -259,7 +259,7 @@ public:
     // mesh names are hold per fixture
     void addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames);
     void debug_addPortalBody(PortalBody* portalBody);
-    void addPortalBody(PortalBody* portalBody, std::vector<std::string> textures);
+    s_renderGroup* addPortalBody(PortalBody* portalBody, std::vector<std::string> textures);
     void releaseRenderResources();
     void eraseFromMaperFunctions(std::vector<std::pair<void (*) (void*), void*>>& vec, void* ptr);
     void eraseFromRenderFunctions(std::vector<std::pair<void (*) (VkCommandBuffer, void*), void*>>& vec, void* ptr);

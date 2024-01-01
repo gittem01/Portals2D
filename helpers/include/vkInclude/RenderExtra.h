@@ -103,7 +103,7 @@ typedef struct
     std::vector<s_buffers*> vertexBuffers;
     std::set<s_renderBody*> renderBodies;
 
-    int currentImgIndex;
+    uint32_t currentImgIndex = 0;
 } s_renderGroup;
 
 typedef struct PortalRender

@@ -483,13 +483,14 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
     {
         double animVal = upUpAnim * renderGroup->imageSets.size();
         vkCmdBindDescriptorSets(frames[lastSwapChainImageIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            bodyShader->pipelineLayout, 1, 1, renderGroup->imageSets[((int)animVal) % renderGroup->imageSets.size()], 0, VK_NULL_HANDLE);
+            bodyShader->pipelineLayout, 1, 1, renderGroup->imageSets[renderGroup->currentImgIndex % renderGroup->imageSets.size()], 0, VK_NULL_HANDLE);
         for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
             int i = 0;
             for (PBFixtureData* pFixData : renderBody->renderFixtures)
             {
                 s_renderBodyPsh pshConst;
+                pshConst.movScale = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
                 pshConst.posRot = glm::vec4(renderBody->portalBody->body->GetPosition().x, renderBody->portalBody->body->GetPosition().y,
                     renderBody->portalBody->body->GetAngle(), renderBody->portalBody->isMirrored * -1);
 
@@ -1151,7 +1152,7 @@ void ThinDrawer::portalBodyDestroyCallback_3d(PortalBody* portalBody, void* data
     }
 }
 
-void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> textures)
+s_renderGroup* ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> textures)
 {
     s_renderGroup* renderGroup = new s_renderGroup;
     renderGroups.push_back(renderGroup);
@@ -1162,8 +1163,8 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
         {
             try
             {
-                IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-                renderGroup->imageSets.push_back(&(IOHelper::textureMap[textures[i]]->set));
+                s_texture* tex = IOHelper::loadTexture(textures[i], VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+                renderGroup->imageSets.push_back(&tex->set);
             }
             catch (const std::exception& ex)
             {
@@ -1320,6 +1321,8 @@ void ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std::string> 
 
     portalBody->worldIndex->createCallbacks.push_back(std::make_pair(portalBodyCreateCallback, (void*)renderGroup));
     portalBody->worldIndex->destroyCallbacks.push_back(std::make_pair(portalBodyDestroyCallback, (void*)renderGroup));
+
+    return renderGroup;
 }
 
 void ThinDrawer::debug_addPortalBody(PortalBody* portalBody)

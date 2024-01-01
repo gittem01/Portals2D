@@ -4,6 +4,7 @@
 #include <DefaultObjects/LaserCube.h>
 #include <DefaultObjects/Sphere.h>
 #include <DefaultObjects/Cyber.h>
+#include <DefaultObjects/Turret.h>
 #include <Leveler.h>
 
 enum ReachableType

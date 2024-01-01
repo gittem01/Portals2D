@@ -10,6 +10,7 @@ layout(set = 1, binding = 0) uniform sampler2D tex;
 layout (push_constant) uniform PC
 {
     vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
+	vec4 movScale; // xMov, yMov, xScale, yScale (movement and scaling before rotation)
 	vec4 portals[4];
 	int numPortals;
 } pc;

@@ -570,7 +570,13 @@ void LevelerTestCase::createDynamics()
             sp->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
         }
         break;
-        
+        case TURRET:
+        {
+            Turret* tr = new Turret(g->pWorld);
+            tr->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+        }
+        break;
+
         default:
             break;
         }
