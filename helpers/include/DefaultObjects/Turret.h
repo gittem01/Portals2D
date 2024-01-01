@@ -4,7 +4,8 @@
 #include <vulkan/vulkan.h>
 #include <ShaderBase.h>
 
-const float shootTimer = 0.2f;
+const float shootTimer = 0.08f;
+const float fullBackInTime = shootTimer;
 
 class Turret : public DefaultObject
 {
@@ -12,6 +13,7 @@ public:
 	float midX;
 	uint32_t shootGundex = 0;
 	double lastShootTime = -10.0;
+	double shootTimes[2] = { -10.0, -10.0 };
 	float gunBacks[2] = { 0.0f, 0.0f };
 	float openAmount = 0.0f;
 	float rotation = 0.0f;

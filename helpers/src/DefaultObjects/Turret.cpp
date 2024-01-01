@@ -135,7 +135,9 @@ void Turret::shoot()
 {
 	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer)
 	{
-		// fill later
+		lastShootTime = ThinDrawer::object->gameTime;
+		shootTimes[shootGundex] = ThinDrawer::object->gameTime;
+		shootGundex = (shootGundex + 1) % 2;
 	}
 }
 
@@ -154,6 +156,24 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 	VkDeviceSize offsets = 0;
 
+	trt->shoot();
+	for (int i = 0; i < 2; i++)
+	{
+		double td = ThinDrawer::object->gameTime - trt->shootTimes[i];
+		if (td < fullBackInTime)
+		{
+			trt->gunBacks[i] = sqrt((0.5 - 1.0 / (exp(td * 30.0) + 1.0)) * 2.0);
+		}
+		else if (td < fullBackInTime * 2.0)
+		{
+			trt->gunBacks[i] = 1.0 - (td - fullBackInTime) / fullBackInTime;
+		}
+		else
+		{
+			trt->gunBacks[i] = 0.0f;
+		}
+	}
+
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, drawer->bodyShader->pipeline);
 
 	const uint32_t camOffset = ShaderBase::alignedSharedSize * drawer->lastSwapChainImageIndex;
@@ -164,9 +184,10 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		drawer->bodyShader->pipelineLayout, 1, 1, &trt->coverTex->set, 0, VK_NULL_HANDLE);
 
 	trt->openAmount = sin(drawer->gameTime * 3.0f) * 0.5f + 0.5f;
+	trt->openAmount = 1.0f;
 	trt->rotation = sin(drawer->gameTime * 1.0f) * 0.5f;
 	trt->rotation *= trt->openAmount;
-	
+
 	for (auto pBody : *trt->pBody)
 	{
 		s_renderBodyPsh pshData;
@@ -211,7 +232,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 			glm::vec2 newCenter = rotateArroundPoint(glm::vec2(0.0f, 0.0f), center, -effectiveRotation);
 
-			pshData.movScale = glm::vec4((-0.05f - trt->openAmount * 0.125) * mirrMult, 0.24f, 0.275, 0.275 * 0.234);
+			pshData.movScale = glm::vec4((-0.05f - trt->openAmount * 0.125 + trt->gunBacks[0] * 0.1 * trt->openAmount) * mirrMult, 0.24f, 0.275, 0.275 * 0.234);
 			glm::vec2 p = glm::vec2(pshData.movScale.x, pshData.movScale.y);
 			p = rotateArroundPoint(glm::vec2(0.0f, 0.0f), p, -effectiveRotation);
 			p = rotateArroundPoint(newCenter, p, effectiveRotation);
@@ -222,7 +243,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-			pshData.movScale.x = (-0.05f - trt->openAmount * 0.125) * mirrMult;
+			pshData.movScale.x = (-0.05f - trt->openAmount * 0.125 + trt->gunBacks[1] * 0.1 * trt->openAmount) * mirrMult;
 			pshData.movScale.y = 0.0f;
 			p = glm::vec2(pshData.movScale.x, pshData.movScale.y);
 			p = rotateArroundPoint(glm::vec2(0.0f, 0.0f), p, -effectiveRotation);
