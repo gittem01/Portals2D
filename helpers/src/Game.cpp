@@ -3,6 +3,7 @@
 #include <Sounder.h>
 #include <Leveler.h>
 #include <Overlayer.h>
+#include <DefaultObjects/Turret.h>
 
 Game* Game::object;
 
@@ -73,6 +74,8 @@ void Game::LevelerState()
 
 void Game::TestState()
 {
+    Turret::staticInit();
+
     if (!leveler)
     {
         testCase = newTest(this, 8);
@@ -98,6 +101,7 @@ void Game::TestState()
             lastTime = glfwGetTime();
 
             testCase->onUpdate();
+            Turret::update();
         }
         else
         {

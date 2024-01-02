@@ -151,8 +151,9 @@ void ThinDrawer::renderLoop()
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &currentFrame.renderSemaphore;
 
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &frames[lastSwapChainImageIndex].commandBuffer;
+    VkCommandBuffer cmdBuffers[] = { frames[lastSwapChainImageIndex].commandBuffer };
+    submit.commandBufferCount = std::size(cmdBuffers);
+    submit.pCommandBuffers = cmdBuffers;
 
     CHECK_RESULT_VK(vkQueueSubmit(queues.graphicsQueue, 1, &submit, currentFrame.renderFence));
     VkPresentInfoKHR presentInfo = { };
@@ -173,6 +174,63 @@ void ThinDrawer::renderLoop()
     }
 
     frameNumber++;
+}
+
+void ThinDrawer::buildCommandBuffers()
+{
+    double t0 = glfwGetTime();
+    VkCommandBuffer cmdBuff = frames[lastSwapChainImageIndex].commandBuffer;
+
+    renderCommandBeginner(cmdBuff);
+
+    VkDeviceSize offsets = 0;
+
+    for (auto& f : earlyDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
+
+    renderWalls(cmdBuff);
+
+    renderPortalBodies(cmdBuff);
+
+    for (auto& f : drawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
+
+    renderPortals(cmdBuff);
+
+    if (pWorld)
+    {
+        if (drawDebugBodies)
+        {
+            debug_renderPortalBodies(cmdBuff);
+        }
+        if (drawDebugEdges)
+        {
+            debug_renderEdges(cmdBuff);
+        }
+        if (drawDebugPortals)
+        {
+            debug_renderPortals(cmdBuff);
+        }
+    }
+
+    for (auto& f : lateDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
+
+    if (drawData)
+    {
+        ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
+    }
+
+    vkCmdEndRenderPass(cmdBuff);
+    CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
+
+    //printf("%f\n", glfwGetTime() - t0);
 }
 
 void ThinDrawer::preparePipelines()
@@ -207,13 +265,7 @@ void ThinDrawer::renderCommandBeginner(VkCommandBuffer& cmdBuff)
 {
     VkCommandBufferBeginInfo cmdBufInfo = vkinit::commandBufferBeginInfo();
 
-    VkClearValue clearValue;
-    clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-    VkClearValue clearValues[] = { clearValue };
-
-    VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, clearValues);
-    renderPassBeginInfo.clearValueCount = std::size(clearValues);
+    VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, nullptr);
 
     renderPassBeginInfo.framebuffer = swapChain->frameBuffers[lastSwapChainImageIndex];
 
@@ -708,63 +760,6 @@ void ThinDrawer::beforeCreate()
 {
     pWorld->portalCreateCallbacks.push_back(portalCreateCallback);
     pWorld->portalDestroyCallbacks.push_back(portalDestroyCallback);
-}
-
-void ThinDrawer::buildCommandBuffers()
-{
-    double t0 = glfwGetTime();
-    VkCommandBuffer cmdBuff = frames[lastSwapChainImageIndex].commandBuffer;
-
-    renderCommandBeginner(cmdBuff);
-
-    VkDeviceSize offsets = 0;
-
-    for (auto& f : earlyDrawFuncs)
-    {
-        f.first(cmdBuff, f.second);
-    }
-
-    renderWalls(cmdBuff);
-
-    renderPortalBodies(cmdBuff);
-
-    for (auto& f : drawFuncs)
-    {
-        f.first(cmdBuff, f.second);
-    }
-
-    renderPortals(cmdBuff);
-
-    if (pWorld)
-    {
-        if (drawDebugBodies)
-        {
-            debug_renderPortalBodies(cmdBuff);
-        }
-        if (drawDebugEdges)
-        {
-            debug_renderEdges(cmdBuff);
-        }
-        if (drawDebugPortals)
-        {
-            debug_renderPortals(cmdBuff);
-        }
-    }
-
-    for (auto& f : lateDrawFuncs)
-    {
-        f.first(cmdBuff, f.second);
-    }
-
-    if (drawData)
-    {
-        ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
-    }
-
-    vkCmdEndRenderPass(cmdBuff);
-    CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
-
-    //printf("%f\n", glfwGetTime() - t0);
 }
 
 void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
