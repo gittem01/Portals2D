@@ -151,7 +151,7 @@ glm::vec2 rotateArroundPoint(glm::vec2 c, glm::vec2 p, float angle)
 
 void Turret::shoot()
 {
-	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer)
+	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer && openAmount > 0.999f)
 	{
 		ALuint source = Sounder::object->playSound(soundBuffers[0], 0.2 + 0.1 * rand() / (float)RAND_MAX);
 		Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
@@ -230,10 +230,10 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 	for (auto pBody : *trt->pBody)
 	{
 		s_renderBodyPsh pshData;
+		pshData.data.y = -20.0f;
 
 		float mirrMult = pBody->isMirrored ? -1.0f : 1.0f;
 		float effectiveRotation = trt->rotation * mirrMult;
-		pshData.numPortals;
 		pshData.posRot = glm::vec4(pBody->body->GetPosition().x, pBody->body->GetPosition().y, pBody->body->GetAngle() + effectiveRotation, pBody->isMirrored * -1.0f);
 		bool renderDisabled = false;
 		fixtureData* fixData = (fixtureData*)pBody->fixtures[trt->bodyFixDataIndex]->GetUserData().pointer;
@@ -254,11 +254,11 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 					pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
 			}
 
-			pshData.numPortals = pbfData->pCollisions.size();
+			pshData.data.x = (float)pbfData->pCollisions.size();
 		}
 		else
 		{
-			pshData.numPortals = 0;
+			pshData.data.x = 0.0f;
 		}
 
 		if (!renderDisabled)

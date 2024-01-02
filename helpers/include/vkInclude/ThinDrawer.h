@@ -112,6 +112,8 @@ public:
     bool drawDebugEdges = false;
     bool drawDebugPortals = false;
 
+    glm::vec4 adjustableValues = { 0.0f, 0.0f, 0.0f, 0.0f };
+
     void initImgui();
     ImDrawData* drawData = nullptr;
     // Base var start

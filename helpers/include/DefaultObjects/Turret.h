@@ -5,7 +5,7 @@
 #include <ShaderBase.h>
 #include <LaserShader.h>
 
-const float shootTimer = 0.06f;
+const float shootTimer = 0.07f;
 const float fullBackInTime = shootTimer;
 
 class Turret : public DefaultObject
@@ -35,6 +35,8 @@ public:
 	void shoot();
 	void createBody();
 	void createRenderings();
+
+	void deploy();
 
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 };

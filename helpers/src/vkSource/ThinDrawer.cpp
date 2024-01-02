@@ -488,13 +488,14 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
         for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
             int i = 0;
+            s_renderBodyPsh pshConst;
+            pshConst.posRot = glm::vec4(renderBody->portalBody->body->GetPosition().x, renderBody->portalBody->body->GetPosition().y,
+                renderBody->portalBody->body->GetAngle(), renderBody->portalBody->isMirrored * -1);
+            pshConst.movScale = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+            pshConst.data.y = gameTime - adjustableValues.x;
+
             for (PBFixtureData* pFixData : renderBody->renderFixtures)
             {
-                s_renderBodyPsh pshConst;
-                pshConst.movScale = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-                pshConst.posRot = glm::vec4(renderBody->portalBody->body->GetPosition().x, renderBody->portalBody->body->GetPosition().y,
-                    renderBody->portalBody->body->GetAngle(), renderBody->portalBody->isMirrored * -1);
-
                 bool renderDisabled = false;
                 if (pFixData->pCollisions.size() > 0)
                 {
@@ -511,11 +512,11 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
                             pc->portal->points[pc->side ^ 1].x, pc->portal->points[pc->side ^ 1].y,
                             pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
                     }
-                    pshConst.numPortals = pFixData->pCollisions.size();
+                    pshConst.data.x = pFixData->pCollisions.size();
                 }
                 else
                 {
-                    pshConst.numPortals = 0;
+                    pshConst.data.x = 0;
                 }
 
                 if (!renderDisabled)

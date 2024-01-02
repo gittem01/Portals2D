@@ -109,6 +109,11 @@ void BaseTestCase::imguiRender()
     {
         g->mjh->createMouseBody();
     }
+    
+    ImGui::SliderFloat("V0", &ThinDrawer::object->adjustableValues.x, 0.0f, 1.0f, "%.2f", 1);
+    ImGui::SliderFloat("V1", &ThinDrawer::object->adjustableValues.y, 0.0f, 1.0f, "%.2f", 1);
+    ImGui::SliderFloat("V2", &ThinDrawer::object->adjustableValues.z, 0.0f, 1.0f, "%.2f", 1);
+    ImGui::SliderFloat("V3", &ThinDrawer::object->adjustableValues.w, 0.0f, 1.0f, "%.2f", 1);
 
     ImGui::End();
 

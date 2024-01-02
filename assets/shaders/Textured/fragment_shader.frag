@@ -7,13 +7,39 @@ layout (location = 1) in vec2 worldPosition;
 
 layout(set = 1, binding = 0) uniform sampler2D tex;
 
+layout (set = 0, binding = 0) uniform SharedUboData
+{
+    mat4 cameraMatrix;
+    vec4 cameraPos;
+    vec4 data;
+} sharedUboData;
+
 layout (push_constant) uniform PC
 {
     vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
 	vec4 movScale; // xMov, yMov, xScale, yScale (movement and scaling before rotation)
 	vec4 portals[4];
-	int numPortals;
+	vec4 data; // numPortals, destroyTime, unused, unused
 } pc;
+
+float hash(vec2 p)
+{
+    p  = 50.0 * fract(p * 0.3183099 + vec2(0.71, 0.113));
+    return -1.0 + 2.0 * fract(p.x * p.y * (p.x + p.y));
+}
+
+float noise( in vec2 p )
+{
+    ivec2 i = ivec2(floor( p ));
+    vec2 f = fract( p );
+	
+    vec2 u = f*f*(3.0-2.0*f);
+
+    return mix( mix( hash( i + ivec2(0,0) ), 
+                     hash( i + ivec2(1,0) ), u.x),
+                mix( hash( i + ivec2(0,1) ), 
+                     hash( i + ivec2(1,1) ), u.x), u.y);
+}
 
 float lineRel(vec2 a, vec2 b, vec2 c)
 {
@@ -22,7 +48,7 @@ float lineRel(vec2 a, vec2 b, vec2 c)
 
 void main()
 {
-	for (int i = 0; i < pc.numPortals; i++)
+	for (int i = 0; i < int(round(pc.data.x)); i++)
 	{
 		if (lineRel(pc.portals[i].xy, pc.portals[i].zw, worldPosition) > 0)
 		{
@@ -30,6 +56,30 @@ void main()
 			return;
 		}
 	}
+	
+	float f = 1.0f;
+    float blackAmount = 0.0;
+	if (pc.data.y > -10.0f)
+	{
+        float iTime = sharedUboData.data.y - pc.data.y;
+        vec2 uv = worldPosition;
+        uv *= 10.0f;
+		mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+        f  = 0.5000 * noise(uv + iTime); uv = m * uv;
+        f += 0.2500 * noise(uv + iTime * 1.5); uv = m * uv;
+        f += 0.1250 * noise(uv - iTime * 4.0); uv = m * uv;
+        f += 0.0625 * noise(uv + iTime * 3.0); uv = m * uv;
 
-	outFragColor = texture(tex, texCoord);
+        f += 1.0;
+        f -= iTime * 2;
+        f *= 20.0;
+        f = min(f, 1.0);
+
+        blackAmount = pow(iTime, 0.5);
+	}
+    
+    vec4 clr = texture(tex, texCoord);
+    clr.rgb *= 1.0 - blackAmount;
+
+	outFragColor = clr * f;
 }
