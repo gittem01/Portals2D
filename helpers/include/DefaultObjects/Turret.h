@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <ShaderBase.h>
 
-const float shootTimer = 0.04f;
+const float shootTimer = 0.06f;
 const float fullBackInTime = shootTimer;
 
 class Turret : public DefaultObject
@@ -17,8 +17,10 @@ public:
 	float gunBacks[2] = { 0.0f, 0.0f };
 	float openAmount = 0.0f;
 	float rotation = 0.0f;
+
 	s_texture* coverTex;
 	s_texture* gunTex;
+	s_texture* glowTex;
 
 	s_buffers* coverVertexBuffer;
 	uint32_t bodyFixDataIndex;

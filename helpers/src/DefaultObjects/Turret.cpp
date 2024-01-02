@@ -102,6 +102,12 @@ void Turret::createBody()
 	PortalBody* portalBody = pWorld->createPortalBody(body);
 	pBody = &portalBody->worldIndex->pbIndices;
 
+	bodyData* bData = (bodyData*)body->GetUserData().pointer;
+	g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+	physicsData->type = (g_DataType)(DEFAULT_OBJECT_O | TURRET_O);
+	physicsData->data = this;
+	bData->extraData = physicsData;
+
 	bodyFixDataIndex = 2;
 
 	ThinDrawer::object->addPortalBody(portalBody, { "turretBody.png" });
@@ -112,6 +118,7 @@ void Turret::createRenderings()
 {
 	coverTex = IOHelper::loadTexture("turretCover.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	gunTex = IOHelper::loadTexture("turretGun.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+	glowTex = IOHelper::loadTexture("glow.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
 	std::vector<s_vertex> coverVertices = 
 	{
@@ -138,7 +145,7 @@ void Turret::shoot()
 {
 	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer)
 	{
-		ALuint source = Sounder::object->playSound(soundBuffers[0], 0.2 + 0.2 * rand() / (float)RAND_MAX);
+		ALuint source = Sounder::object->playSound(soundBuffers[0], 0.2 + 0.1 * rand() / (float)RAND_MAX);
 		Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
 
 		lastShootTime = ThinDrawer::object->gameTime;
@@ -190,7 +197,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		drawer->bodyShader->pipelineLayout, 1, 1, &trt->coverTex->set, 0, VK_NULL_HANDLE);
 
 	trt->openAmount = sin(drawer->gameTime * 3.0f) * 0.5f + 0.5f;
-	trt->openAmount = 1.0f;
+	//trt->openAmount = 1.0f;
 	trt->rotation = sin(drawer->gameTime * 1.0f) * 0.5f;
 	trt->rotation *= trt->openAmount;
 
@@ -269,6 +276,18 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &pshData);
 
 			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+			float timeMult = sin(drawer->gameTime * 3.0f) * 0.1f + 0.1f + 1.0f;
+			pshData.posRot.z = pBody->body->GetAngle();
+			pshData.movScale = glm::vec4(-0.23f * mirrMult, 0.11f, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult);
+
+			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				drawer->bodyShader->pipelineLayout, 1, 1, &trt->glowTex->set, 0, VK_NULL_HANDLE);
+
+			vkCmdPushConstants(cmdBuff, drawer->bodyShader->pipelineLayout,
+				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &pshData);
+
+			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 		}
-	}
+	}	
 }

@@ -29,9 +29,10 @@ typedef enum GameDataType
     DEFAULT_CUBE_O = 0x1 << 1,
     LASER_CUBE_O = 0x1 << 2,
     SPHERE_CUBE_O = 0x1 << 3,
+    TURRET_O = 0x1 << 4,
 } g_DataType;
 
-#define PICKABLES (DEFAULT_CUBE_O | LASER_CUBE_O | SPHERE_CUBE_O)
+#define PICKABLES (DEFAULT_CUBE_O | LASER_CUBE_O | SPHERE_CUBE_O | TURRET_O)
 
 enum FixtureDataType
 {

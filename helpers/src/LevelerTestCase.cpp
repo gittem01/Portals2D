@@ -574,6 +574,7 @@ void LevelerTestCase::createDynamics()
         {
             Turret* tr = new Turret(g->pWorld);
             tr->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.85f), 0.0);
+            tr->pBody->at(0)->isMirrored = objectData->mirrored;
         }
         break;
 
