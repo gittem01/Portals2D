@@ -141,6 +141,14 @@ void Turret::createRenderings()
 	soundBuffers.push_back(buffer);
 }
 
+glm::vec2 rotateArroundPoint(glm::vec2 c, glm::vec2 p, float angle)
+{
+	glm::vec2 v = p - c;
+	float s = sin(angle);
+	float c2 = cos(angle);
+	return glm::vec2(c.x + v.x * c2 - v.y * s, c.y + v.x * s + v.y * c2);
+}
+
 void Turret::shoot()
 {
 	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer)
@@ -150,16 +158,32 @@ void Turret::shoot()
 
 		lastShootTime = ThinDrawer::object->gameTime;
 		shootTimes[shootGundex] = ThinDrawer::object->gameTime;
+		
+
+		float mirrMult = pBody->at(0)->isMirrored ? -1.0f : 1.0f;
+		float effectiveRotation = rotation * mirrMult;
+		glm::vec2 center = glm::vec2((midX + openAmount * 0.05) * mirrMult, 0.115f);
+
+		b2Vec2 bPos = b2Vec2(-0.31 * mirrMult, 0.24 - shootGundex * 0.24);
+		
+		glm::vec2 res = rotateArroundPoint(center, *(glm::vec2*)&bPos, effectiveRotation);
+		b2Vec2 fwdMov = b2Vec2(bPos.x - 100.0f * mirrMult, bPos.y);
+		bPos = b2Vec2(res.x, res.y);
+		res = rotateArroundPoint(glm::vec2(0.0f, 0.0f), *(glm::vec2*)&fwdMov, effectiveRotation + 0.2f * rand() / (float)RAND_MAX - 0.1f);
+		fwdMov = b2Vec2(res.x, res.y);
+
+		bPos = pBody->at(0)->body->GetWorldPoint(bPos);
+		fwdMov = pBody->at(0)->body->GetWorldPoint(fwdMov);
+
+		s_laserUbo laserData;
+		laserData.colour = glm::vec4(0.7f, 0.5f, 0.0f, 1.0f);
+		laserData.points = glm::vec4(bPos.x, bPos.y, fwdMov.x, fwdMov.y);
+		laserData.data = glm::vec4(0.25f, 1.5f, 1.0f, ThinDrawer::object->gameTime);
+
+		renderLaserDatas.push_back({ laserData, shootGundex });
+
 		shootGundex = (shootGundex + 1) % 2;
 	}
-}
-
-glm::vec2 rotateArroundPoint(glm::vec2 c, glm::vec2 p, float angle)
-{
-	glm::vec2 v = p - c;
-	float s = sin(angle);
-	float c2 = cos(angle);
-	return glm::vec2(c.x + v.x * c2 - v.y * s, c.y + v.x * s + v.y * c2);
 }
 
 void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
@@ -196,8 +220,10 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		drawer->bodyShader->pipelineLayout, 1, 1, &trt->coverTex->set, 0, VK_NULL_HANDLE);
 
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &trt->coverVertexBuffer->buffer, &offsets);
+
 	trt->openAmount = sin(drawer->gameTime * 3.0f) * 0.5f + 0.5f;
-	//trt->openAmount = 1.0f;
+	trt->openAmount = 1.0f;
 	trt->rotation = sin(drawer->gameTime * 1.0f) * 0.5f;
 	trt->rotation *= trt->openAmount;
 
@@ -238,12 +264,10 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		if (!renderDisabled)
 		{
 			glm::vec2 center = glm::vec2((trt->midX + trt->openAmount * 0.05) * mirrMult, 0.115f);
-			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &trt->coverVertexBuffer->buffer, &offsets);
+			glm::vec2 newCenter = rotateArroundPoint(glm::vec2(0.0f, 0.0f), center, -effectiveRotation);
 
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				drawer->bodyShader->pipelineLayout, 1, 1, &trt->gunTex->set, 0, VK_NULL_HANDLE);
-
-			glm::vec2 newCenter = rotateArroundPoint(glm::vec2(0.0f, 0.0f), center, -effectiveRotation);
 
 			pshData.movScale = glm::vec4((-0.05f - trt->openAmount * 0.125 + trt->gunBacks[0] * 0.1 * trt->openAmount) * mirrMult, 0.24f, 0.275, 0.275 * 0.234);
 			glm::vec2 p = glm::vec2(pshData.movScale.x, pshData.movScale.y);
@@ -289,5 +313,57 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 		}
-	}	
+	}
+
+	float mirrMult = trt->pBody->at(0)->isMirrored ? -1.0f : 1.0f;
+	float effectiveRotation = trt->rotation * mirrMult;
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, drawer->laserPshShader->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		drawer->laserPshShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &drawer->playerShader->buffers[0]->buffer, &offsets);
+
+	b2Vec2 bPos = b2Vec2(mirrMult * -0.23f, 0.11f);
+	b2Vec2 fwdMov = b2Vec2(bPos.x - 100.0f * mirrMult, bPos.y);
+	glm::vec2 res = rotateArroundPoint(glm::vec2(0.0f, 0.0f), *(glm::vec2*)&fwdMov, effectiveRotation);
+	fwdMov = b2Vec2(res.x, res.y);
+
+	bPos = trt->pBody->at(0)->body->GetWorldPoint(bPos);
+	fwdMov = trt->pBody->at(0)->body->GetWorldPoint(fwdMov);
+
+	s_laserUbo laserData;
+	laserData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	laserData.points = glm::vec4(bPos.x, bPos.y, fwdMov.x, fwdMov.y);
+	laserData.data = glm::vec4(0.2f, 1.5f, 0.5f, 0.0f);
+	vkCmdPushConstants(cmdBuff, drawer->laserPshShader->pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
+
+	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+	for (auto& laserData : trt->renderLaserDatas)
+	{
+		float dt = ThinDrawer::object->gameTime - laserData.first.data.w;
+		if (dt < 0.5f)
+		{
+			glm::vec2 center = glm::vec2((trt->midX + trt->openAmount * 0.05) * mirrMult, 0.115f);
+
+			b2Vec2 bPos = b2Vec2(-0.31 * mirrMult, 0.24 - laserData.second * 0.24);
+
+			glm::vec2 res = rotateArroundPoint(center, *(glm::vec2*)&bPos, effectiveRotation);
+			bPos = b2Vec2(res.x, res.y);
+
+			bPos = trt->pBody->at(0)->body->GetWorldPoint(bPos);
+			laserData.first.points.x = bPos.x;
+			laserData.first.points.y = bPos.y;
+
+			laserData.first.data.z = 1.0f - sin(dt * b2_pi * 1.0f);
+
+			vkCmdPushConstants(cmdBuff, drawer->laserPshShader->pipelineLayout,
+				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
+
+			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+		}
+	}
 }

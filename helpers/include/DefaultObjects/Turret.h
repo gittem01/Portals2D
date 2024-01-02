@@ -3,6 +3,7 @@
 #include <DefaultObject.h>
 #include <vulkan/vulkan.h>
 #include <ShaderBase.h>
+#include <LaserShader.h>
 
 const float shootTimer = 0.06f;
 const float fullBackInTime = shootTimer;
@@ -26,6 +27,8 @@ public:
 	uint32_t bodyFixDataIndex;
 
 	std::vector<uint32_t> soundBuffers;
+
+	std::vector<std::pair<s_laserUbo, uint32_t>> renderLaserDatas;
 
 	Turret(PortalWorld* portalWorld);
 
