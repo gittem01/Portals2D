@@ -23,7 +23,8 @@ public:
 	virtual bool ReportFixture(b2Fixture* fixture);
 };
 
-class Portal{
+class Portal
+{
 
 friend class PortalWorld;
 friend class PortalBody;

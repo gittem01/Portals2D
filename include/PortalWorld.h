@@ -154,6 +154,11 @@ public:
     std::vector<void (*) (Portal*)> portalDestroyCallbacks;
 
     static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
+    //world and local
+    static b2Vec2 getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect);
+    static b2Vec2 getRelativePortalPositionReverse_W(b2Vec2 point, portalConnection* pConnect);
+    static b2Vec2 getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect);
+    static b2Vec2 getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect);
 
 private:
     PortalRay* rayHandler;
@@ -174,12 +179,6 @@ private:
     static float calcAngle2(b2Vec2 vec);
     static void normalize(b2Vec2* vec);
     static b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
-
-    //world and local
-    static b2Vec2 getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect);
-    static b2Vec2 getRelativePortalPositionReverse_W(b2Vec2 point, portalConnection* pConnect);
-    static b2Vec2 getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect);
-    static b2Vec2 getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect);
 
     static glm::vec4 tangenter(point p1, point p2, float mult);
     static void calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<point>& outerVertices, std::vector<glm::vec4>& outerEdges, std::vector<float>& angles);

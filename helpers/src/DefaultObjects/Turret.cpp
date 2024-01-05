@@ -2,6 +2,7 @@
 #include <ThinDrawer.h>
 #include <Portal.h>
 #include <Game.h>
+#include <BaseTestCase.h>
 
 std::set<Turret*> Turret::turrets;
 s_texture* Turret::coverTex;
@@ -235,11 +236,6 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &trt->coverVertexBuffer->buffer, &offsets);
 
-		/*trt->openAmount = sin(drawer->gameTime * 3.0f) * 0.5f + 0.5f;
-		trt->openAmount = 1.0f;
-		trt->rotation = sin(drawer->gameTime * 1.0f) * 0.5f;
-		trt->rotation *= trt->openAmount;*/
-
 		for (auto pBody : *trt->pBody)
 		{
 			s_renderBodyPsh pshData;
@@ -394,8 +390,6 @@ void Turret::update()
 {
 	for (auto trt : turrets)
 	{
-		//
-
 		if (ThinDrawer::object->wh->keyData[GLFW_KEY_W] == 2)
 		{
 			trt->status = true;
@@ -430,6 +424,32 @@ void Turret::update()
 		{
 			trt->openAmount -= 0.01f;
 			trt->openAmount = std::max(trt->openAmount, 0.0f);
+		}
+
+		for (PortalBody* pb : *Game::object->testCase->tp->pBody)
+		{
+			float mirrMult = pb->isMirrored ? -1.0f : 1.0f;
+			b2Body* body = pb->body;
+			b2Vec2 pos = body->GetPosition();
+			b2Vec2 upVec = b2Vec2(-sin(body->GetAngle()), cos(body->GetAngle()));
+			pos += 0.7f * sin(Game::object->gameTime * 50.0f) * upVec;
+
+			b2Vec2 eyePos = b2Vec2(-0.23f * mirrMult, 0.11f);
+			eyePos = trt->pBody->at(0)->body->GetWorldPoint(eyePos);
+
+			ThinDrawer::object->registerDebugLine(glm::vec4(eyePos.x, eyePos.y, pos.x, pos.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+
+			for (Portal* p : Game::object->pWorld->portals)
+			{
+				if (p->connections->size() == 0)
+				{
+					continue;
+				}
+
+				b2Vec2 pos2 = PortalWorld::getRelativePortalPosition_W(pos, p->connections->at(0));
+
+				ThinDrawer::object->registerDebugLine(glm::vec4(eyePos.x, eyePos.y, pos2.x, pos2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+			}
 		}
 	}
 }
