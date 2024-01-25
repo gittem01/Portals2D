@@ -60,6 +60,8 @@ public:
     bool isParallel(b2Vec2 p1, b2Vec2 p2);
     void setLinVel(b2Vec2 speed);
     b2Vec2 getLinVel();
+    int getPointSide(b2Vec2 point);
+    int getPointSideVertical(b2Vec2 point);
 
     void setAngVel(float angVel);
     float getAngVel();
@@ -86,8 +88,6 @@ private:
 
     b2Fixture* getPreDestructionFixture();
 
-    int getPointSide(b2Vec2 point);
-    int getPointSideVertical(b2Vec2 point);
     int getFixtureSide(b2Fixture* fix);
 
     // fix1 is always a fixture of the portal

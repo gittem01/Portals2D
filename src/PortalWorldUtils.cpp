@@ -314,7 +314,7 @@ void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* f
     for (int i = 0; i < rayResult.size(); i++)
     {
         rayData res = rayResult[i];
-        ThinDrawer::object->registerDebugLine(glm::vec4(res.startPos.x, res.startPos.y, res.endPos.x, res.endPos.y), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f, 0.5f);
+        //ThinDrawer::object->registerDebugLine(glm::vec4(res.startPos.x, res.startPos.y, res.endPos.x, res.endPos.y), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f, 0.5f);
     }
 }
 

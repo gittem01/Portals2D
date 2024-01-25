@@ -10,6 +10,12 @@ const float rotationLimit = 0.5f;
 const float fullBackInTime = shootTimer;
 const uint32_t numLasers = 16;
 
+typedef struct centerLaser
+{
+	b2Vec2 from;
+	b2Vec2 to;
+} centerLaser;
+
 class Turret : public DefaultObject
 {
 public:
@@ -20,6 +26,8 @@ public:
 	static s_buffers* coverVertexBuffer;
 	static std::vector<uint32_t> soundBuffers;
 
+	PortalBody* eyeBody;
+	std::vector<centerLaser> laserPoints;
 	float midX;
 	uint32_t shootGundex = 0;
 	double lastShootTime = -10.0;

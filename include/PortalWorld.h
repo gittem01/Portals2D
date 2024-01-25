@@ -153,6 +153,8 @@ public:
     std::vector<void (*) (Portal*)> portalCreateCallbacks;
     std::vector<void (*) (Portal*)> portalDestroyCallbacks;
 
+    PortalRay* rayHandler;
+
     static b2Vec2 mirror(b2Vec2 mirror, b2Vec2 vec);
     //world and local
     static b2Vec2 getRelativePortalPosition_W(b2Vec2 point, portalConnection* pConnect);
@@ -161,8 +163,6 @@ public:
     static b2Vec2 getRelativePortalPositionReverse_L(b2Vec2 point, portalConnection* pConnect);
 
 private:
-    PortalRay* rayHandler;
-
     Portal* createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, float size);
 
     std::set<PortalBody*> destroyBodies;

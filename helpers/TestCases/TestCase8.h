@@ -5,6 +5,7 @@
 #include <Game.h>
 #include <Portal.h>
 #include <helpers.h>
+#include <DefaultObjects/Turret.h>
 
 class TestCase8 : public BaseTestCase
 {
@@ -137,14 +138,14 @@ public:
         lastBody = createBox(b2Vec2(10.0f, 0.0f), b2Vec2(0.49, 0.49), g->pWorld, b2_dynamicBody, 10.0);
         lastBody->SetBullet(true);
 
-        Portal* portalDown = g->pWorld->createPortal(b2Vec2(10.0f, -0.5f), b2Vec2(0.0f, -1.0f), 0.5f, lastBody);
+       /* Portal* portalDown = g->pWorld->createPortal(b2Vec2(10.0f, -0.5f), b2Vec2(0.0f, -1.0f), 0.5f, lastBody);
         Portal* portalUp = g->pWorld->createPortal(b2Vec2(10.0f, +0.5f), b2Vec2(0.0f, +1.0f), 0.5f, lastBody);
 
         Portal* portalRight = g->pWorld->createPortal(b2Vec2(10.5f, 0.0f), b2Vec2(1.0f, 0.0f), 0.5f, lastBody);
         Portal* portalLeft = g->pWorld->createPortal(b2Vec2(9.5f, 0.0f), b2Vec2(-1.0f, 0.0f), 0.5f, lastBody);
 
         portalDown->connect(portalRight);
-        portalUp->connect(portalLeft);
+        portalUp->connect(portalLeft);*/
 
         b2Vec2 p = b2Vec2(1.0f, -3.0f);
         b2Vec2 s = b2Vec2(0.4f, 0.4f);
@@ -203,6 +204,9 @@ public:
         dc2->pBody->at(0)->body->SetTransform(b2Vec2(5.0, 0.0), 0.0);
 
         Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0, 0.0));
+
+        Turret* tr = new Turret(g->pWorld);
+        tr->pBody->at(0)->body->SetTransform(b2Vec2(-3.0f, 3.0f), 0.0);
     }
 
     void onUpdate()

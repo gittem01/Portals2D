@@ -11,6 +11,9 @@ s_texture* Turret::glowTex;
 s_buffers* Turret::coverVertexBuffer;
 std::vector<uint32_t> Turret::soundBuffers;
 
+const b2Vec2 tEyePos = b2Vec2(-0.23f, 0.11f);
+const float minCosX = 0.6;
+
 Turret::Turret(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 {
 	createBody();
@@ -111,8 +114,8 @@ void Turret::createBody()
 	body->CreateFixture(&bottomCircle, 1.0f);
 	body->CreateFixture(&topCircle, 1.0f);
 
-	PortalBody* portalBody = pWorld->createPortalBody(body);
-	pBody = &portalBody->worldIndex->pbIndices;
+	eyeBody = pWorld->createPortalBody(body);
+	pBody = &eyeBody->worldIndex->pbIndices;
 
 	bodyData* bData = (bodyData*)body->GetUserData().pointer;
 	g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
@@ -122,8 +125,8 @@ void Turret::createBody()
 
 	bodyFixDataIndex = 2;
 
-	ThinDrawer::object->addPortalBody(portalBody, { "turretBody.png" });
-	ThinDrawer::object->debug_addPortalBody(portalBody);
+	ThinDrawer::object->addPortalBody(eyeBody, { "turretBody.png" });
+	ThinDrawer::object->debug_addPortalBody(eyeBody);
 }
 
 void Turret::staticInit()
@@ -324,7 +327,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 			}
 		}
 
-		float mirrMult = trt->pBody->at(0)->isMirrored ? -1.0f : 1.0f;
+		float mirrMult = trt->eyeBody->isMirrored ? -1.0f : 1.0f;
 		float effectiveRotation = trt->rotation * mirrMult;
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, drawer->laserPshShader->pipeline);
@@ -339,13 +342,25 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		glm::vec2 res = rotateArroundPoint(glm::vec2(0.0f, 0.0f), *(glm::vec2*)&fwdMov, effectiveRotation);
 		fwdMov = b2Vec2(res.x, res.y);
 
-		bPos = trt->pBody->at(0)->body->GetWorldPoint(bPos);
-		fwdMov = trt->pBody->at(0)->body->GetWorldPoint(fwdMov);
+		bPos = trt->eyeBody->body->GetWorldPoint(bPos);
+		fwdMov = trt->eyeBody->body->GetWorldPoint(fwdMov);
 
 		s_laserUbo laserData;
-		laserData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		laserData.points = glm::vec4(bPos.x, bPos.y, fwdMov.x, fwdMov.y);
+		laserData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);		
 		laserData.data = glm::vec4(0.2f, 1.5f, 0.5f, 0.0f);
+
+		for (centerLaser clData : trt->laserPoints)
+		{
+			memcpy(&laserData.points, &clData, sizeof(centerLaser));
+			vkCmdPushConstants(cmdBuff, drawer->laserPshShader->pipelineLayout,
+				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
+
+			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+		}
+
+		memcpy(&laserData.points, &trt->laserPoints.front().to, sizeof(b2Vec2));
+		memcpy(&(laserData.points.z), &trt->laserPoints.front().to, sizeof(b2Vec2));
+		laserData.data.x = 1.0f;
 		vkCmdPushConstants(cmdBuff, drawer->laserPshShader->pipelineLayout,
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
 
@@ -390,21 +405,20 @@ void Turret::update()
 {
 	for (auto trt : turrets)
 	{
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_W] == 2)
+		if (ThinDrawer::object->wh->keyData[GLFW_KEY_UP] == 2)
 		{
 			trt->status = true;
 		}
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_S] == 2)
+		if (ThinDrawer::object->wh->keyData[GLFW_KEY_DOWN] == 2)
 		{
 			trt->status = false;
 		}
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_A])
+		if (ThinDrawer::object->wh->keyData[GLFW_KEY_LEFT])
 		{
 			trt->rotation -= Game::object->deltaTime;
 			trt->rotation = std::max(trt->rotation, -rotationLimit);
-
 		}
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_D])
+		if (ThinDrawer::object->wh->keyData[GLFW_KEY_RIGHT])
 		{
 			trt->rotation += Game::object->deltaTime;
 			trt->rotation = std::min(trt->rotation, rotationLimit);
@@ -426,18 +440,53 @@ void Turret::update()
 			trt->openAmount = std::max(trt->openAmount, 0.0f);
 		}
 
+		PortalBody* tPb;
+		if (trt->pBody->size() == 1)
+		{
+			tPb = trt->pBody->at(0);
+		}
+		else
+		{
+			tPb = trt->pBody->at(0);
+			b2Vec2 eyePos = b2Vec2(tEyePos.x * (tPb->isMirrored ? -1.0f : 1.0f), tEyePos.y);
+			eyePos = tPb->body->GetWorldPoint(eyePos);
+			portalConnection* pc = tPb->bodyMaps->at(0)->connection;
+			if (pc->portal1->getPointSide(eyePos) != pc->side1)
+			{
+				tPb = trt->pBody->at(1);
+			}
+		}
+
+		trt->eyeBody = tPb;
+
+		const float turretBodyAngle = tPb->body->GetAngle();
+		b2Vec2 eyePos = b2Vec2(tEyePos.x * (tPb->isMirrored ? -1.0f : 1.0f), tEyePos.y);
+		eyePos = tPb->body->GetWorldPoint(eyePos);
+		b2Vec2 fwd = (tPb->isMirrored ? 1.0f : -1.0f) * b2Vec2(cos(turretBodyAngle), sin(turretBodyAngle));
+
+		trt->laserPoints.clear();
+		trt->pWorld->rayHandler->sendRay(eyePos, fwd, 100.0f);
+		for (rayData& rd : trt->pWorld->rayHandler->rayResult)
+		{
+			trt->laserPoints.push_back({ rd.startPos, rd.endPos });
+		}
+
 		for (PortalBody* pb : *Game::object->testCase->tp->pBody)
 		{
 			float mirrMult = pb->isMirrored ? -1.0f : 1.0f;
 			b2Body* body = pb->body;
+			const float bodyAngle = body->GetAngle();
 			b2Vec2 pos = body->GetPosition();
-			b2Vec2 upVec = b2Vec2(-sin(body->GetAngle()), cos(body->GetAngle()));
+			b2Vec2 upVec = b2Vec2(-sin(bodyAngle), cos(bodyAngle));
 			pos += 0.7f * sin(Game::object->gameTime * 50.0f) * upVec;
 
-			b2Vec2 eyePos = b2Vec2(-0.23f * mirrMult, 0.11f);
-			eyePos = trt->pBody->at(0)->body->GetWorldPoint(eyePos);
+			b2Vec2 diff = pos - eyePos;
+			float cosX = b2Dot(diff, fwd) / diff.Length();
 
-			ThinDrawer::object->registerDebugLine(glm::vec4(eyePos.x, eyePos.y, pos.x, pos.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+			if (cosX > minCosX)
+			{
+				ThinDrawer::object->registerDebugLine(glm::vec4(eyePos.x, eyePos.y, pos.x, pos.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+			}
 
 			for (Portal* p : Game::object->pWorld->portals)
 			{
