@@ -19,7 +19,7 @@ typedef struct centerLaser
 class Turret : public DefaultObject
 {
 public:
-	static std::set<Turret*> turrets;
+	static std::vector<Turret*> turrets;
 	static s_texture* coverTex;
 	static s_texture* gunTex;
 	static s_texture* glowTex;
@@ -29,6 +29,8 @@ public:
 	PortalBody* eyeBody;
 	std::vector<centerLaser> laserPoints;
 	float midX;
+	b2Vec2 eyePos;
+	b2Vec2 fwd;
 	uint32_t shootGundex = 0;
 	double lastShootTime = -10.0;
 	double shootTimes[2] = { -10.0, -10.0 };
@@ -57,5 +59,5 @@ public:
 
 	static void staticInit();
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
-	static void update();
+	static void perFrameUpdate();
 };

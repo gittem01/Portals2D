@@ -101,7 +101,7 @@ void Game::TestState()
             lastTime = glfwGetTime();
 
             testCase->onUpdate();
-            Turret::update();
+            Turret::perFrameUpdate();
         }
         else
         {

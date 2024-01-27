@@ -90,9 +90,6 @@ class PortalRay : public b2RayCastCallback
 {
 public:
     PortalRay(PortalWorld* pWorld);
-    
-    void sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal);
-    void prepareRaySend();
 
     PortalWorld* pWorld;
     float minFraction = 1.0f;
@@ -111,6 +108,10 @@ public:
     std::vector<rayData> rayResult;
 
     void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody=nullptr, int rayIndex=0, Portal* rayOutPortal=nullptr);
+
+private:
+    void prepareRaySend();
+    void sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int rayIndex, Portal* rayOutPortal);
 
     void reset();
     void endHandle();
