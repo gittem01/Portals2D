@@ -29,8 +29,14 @@ public:
 	PortalBody* eyeBody;
 	std::vector<centerLaser> laserPoints;
 	float midX;
-	b2Vec2 eyePos;
 	b2Vec2 fwd;
+	b2Vec2 eyePos;
+	b2Vec2 laserDir;
+	b2Vec2 trackPoint;
+	double lastTrackTime = -10.0;
+	void* lastTrackPtr = nullptr;
+	bool tracking = false;
+
 	uint32_t shootGundex = 0;
 	double lastShootTime = -10.0;
 	double shootTimes[2] = { -10.0, -10.0 };

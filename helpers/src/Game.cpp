@@ -29,7 +29,7 @@ Game::Game()
 
 	sounder = new Sounder();
 
-    gameStater = &Game::TestState;
+    gameStater = &Game::LevelerState;
 
     glfwShowWindow(thinDrawer->wh->window);
 }
@@ -140,6 +140,7 @@ void Game::TestState()
             testCase->shouldQuit = false;
 
             testCase->destroy();
+            Turret::turrets.clear();
             delete testCase;
         }
 

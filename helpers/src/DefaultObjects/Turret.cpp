@@ -19,6 +19,8 @@ Turret::Turret(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 {
 	createBody();
 
+	laserDir = pBody->at(0)->isMirrored ? b2Vec2(1.0f, 0.0f) : b2Vec2(-1.0f, 0.0f);
+
 	renderLaserDatas.resize(numLasers);
 
 	turrets.push_back(this);
@@ -174,7 +176,6 @@ void Turret::shoot()
 
 		lastShootTime = ThinDrawer::object->gameTime;
 		shootTimes[shootGundex] = ThinDrawer::object->gameTime;
-		
 
 		float mirrMult = pBody->at(0)->isMirrored ? -1.0f : 1.0f;
 		float effectiveRotation = rotation * mirrMult;
@@ -185,19 +186,24 @@ void Turret::shoot()
 		glm::vec2 res = rotateArroundPoint(center, *(glm::vec2*)&bPos, effectiveRotation);
 		b2Vec2 fwdMov = b2Vec2(bPos.x - 100.0f * mirrMult, bPos.y);
 		bPos = b2Vec2(res.x, res.y);
-		res = rotateArroundPoint(glm::vec2(0.0f, 0.0f), *(glm::vec2*)&fwdMov, effectiveRotation + 0.2f * rand() / (float)RAND_MAX - 0.1f);
+		res = rotateArroundPoint(glm::vec2(0.0f, 0.0f), *(glm::vec2*)&fwdMov, effectiveRotation + 0.1f * rand() / (float)RAND_MAX - 0.05f);
 		fwdMov = b2Vec2(res.x, res.y);
 
 		bPos = pBody->at(0)->body->GetWorldPoint(bPos);
 		fwdMov = pBody->at(0)->body->GetWorldPoint(fwdMov);
 
-		s_laserUbo laserData;
-		laserData.colour = glm::vec4(0.8f, 0.8f, 0.0f, 1.0f);
-		laserData.points = glm::vec4(bPos.x, bPos.y, fwdMov.x, fwdMov.y);
-		laserData.data = glm::vec4(0.25f, 1.5f, 1.0f, ThinDrawer::object->gameTime);
+		pWorld->rayHandler->sendRay(bPos, fwdMov - bPos, 120.0f);
 
-		renderLaserDatas[lastLaserIndex % numLasers] = { laserData, shootGundex };
-		lastLaserIndex++;
+		for (rayData& rd : pWorld->rayHandler->rayResult)
+		{
+			s_laserUbo laserData;
+			laserData.colour = glm::vec4(0.8f, 0.8f, 0.0f, 1.0f);
+			laserData.points = glm::vec4(rd.startPos.x, rd.startPos.y, rd.endPos.x, rd.endPos.y);
+			laserData.data = glm::vec4(0.25f, 1.5f, 1.0f, ThinDrawer::object->gameTime);
+
+			renderLaserDatas[lastLaserIndex % numLasers] = { laserData, shootGundex };
+			lastLaserIndex++;
+		}
 
 		shootGundex = (shootGundex + 1) % 2;
 	}
@@ -464,9 +470,33 @@ void Turret::perFrameUpdate()
 		trt->eyePos = b2Vec2(tEyePos.x * (tPb->isMirrored ? -1.0f : 1.0f), tEyePos.y);
 		trt->eyePos = tPb->body->GetWorldPoint(trt->eyePos);
 		trt->fwd = (tPb->isMirrored ? 1.0f : -1.0f) * b2Vec2(cos(turretBodyAngle), sin(turretBodyAngle));
+		
+		if (trt->lastTrackTime + 0.25 > Game::object->gameTime)
+		{
+			b2Vec2 v = trt->trackPoint - trt->eyePos;
+			v.Normalize();
+			trt->laserDir = 0.9f * trt->laserDir + 0.1f * v;
+			trt->status = true;
+			trt->shoot();
+		}
+		else
+		{
+			trt->laserDir = trt->laserDir = 0.9f * trt->laserDir + 0.1f * trt->fwd;
+			trt->status = false;
+		}
+		
+		if (trt->openAmount != 0.0f)
+		{
+			float angle = atan2(trt->laserDir.y, trt->laserDir.x);
+			trt->rotation = (tPb->isMirrored ? -1.0f : 1.0f) * (angle - turretBodyAngle + b2_pi) + (tPb->isMirrored ? 1.0f : 0.0f) * b2_pi;
+		}
+		else
+		{
+			trt->rotation = 0.0f;
+		}
 
 		trt->laserPoints.clear();
-		trt->pWorld->rayHandler->sendRay(trt->eyePos, trt->fwd, 600.0f);
+		trt->pWorld->rayHandler->sendRay(trt->eyePos, trt->laserDir, 600.0f);
 		for (rayData& rd : trt->pWorld->rayHandler->rayResult)
 		{
 			trt->laserPoints.push_back({ rd.startPos, rd.endPos });
@@ -492,11 +522,13 @@ void Turret::perFrameUpdate()
 		for (size_t i = lastTurretUpdateIndex; i < numTurretUpdates + lastTurretUpdateIndex; i++)
 		{
 			Turret* trt = turrets.at(i % turrets.size());
+			if (trt->lastTrackPtr != pb && trt->lastTrackTime + 0.15 > Game::object->gameTime) continue;
+			
 			PortalBody* tPb = trt->eyeBody;
 
 			b2Vec2 upVec = pos - tPb->body->GetPosition();
 			upVec = b2Vec2(-upVec.y, upVec.x); upVec.Normalize();
-			b2Vec2 lookPos = pos + 0.7f * sin(Game::object->gameTime * 50.0f) * upVec;
+			b2Vec2 lookPos = pos + sin(Game::object->gameTime * 50.0f) * upVec;
 
 			b2Vec2 diff = lookPos - trt->eyePos;
 			float cosX = b2Dot(diff, trt->fwd) / diff.Length();
@@ -504,7 +536,18 @@ void Turret::perFrameUpdate()
 			if (cosX > minCosX)
 			{
 				lookPos.x += upVec.y; lookPos.y += -upVec.x;
-				ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, lookPos.x, lookPos.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+				trt->pWorld->rayHandler->sendRay(trt->eyePos, lookPos - trt->eyePos, 100.0f);
+				if (trt->pWorld->rayHandler->closestFixture)
+				{
+					bodyData* bData = (bodyData*)trt->pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
+					if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & PLAYER_O)
+					{
+						trt->trackPoint = pos;
+						trt->lastTrackPtr = pb;
+						trt->lastTrackTime = Game::object->gameTime;
+						ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, lookPos.x, lookPos.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+					}
+				}
 			}
 		}
 	}
@@ -516,16 +559,17 @@ void Turret::perFrameUpdate()
 
 		for (Portal* p : Game::object->pWorld->portals)
 		{
-			if (p->connections->size() == 0 || p->getPointSide(trt->eyePos) != p->connections->at(0)->side1)
+			if (p->connections->size() == 0 || p->getPointSide(trt->eyePos) != p->connections->at(0)->side1 ||
+				trt->lastTrackPtr != p && trt->lastTrackTime + 0.15 > Game::object->gameTime)
 			{
 				continue;
 			}
 
 			b2Vec2 pos2 = PortalWorld::getRelativePortalPositionReverse_W(pos, p->connections->at(0));
-
+			b2Vec2 pos2Res = pos2;
 			b2Vec2 upVec = pos2 - tPb->body->GetPosition();
 			upVec = b2Vec2(-upVec.y, upVec.x); upVec.Normalize();
-			pos2 = pos2 + 0.7f * sin(Game::object->gameTime * 50.0f) * upVec;
+			pos2 = pos2 + sin(Game::object->gameTime * 50.0f) * upVec;
 
 			float cross1 = b2Cross(p->points[0] - trt->eyePos, pos2 - trt->eyePos);
 			float cross2 = b2Cross(pos2 - trt->eyePos, p->points[1] - trt->eyePos);
@@ -539,11 +583,17 @@ void Turret::perFrameUpdate()
 				{
 					pos2.x += upVec.y; pos2.y += -upVec.x;
 					trt->pWorld->rayHandler->sendRay(trt->eyePos, pos2 - trt->eyePos, 100.0f);
-					bodyData* bData = (bodyData*)trt->pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
-					if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & PLAYER_O)
+					if (trt->pWorld->rayHandler->closestFixture)
 					{
-						trt->shoot();
-						ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, pos2.x, pos2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+						bodyData* bData = (bodyData*)trt->pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
+						if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & PLAYER_O)
+						{
+							trt->shoot();
+							trt->trackPoint = pos2Res;
+							trt->lastTrackPtr = p;
+							trt->lastTrackTime = Game::object->gameTime;
+							ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, pos2.x, pos2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+						}
 					}
 				}
 			}
