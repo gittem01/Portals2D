@@ -78,6 +78,7 @@ void ThinDrawer::initExtra()
     diagonalLiner = new DiagonalLiner(this); shaders.push_back(diagonalLiner);
     platformRectangle = new PlatformRectangle(this); shaders.push_back(platformRectangle);
     polynomShader = new PolynomialShader(this); shaders.push_back(polynomShader);
+    gelShader = new Gel(this); shaders.push_back(gelShader);
 
     setupDescriptorPool();
 
@@ -520,6 +521,35 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     diagonalLiner->render(cmdBuff, 1, camPos.x, -camPos.y);
 
     polynomShader->render(cmdBuff, wh->cam);
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, gelShader->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        gelShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        gelShader->pipelineLayout, 1, 1, &gelShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    int numRender = (int)(wh->cam->xSides.y - wh->cam->xSides.x + 2) * (int)(wh->cam->ySides.y - wh->cam->ySides.x + 2);
+    s_gelData gelData;
+    gelData.color = glm::vec4(1.0f, 0.4f, 0.0f, 1.0f);
+    gelData.fData = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+    gelData.iData.z = 64;
+    vkCmdPushConstants(cmdBuff, gelShader->pipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_gelData), &gelData);
+    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, numRender, 0, 0);
+
+    s_perGelData* pGelData;
+    vkMapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory, 0, sizeof(s_perGelData) * 1024, 0, (void**)&pGelData);
+    for (int i = 0; i < 1024; i++)
+    {
+        pGelData[i].posR.x = gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f;
+        pGelData[i].posR.y = gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f;
+    }
+    
+    vkUnmapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

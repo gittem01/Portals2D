@@ -29,6 +29,7 @@
 #include <ShaderHeaders/DiagonalLiner.h>
 #include <ShaderHeaders/PlatformRectangle.h>
 #include <ShaderHeaders/PolynomialShader.h>
+#include <ShaderHeaders/Gel.h>
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -194,6 +195,7 @@ public:
     DiagonalLiner* diagonalLiner;
     PlatformRectangle* platformRectangle;
     PolynomialShader* polynomShader;;
+    Gel* gelShader;
 
     std::vector<ShaderBase*> shaders;
 
