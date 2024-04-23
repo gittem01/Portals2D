@@ -151,11 +151,11 @@ void Leveler::initOffsets()
 			float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
 			if (rndVal > 0.9f)
 			{
-				float randVal11 = (((float)rand() / RAND_MAX) - 0.5f) * 0.01f;
+				float randVal11 = (((float)rand() / RAND_MAX) - 0.3f) * 0.01f;
 				float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
 				s_wallUbo_w wallUbo;
 				wallUbo.posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
-				wallUbo.bgColour = glm::vec4(0.05f + randVal11, 0.05f + randVal11, 0.05f + randVal11, 1.0f);
+				wallUbo.bgColour = glm::vec4(0.1f + randVal11, 0.1f + randVal11, 0.1f + randVal11, 1.0f);
 				wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 				wallUbo.dotColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
 				wallUbo.data = glm::vec4(0.2f + randVal22, 0.01f, 2.0f, 1.0f);
@@ -208,7 +208,7 @@ void Leveler::initOffsets()
 			vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
 				gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
 			wallUbo->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
-			wallUbo->colour = glm::vec4(0.02, 0.02, 0.02, 1.0) * rndVal;
+			wallUbo->colour = glm::vec4(0.015, 0.015, 0.015, 1.0) * rndVal;
 			wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.8, 0.0);
 			vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
 			gData->offsetEnd++;

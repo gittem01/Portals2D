@@ -41,10 +41,11 @@ void main()
     vec2 center = vec2(thisX + 0.5, thisY + 0.5) + sharedUboData.cameraPos.xy * vec2(1.0, -1.0);
 
     int gelIndex = 0;
+    // optimize
     for (int i = 0; i < 1024; i++)
     {
         vec4 p = ubo.sData[i].posR;
-        if (length(p.xy - center) - p.z < 0.9)
+        if (length(p.xy - center) - p.z < 1.0)
         {
             outGelData[gelIndex / 4 + 1][gelIndex % 4] = i;
             gelIndex++;

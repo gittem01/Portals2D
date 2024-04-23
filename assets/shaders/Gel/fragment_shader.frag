@@ -31,11 +31,10 @@ layout (std140, set = 1, binding = 0) readonly buffer UBO
 
 void main()
 {
-    vec3 gelColor = gelData.color.xyz;
+    vec4 gelColor = gelData.color;
     int numGels = inGelData[0][0];
 
-    float xRatio = 2000.0 / 1280.0;
-    float smoothThick = 0.05 / xRatio;
+    float smoothThick = 0.1 / sharedUboData.data.x;
 
     vec2 vecSum = vec2(0.0, 0.0);
     float lengthSum = 0.0f;
@@ -46,7 +45,7 @@ void main()
         vec2 diff = wp - posR.xy;
         vec2 normDiff = normalize(diff);
         vec2 lengthAdjusted =
-        (normDiff / pow(length(diff), adjV)) * pow(posR.z * xRatio, adjV);
+        (normDiff / pow(length(diff), adjV)) * pow(posR.z, adjV);
         vecSum += lengthAdjusted;
         lengthSum += length(lengthAdjusted);
     }
@@ -80,7 +79,7 @@ void main()
         diff = pow(diff, 2.0) * 0.5;
         
         float specular = 1.0 * spec;
-        vec4 requestedColor = vec4(specular + diff * gelColor + gelColor * 0.2, 1.0);
+        vec4 requestedColor = (specular * gelColor.xyz, specular) + vec4(diff * gelColor.xyz + gelColor.xyz * 0.2, gelColor.w);
         
         if (normalizedDist < smoothThick && normalizedDist > 0.0)
         {

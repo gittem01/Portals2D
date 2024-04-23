@@ -534,7 +534,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     int numRender = (int)(wh->cam->xSides.y - wh->cam->xSides.x + 2) * (int)(wh->cam->ySides.y - wh->cam->ySides.x + 2);
     s_gelData gelData;
-    gelData.color = glm::vec4(1.0f, 0.4f, 0.0f, 1.0f);
+    gelData.color = glm::vec4(0.0, 0.4, 1.0, 1.0);
     gelData.fData = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
     gelData.iData.z = 64;
     vkCmdPushConstants(cmdBuff, gelShader->pipelineLayout,
@@ -543,10 +543,16 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     s_perGelData* pGelData;
     vkMapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory, 0, sizeof(s_perGelData) * 1024, 0, (void**)&pGelData);
-    for (int i = 0; i < 1024; i++)
+    for (int i = 0; i < 600; i++)
     {
         pGelData[i].posR.x = gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f;
         pGelData[i].posR.y = gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f;
+    }
+
+    for (int i = 600; i < 1024; i++)
+    {
+        pGelData[i].posR.x = (i - 600) * 0.3 + gameTime;
+        pGelData[i].posR.y = sin(i * 0.3 + gameTime) * 2.0;
     }
     
     vkUnmapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory);

@@ -24,7 +24,7 @@ void Gel::prepareUniforms()
     for (int i = 0; i < basePositions.size(); i++)
     {
         basePositions[i].posR = glm::vec4(((float)rand() / RAND_MAX) * 20.0, ((float)rand() / RAND_MAX) * 20.0,
-            ((float)rand() / RAND_MAX) * 0.3 + 0.3, 0.0);
+            ((float)rand() / RAND_MAX) * 0.8 + 0.2, 0.0);
     }
 
     s_perGelData* mapMem;
