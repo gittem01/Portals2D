@@ -1,5 +1,7 @@
 #version 460 core
 
+#define MULT 2
+
 layout (location = 0) in vec2 vertex;
 
 layout (location = 0) flat out ivec4 outGelData[16];
@@ -9,7 +11,8 @@ layout (push_constant) uniform PC
 {    
     vec4 color;
     vec4 fData; // gridSize, none, none, none
-    ivec4 iData; // numGridX, numGridY, numGels, none
+    ivec4 iData; // swapchainImage, gelType, numSquares, start1
+    ivec4 iData2; // xSquareCount, ySquareCount, none, none
 } gelData;
 
 layout (set = 0, binding = 0) uniform SharedUboData
@@ -24,36 +27,68 @@ struct storageData
     vec4 posR; // posx, posy, radius, none
 };
 
+struct gelSpatialData
+{
+    ivec4 gelIndices[64];
+};
+
 layout (std140, set = 1, binding = 0) readonly buffer UBO
 {
     storageData sData[];
 } ubo;
 
+layout (std140, set = 1, binding = 1) readonly buffer UBO2
+{
+    gelSpatialData sData[];
+} ubo2;
+
 void main()
 {
     int instanceID = gl_InstanceIndex;
-    int numxGrid = int(sharedUboData.cameraPos.z + 2);
-    int numyGrid = int(sharedUboData.cameraPos.w + 2);
+    int numxGrid = int(sharedUboData.cameraPos.z + 2) * MULT;
+    int numyGrid = int(sharedUboData.cameraPos.w + 2) * MULT;
     
-    int thisX = instanceID % numxGrid - numxGrid / 2;
-    int thisY = instanceID / numxGrid - numyGrid / 2;
+    int thisX = (instanceID % numxGrid - numxGrid / 2);
+    int thisY = (instanceID / numxGrid - numyGrid / 2);
 
-    vec2 center = vec2(thisX + 0.5, thisY + 0.5) + sharedUboData.cameraPos.xy * vec2(1.0, -1.0);
+    vec2 center = vec2(thisX + 0.5, thisY + 0.5) / MULT + sharedUboData.cameraPos.xy * vec2(1.0, -1.0);
 
     int gelIndex = 0;
-    // optimize
-    for (int i = 0; i < 1024; i++)
+
+    int swapchainImage = gelData.iData[0];
+    int gelType = gelData.iData[1];
+    int numSquares = gelData.iData[2];
+
+    int arrStart = numSquares * swapchainImage * 4 + numSquares * gelType;
+
+    int xSquareCount = gelData.iData2[0];
+    int ySquareCount = gelData.iData2[1];
+
+    vec2 arrV = center + vec2(xSquareCount, ySquareCount) - sharedUboData.cameraPos.xy * vec2(1.0, -1.0);
+
+    for (int i = -2; i < 3; i++)
     {
-        vec4 p = ubo.sData[i].posR;
-        if (length(p.xy - center) - p.z < 1.0)
+        break;
+        for (int j = -2; j < 3; j++)
         {
-            outGelData[gelIndex / 4 + 1][gelIndex % 4] = i;
-            gelIndex++;
+            int arrPos = int(arrV.x + i) / 2 + (int(arrV.y + j) / 2) * xSquareCount + arrStart;
+            int numGels = ubo2.sData[arrPos].gelIndices[0][0];
+            for (int k = 1; k <= numGels; k++)
+            {
+                int index = ubo2.sData[arrPos].gelIndices[k][0];
+                vec4 p = ubo.sData[index].posR;
+                if (length(p.xy - center) - p.z < 0.75)
+                {
+                    outGelData[gelIndex / 4 + 1][gelIndex % 4] = index;
+                    gelIndex++;
+                }
+            }
         }
     }
 
     outGelData[0][0] = gelIndex;
-
+    
+    gelIndex = 1;
     if (gelIndex == 0)
     {
         // discard
@@ -61,8 +96,7 @@ void main()
     }
     else
     {
-        vec2 pos = vertex + center;
-        wp = pos;
-        gl_Position = sharedUboData.cameraMatrix * vec4(pos, 0.0, 1.0);
+        wp = vertex / MULT + center;
+        gl_Position = sharedUboData.cameraMatrix * vec4(wp, 0.0, 1.0);
     }
 }

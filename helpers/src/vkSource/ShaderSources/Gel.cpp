@@ -4,7 +4,7 @@
 #include <Shader.h>
 #include <definitions.h>
 #include <vkInit.h>
-
+#include <SwapChain.h>
 
 void Gel::prepareVertexData()
 {
@@ -13,11 +13,20 @@ void Gel::prepareVertexData()
 
 void Gel::prepareUniforms()
 {
-    uniformBuffers.resize(1);
+    uniformBuffers.resize(2);
 
     uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
+    uniformBuffers[1] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
-    thinDrawer->uniformHelper(sizeof(s_perGelData) * 1024, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    Camera* cam = thinDrawer->wh->cam;
+    numSquares = (int)(cam->baseX / (cam->zoomLimits.x * GEL_SQUARE_SIZE)) + 1; numSquares *= numSquares;
+
+    spatialDataSize = sizeof(s_gelSpatialData) * numSquares * thinDrawer->swapChain->imageCount * NUM_GEL_TYPE;
+    spatialDataLayerSize = sizeof(s_gelSpatialData) * numSquares * NUM_GEL_TYPE;
+
+    thinDrawer->uniformHelper(sizeof(s_perGelData) * 1024 * thinDrawer->swapChain->imageCount * NUM_GEL_TYPE,
+                                uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(spatialDataSize, uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     // fill with random data
     basePositions.resize(1024);
@@ -43,7 +52,10 @@ void Gel::setupDescriptorSetLayout()
     VkDescriptorSetLayoutBinding layoutBinding10 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 0);
 
-    VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding10 };
+    VkDescriptorSetLayoutBinding layoutBinding11 = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_VERTEX_BIT, 1, 1);
+
+    VkDescriptorSetLayoutBinding bindings2[] = { layoutBinding10, layoutBinding11 };
 
     VkDescriptorSetLayoutCreateInfo descriptorLayout2 = vkinit::descriptorSetLayoutCreateInfo(bindings2, sizeof(bindings2) / sizeof(bindings2[0]));
     CHECK_RESULT_VK(vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout2, VK_NULL_HANDLE, &descriptorSetLayouts[1]));
@@ -117,5 +129,9 @@ void Gel::setupDescriptorSet()
     writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
+    vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
+
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[1]->descriptor;
+    writeDescriptorSet.dstBinding = 1;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 }

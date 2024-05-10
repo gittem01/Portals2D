@@ -14,6 +14,7 @@ typedef enum GEL_TYPE_N : char
     BLUE = 0x2,
     ORANGE = 0x4,
     WHITE = 0x8,
+    CLEAR = 0x10,
 } GEL_TYPE;
 
 typedef enum WALL_TYPE_N : char

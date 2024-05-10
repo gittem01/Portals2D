@@ -532,30 +532,71 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         gelShader->pipelineLayout, 1, 1, &gelShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    int numRender = (int)(wh->cam->xSides.y - wh->cam->xSides.x + 2) * (int)(wh->cam->ySides.y - wh->cam->ySides.x + 2);
+    int numRender = (int)(wh->cam->xSides.y - wh->cam->xSides.x + 2) * (int)(wh->cam->ySides.y - wh->cam->ySides.x + 2) * (1 << 2);
+    int gelType = 0;
+    
+    int xSquareCount = (wh->cam->xSides.y - wh->cam->xSides.y) / (wh->cam->zoom * GEL_SQUARE_SIZE) + 1;
+    int ySquareCount = (wh->cam->ySides.y - wh->cam->ySides.y) / (wh->cam->zoom * GEL_SQUARE_SIZE) + 1;
+    int requiredSquareSize = xSquareCount * ySquareCount;
+
     s_gelData gelData;
-    gelData.color = glm::vec4(0.0, 0.4, 1.0, 1.0);
-    gelData.fData = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-    gelData.iData.z = 64;
+    gelData.color = glm::vec4(0.0, 0.25, 1.0, 1.0);
+    gelData.iData = glm::ivec4(lastSwapChainImageIndex, gelType, 0, 0);
+    gelData.iData2 = glm::ivec4(xSquareCount, ySquareCount, 0, 0);
     vkCmdPushConstants(cmdBuff, gelShader->pipelineLayout,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_gelData), &gelData);
-    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, numRender, 0, 0);
+    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, numRender, gelShader->numSquares, 0);
+
+    int memStart1 = sizeof(s_perGelData) * 1024 * 0 + 
+                    sizeof(s_perGelData) * 1024 * gelType;
+    int memEnd1 = memStart1 + sizeof(s_perGelData) * 1024;
+
+    int memStart2 = sizeof(s_gelSpatialData) * (
+                    gelShader->numSquares * lastSwapChainImageIndex * NUM_GEL_TYPE +
+                    gelShader->numSquares * gelType);
+    
+    int memEnd2 = memStart2 + sizeof(s_gelSpatialData) * gelShader->numSquares;
 
     s_perGelData* pGelData;
-    vkMapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory, 0, sizeof(s_perGelData) * 1024, 0, (void**)&pGelData);
-    for (int i = 0; i < 600; i++)
+    s_gelSpatialData* pGelSpatialData;
+    vkMapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory, memStart1, memEnd1, 0, (void**)&pGelData);
+    vkMapMemory(logicalDevice, gelShader->uniformBuffers[1]->memory, memStart2, memEnd2, 0, (void**)&pGelSpatialData);
+    
+    for (int i = 0; i < requiredSquareSize; i++)
     {
-        pGelData[i].posR.x = gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f;
-        pGelData[i].posR.y = gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f;
+        pGelSpatialData[i].gels[0][0] = 0;
     }
 
-    for (int i = 600; i < 1024; i++)
+    for (int i = 0; i < 600; i++)
     {
-        pGelData[i].posR.x = (i - 600) * 0.3 + gameTime;
-        pGelData[i].posR.y = sin(i * 0.3 + gameTime) * 2.0;
+        glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
+                                gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f);
+
+        pGelData[i].posR.x = p.x;
+        pGelData[i].posR.y = p.y;
+
+        glm::vec2 posDiff = p - camPos + glm::vec2(xSquareCount, ySquareCount);
+
+        if (posDiff.x < 0 || posDiff.y < 0 || posDiff.x >= xSquareCount * GEL_SQUARE_SIZE || posDiff.y >= ySquareCount * GEL_SQUARE_SIZE)
+        {
+            continue;
+        }
+
+        glm::ivec4* spatialData = pGelSpatialData[(int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount].gels;
+        spatialData[++spatialData[0][0]][0] = i;
     }
+
+    // for (int i = 600; i < 1024; i++)
+    // {
+    //     pGelData[i].posR.x = (i - 700) * 0.3 + gameTime;
+    //     pGelData[i].posR.y = sin(i * 0.3 + gameTime) * 2.0;
+
+    //     glm::ivec4* spatialData = pGelSpatialData[(int)(pGelData[i].posR.x * 0.5 + 100) + (int)(pGelData[i].posR.y * 0.5 + 100) * 200].gels;
+    //     spatialData[++spatialData[0][0]][0] = i;
+    // }
     
     vkUnmapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, gelShader->uniformBuffers[1]->memory);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

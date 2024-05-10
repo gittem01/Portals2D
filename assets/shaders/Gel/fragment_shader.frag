@@ -93,6 +93,6 @@ void main()
     }
     else
     {
-        FragColour = vec4(0.0);
+        FragColour = vec4(0.5);
     }
 }
