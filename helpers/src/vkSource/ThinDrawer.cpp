@@ -540,6 +540,8 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 		gelShader->preFillSpatialData[i].gels[0][0] = 0;
     }
 
+    int numWrites = 0;
+
     for (int i = 0; i < 600; i++)
     {
         glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
@@ -556,6 +558,11 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         }
 
         int ind = (int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount;
+        if (ind < 0 || ind >= requiredSquareSize)
+        {
+            assert(false);
+        }
+        numWrites++;
         glm::ivec4* spatialData = gelShader->preFillSpatialData[ind].gels;
         spatialData[++spatialData[0][0]][0] = i;
     }
@@ -572,10 +579,18 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         {
             continue;
         }
+
         int ind = (int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount;
+        if (ind < 0 || ind >= requiredSquareSize)
+        {
+            assert(false);
+        }
+        numWrites++;
         glm::ivec4* spatialData = gelShader->preFillSpatialData[ind].gels;
         spatialData[++spatialData[0][0]][0] = i;
     }
+
+    printf("%d\n", numWrites);
 
     s_perGelData* pGelData;
     s_gelSpatialData* pGelSpatialData;
