@@ -19,8 +19,7 @@ void Gel::prepareUniforms()
     uniformBuffers[1] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
 
     Camera* cam = thinDrawer->wh->cam;
-    numSquares = (int)(cam->baseX / (cam->zoomLimits.x * GEL_SQUARE_SIZE)) + 1; numSquares *= numSquares;
-
+    numSquares = (int)(cam->baseX / (cam->zoomLimits.x * cam->zoomLimits.x * GEL_SQUARE_SIZE)) + 6; numSquares *= numSquares;
     spatialDataSize = sizeof(s_gelSpatialData) * numSquares * thinDrawer->swapChain->imageCount * NUM_GEL_TYPE;
     spatialDataLayerSize = sizeof(s_gelSpatialData) * numSquares * NUM_GEL_TYPE;
 

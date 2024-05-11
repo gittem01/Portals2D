@@ -522,10 +522,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     polynomShader->render(cmdBuff, wh->cam);
 
-    // flush previous calls if no draw call is generated
-	vkCmdDraw(cmdBuff, 0, 0, 0, 0);
-
-    int gelType = 0;
+    int gelType = 3;
     int memStart1 = sizeof(s_perGelData) * MAX_GEL_COUNT * (NUM_GEL_TYPE * lastSwapChainImageIndex + gelType);
     int memSize1 = sizeof(s_perGelData) * MAX_GEL_COUNT;
 
@@ -533,9 +530,9 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     int memSize2 = sizeof(s_gelSpatialData) * gelShader->numSquares;
 
     int numRender = (int)(wh->cam->xSides.y - wh->cam->xSides.x + 2) * (int)(wh->cam->ySides.y - wh->cam->ySides.x + 2) * (1 << 2);
-    
-    int xSquareCount = (wh->cam->xSides.y - wh->cam->xSides.x) / GEL_SQUARE_SIZE + 4;
-    int ySquareCount = (wh->cam->ySides.y - wh->cam->ySides.x) / GEL_SQUARE_SIZE + 4;
+
+    int xSquareCount = (wh->cam->xSides.y - wh->cam->xSides.x) / GEL_SQUARE_SIZE + 6;
+    int ySquareCount = (wh->cam->ySides.y - wh->cam->ySides.x) / GEL_SQUARE_SIZE + 6;
     int requiredSquareSize = xSquareCount * ySquareCount;
 
     for (int i = 0; i < requiredSquareSize; i++)
@@ -543,7 +540,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 		gelShader->preFillSpatialData[i].gels[0][0] = 0;
     }
 
-    int numWrite = 0;
     for (int i = 0; i < 600; i++)
     {
         glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
@@ -558,7 +554,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         {
             continue;
         }
-        numWrite++;
+
         int ind = (int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount;
         glm::ivec4* spatialData = gelShader->preFillSpatialData[ind].gels;
         spatialData[++spatialData[0][0]][0] = i;
@@ -576,12 +572,11 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         {
             continue;
         }
-        numWrite++;
         int ind = (int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount;
         glm::ivec4* spatialData = gelShader->preFillSpatialData[ind].gels;
         spatialData[++spatialData[0][0]][0] = i;
     }
-	printf("%d\n", numWrite);
+
     s_perGelData* pGelData;
     s_gelSpatialData* pGelSpatialData;
     vkMapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory, memStart1, memSize1, 0, (void**)&pGelData);
