@@ -11,8 +11,8 @@ layout (push_constant) uniform PC
 {    
     vec4 color;
     vec4 fData; // gridSize, none, none, none
-    ivec4 iData; // swapchainImage, gelType, numSquares, start1
-    ivec4 iData2; // xSquareCount, ySquareCount, none, none
+    ivec4 iData; // swapchainImage, gelType, numSquares, arrStart
+    ivec4 iData2; // xSquareCount, ySquareCount, none, start1
 } gelData;
 
 layout (set = 0, binding = 0) uniform SharedUboData
@@ -58,28 +58,31 @@ void main()
     int swapchainImage = gelData.iData[0];
     int gelType = gelData.iData[1];
     int numSquares = gelData.iData[2];
-
-    int arrStart = numSquares * swapchainImage * 4 + numSquares * gelType;
+    int arrStart = gelData.iData[3];
 
     int xSquareCount = gelData.iData2[0];
     int ySquareCount = gelData.iData2[1];
+    int start1 = gelData.iData2[3];
 
     vec2 arrV = center + vec2(xSquareCount, ySquareCount) - sharedUboData.cameraPos.xy * vec2(1.0, -1.0);
 
     for (int i = -2; i < 3; i++)
     {
-        break;
         for (int j = -2; j < 3; j++)
         {
-            int arrPos = int(arrV.x + i) / 2 + (int(arrV.y + j) / 2) * xSquareCount + arrStart;
+            int arrPos = int(arrV.x / 2) + i + (int(arrV.y / 2) + j) * xSquareCount + arrStart;
+            if (arrPos < 0)
+			{
+				continue;
+			}
             int numGels = ubo2.sData[arrPos].gelIndices[0][0];
             for (int k = 1; k <= numGels; k++)
             {
                 int index = ubo2.sData[arrPos].gelIndices[k][0];
-                vec4 p = ubo.sData[index].posR;
+                vec4 p = ubo.sData[index + start1].posR;
                 if (length(p.xy - center) - p.z < 0.75)
                 {
-                    outGelData[gelIndex / 4 + 1][gelIndex % 4] = index;
+                    outGelData[gelIndex / 4 + 1][gelIndex % 4] = index + start1;
                     gelIndex++;
                 }
             }
@@ -87,8 +90,6 @@ void main()
     }
 
     outGelData[0][0] = gelIndex;
-    
-    gelIndex = 1;
     if (gelIndex == 0)
     {
         // discard

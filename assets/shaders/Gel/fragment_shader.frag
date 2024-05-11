@@ -16,7 +16,8 @@ layout (push_constant) uniform PC
 {    
     vec4 color;
     vec4 fData; // gridSize, none, none, none
-    ivec4 iData; // numGridX, numGridY, numGels, none
+    ivec4 iData; // swapchainImage, gelType, numSquares, arrStart
+    ivec4 iData2; // xSquareCount, ySquareCount, none, none
 } gelData;
 
 struct storageData
@@ -93,6 +94,6 @@ void main()
     }
     else
     {
-        FragColour = vec4(0.5);
+        FragColour = vec4(0.0f);
     }
 }

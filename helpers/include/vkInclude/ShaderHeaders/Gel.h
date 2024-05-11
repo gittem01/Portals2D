@@ -3,7 +3,8 @@
 #include <ShaderBase.h>
 
 #define NUM_GEL_TYPE 4
-#define GEL_SQUARE_SIZE 2.0
+#define MAX_GEL_COUNT 2048
+#define GEL_SQUARE_SIZE 2.0f
 
 typedef struct
 {
@@ -33,6 +34,8 @@ public:
     int spatialDataLayerSize;
 
     std::vector<s_perGelData> basePositions;
+    s_perGelData preFillGelData[2048];
+    s_gelSpatialData preFillSpatialData[64 * 64];
 
     void prepareVertexData();
 

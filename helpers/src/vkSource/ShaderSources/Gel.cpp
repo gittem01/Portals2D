@@ -24,21 +24,22 @@ void Gel::prepareUniforms()
     spatialDataSize = sizeof(s_gelSpatialData) * numSquares * thinDrawer->swapChain->imageCount * NUM_GEL_TYPE;
     spatialDataLayerSize = sizeof(s_gelSpatialData) * numSquares * NUM_GEL_TYPE;
 
-    thinDrawer->uniformHelper(sizeof(s_perGelData) * 1024 * thinDrawer->swapChain->imageCount * NUM_GEL_TYPE,
+    thinDrawer->uniformHelper(sizeof(s_perGelData) * MAX_GEL_COUNT * thinDrawer->swapChain->imageCount * NUM_GEL_TYPE,
                                 uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     thinDrawer->uniformHelper(spatialDataSize, uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     // fill with random data
-    basePositions.resize(1024);
+    basePositions.resize(MAX_GEL_COUNT);
     for (int i = 0; i < basePositions.size(); i++)
     {
-        basePositions[i].posR = glm::vec4(((float)rand() / RAND_MAX) * 20.0, ((float)rand() / RAND_MAX) * 20.0,
-            ((float)rand() / RAND_MAX) * 0.8 + 0.2, 0.0);
+        basePositions[i].posR = glm::vec4(((float)rand() / RAND_MAX) * 20.0 - 10, ((float)rand() / RAND_MAX) * 20.0 - 10,
+            ((float)rand() / RAND_MAX) * 0.5 + 0.4, 0.0);
+		preFillGelData[i] = basePositions[i];
     }
 
     s_perGelData* mapMem;
     vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, sizeof(s_perGelData) * basePositions.size(), 0, (void**)&mapMem);
-    memcpy(mapMem, basePositions.data(), sizeof(s_perGelData) * 1024);
+    memcpy(mapMem, basePositions.data(), sizeof(s_perGelData) * MAX_GEL_COUNT);
     vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
 }
 
