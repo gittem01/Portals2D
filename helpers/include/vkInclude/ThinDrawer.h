@@ -119,6 +119,7 @@ public:
     ImDrawData* drawData = nullptr;
     // Base var start
 
+    uint32_t camOffset;
     uint32_t frameNumber = 0;
     uint32_t lastSwapChainImageIndex = 0;
     VkSampleCountFlagBits samples;

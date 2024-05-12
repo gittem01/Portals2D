@@ -75,7 +75,7 @@ void main()
         vec3 lightDir = normalize(vec3(1, 1, -0.8));
         vec3 reflectDir = reflect(-lightDir, normal);  
 
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 48.0);
         float diff = dot(normal, -lightDir) + 0.5;
         diff = pow(diff, 2.0) * 0.5;
         
@@ -94,6 +94,6 @@ void main()
     }
     else
     {
-        FragColour = vec4(0.0f);
+        FragColour = vec4(0.1f);
     }
 }

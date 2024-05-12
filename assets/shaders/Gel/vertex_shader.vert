@@ -66,21 +66,22 @@ void main()
 
     vec2 arrV = center + vec2(xSquareCount, ySquareCount) - sharedUboData.cameraPos.xy * vec2(1.0, -1.0);
 
-    for (int i = -2; i < 3; i++)
+    for (int i = -1; i < 2; i++)
     {
-        for (int j = -2; j < 3; j++)
+        for (int j = -1; j < 2; j++)
         {
             int arrPos = int(arrV.x / 2) + i + (int(arrV.y / 2) + j) * xSquareCount + arrStart;
             if (arrPos < 0)
 			{
 				continue;
 			}
+            
             int numGels = ubo2.sData[arrPos].gelIndices[0][0];
             for (int k = 1; k <= numGels; k++)
             {
                 int index = ubo2.sData[arrPos].gelIndices[k][0];
                 vec4 p = ubo.sData[index + start1].posR;
-                if (length(p.xy - center) - p.z < 0.75)
+                if (length(p.xy - center) - p.z < 0.5)
                 {
                     outGelData[gelIndex / 4 + 1][gelIndex % 4] = index + start1;
                     gelIndex++;

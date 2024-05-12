@@ -6,6 +6,92 @@
 #include <vkInit.h>
 #include <SwapChain.h>
 
+void Gel::preCalculate()
+{
+    xSquareCount = (thinDrawer->wh->cam->xSides.y - thinDrawer->wh->cam->xSides.x) / GEL_SQUARE_SIZE + 2;
+    ySquareCount = (thinDrawer->wh->cam->ySides.y - thinDrawer->wh->cam->ySides.x) / GEL_SQUARE_SIZE + 2;
+    xSquareCount = std::max(xSquareCount, 4);
+    ySquareCount = std::max(ySquareCount, 4);
+    requiredSquareSize = xSquareCount * ySquareCount;
+
+    for (int i = 0; i < requiredSquareSize * NUM_GEL_TYPE; i++)
+    {
+		preFillSpatialData[i % NUM_GEL_TYPE][i / NUM_GEL_TYPE].gels[0][0] = 0;
+    }
+    
+    for (int i = 0; i < NUM_GEL_TYPE; i++)
+    {
+        lastIndices[i] = 0;
+    }
+}
+
+void Gel::putGel(int gelType, glm::vec2 pos, float radius)
+{
+    int i = lastIndices[gelType]++;
+    preFillGelData[gelType][i].posR.x = pos.x;
+    preFillGelData[gelType][i].posR.y = pos.y;
+
+    glm::vec2 posDiff = pos + glm::vec2(xSquareCount, ySquareCount) * (GEL_SQUARE_SIZE / 2.0f) - thinDrawer->wh->cam->pos * glm::vec2(1.0, -1.0);
+
+    if (posDiff.x < 0 || posDiff.y < 0 || posDiff.x >= xSquareCount * GEL_SQUARE_SIZE || posDiff.y >= ySquareCount * GEL_SQUARE_SIZE)
+    {
+        return;
+    }
+
+    int ind = (int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount;
+    if (ind < 0 || ind >= requiredSquareSize)
+    {
+        assert(false);
+    }
+    
+    glm::ivec4* spatialData = preFillSpatialData[gelType][ind].gels;
+    spatialData[++spatialData[0][0]][0] = i;
+}
+
+void Gel::renderGel(VkCommandBuffer cmdBuff, int gelType, int swapChainImage)
+{
+    int memStart1 = sizeof(s_perGelData) * MAX_GEL_COUNT * (NUM_GEL_TYPE * swapChainImage + gelType);
+    int memSize1 = sizeof(s_perGelData) * MAX_GEL_COUNT;
+
+    int memStart2 = sizeof(s_gelSpatialData) * numSquares * (NUM_GEL_TYPE * swapChainImage + gelType);
+    int memSize2 = sizeof(s_gelSpatialData) * numSquares;
+
+    int numRender = (int)(thinDrawer->wh->cam->xSides.y - thinDrawer->wh->cam->xSides.x + 2) *
+                    (int)(thinDrawer->wh->cam->ySides.y - thinDrawer->wh->cam->ySides.x + 2) * (1 << 2);
+
+    s_perGelData* pGelData;
+    s_gelSpatialData* pGelSpatialData;
+    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, memStart1, memSize1, 0, (void**)&pGelData);
+    vkMapMemory(logicalDevice, uniformBuffers[1]->memory, memStart2, memSize2, 0, (void**)&pGelSpatialData);
+
+	memcpy(pGelData, preFillGelData[gelType], sizeof(s_perGelData) * 1024);
+	memcpy(pGelSpatialData, preFillSpatialData[gelType], sizeof(s_gelSpatialData) * requiredSquareSize);
+
+    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[1]->memory);
+
+    VkDeviceSize offsets = 0;
+
+    s_gelData gelData;
+    gelData.color = gelColors[gelType];
+    gelData.iData = glm::ivec4(swapChainImage, gelType, numSquares, memStart2 / sizeof(s_gelSpatialData));
+    gelData.iData2 = glm::ivec4(xSquareCount, ySquareCount, 0, memStart1 / sizeof(s_perGelData));
+    vkCmdPushConstants(cmdBuff, pipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_gelData), &gelData);
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &thinDrawer->wallLight->buffers[0]->buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &thinDrawer->camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineLayout, 1, 1, &descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, thinDrawer->wallLight->buffers[0]->count, numRender, 0, 0);
+}
+
 void Gel::prepareVertexData()
 {
 
@@ -33,7 +119,11 @@ void Gel::prepareUniforms()
     {
         basePositions[i].posR = glm::vec4(((float)rand() / RAND_MAX) * 20.0 - 10, ((float)rand() / RAND_MAX) * 20.0 - 10,
             ((float)rand() / RAND_MAX) * 0.5 + 0.4, 0.0);
-		preFillGelData[i] = basePositions[i];
+		
+        for (int j = 0; j < NUM_GEL_TYPE; j++)
+        {
+            preFillGelData[j][i] = basePositions[i];
+        }
     }
 
     s_perGelData* mapMem;

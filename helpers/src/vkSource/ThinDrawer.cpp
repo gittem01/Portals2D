@@ -185,6 +185,7 @@ void ThinDrawer::buildCommandBuffers()
     renderCommandBeginner(cmdBuff);
 
     VkDeviceSize offsets = 0;
+    camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
 
     for (auto& f : earlyDrawFuncs)
     {
@@ -285,7 +286,6 @@ void ThinDrawer::renderCommandBeginner(VkCommandBuffer& cmdBuff)
 void ThinDrawer::debug_renderPortalBodies(VkCommandBuffer& cmdBuff)
 {
     const VkDeviceSize offsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
 
     for (s_debug_renderGroup* rg : debug_renderGroups)
     {
@@ -448,7 +448,6 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugLineShader->pipeline);
     vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0]->buffer, &offsets);
 
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
@@ -463,7 +462,6 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
 void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 {
     const VkDeviceSize offsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
     
     glm::vec2 camPos = wh->cam->pos;
 
@@ -522,105 +520,46 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     polynomShader->render(cmdBuff, wh->cam);
 
-    int gelType = 3;
-    int memStart1 = sizeof(s_perGelData) * MAX_GEL_COUNT * (NUM_GEL_TYPE * lastSwapChainImageIndex + gelType);
-    int memSize1 = sizeof(s_perGelData) * MAX_GEL_COUNT;
+    gelShader->preCalculate();
 
-    int memStart2 = sizeof(s_gelSpatialData) * gelShader->numSquares * (NUM_GEL_TYPE * lastSwapChainImageIndex + gelType);
-    int memSize2 = sizeof(s_gelSpatialData) * gelShader->numSquares;
-
-    int numRender = (int)(wh->cam->xSides.y - wh->cam->xSides.x + 2) * (int)(wh->cam->ySides.y - wh->cam->ySides.x + 2) * (1 << 2);
-
-    int xSquareCount = (wh->cam->xSides.y - wh->cam->xSides.x) / GEL_SQUARE_SIZE + 6;
-    int ySquareCount = (wh->cam->ySides.y - wh->cam->ySides.x) / GEL_SQUARE_SIZE + 6;
-    int requiredSquareSize = xSquareCount * ySquareCount;
-
-    for (int i = 0; i < requiredSquareSize; i++)
-    {
-		gelShader->preFillSpatialData[i].gels[0][0] = 0;
-    }
-
-    int numWrites = 0;
+    int gelType = 1;
 
     for (int i = 0; i < 600; i++)
     {
         glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
                                 gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f);
 
-        gelShader->preFillGelData[i].posR.x = p.x;
-        gelShader->preFillGelData[i].posR.y = p.y;
-
-        glm::vec2 posDiff = p + glm::vec2(xSquareCount, ySquareCount) * (GEL_SQUARE_SIZE / 2.0f) - camPos * glm::vec2(1.0, -1.0);
-
-        if (posDiff.x < 0 || posDiff.y < 0 || posDiff.x >= xSquareCount * GEL_SQUARE_SIZE || posDiff.y >= ySquareCount * GEL_SQUARE_SIZE)
-        {
-            continue;
-        }
-
-        int ind = (int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount;
-        if (ind < 0 || ind >= requiredSquareSize)
-        {
-            assert(false);
-        }
-        numWrites++;
-        glm::ivec4* spatialData = gelShader->preFillSpatialData[ind].gels;
-        spatialData[++spatialData[0][0]][0] = i;
+        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
     }
 
     for (int i = 600; i < 1024; i++)
     {
         glm::vec2 p = glm::vec2((i - 1000) * 0.3 + gameTime, sin(i * 0.3 + gameTime) * 2.0);
-        gelShader->preFillGelData[i].posR.x = p.x;
-        gelShader->preFillGelData[i].posR.y = p.y;
-
-        glm::vec2 posDiff = p + glm::vec2(xSquareCount, ySquareCount) * (GEL_SQUARE_SIZE / 2.0f) - camPos * glm::vec2(1.0, -1.0);
-
-        if (posDiff.x < 0 || posDiff.y < 0 || posDiff.x >= xSquareCount * GEL_SQUARE_SIZE || posDiff.y >= ySquareCount * GEL_SQUARE_SIZE)
-        {
-            continue;
-        }
-
-        int ind = (int)(posDiff.x / GEL_SQUARE_SIZE) + (int)(posDiff.y / GEL_SQUARE_SIZE) * xSquareCount;
-        if (ind < 0 || ind >= requiredSquareSize)
-        {
-            assert(false);
-        }
-        numWrites++;
-        glm::ivec4* spatialData = gelShader->preFillSpatialData[ind].gels;
-        spatialData[++spatialData[0][0]][0] = i;
+        
+        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
     }
 
-    printf("%d\n", numWrites);
+    gelShader->renderGel(cmdBuff, gelType, lastSwapChainImageIndex);
 
-    s_perGelData* pGelData;
-    s_gelSpatialData* pGelSpatialData;
-    vkMapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory, memStart1, memSize1, 0, (void**)&pGelData);
-    vkMapMemory(logicalDevice, gelShader->uniformBuffers[1]->memory, memStart2, memSize2, 0, (void**)&pGelSpatialData);
+    gelType = 2;
 
-	memcpy(pGelData, gelShader->preFillGelData, sizeof(s_perGelData) * 1024);
-	memcpy(pGelSpatialData, gelShader->preFillSpatialData, sizeof(s_gelSpatialData) * requiredSquareSize);
+    for (int i = 0; i < 600; i++)
+    {
+        glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.9f,
+                                gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.9f);
 
-    vkUnmapMemory(logicalDevice, gelShader->uniformBuffers[0]->memory);
-    vkUnmapMemory(logicalDevice, gelShader->uniformBuffers[1]->memory);
+        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
+    }
 
-    s_gelData gelData;
-    gelData.color = glm::vec4(0.0, 0.25, 1.0, 1.0);
-    gelData.iData = glm::ivec4(lastSwapChainImageIndex, gelType, gelShader->numSquares, memStart2 / sizeof(s_gelSpatialData));
-    gelData.iData2 = glm::ivec4(xSquareCount, ySquareCount, 0, memStart1 / sizeof(s_perGelData));
-    vkCmdPushConstants(cmdBuff, gelShader->pipelineLayout,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_gelData), &gelData);
+    for (int i = 600; i < 1024; i++)
+    {
+        glm::vec2 p = glm::vec2((i - 1000) * 0.8 + gameTime, sin(i * 0.5 + gameTime) * 3.0);
+        
+        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
+    }
 
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, gelShader->pipeline);
+    gelShader->renderGel(cmdBuff, gelType, lastSwapChainImageIndex);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        gelShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        gelShader->pipelineLayout, 1, 1, &gelShader->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, numRender, 0, 0);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
@@ -629,7 +568,6 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, bodyShader->pipeline);
 
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         bodyShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
@@ -866,7 +804,6 @@ void ThinDrawer::beforeCreate()
 void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
 {
     VkDeviceSize offsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
 
     for (auto& pair : renderPortalData)
     {
