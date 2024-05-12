@@ -559,7 +559,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     }
 
     gelShader->renderGel(cmdBuff, gelType, lastSwapChainImageIndex);
-
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

@@ -29,7 +29,7 @@ struct storageData
 
 struct gelSpatialData
 {
-    ivec4 gelIndices[64];
+    ivec4 gelIndices[32];
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -75,11 +75,11 @@ void main()
 			{
 				continue;
 			}
-            
+
             int numGels = ubo2.sData[arrPos].gelIndices[0][0];
             for (int k = 1; k <= numGels; k++)
             {
-                int index = ubo2.sData[arrPos].gelIndices[k][0];
+                int index = ubo2.sData[arrPos].gelIndices[k / 4][k % 4];
                 vec4 p = ubo.sData[index + start1].posR;
                 if (length(p.xy - center) - p.z < 0.5)
                 {

@@ -45,7 +45,8 @@ void Gel::putGel(int gelType, glm::vec2 pos, float radius)
     }
     
     glm::ivec4* spatialData = preFillSpatialData[gelType][ind].gels;
-    spatialData[++spatialData[0][0]][0] = i;
+    int sInd = ++spatialData[0][0];
+    spatialData[sInd / 4][sInd % 4] = i;
 }
 
 void Gel::renderGel(VkCommandBuffer cmdBuff, int gelType, int swapChainImage)

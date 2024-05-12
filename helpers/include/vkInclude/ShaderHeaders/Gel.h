@@ -21,7 +21,7 @@ typedef struct
 
 typedef struct
 {
-    glm::ivec4 gels[64];
+    glm::ivec4 gels[32];
 } s_gelSpatialData;
 
 class Gel : public ShaderBase
@@ -35,7 +35,7 @@ public:
 
     std::vector<s_perGelData> basePositions;
     s_perGelData preFillGelData[NUM_GEL_TYPE][2048];
-    s_gelSpatialData preFillSpatialData[NUM_GEL_TYPE][64 * 64];
+    s_gelSpatialData preFillSpatialData[NUM_GEL_TYPE][32 * 32];
     glm::vec4 gelColors[NUM_GEL_TYPE] = {
         glm::vec4(0.0, 0.3, 1.0, 1.0),
         glm::vec4(1.0, 0.3, 0.0, 1.0),
