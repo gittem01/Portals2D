@@ -14,7 +14,6 @@ layout (set = 0, binding = 0) uniform SharedUboData
 
 layout (push_constant) uniform PC
 {    
-    vec4 color;
     vec4 fData; // gridSize, none, none, none
     ivec4 iData; // swapchainImage, gelType, numSquares, arrStart
     ivec4 iData2; // xSquareCount, ySquareCount, none, none
@@ -23,6 +22,7 @@ layout (push_constant) uniform PC
 struct storageData
 {
     vec4 posR; // posx, posy, radius, none
+    vec4 color;
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -32,7 +32,6 @@ layout (std140, set = 1, binding = 0) readonly buffer UBO
 
 void main()
 {
-    vec4 gelColor = gelData.color;
     int numGels = inGelData[0][0];
 
     float smoothThick = 0.1 / sharedUboData.data.x;
@@ -40,16 +39,26 @@ void main()
     vec2 vecSum = vec2(0.0, 0.0);
     float lengthSum = 0.0f;
     float adjV = 5.0;
+    vec4 endColor = vec4(0.0);
+    float extra = 0.0;
     for (int i = 0; i < numGels; i++)
     {
-        vec4 posR = ubo.sData[inGelData[i / 4 + 1][i % 4]].posR;
+        storageData gel = ubo.sData[inGelData[i / 4 + 1][i % 4]];
+        vec4 posR = gel.posR;
         vec2 diff = wp - posR.xy;
         vec2 normDiff = normalize(diff);
         vec2 lengthAdjusted =
         (normDiff / pow(length(diff), adjV)) * pow(posR.z, adjV);
         vecSum += lengthAdjusted;
         lengthSum += length(lengthAdjusted);
+        
+        float m = max(pow((posR.z - length(diff)) / posR.z, 3.0), 0.0);
+        endColor += gel.color * m;
+        extra += (1.0 - gel.color.a) * m;
     }
+
+    vec2 n = normalize(vec2(endColor.a, extra)); 
+    vec4 gelColor = vec4(normalize(endColor.xyz), n.x);
 
     const float minVal = 0.5;
     
@@ -94,6 +103,6 @@ void main()
     }
     else
     {
-        FragColour = vec4(0.1f);
+        FragColour = vec4(0.0);
     }
 }

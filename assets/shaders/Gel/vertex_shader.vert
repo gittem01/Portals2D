@@ -9,7 +9,6 @@ layout (location = 16) out vec2 wp;
 
 layout (push_constant) uniform PC
 {    
-    vec4 color;
     vec4 fData; // gridSize, none, none, none
     ivec4 iData; // swapchainImage, gelType, numSquares, arrStart
     ivec4 iData2; // xSquareCount, ySquareCount, none, start1
@@ -25,6 +24,7 @@ layout (set = 0, binding = 0) uniform SharedUboData
 struct storageData
 {
     vec4 posR; // posx, posy, radius, none
+    vec4 color;
 };
 
 struct gelSpatialData
@@ -70,7 +70,7 @@ void main()
     {
         for (int j = -1; j < 2; j++)
         {
-            int arrPos = int(arrV.x / 2) + i + (int(arrV.y / 2) + j) * xSquareCount + arrStart;
+            int arrPos = int(arrV.x / 2.0) + i + (int(arrV.y / 2.0) + j) * xSquareCount + arrStart;
             if (arrPos < 0)
 			{
 				continue;
@@ -91,6 +91,7 @@ void main()
     }
 
     outGelData[0][0] = gelIndex;
+
     if (gelIndex == 0)
     {
         // discard

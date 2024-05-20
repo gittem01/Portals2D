@@ -528,37 +528,33 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     {
         glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
                                 gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f);
-
+        gelType = i % 4;
         gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
     }
 
     for (int i = 600; i < 1024; i++)
     {
         glm::vec2 p = glm::vec2((i - 1000) * 0.3 + gameTime, sin(i * 0.3 + gameTime) * 2.0);
+        gelType = i % 4;
+        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
+    }
+
+    // for (int i = 0; i < 600; i++)
+    // {
+    //     glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.9f,
+    //                             gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.9f);
+
+    //     gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
+    // }
+
+    // for (int i = 600; i < 1024; i++)
+    // {
+    //     glm::vec2 p = glm::vec2((i - 1000) * 0.8 + gameTime, sin(i * 0.5 + gameTime) * 3.0);
         
-        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }
+    //     gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
+    // }
 
-    gelShader->renderGel(cmdBuff, gelType, lastSwapChainImageIndex);
-
-    gelType = 2;
-
-    for (int i = 0; i < 600; i++)
-    {
-        glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.9f,
-                                gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.9f);
-
-        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }
-
-    for (int i = 600; i < 1024; i++)
-    {
-        glm::vec2 p = glm::vec2((i - 1000) * 0.8 + gameTime, sin(i * 0.5 + gameTime) * 3.0);
-        
-        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }
-
-    gelShader->renderGel(cmdBuff, gelType, lastSwapChainImageIndex);
+    gelShader->render(cmdBuff, lastSwapChainImageIndex);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
