@@ -24,6 +24,7 @@ void Gel::preCalculate()
 
 void Gel::putGel(int gelType, glm::vec2 pos, float radius)
 {
+    // take these down later
     int i = lastIndex++;
     
     preFillGelData[i].posR.x = pos.x;
@@ -51,10 +52,10 @@ void Gel::putGel(int gelType, glm::vec2 pos, float radius)
 void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
 {
     int memStart1 = sizeof(s_perGelData) * MAX_GEL_COUNT * swapChainImage;
-    int memSize1 = sizeof(s_perGelData) * MAX_GEL_COUNT;
+    int memSize1 = sizeof(s_perGelData) * lastIndex;
 
     int memStart2 = sizeof(s_gelSpatialData) * numSquares * swapChainImage;
-    int memSize2 = sizeof(s_gelSpatialData) * numSquares;
+    int memSize2 = sizeof(s_gelSpatialData) * requiredSquareSize;
 
     int numRender = (int)(thinDrawer->wh->cam->xSides.y - thinDrawer->wh->cam->xSides.x + 2) *
                     (int)(thinDrawer->wh->cam->ySides.y - thinDrawer->wh->cam->ySides.x + 2) * (1 << 2);
@@ -64,8 +65,10 @@ void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
     vkMapMemory(logicalDevice, uniformBuffers[0]->memory, memStart1, memSize1, 0, (void**)&pGelData);
     vkMapMemory(logicalDevice, uniformBuffers[1]->memory, memStart2, memSize2, 0, (void**)&pGelSpatialData);
 
-	memcpy(pGelData, preFillGelData, sizeof(s_perGelData) * 1024);
-	memcpy(pGelSpatialData, preFillSpatialData, sizeof(s_gelSpatialData) * requiredSquareSize);
+	memcpy(pGelData, preFillGelData, memSize1);
+	memcpy(pGelSpatialData, preFillSpatialData, memSize2);
+
+    printf("%d, %d\n", memSize1, memSize2);
 
     vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
     vkUnmapMemory(logicalDevice, uniformBuffers[1]->memory);
