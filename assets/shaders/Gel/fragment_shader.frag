@@ -57,24 +57,22 @@ void main()
         extra += (1.0 - gel.color.a) * m;
     }
 
-    vec2 n = normalize(vec2(endColor.a, extra)); 
-    vec4 gelColor = vec4(normalize(endColor.xyz), n.x);
-
-    const float minVal = 0.5;
+    vec4 gelColor = vec4(normalize(endColor.xyz), normalize(vec2(endColor.a, extra)).x);
     
     float dist = 1.0 - 1.0 / pow(lengthSum, 1.0 / adjV);
-    float normalizedDist = (dist - minVal) * (1.0 / (1.0 - minVal));
-    float upDist = sqrt(1.0 - pow(1.0 - normalizedDist, 2.0));
-    float ratio = length(vecSum) / lengthSum;
-    vec2 normVec = vec2(ratio * normalize(vecSum));
-    vec3 normal = vec3((1.0 - normalizedDist) * normalize(vecSum), upDist) * ratio;
-    normal += (1.0 - ratio * ratio) * normalize(vec3(vecSum * ratio *
-    (1.0 - upDist * upDist), lengthSum * upDist * upDist));
-    
-    normal = normalize(normal);
+    float normalizedDist = (dist - 0.5) * 2.0;
 
     if (normalizedDist > 0.0)
     {
+        float upDist = sqrt(1.0 - pow(1.0 - normalizedDist, 2.0));
+        float ratio = length(vecSum) / lengthSum;
+        vec2 normVec = vec2(ratio * normalize(vecSum));
+        vec3 normal = vec3((1.0 - normalizedDist) * normalize(vecSum), upDist) * ratio;
+        normal += (1.0 - ratio * ratio) * normalize(vec3(vecSum * ratio *
+        (1.0 - upDist * upDist), lengthSum * upDist * upDist));
+        
+        normal = normalize(normal);
+
         vec3 worldPos = vec3(wp, 0.0);
         vec3 viewDir = normalize(worldPos - vec3(sharedUboData.cameraPos.xy * vec2(1.0, -1.0), sharedUboData.cameraPos.z));
         vec3 lightDir = normalize(vec3(-1.0, -1.0, -1.0));
@@ -87,15 +85,8 @@ void main()
         float specular = 1.0 * spec;
         vec4 requestedColor = (specular * gelColor.xyz, specular) + vec4(diff * gelColor.xyz + gelColor.xyz * 0.2, gelColor.w);
         
-        if (normalizedDist < smoothThick && normalizedDist > 0.0)
-        {
-            float normNorm = pow(normalizedDist / smoothThick, 1.0);
-            FragColour = requestedColor * normNorm;
-        }
-        else
-        {
-            FragColour = requestedColor;
-        }
+        float normNorm = smoothstep(normalizedDist / smoothThick, 0.0, 0.1);
+        FragColour = requestedColor * normNorm;
     }
     else
     {
