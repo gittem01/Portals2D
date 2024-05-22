@@ -109,6 +109,7 @@ void SwapChain::createSwapChain()
             break;
         }
     }
+    
     if (i == surfaceFormats.size())
     {
         surfaceFormat = surfaceFormats[0];

@@ -47,8 +47,7 @@ void main()
         vec4 posR = gel.posR;
         vec2 diff = wp - posR.xy;
         vec2 normDiff = normalize(diff);
-        vec2 lengthAdjusted =
-        (normDiff / pow(length(diff), adjV)) * pow(posR.z, adjV);
+        vec2 lengthAdjusted = (normDiff / pow(length(diff), adjV)) * pow(posR.z, adjV);
         vecSum += lengthAdjusted;
         lengthSum += length(lengthAdjusted);
         
@@ -68,8 +67,7 @@ void main()
         float ratio = length(vecSum) / lengthSum;
         vec2 normVec = vec2(ratio * normalize(vecSum));
         vec3 normal = vec3((1.0 - normalizedDist) * normalize(vecSum), upDist) * ratio;
-        normal += (1.0 - ratio * ratio) * normalize(vec3(vecSum * ratio *
-        (1.0 - upDist * upDist), lengthSum * upDist * upDist));
+        normal += (1.0 - ratio * ratio) * normalize(vec3(vecSum * ratio * (1.0 - upDist * upDist), lengthSum * upDist * upDist));
         
         normal = normalize(normal);
 
