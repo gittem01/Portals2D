@@ -81,7 +81,7 @@ void main()
             {
                 int index = ubo2.sData[arrPos].gelIndices[k / 4][k % 4];
                 vec4 p = ubo.sData[index + start1].posR;
-                if (length(p.xy - center) - p.z < 0.5)
+                if (length(p.xy - center) - p.z < 0.75)
                 {
                     outGelData[gelIndex / 4 + 1][gelIndex % 4] = index + start1;
                     gelIndex++;

@@ -75,16 +75,12 @@ void main()
 
     if (normalizedDist > 0.0)
     {
-        //FragColour = vec4(vec3(normal), 1.0); return;
-        //vec3 worldPos = vec3(fragCoord, upDist * 100.0);
-        //vec3 viewDir = normalize(worldPos -
-        //vec3(iResolution.x * 0.5, iResolution.y * 0.5, 200.0));
-        vec3 viewDir = vec3(0, 0, -1);
-        //vec3 lightDir = normalize(worldPos - vec3(lightPos, 200.0));
-        vec3 lightDir = normalize(vec3(1, 1, -0.8));
+        vec3 worldPos = vec3(wp, 0.0);
+        vec3 viewDir = normalize(worldPos - vec3(sharedUboData.cameraPos.xy * vec2(1.0, -1.0), sharedUboData.cameraPos.z));
+        vec3 lightDir = normalize(vec3(-1.0, -1.0, -1.0));
         vec3 reflectDir = reflect(-lightDir, normal);  
 
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 48.0);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
         float diff = dot(normal, -lightDir) + 0.5;
         diff = pow(diff, 2.0) * 0.5;
         

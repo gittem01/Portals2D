@@ -539,21 +539,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
     }
 
-    // for (int i = 0; i < 600; i++)
-    // {
-    //     glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.9f,
-    //                             gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.9f);
-
-    //     gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    // }
-
-    // for (int i = 600; i < 1024; i++)
-    // {
-    //     glm::vec2 p = glm::vec2((i - 1000) * 0.8 + gameTime, sin(i * 0.5 + gameTime) * 3.0);
-        
-    //     gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    // }
-
     gelShader->render(cmdBuff, lastSwapChainImageIndex);
 }
 

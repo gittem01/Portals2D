@@ -20,6 +20,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/OpenAlSoft/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/AudioFile)
 include_directories(${CMAKE_SOURCE_DIR}/external/stb_truetype)
+include_directories(${CMAKE_SOURCE_DIR}/external/SPIRV-Reflect)
 
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
@@ -48,11 +49,13 @@ link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 link_directories(${CMAKE_SOURCE_DIR}/external/vulkan/lib)
 
 if(APPLE)
-    set(MACOSX_BUNDLE_ICON_FILE portal.ico)
-    set(appIcon ${CMAKE_CURRENT_SOURCE_DIR}/icon/${MACOSX_BUNDLE_ICON_FILE})
-    set_source_files_properties(${appIcon} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    add_executable(${APP_NAME} MACOSX_BUNDLE Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS} ${appIcon})
-    file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${APP_NAME}.app/Contents/Resources)
+    # set(MACOSX_BUNDLE_ICON_FILE portal.ico)
+    # set(appIcon ${CMAKE_CURRENT_SOURCE_DIR}/icon/${MACOSX_BUNDLE_ICON_FILE})
+    # set_source_files_properties(${appIcon} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    # add_executable(${APP_NAME} MACOSX_BUNDLE Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS} ${appIcon})
+    # file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${APP_NAME}.app/Contents/Resources)
+
+    add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
 elseif(MSVC)
     #add_executable(${APP_NAME} WIN32 Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS} ${CMAKE_CURRENT_SOURCE_DIR}/icon/portal.rc)
     add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
@@ -66,12 +69,15 @@ file(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
 
 add_library(PORTAL2D ${SOURCE_FILES} ${HEADER_FILES})
 add_library(imgui ${IMGUI_SOURCES} ${IMGUI_HEADERS})
+add_library(spirv-reflect ${CMAKE_SOURCE_DIR}/external/SPIRV-Reflect/spirv_reflect.c)
 
 target_link_libraries(${APP_NAME} PORTAL2D)
 target_link_libraries(${APP_NAME} box2d)
 target_link_libraries(${APP_NAME} glfw)
 target_link_libraries(${APP_NAME} imgui)
 target_link_libraries(${APP_NAME} OpenAL)
+target_link_libraries(${APP_NAME} spirv-reflect)
+
 
 if (APPLE)
 	target_link_libraries(${APP_NAME} libvulkan.1.dylib)

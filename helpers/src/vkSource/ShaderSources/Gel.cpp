@@ -68,8 +68,6 @@ void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
 	memcpy(pGelData, preFillGelData, memSize1);
 	memcpy(pGelSpatialData, preFillSpatialData, memSize2);
 
-    printf("%d, %d\n", memSize1, memSize2);
-
     vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
     vkUnmapMemory(logicalDevice, uniformBuffers[1]->memory);
 
@@ -120,7 +118,7 @@ void Gel::prepareUniforms()
     for (int i = 0; i < basePositions.size(); i++)
     {
         basePositions[i].posR = glm::vec4(((float)rand() / RAND_MAX) * 20.0 - 10, ((float)rand() / RAND_MAX) * 20.0 - 10,
-            ((float)rand() / RAND_MAX) * 0.5 + 0.4, 0.0);
+            ((float)rand() / RAND_MAX) * 0.7 + 0.4, 0.0);
 		
         preFillGelData[i] = basePositions[i];
     }
