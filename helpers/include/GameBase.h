@@ -21,7 +21,8 @@ typedef enum WALL_TYPE_N : char
 {
     PORTALLABLE = 0x1,
     NOT_PORTALLABLE = 0x2,
-    NOT_PORTALLABLE_2 = 0x4,
+    NOT_PORTALLABLE_2 = 0x4, // can't portal at all
+    NOT_PORTALLABLE_4 = 0x8, // can't portal at all
 } WALL_TYPE;
 
 typedef enum GameDataType
@@ -124,6 +125,6 @@ typedef struct
 } g_PhysicsData;
 
 b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world);
-b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, PortalWorld* world);
+b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDataType type, PortalWorld* world);
 b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, FixtureDataType type, PortalWorld* world);
 b2Body* createBasicEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDataType type, PortalWorld* world);

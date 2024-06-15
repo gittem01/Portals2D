@@ -29,7 +29,7 @@ b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world)
     return body;
 }
 
-b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, PortalWorld* world)
+b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDataType type, PortalWorld* world)
 {
     b2BodyDef bDef;
     bDef.type = b2_staticBody;
@@ -40,7 +40,7 @@ b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, PortalWor
     shape.SetOneSided(p0, p1, p2, p3);
 
     fixtureData* fData = new fixtureData();
-    fData->type = F_EDGE;
+    fData->type = type;
 
     s_edgeGlobalData* eGlobalData = new s_edgeGlobalData(p1, p2);
     s_edgeLocalData* eLocalData = new s_edgeLocalData(eGlobalData);

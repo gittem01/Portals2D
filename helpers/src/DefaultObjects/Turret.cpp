@@ -601,5 +601,6 @@ void Turret::perFrameUpdate()
 	}
 
 	lastTurretUpdateIndex += numTurretUpdates;
-	lastTurretUpdateIndex %= turrets.size();
+	if (turrets.size() > 0)
+		lastTurretUpdateIndex %= turrets.size();
 }

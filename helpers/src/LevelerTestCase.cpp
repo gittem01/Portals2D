@@ -3,6 +3,7 @@
 #include <LevelerTestCase.h>
 #include <Game.h>
 #include <TestPlayer.h>
+#include <Overlayer.h>
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
@@ -238,7 +239,7 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
 
         b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
         b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
-        b2Body* body = createEdgeOneSided(p11, p1, p0, p00, g->pWorld);
+        b2Body* body = createEdgeOneSided(p11, p1, p0, p00, F_EDGE, g->pWorld);
 
         //b2Body* body = createEdge(p1, p0, g->pWorld);
 
@@ -271,10 +272,37 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
         glm::i16vec2 fwdPos = pos + dirs[dir].asGlm();
         glm::i16vec2 fwdUpPos = fwdPos + upDir;
 
+        const s_levelGridData& lgd = g->leveler->getSquare(pos.x, pos.y);
+
+        float limits[2] = { 10000.0f, -10000.0f };
+		glm::i16vec2 upPos = pos + upDir;
+		if (g->leveler->isInBounds(upPos.x, upPos.y))
+        {
+            const s_levelGridData& upLgd = g->leveler->getSquare(upPos.x, upPos.y);
+            s_objectDataGrid* objectData = (s_objectDataGrid*)upLgd.data.ptr;
+            s_gridItemData iData = g->leveler->ol->items[getLevelObjectIndex(upLgd.objectType)];
+            if (upLgd.objectType & WALL_EDGE_OCCUPIERS && objectData->rotation == (dir + 3) % 4)
+            {
+				float rendIScale = iData.tex->width > iData.tex->height ? iData.gridRenderScale : iData.gridRenderScale * (float)iData.tex->width / iData.tex->height;
+                glm::i16vec2 objPos = (objectData->rotation == 0 || objectData->rotation == 1) ? objectData->pos :
+                                        (objectData->pos - (short)(iData.gridScale.x - 1) * dirs[dir].asGlm());
+                glm::i16vec2 pDiff = objPos - upPos;
+                short lenDiff = std::max(std::abs(pDiff.x), std::abs(pDiff.y));
+                limits[0] = (iData.gridScale.x - rendIScale) * 0.5 - lenDiff + 0.05;
+                limits[1] = rendIScale + limits[0] - 0.1;
+            }
+		}
+		
         for (int i = 0; i < unitWallPerMeter; i++)
         {
-            const s_levelGridData& lgd = g->leveler->getSquare(pos.x, pos.y);
-            wallData.push_back({ NONE, (WALL_TYPE)lgd.objectType, 0 });
+			float fPos0 = (float)i / unitWallPerMeter; float fPos1 = (float)(i + 1) / unitWallPerMeter;
+            int shiftAmnt = 0;
+			if (fPos0 > limits[0] && fPos0 < limits[1] || fPos1 > limits[0] && fPos1 < limits[1])
+			{
+				shiftAmnt = 2;
+			}
+
+            wallData.push_back({ NONE, (WALL_TYPE)(lgd.objectType << shiftAmnt), 0 });
         }
 
         bool fwdEmp = !g->leveler->isInBounds(fwdPos.x, fwdPos.y) || !(g->leveler->getSquare(fwdPos.x, fwdPos.y).objectType & (BLACK_WALL | WHITE_WALL));
@@ -343,7 +371,7 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
                     short cDirs = getDirs(p, lastChangePos, startDir);
                     b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
                     b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
-                    b2Body* body = createBasicEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+                    b2Body* body = createEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
 
                     //createBasicEdge(p0, p1, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
 
@@ -364,7 +392,7 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
             short cDirs = getDirs(lastChangePos, endPos, startDir);
             b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
             b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
-            b2Body* body = createBasicEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+            b2Body* body = createEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
 
             //createBasicEdge(p1, p0, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
         }
