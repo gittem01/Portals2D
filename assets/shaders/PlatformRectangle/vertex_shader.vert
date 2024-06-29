@@ -8,6 +8,7 @@ layout (location = 2) flat out vec2 size;
 layout (location = 3) flat out vec4 inColour;
 layout (location = 4) flat out vec4 outColour;
 layout (location = 5) flat out vec4 outData;
+layout (location = 6) flat out int outInstanceIndex;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -31,8 +32,8 @@ layout (std140, set = 1, binding = 0) readonly buffer UBO
 
 void main()
 {
-    int instanceIndex = gl_InstanceIndex;
-    storageData data = ubo.sData[instanceIndex];
+    outInstanceIndex = gl_InstanceIndex;
+    storageData data = ubo.sData[outInstanceIndex];
 
     size = data.posSize.zw;
     inColour = data.inColour;

@@ -79,6 +79,7 @@ void ThinDrawer::initExtra()
     platformRectangle = new PlatformRectangle(this); shaders.push_back(platformRectangle);
     polynomShader = new PolynomialShader(this); shaders.push_back(polynomShader);
     gelShader = new Gel(this); shaders.push_back(gelShader);
+    wallGel = new WallGel(this); shaders.push_back(wallGel);
 
     setupDescriptorPool();
 
@@ -465,10 +466,32 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     
     glm::vec2 camPos = wh->cam->pos;
 
+
     blackWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     whiteWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     diagonalLiner->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
+
+    gelShader->preCalculate();
+
+    int gelType = 1;
+
+    for (int i = 0; i < 600; i++)
+    {
+        glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
+            gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f);
+        gelType = i % 4;
+        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
+    }
+
+    for (int i = 600; i < 1024; i++)
+    {
+        glm::vec2 p = glm::vec2((i - 1000) * 0.3 + gameTime, sin(i * 0.3 + gameTime) * 2.0);
+        gelType = i % 4;
+        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
+    }
+
+    gelShader->render(cmdBuff, lastSwapChainImageIndex);
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, hazardShader->pipeline);
 
@@ -520,26 +543,12 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     polynomShader->render(cmdBuff, wh->cam);
 
-    gelShader->preCalculate();
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, wallGel->pipeline);
 
-    int gelType = 1;
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        wallGel->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-    for (int i = 0; i < 600; i++)
-    {
-        glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
-                                gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f);
-        gelType = i % 4;
-        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }
-
-    for (int i = 600; i < 1024; i++)
-    {
-        glm::vec2 p = glm::vec2((i - 1000) * 0.3 + gameTime, sin(i * 0.3 + gameTime) * 2.0);
-        gelType = i % 4;
-        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }
-
-    gelShader->render(cmdBuff, lastSwapChainImageIndex);
+    vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

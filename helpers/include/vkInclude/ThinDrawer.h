@@ -30,6 +30,7 @@
 #include <ShaderHeaders/PlatformRectangle.h>
 #include <ShaderHeaders/PolynomialShader.h>
 #include <ShaderHeaders/Gel.h>
+#include <ShaderHeaders/WallGel.h>
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -197,6 +198,7 @@ public:
     PlatformRectangle* platformRectangle;
     PolynomialShader* polynomShader;;
     Gel* gelShader;
+    WallGel* wallGel;
 
     std::vector<ShaderBase*> shaders;
 

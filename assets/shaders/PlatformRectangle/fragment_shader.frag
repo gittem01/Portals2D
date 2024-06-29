@@ -10,6 +10,7 @@ layout (location = 2) flat in vec2 size;
 layout (location = 3) flat in vec4 inColour;
 layout (location = 4) flat in vec4 outColour;
 layout (location = 5) flat in vec4 outData;
+layout (location = 6) flat in int inInstanceIndex;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -52,7 +53,7 @@ void main()
     float sider = outData.y;
 
     vec3 h = hexagon(4.0 * localPos);
-    float hashMult = 0.8 + 0.2 * hash(ivec2(h.xy));
+    float hashMult = 0.75 + 0.25 * hash(ivec2(h.xy + float(inInstanceIndex) * 100.0));
 
     float m = smoothstep(outData.x - 0.1, 0.1 + outData.x, h.z) * (inColour.w > 0.0 ? hashMult : 1.0);
 
