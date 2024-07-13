@@ -2160,8 +2160,10 @@ bool Leveler::extraPutCheck(const s_gridItemData& item, s_objectDataGrid* object
 	break;
 
 	default:
-		return true;
+		return false;
 	}
+
+	return false;
 }
 
 void Leveler::updateConnectionRenderData(s_connection* connection)
