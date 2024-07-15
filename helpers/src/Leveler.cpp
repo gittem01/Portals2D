@@ -2160,7 +2160,7 @@ bool Leveler::extraPutCheck(const s_gridItemData& item, s_objectDataGrid* object
 	break;
 
 	default:
-		return false;
+		return true;
 	}
 
 	return false;
