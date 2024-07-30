@@ -135,17 +135,17 @@ public:
 
         portal1->connect(portal2, true, 0, 0);
 
-        //lastBody = createBox(b2Vec2(10.0f, 0.0f), b2Vec2(0.49, 0.49), g->pWorld, b2_dynamicBody, 10.0);
-        //lastBody->SetBullet(true);
+        lastBody = createBox(b2Vec2(10.0f, 0.0f), b2Vec2(2.49, 2.49), g->pWorld, b2_dynamicBody, 10.0);
+        lastBody->SetBullet(true);
 
-       /* Portal* portalDown = g->pWorld->createPortal(b2Vec2(10.0f, -0.5f), b2Vec2(0.0f, -1.0f), 0.5f, lastBody);
-        Portal* portalUp = g->pWorld->createPortal(b2Vec2(10.0f, +0.5f), b2Vec2(0.0f, +1.0f), 0.5f, lastBody);
+        Portal* portalDown = g->pWorld->createPortal(b2Vec2(10.0f, -2.5f), b2Vec2(0.0f, -1.0f), 2.5f, lastBody);
+        Portal* portalUp = g->pWorld->createPortal(b2Vec2(10.0f, +2.5f), b2Vec2(0.0f, +1.0f), 2.5f, lastBody);
 
-        Portal* portalRight = g->pWorld->createPortal(b2Vec2(10.5f, 0.0f), b2Vec2(1.0f, 0.0f), 0.5f, lastBody);
-        Portal* portalLeft = g->pWorld->createPortal(b2Vec2(9.5f, 0.0f), b2Vec2(-1.0f, 0.0f), 0.5f, lastBody);
+        Portal* portalRight = g->pWorld->createPortal(b2Vec2(12.5f, 0.0f), b2Vec2(1.0f, 0.0f), 2.5f, lastBody);
+        Portal* portalLeft = g->pWorld->createPortal(b2Vec2(7.5f, 0.0f), b2Vec2(-1.0f, 0.0f), 2.5f, lastBody);
 
         portalDown->connect(portalRight);
-        portalUp->connect(portalLeft);*/
+        portalUp->connect(portalLeft);
 
         b2Vec2 p = b2Vec2(1.0f, -3.0f);
         b2Vec2 s = b2Vec2(0.4f, 0.4f);
@@ -164,6 +164,20 @@ public:
         PortalBody* lastPb = g->pWorld->createPortalBody(lastBody);
         td->debug_addPortalBody(lastPb);
         td->addPortalBody(lastPb, {"sphereEnabled.png"});
+
+
+        b2Vec2 circP = b2Vec2(20.0, 0.0);
+        const int cnt = 20;
+        const float circR = 0.2f;
+        for (int i = 0; i < cnt; i++)
+        {
+            for (int j = 0; j < cnt; j++)
+            {
+                b2Body* bdy = createCircle(circP + circR * b2Vec2(i, j), circR, g->pWorld, b2_dynamicBody);
+                PortalBody* circPb = g->pWorld->createPortalBody(bdy);
+                td->addPortalBody(circPb, { "sphereEnabled.png" });
+            }
+        }
 
         lastBody->SetLinearDamping(0.0f);
 

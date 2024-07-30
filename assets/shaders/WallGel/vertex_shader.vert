@@ -41,13 +41,13 @@ vec2 rotateAroundOrigin(vec2 point, float angle)
 
 void main() 
 {
-    vec2 p0 = vec2(-4.0, 0.0);
-    vec2 p1 = vec2(+4.0, 0.0);
+    vec2 p0 = vec2(-2.0, 0.0);
+    vec2 p1 = vec2(+2.0, 0.0);
     float angle = atan(p1.y - p0.y, p1.x - p0.x);
     vec2 p = vertexArray[gl_VertexIndex];
     p.x *= length(p0 - p1);
     localPosition = p;
-    p.y *= -0.5;
+    p.y *= -0.4;
     p = rotateAroundOrigin(p, angle) + p0;
     worldPosition = p;
     vec4 ppp = sharedUboData.orthoMatrix * vec4(p, 0.0, 1.0);

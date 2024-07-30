@@ -96,7 +96,7 @@ typedef struct
 } s_renderBody;
 
 // per worldIndex
-typedef struct
+typedef struct s_renderGroup
 {
     std::vector<VkDescriptorSet*> imageSets;
     // ordered consistently with the fixture list

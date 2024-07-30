@@ -59,23 +59,49 @@ float vecMax(vec3 v)
     return max(max(v.x, v.y), v.z);
 }
 
+const float perTileGel = 10.0;
+
+void calculate(vec2 pos, vec3 norm, float lastVal, vec3 finalClr, out vec3 oNorm, out float oVal, out vec3 oColor)
+{
+    for (int i = -1; i < 2; i++)
+    {
+        float checkX = int(pos.x * perTileGel) + i;
+        int ind = int(checkX);
+        if (ind > 39 || ind < 0) continue;
+        float mult = max(pow(min(pos.x, 4.0 - pos.x), 0.5) * 1.5, 0.25);
+        mult = 1.0;
+        float val = edgeData[ind].data.x * min(mult, 1.0) - 0.2;
+        vec3 clr = edgeData[ind].color.xyz;
+        vec2 diff = vec2(pos.x * perTileGel - 0.5, pos.y * 0.4 * perTileGel) - vec2(checkX, min(val, pos.y) * 0.4 * perTileGel);
+        float revDiff = pow(max(1.0 - length(diff), 0.0), 2.0);
+        norm += normalize(vec3(diff, revDiff * 3.0)) * revDiff;
+        finalClr += clr * pow(revDiff, 0.5);
+        lastVal = opSmoothUnion(lastVal, pow(length(diff), 3.0), 1.0);
+    }
+
+    oNorm = norm;
+    oVal = lastVal;
+    oColor = finalClr;
+}
+
 void main()
 {
     vec3 colors[3] = {
-        vec3(0.0, 0.25, 1.0),
-        vec3(1.0, 0.25, 0.0),
+        vec3(0.0, 0.2, 1.0),
+        vec3(1.0, 0.2, 0.0),
         vec3(1.0, 1.0, 1.0),
     };
 
-    const float perTileGel = 10.0;
     float iTime = sharedUboData.data.y;
     vec3 gelClr = vec3(0.0, 0.5, 1.5);
-    float xSize = 8.0;
-    for (int i = 0; i < 80; i++)
+    float xSize = 4.0;
+    for (int i = 0; i < 40; i++)
 	{
 		//edgeData[i].data.x = sin(i * 1000.0) * 0.3 + 0.2 + 0.05 * sin(iTime * rand(vec2(i))) - 0.15;
-        edgeData[i].data.x = 0.6 + rand(vec2(i)) * 0.15 + 0.05 * sin(iTime * rand(vec2(i)));
+        edgeData[i].data.x = 0.75 + rand(vec2(i)) * 0.15 + 0.1 * sin(iTime * rand(vec2(i)));
         edgeData[i].color.xyz = colors[int(rand(vec2(i)) * 100) % 3];
+        edgeData[i].color.xyz = colors[1];
+        if (i > 20) edgeData[i].color.xyz = colors[0];
         //if (edgeData[i] < 0.2) edgeData[i] = -0.2;
 	}
 
@@ -83,23 +109,21 @@ void main()
     vec3 norm = vec3(0.0, 0.0, 0.0);
     float lastVal = 1.0;
     vec3 finalClr = vec3(0.0, 0.0, 0.0);
-    for (int i = -1; i < 2; i++)
-    {
-        float checkX = float(round(pos.x * perTileGel + 0.5)) + float(i);
+    
+    calculate(pos, norm, lastVal, finalClr, norm, lastVal, finalClr);
 
-        float val = edgeData[int(checkX)].data.x;
-        vec3 clr = edgeData[int(checkX)].color.xyz;
-        vec2 diff = vec2(pos.x * perTileGel + 0.5, pos.y * 0.5 * perTileGel) - vec2(checkX, min(val, pos.y) * 0.5 * perTileGel);
-        float revDiff = pow(max(1.0 - length(diff), 0.0), 2.0);
-        norm += normalize(vec3(diff, revDiff * 3.0)) * revDiff;
-        finalClr += clr * revDiff;
-        lastVal = opSmoothUnion(lastVal, pow(length(diff), 2.0), 0.7);
-    }
+    float tmp = pos.y;
+    pos.y = pos.x;
+    pos.x = 4.0 - tmp * 0.4;
+
+    pos.y *= 2.5;
+
+    calculate(pos, norm, lastVal, finalClr, norm, lastVal, finalClr);
 
     gelClr = 1.5 * finalClr / vecMax(finalClr);
 
     const float vx = 0.1;
-    const float vy = vx * 2.0;
+    const float vy = vx * 2.5;
     float multy = (max(vy - pos.y, 0.0)) / vy;
 
     float xVal = (pos.x > 0.5) ? xSize - pos.x : pos.x;

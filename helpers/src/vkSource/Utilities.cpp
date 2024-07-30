@@ -571,7 +571,7 @@ void ThinDrawer::uniformHelper(int size, s_uniformBuffer* uniformBuffer, VkBuffe
     vkGetBufferMemoryRequirements(logicalDevice, uniformBuffer->buffer, &memReqs);
     allocInfo.allocationSize = memReqs.size;
     allocInfo.memoryTypeIndex = getMemoryTypeIndex(memReqs.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
     CHECK_RESULT_VK(vkAllocateMemory(logicalDevice, &allocInfo, VK_NULL_HANDLE, &uniformBuffer->memory));
     CHECK_RESULT_VK(vkBindBufferMemory(logicalDevice, uniformBuffer->buffer, uniformBuffer->memory, 0));
 
