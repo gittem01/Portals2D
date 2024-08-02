@@ -31,6 +31,7 @@
 #include <ShaderHeaders/PolynomialShader.h>
 #include <ShaderHeaders/Gel.h>
 #include <ShaderHeaders/WallGel.h>
+#include <ShaderHeaders/SplashShader.h>
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -199,6 +200,7 @@ public:
     PolynomialShader* polynomShader;;
     Gel* gelShader;
     WallGel* wallGel;
+    SplashShader* splash;
 
     std::vector<ShaderBase*> shaders;
 

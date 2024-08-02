@@ -10,6 +10,7 @@
 #include <GameBase.h>
 #include <IOHelper.h>
 #include <Game.h>
+#include <cmath>
 
 ThinDrawer* ThinDrawer::object = nullptr;
 
@@ -80,6 +81,7 @@ void ThinDrawer::initExtra()
     polynomShader = new PolynomialShader(this); shaders.push_back(polynomShader);
     gelShader = new Gel(this); shaders.push_back(gelShader);
     wallGel = new WallGel(this); shaders.push_back(wallGel);
+    splash = new SplashShader(this); shaders.push_back(splash);
 
     setupDescriptorPool();
 
@@ -124,10 +126,11 @@ void ThinDrawer::renderLoop()
     s_frameData currentFrame = frames[imNum];
 
     CHECK_RESULT_VK(vkWaitForFences(logicalDevice, 1, &currentFrame.renderFence, true, UINT64_MAX));
-    CHECK_RESULT_VK(vkResetFences(logicalDevice, 1, &currentFrame.renderFence));
 
     VkResult result = vkAcquireNextImageKHR(logicalDevice, swapChain->swapChain, UINT64_MAX,
                           currentFrame.presentSemaphore, VK_NULL_HANDLE, &lastSwapChainImageIndex);
+
+    CHECK_RESULT_VK(vkResetFences(logicalDevice, 1, &currentFrame.renderFence));
 
     animate();
 
@@ -549,6 +552,81 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         wallGel->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
     vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+    static glm::vec2 p = glm::vec2(0.0, 0.0);
+
+    splashData sData;
+    sData.posSpeed.x = 5.8;
+    sData.posSpeed.y = 0.5;
+    sData.data.x = 0.1;
+    sData.data.y = -1000.0;
+    sData.data.z = b2_pi * 0.25;
+    sData.data.w = 0.0;
+    
+    sData.color = glm::vec4(1.0, 0.0, 0.0, 1.0);
+
+    sData.data2.z = 2.0;
+    sData.data2.x = 2.0;
+    sData.data2.y = 3.0;
+    sData.data2.w = 0.2;
+
+    sData.data3.x = 0.15;
+    sData.data3.y = 1.0;
+    sData.data3.z = 2.0;
+    sData.data3.w = 0.0;
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, splash->pipeline);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        splash->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
+
+    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
+
+    sData.posSpeed.x = -50.0;
+    sData.posSpeed.y = 25.0;
+    sData.data.x = 0.075;
+    sData.data.y = (int)gameTime;
+    sData.data.z = b2_pi * 2.0;
+    sData.data.w = 0.0;
+
+    sData.color = glm::vec4(1.0, 0.3, 0.0, 0.2);
+
+    sData.data2.z = 3.0;
+    sData.data2.x = 1.0;
+    sData.data2.y = 5.0;
+    sData.data2.w = 0.5;
+
+    sData.data3.x = 0.0;
+    sData.data3.y = 0.8;
+    sData.data3.z = 100000.0;
+    sData.data3.w = 0.5;
+
+    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
+
+    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
+
+    sData.posSpeed.x = -55.0;
+    sData.color = glm::vec4(0.0, 0.3, 1.0, 1.0);
+
+    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
+
+    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
+
+    sData.posSpeed.x = -60.0;
+    sData.color = glm::vec4(1.0, 1.0, 1.0, 1.0);
+
+    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
+
+    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
+
+    sData.posSpeed.x = -65.0;
+    sData.color = glm::vec4(1.0, 1.0, 1.0, 0.01);
+
+    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
+
+    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
