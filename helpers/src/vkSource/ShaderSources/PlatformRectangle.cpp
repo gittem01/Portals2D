@@ -14,17 +14,15 @@ void PlatformRectangle::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
-    thinDrawer->uniformHelper(sizeof(s_platformRectUbo) * 40000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_platformRectUbo) * 40000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_platformRectUbo* platformUbo;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
+    vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
     platformUbo->posSize = glm::vec4(0.0, 0.0, 2.0, 0.5);
     platformUbo->inColour = glm::vec4(0.0, 0.0, 0.0, 0.8);
     platformUbo->outColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
     platformUbo->data = glm::vec4(0.15, 0.15, 1.0, 1.0);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }
 
 void PlatformRectangle::setupDescriptorSetLayout()
@@ -100,7 +98,7 @@ void PlatformRectangle::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

@@ -104,7 +104,7 @@ void ThinDrawer::uniformFiller()
     s_sharedUniformData* sharedData;
     CHECK_RESULT_VK(vkMapMemory(logicalDevice, ShaderBase::sharedOrthoUniform->memory, ShaderBase::alignedSharedSize * lastSwapChainImageIndex,
         ShaderBase::alignedSharedSize, 0, (void**)&sharedData));
-    
+
     sharedData->orthoMatrix = wh->cam->camMatrix;
     sharedData->cameraPos = glm::vec4(
         wh->cam->pos.x, wh->cam->pos.y,
@@ -441,16 +441,16 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
     if (debugLineRegistry.size() > 0)
     {
         s_debugLineUbo* lineUbo;
-        vkMapMemory(logicalDevice, debugLineShader->uniformBuffers[0]->memory, debugLineShader->numLines * sizeof(s_debugLineUbo),
+        vkMapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory, debugLineShader->numLines * sizeof(s_debugLineUbo),
             sizeof(s_debugLineUbo) * debugLineRegistry.size(), 0, (void**)&lineUbo);
         memcpy(lineUbo, debugLineRegistry.data(), sizeof(s_debugLineUbo) * debugLineRegistry.size());
-        vkUnmapMemory(logicalDevice, debugLineShader->uniformBuffers[0]->memory);
+        vkUnmapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory);
     }
     
     const VkDeviceSize offsets = 0;
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugLineShader->pipeline);
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -458,7 +458,7 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         debugLineShader->pipelineLayout, 1, 1, &debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, debugCircleShader->buffers[0]->count, debugLineShader->numLines + debugLineRegistry.size(), 0, 0);
+    vkCmdDraw(cmdBuff, debugCircleShader->buffers[0].count, debugLineShader->numLines + debugLineRegistry.size(), 0, 0);
 
     debugLineShader->numLines = 0;
 }
@@ -498,7 +498,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, hazardShader->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         hazardShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -506,12 +506,12 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         hazardShader->pipelineLayout, 1, 1, &hazardShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, hazardShader->numHazards, 0, 0);
+    vkCmdDraw(cmdBuff, wallLight->buffers[0].count, hazardShader->numHazards, 0, 0);
 
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, blueField->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         blueField->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -519,12 +519,12 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         blueField->pipelineLayout, 1, 1, &blueField->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, blueField->numFields, 0, 0);
+    vkCmdDraw(cmdBuff, wallLight->buffers[0].count, blueField->numFields, 0, 0);
 
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, lineZ->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         lineZ->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -532,7 +532,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         lineZ->pipelineLayout, 1, 1, &lineZ->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, wallLight->buffers[0]->count, lineZ->numZs, 0, 0);
+    vkCmdDraw(cmdBuff, wallLight->buffers[0].count, lineZ->numZs, 0, 0);
 
     for (auto& f : midDrawFuncs)
     {
@@ -704,18 +704,18 @@ void ThinDrawer::renderPortalBodies3D(VkCommandBuffer& cmdBuff)
             PortalBody* pb = renderBody->portalBody;
             s_bodyUbo* bodyUbo;
             
-            CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader3D->uniformBuffers[0]->memory,
+            CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader3D->uniformBuffers[0].memory,
                 renderBody->dynamicOffsets[lastSwapChainImageIndex], bodyShader3D->alignedSize_body, 0, (void**)&bodyUbo));
 
             bodyUbo->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(pb->body->GetPosition().x, pb->body->GetPosition().y, 0.0f));
             bodyUbo->rotationMatrix = glm::rotate(glm::mat4(1.0f), pb->body->GetAngle(), glm::vec3(0.0f, 0.0f, 1.0));
             bodyUbo->modelMatrix = bodyUbo->modelMatrix * bodyUbo->rotationMatrix * renderGroup->scaleMatrix;
-            vkUnmapMemory(logicalDevice, bodyShader3D->uniformBuffers[0]->memory);
+            vkUnmapMemory(logicalDevice, bodyShader3D->uniformBuffers[0].memory);
 
             for (s_renderStruct3D* renderStruct : renderBody->renderFixtures)
             {
                 s_fixUbo* fixUbo;
-                CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader3D->uniformBuffers[1]->memory,
+                CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader3D->uniformBuffers[1].memory,
                     renderStruct->dynamicOffsets[lastSwapChainImageIndex][1], bodyShader3D->alignedSize_fixture, 0, (void**)&fixUbo));
 
                 int i = 0;
@@ -733,13 +733,13 @@ void ThinDrawer::renderPortalBodies3D(VkCommandBuffer& cmdBuff)
 
                 if (fullOut)
                 {
-                    vkUnmapMemory(logicalDevice, bodyShader3D->uniformBuffers[1]->memory);
+                    vkUnmapMemory(logicalDevice, bodyShader3D->uniformBuffers[1].memory);
                     continue;
                 }
 
                 fixUbo->data.x = (float)renderStruct->pbfData->pCollisions.size();
 
-                vkUnmapMemory(logicalDevice, bodyShader3D->uniformBuffers[1]->memory);
+                vkUnmapMemory(logicalDevice, bodyShader3D->uniformBuffers[1].memory);
 
                 vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     bodyShader3D->pipelineLayout, 1, 1, &bodyShader3D->descriptorSets[1],
@@ -766,7 +766,7 @@ void ThinDrawer::renderPortals3D(VkCommandBuffer& cmdBuff)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, portalShader->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &portalShader->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &portalShader->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         portalShader->pipelineLayout, 2, 1, &portalShader->textureData[0]->set, 0, VK_NULL_HANDLE);
@@ -774,7 +774,7 @@ void ThinDrawer::renderPortals3D(VkCommandBuffer& cmdBuff)
     for (auto pair : portalsToRender3D)
     {
         s_portalUbo* pUbo;
-        vkMapMemory(logicalDevice, portalShader->uniformBuffers[0]->memory, pair.second.dynamicOffsets[lastSwapChainImageIndex], sizeof(s_portalUbo), 0, (void**)&pUbo);
+        vkMapMemory(logicalDevice, portalShader->uniformBuffers[0].memory, pair.second.dynamicOffsets[lastSwapChainImageIndex], sizeof(s_portalUbo), 0, (void**)&pUbo);
 
         pUbo->data0 = glm::vec4(0.5, pair.second.portalSizeY, 0.5 / pair.second.portalSizeY, 0.1);
         pUbo->data1.x = pair.second.portalSizeUp;
@@ -791,12 +791,12 @@ void ThinDrawer::renderPortals3D(VkCommandBuffer& cmdBuff)
 
         pUbo->data3.z = pair.second.noiseMult;
 
-        vkUnmapMemory(logicalDevice, portalShader->uniformBuffers[0]->memory);
+        vkUnmapMemory(logicalDevice, portalShader->uniformBuffers[0].memory);
 
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             portalShader->pipelineLayout, 1, 1, &portalShader->descriptorSets[1], 1, &pair.second.dynamicOffsets[lastSwapChainImageIndex]);
 
-        vkCmdDraw(cmdBuff, portalShader->buffers[0]->count, 1, 0, 0);
+        vkCmdDraw(cmdBuff, portalShader->buffers[0].count, 1, 0, 0);
     }
 #endif
 }
@@ -897,7 +897,7 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, portalParticleShader->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &portalParticleShader->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &portalParticleShader->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         portalParticleShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -909,13 +909,13 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
             vkCmdPushConstants(cmdBuff, portalParticleShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                 				0, sizeof(s_portalParticlePsh), &pair.second.particlePsh);
 
-            vkCmdDraw(cmdBuff, portalParticleShader->buffers[0]->count, 100, 0, 0);
+            vkCmdDraw(cmdBuff, portalParticleShader->buffers[0].count, 100, 0, 0);
         }
     }
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, portalShader->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &portalShader->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &portalShader->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         portalShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -924,7 +924,7 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
     {
         vkCmdPushConstants(cmdBuff, portalShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             							0, sizeof(s_portalPsh), &pair.second.portalPsh);
-        vkCmdDraw(cmdBuff, portalShader->buffers[0]->count, 1, 0, 0);
+        vkCmdDraw(cmdBuff, portalShader->buffers[0].count, 1, 0, 0);
     }
 }
 
@@ -1005,7 +1005,7 @@ void ThinDrawer::portalCreateCallback_3d(Portal* portal)
 
         pr->dynamicOffsets[i] = dynOffset;
         s_portalUbo3D* pUbo;
-        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader3D->uniformBuffers[0]->memory, dynOffset, thinDrawer->portalShader3D->alignedSize, 0, (void**)&pUbo);
+        vkMapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader3D->uniformBuffers[0].memory, dynOffset, thinDrawer->portalShader3D->alignedSize, 0, (void**)&pUbo);
 
         pUbo->modelMatrix = modelMatrix;
 
@@ -1025,7 +1025,7 @@ void ThinDrawer::portalCreateCallback_3d(Portal* portal)
         pUbo->portalColour = glm::vec4(0.0, 0.2, 1.0, 0.0);
         pUbo->edgeColour = glm::vec4(0.0, 0.5, 1.0, 0.0);
 
-        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader3D->uniformBuffers[0]->memory);
+        vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->portalShader3D->uniformBuffers[0].memory);
     }
 }
 
@@ -1061,11 +1061,11 @@ void ThinDrawer::portalDestroyCallback_3d(Portal* portal)
 void ThinDrawer::addDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
 {
     s_debugLineUbo* lineUbo;
-    vkMapMemory(logicalDevice, debugLineShader->uniformBuffers[0]->memory, debugLineShader->numLines * sizeof(s_debugLineUbo), sizeof(s_debugLineUbo), 0, (void**)&lineUbo);
+    vkMapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory, debugLineShader->numLines * sizeof(s_debugLineUbo), sizeof(s_debugLineUbo), 0, (void**)&lineUbo);
     lineUbo->colour = color;
     lineUbo->positions = positions;
     lineUbo->data.y = thickness; lineUbo->data.z = smoothness;
-    vkUnmapMemory(logicalDevice, debugLineShader->uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory);
 
     debugLineShader->numLines++;
 }

@@ -109,8 +109,8 @@ public:
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
 
-    std::vector<s_buffers*> buffers;
-    std::vector<s_uniformBuffer*> uniformBuffers;
+    std::vector<s_buffers> buffers;
+    std::vector<s_uniformBuffer> uniformBuffers;
     
     static VkDescriptorSetLayout sharedLayout;
     static VkDescriptorSet sharedSet;

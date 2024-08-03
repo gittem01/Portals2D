@@ -12,7 +12,9 @@ void WallGel::prepareVertexData()
 
 void WallGel::prepareUniforms()
 {
+    uniformBuffers.resize(2);
 
+    thinDrawer->uniformHelper(sizeof(s_wallUbo_w) * 1, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void WallGel::setupDescriptorSetLayout()

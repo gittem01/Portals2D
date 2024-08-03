@@ -8,27 +8,27 @@
 //if (wh->keyData[GLFW_KEY_SPACE] == 2)
 //{
 //    s_funnelUbo* funnelUbo;
-//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory, 0, sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory, 0, sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 //    float colorSplitPos = std::max(std::min(funnelUbo->data2.x + funnelUbo->data.w * ((float)game->gameTime - funnelUbo->data2.w) * -200.0f, 70.0f), -10.0f);
 //    funnelUbo->data.y += (game->gameTime - funnelUbo->data2.w) * funnelUbo->data.w;
 //    funnelUbo->data.w *= -1.0f;
 //    funnelUbo->data2.x = colorSplitPos;
 //    funnelUbo->data2.w = game->gameTime;
-//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory);
 //
-//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory, sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory, sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 //    funnelUbo->data.y += (game->gameTime - funnelUbo->data2.w) * funnelUbo->data.w;
 //    funnelUbo->data.w *= -1.0f;
 //    funnelUbo->data2.x = colorSplitPos;
 //    funnelUbo->data2.w = game->gameTime;
-//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory);
 //}
 
 // hazard thingy -same for blue thingy-
 //if (wh->keyData[GLFW_KEY_SPACE] == 2)
 //{
 //    s_hazardUbo* hazardUbo;
-//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory, 0, sizeof(s_funnelUbo), 0, (void**)&hazardUbo);
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory, 0, sizeof(s_funnelUbo), 0, (void**)&hazardUbo);
 //
 //    float dist = glm::length(glm::vec2(hazardUbo->pointts.z, hazardUbo->pointts.w) - glm::vec2(hazardUbo->pointts.x, hazardUbo->pointts.y));
 //    const float speed = std::min(200.0f, dist * 5.0f);
@@ -40,16 +40,16 @@
 //
 //    hazardUbo->data.z = hazardUbo->data.z < 0.5 ? 1.0 : 0.0;
 //    hazardUbo->data.w = game->gameTime - d / speed;
-//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory);
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 //}
 
 // blue shoot
 //if (wh->keyData[GLFW_KEY_SPACE] == 2)
 //{
 //    s_blueFieldUbo* blueUbo;
-//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
+//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
 //    blueUbo->shootData = glm::vec4(0.0, 2.9, game->gameTime, 0.0);
-//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
+//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 //}
 
 Overlayer::Overlayer(Game* game)
@@ -178,13 +178,13 @@ void Overlayer::maper(void* ptr)
             char y = i / ol->numX;
 
             s_manyTextureData* mtd;
-            vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc) * sizeof(s_manyTextureData),
+            vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0].memory, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc) * sizeof(s_manyTextureData),
                 sizeof(s_manyTextureData), 0, (void**)&mtd);
             mtd->posSize = glm::vec4(ol->leftX - ol->xSize + ol->itemRatio * ol->xSize + x * 9.0 + 5.0f, 31.5 - y * 9.0,
                 (6.0 + item.extraScale) * item.scaleRatio.x, (6.0 + item.extraScale) * item.scaleRatio.y);
 
             mtd->data.x = 0.0;
-            vkUnmapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0]->memory);
+            vkUnmapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0].memory);
 
             i++;
         }
@@ -224,14 +224,14 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, os->pipeline);
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             os->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
         vkCmdPushConstants(cmdBuff, os->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_optionData), (void*)&optData);
 
-        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 
         int j = 0;
         for (const auto& rd : pop.texts)
@@ -254,19 +254,19 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ol->il->pipeline);
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             ol->il->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
         vkCmdPushConstants(cmdBuff, ol->il->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_itemData), (void*)&iData);
 
-        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 
         // items tex
         vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ol->mt->pipeline);
 
-        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+        vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             ol->mt->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -280,7 +280,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
             vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 ol->mt->pipelineLayout, 2, 1, &item.tex->set, 0, VK_NULL_HANDLE);
 
-            vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc));
+            vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc));
 
             i++;
         }
@@ -295,14 +295,14 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ol->as->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         ol->as->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
     vkCmdPushConstants(cmdBuff, ol->as->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_arrowData), (void*)&aData);
 
-    vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+    vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 
     if (ol->selectedItemIndex == -1)
     {
@@ -328,7 +328,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
         vkCmdPushConstants(cmdBuff, ol->as->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_arrowData), (void*)&aData);
 
-        vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+        vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
     }
 }
 

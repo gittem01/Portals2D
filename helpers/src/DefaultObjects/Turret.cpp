@@ -342,7 +342,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			drawer->laserPshShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &drawer->playerShader->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &drawer->playerShader->buffers[0].buffer, &offsets);
 
 		b2Vec2 bPos = b2Vec2(mirrMult * -0.23f, 0.11f);
 		b2Vec2 fwdMov = b2Vec2(bPos.x - 100.0f * mirrMult, bPos.y);

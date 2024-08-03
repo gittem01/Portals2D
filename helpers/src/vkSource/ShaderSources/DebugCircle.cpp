@@ -10,11 +10,7 @@ void DebugCircle::prepareVertexData()
     const int bufferSize = 1;
     buffers.resize(bufferSize);
 
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
+    s_buffers* vertices = &buffers[0];
 
     std::vector<s_basicVertex> vertexBuffer =
     {

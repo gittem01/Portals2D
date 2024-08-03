@@ -30,13 +30,9 @@ void Body::prepareUniforms()
     }
 
     uniformBuffers.resize(2);
-    for (int j = 0; j < uniformBuffers.size(); j++)
-    {
-        uniformBuffers[j] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-    }
 
-    thinDrawer->uniformHelper(alignedSize_body * UNIFORM_ALLOC_COUNT_BODY_3D, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_BODY_3D);
-    thinDrawer->uniformHelper(alignedSize_fixture * UNIFORM_ALLOC_COUNT_FIXTURE_3D, uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_FIXTURE_3D);
+    thinDrawer->uniformHelper(alignedSize_body * UNIFORM_ALLOC_COUNT_BODY_3D, &uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_BODY_3D);
+    thinDrawer->uniformHelper(alignedSize_fixture * UNIFORM_ALLOC_COUNT_FIXTURE_3D, &uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_FIXTURE_3D);
 }
 
 void Body::setupDescriptorSetLayout()
@@ -126,11 +122,11 @@ void Body::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 
     writeDescriptorSet.dstBinding = 1;
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[1]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[1].descriptor;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 }

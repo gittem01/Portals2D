@@ -10,11 +10,7 @@ void DualParticleShader::prepareVertexData()
     const int bufferSize = 1;
     buffers.resize(bufferSize);
 
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
+    s_buffers* vertices = &buffers[0];
 
     std::vector<s_basicVertex> vertexBuffer =
     {
@@ -43,23 +39,22 @@ void DualParticleShader::prepareUniforms()
     }
 
     uniformBuffers.resize(1);
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-    thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);
+    thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, &uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);
 
     s_dualParticleUbo* pUbo;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, alignedSize, 0, (void**)&pUbo);
+    vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, alignedSize, 0, (void**)&pUbo);
     pUbo->color0 = glm::vec4(1.0f, 0.5f, 0.0f, 0.0f);
     pUbo->color1 = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
     pUbo->data0 = glm::vec4(0.6f, 0.5f, glfwGetTime(), 0.2f);
     pUbo->data1 = glm::vec4(2.0f, 0.3f, 0.0f, 0.0f);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, alignedSize, alignedSize, 0, (void**)&pUbo);
+    vkMapMemory(logicalDevice, uniformBuffers[0].memory, alignedSize, alignedSize, 0, (void**)&pUbo);
     pUbo->color0 = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
     pUbo->color1 = glm::vec4(0.0f, 1.0f, 1.0f, 0.0f);
     pUbo->data0 = glm::vec4(0.6f, 0.5f, glfwGetTime(), 0.2f);
     pUbo->data1 = glm::vec4(2.0f, 0.3f, 1.0f, 0.0f);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }
 
 void DualParticleShader::setupDescriptorSetLayout()
@@ -135,7 +130,7 @@ void DualParticleShader::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

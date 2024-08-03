@@ -62,14 +62,14 @@ void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
 
     s_perGelData* pGelData;
     s_gelSpatialData* pGelSpatialData;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, memStart1, memSize1, 0, (void**)&pGelData);
-    vkMapMemory(logicalDevice, uniformBuffers[1]->memory, memStart2, memSize2, 0, (void**)&pGelSpatialData);
+    vkMapMemory(logicalDevice, uniformBuffers[0].memory, memStart1, memSize1, 0, (void**)&pGelData);
+    vkMapMemory(logicalDevice, uniformBuffers[1].memory, memStart2, memSize2, 0, (void**)&pGelSpatialData);
 
 	memcpy(pGelData, preFillGelData, memSize1);
 	memcpy(pGelSpatialData, preFillSpatialData, memSize2);
 
-    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
-    vkUnmapMemory(logicalDevice, uniformBuffers[1]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[1].memory);
 
     VkDeviceSize offsets = 0;
 
@@ -81,7 +81,7 @@ void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &thinDrawer->wallLight->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &thinDrawer->wallLight->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &thinDrawer->camOffset);
@@ -89,7 +89,7 @@ void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineLayout, 1, 1, &descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, thinDrawer->wallLight->buffers[0]->count, numRender, 0, 0);
+    vkCmdDraw(cmdBuff, thinDrawer->wallLight->buffers[0].count, numRender, 0, 0);
 }
 
 void Gel::prepareVertexData()
@@ -101,17 +101,14 @@ void Gel::prepareUniforms()
 {
     uniformBuffers.resize(2);
 
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-    uniformBuffers[1] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
     Camera* cam = thinDrawer->wh->cam;
     numSquares = (int)(cam->baseX / (cam->zoomLimits.x * cam->zoomLimits.x * GEL_SQUARE_SIZE)) + 6; numSquares *= numSquares;
     spatialDataSize = sizeof(s_gelSpatialData) * numSquares * thinDrawer->swapChain->imageCount;
     spatialDataLayerSize = sizeof(s_gelSpatialData) * numSquares;
 
     thinDrawer->uniformHelper(sizeof(s_perGelData) * MAX_GEL_COUNT * thinDrawer->swapChain->imageCount,
-                                uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    thinDrawer->uniformHelper(spatialDataSize, uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+                                &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(spatialDataSize, &uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     // fill with random data
     basePositions.resize(MAX_GEL_COUNT);
@@ -124,9 +121,9 @@ void Gel::prepareUniforms()
     }
 
     s_perGelData* mapMem;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, sizeof(s_perGelData) * basePositions.size(), 0, (void**)&mapMem);
+    vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_perGelData) * basePositions.size(), 0, (void**)&mapMem);
     memcpy(mapMem, basePositions.data(), sizeof(s_perGelData) * MAX_GEL_COUNT);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }
 
 void Gel::setupDescriptorSetLayout()
@@ -213,12 +210,12 @@ void Gel::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[1]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[1].descriptor;
     writeDescriptorSet.dstBinding = 1;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 }

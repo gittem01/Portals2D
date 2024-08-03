@@ -14,29 +14,27 @@ void LineZ::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
-    thinDrawer->uniformHelper(sizeof(s_lineZUbo) * 2000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_lineZUbo) * 2000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     float sp = 0.5;
     for (float i = 0; i < 8.0; i++)
     {
         s_lineZUbo* lineZUbo;
-        vkMapMemory(logicalDevice, uniformBuffers[0]->memory, i * sizeof(s_lineZUbo), sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+        vkMapMemory(logicalDevice, uniformBuffers[0].memory, i * sizeof(s_lineZUbo), sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
         lineZUbo->points = glm::vec4(sp, 0.0, sp + i * 0.125 + 0.125 * 0.5, i * 0.125);
         lineZUbo->colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
         lineZUbo->data = glm::vec4(0.125, 0.0, 0.0, 0.0);
-        vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+        vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
     }
     sp = 1.5;
     for (float i = 0.0; i < 8.0; i++)
     {
         s_lineZUbo* lineZUbo;
-        vkMapMemory(logicalDevice, uniformBuffers[0]->memory, (i + 8) * sizeof(s_lineZUbo), sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+        vkMapMemory(logicalDevice, uniformBuffers[0].memory, (i + 8) * sizeof(s_lineZUbo), sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
         lineZUbo->points = glm::vec4(sp, 0.0, sp + i * 0.125 + 0.125 * 0.5, i * 0.125);
         lineZUbo->colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
         lineZUbo->data = glm::vec4(0.125, 0.0, 0.0, 0.0);
-        vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+        vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
     }
 
     for (int i = -20; i < 20; i++)
@@ -44,10 +42,10 @@ void LineZ::prepareUniforms()
         for (int j = -20; j < 20; j++)
         {
             s_lineZUbo* lineZUbo;
-            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, numZs++ * sizeof(s_lineZUbo), sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+            vkMapMemory(logicalDevice, uniformBuffers[0].memory, numZs++ * sizeof(s_lineZUbo), sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
             lineZUbo->points = glm::vec4(j, i, j, i);
             lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
-            vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+            vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
         }
     }
 
@@ -127,7 +125,7 @@ void LineZ::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

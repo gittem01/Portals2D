@@ -14,18 +14,16 @@ void BlueField::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
-    thinDrawer->uniformHelper(sizeof(s_blueFieldUbo) * 2000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_blueFieldUbo) * 2000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_blueFieldUbo* blueFieldUbo;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
+    vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
     blueFieldUbo->pointts = glm::vec4(-10.0, 2.5, +10.0, 2.5);
     blueFieldUbo->colour = glm::vec4(0.0, 0.3, 1.0, 0.7);
     blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, 1.0);
     blueFieldUbo->data = glm::vec4(0.8, 0.0, 1.0, -1.0);
     blueFieldUbo->shootData.z = -10000.0;
-    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }
 
 void BlueField::setupDescriptorSetLayout()
@@ -101,7 +99,7 @@ void BlueField::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

@@ -10,11 +10,7 @@ void PlayerShader::prepareVertexData()
     const int bufferSize = 1;
     buffers.resize(bufferSize);
 
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
+    s_buffers* vertices = &buffers[0];
 
     std::vector<s_basicVertex> vertexBuffer =
     {
@@ -41,13 +37,8 @@ void PlayerShader::prepareUniforms()
 
     uniformBuffers.resize(bufferSize);
 
-    for (int j = 0; j < bufferSize; j++)
-    {
-        uniformBuffers[j] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-    }
-
-    thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT_PLAYER, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_PLAYER);
-    thinDrawer->uniformHelper(alignedSize2 * UNIFORM_ALLOC_COUNT_PLAYER_2, uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_PLAYER_2);
+    thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT_PLAYER, &uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_PLAYER);
+    thinDrawer->uniformHelper(alignedSize2 * UNIFORM_ALLOC_COUNT_PLAYER_2, &uniformBuffers[1], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT_PLAYER_2);
 }
 
 void PlayerShader::setupDescriptorSetLayout()
@@ -130,11 +121,11 @@ void PlayerShader::setupDescriptorSet()
 
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.dstBinding = 0;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[1]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[1].descriptor;
     writeDescriptorSet.dstBinding = 1;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
 

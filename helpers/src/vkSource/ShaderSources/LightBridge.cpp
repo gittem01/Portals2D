@@ -14,16 +14,14 @@ void LightBridge::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
-    thinDrawer->uniformHelper(sizeof(s_bridgeUbo) * 2000, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_bridgeUbo) * 2000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_bridgeUbo* bridgeUbo;
-    vkMapMemory(logicalDevice, uniformBuffers[0]->memory, 0, sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
+    vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
     bridgeUbo->points = glm::vec4(-10.0, -5.0, 0.0, 10.0);
     bridgeUbo->data = glm::vec4(0.6, 0.0, 0.0, 0.0);
     bridgeUbo->portal.x = -317653618351378.8376137f;
-    vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }
 
 void LightBridge::setupDescriptorSetLayout()
@@ -99,7 +97,7 @@ void LightBridge::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

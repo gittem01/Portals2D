@@ -10,11 +10,7 @@ void PolynomialShader::prepareVertexData()
     const int bufferSize = 1;
     buffers.resize(bufferSize);
 
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
+    s_buffers* vertices = &buffers[0];
 
     std::vector<s_basicVertex> vertexBuffer;
 
@@ -118,7 +114,7 @@ void PolynomialShader::render(VkCommandBuffer cmdBuff, class Camera* cam)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -130,7 +126,7 @@ void PolynomialShader::render(VkCommandBuffer cmdBuff, class Camera* cam)
         {
             vkCmdPushConstants(cmdBuff, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_polynomUbo), &renderData.data);
 
-            vkCmdDraw(cmdBuff, buffers[0]->count, 1, 0, 0);
+            vkCmdDraw(cmdBuff, buffers[0].count, 1, 0, 0);
         }
     }
 }

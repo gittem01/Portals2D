@@ -97,7 +97,7 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, cd->fontShader->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &cd->fontShader->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &cd->fontShader->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		cd->fontShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -135,7 +135,7 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				cd->fontShader->pipelineLayout, 1, 1, &chrData.tex->set, 0, VK_NULL_HANDLE);
 
-			vkCmdDraw(cmdBuff, cd->fontShader->buffers[0]->count, 1, 0, 0);
+			vkCmdDraw(cmdBuff, cd->fontShader->buffers[0].count, 1, 0, 0);
 			prevData = chrData;
 		}
 	}

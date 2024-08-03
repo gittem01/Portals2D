@@ -13,9 +13,7 @@ void BlackWall::prepareUniforms()
 
     uniformBuffers.resize(1);
 
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
-    thinDrawer->uniformHelper(alignedSizeFS * 1, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(alignedSizeFS * 1, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void BlackWall::testFill()
@@ -54,11 +52,11 @@ void BlackWall::testFill()
 
             float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
             s_wallUbo_b* wallUbo;
-            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
+            vkMapMemory(logicalDevice, uniformBuffers[0].memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
             wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
             wallUbo->colour = glm::vec4(0.03, 0.03, 0.03, 1.0) * rndVal;
             wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 0.8, 0.0);
-            vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+            vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
             gData->offsetEnd++;
         }
     }
@@ -74,11 +72,11 @@ void BlackWall::testFill()
 
             float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
             s_wallUbo_b* wallUbo;
-            vkMapMemory(logicalDevice, uniformBuffers[0]->memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
+            vkMapMemory(logicalDevice, uniformBuffers[0].memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
             wallUbo->posSize = glm::vec4(i * sz2 + -4.0, j * sz2 + 4.0, sz2, sz2);
             wallUbo->colour = glm::vec4(0.2, 0.2, 0.2, 1.0) * rndVal;
             wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 1.0, 0.0);
-            vkUnmapMemory(logicalDevice, uniformBuffers[0]->memory);
+            vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
             gData->offsetEnd++;
         }
     }
@@ -160,7 +158,7 @@ void BlackWall::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
@@ -170,17 +168,17 @@ void BlackWall::recreateUniforms(int size)
 {
     vkDeviceWaitIdle(logicalDevice);
 
-    vkDestroyBuffer(logicalDevice, uniformBuffers[0]->buffer, VK_NULL_HANDLE);
-    vkFreeMemory(logicalDevice, uniformBuffers[0]->memory, VK_NULL_HANDLE);
+    vkDestroyBuffer(logicalDevice, uniformBuffers[0].buffer, VK_NULL_HANDLE);
+    vkFreeMemory(logicalDevice, uniformBuffers[0].memory, VK_NULL_HANDLE);
 
-    thinDrawer->uniformHelper(sizeof(s_wallUbo_w) * size, uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_wallUbo_w) * size, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkWriteDescriptorSet writeDescriptorSet = { };
     writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writeDescriptorSet.descriptorCount = 1;
     writeDescriptorSet.dstBinding = 0;
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

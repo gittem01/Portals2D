@@ -10,11 +10,7 @@ void PortalShader3D::prepareVertexData()
     const int bufferSize = 1;
     buffers.resize(bufferSize);
 
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
+    s_buffers* vertices = &buffers[0];
 
     std::vector<s_basicVertex> vertexBuffer =
     {
@@ -55,9 +51,7 @@ void PortalShader3D::prepareUniforms()
 
     uniformBuffers.resize(1);
 
-    uniformBuffers[0] = (s_uniformBuffer*)malloc(sizeof(s_uniformBuffer));
-
-    thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);
+    thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, &uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);
 }
 
 void PortalShader3D::setupDescriptorSetLayout()
@@ -146,7 +140,7 @@ void PortalShader3D::setupDescriptorSet()
     allocInfo = vkinit::descriptorSetAllocateInfo(thinDrawer->descriptorPool, &descriptorSetLayouts[1], 1);
     CHECK_RESULT_VK(vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSets[1]));
     writeDescriptorSet.dstSet = descriptorSets[1];
-    writeDescriptorSet.pBufferInfo = &uniformBuffers[0]->descriptor;
+    writeDescriptorSet.pBufferInfo = &uniformBuffers[0].descriptor;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);

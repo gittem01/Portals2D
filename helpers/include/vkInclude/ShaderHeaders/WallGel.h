@@ -2,11 +2,18 @@
 
 #include <ShaderBase.h>
 
-typedef struct WalGellData
+// per wall line
+typedef struct
 {
     glm::vec4 positions;
-    glm::vec4 data;
+    glm::ivec4 data; // size, gelDataIndex, prevIndex, nextIndex
 } s_wallGelData;
+
+// in wall line
+typedef struct
+{
+    glm::vec4 data; // colorIndex, gelHeight, unused, unused
+} s_wallPerGelData;
 
 class WallGel : public ShaderBase
 {

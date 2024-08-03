@@ -104,7 +104,7 @@ void TestPlayer::memMap(void* ptr)
         b2Body* body = pb->body;
 
         s_dRenderPlayerUbo* ru2;
-        vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0]->memory, tp->playerShader->alignedSize * (i + imNum * 8),
+        vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0].memory, tp->playerShader->alignedSize * (i + imNum * 8),
             tp->playerShader->alignedSize, 0, (void**)&ru2);
 
         b2Vec2 pos = body->GetPosition();
@@ -130,7 +130,7 @@ void TestPlayer::memMap(void* ptr)
         }
         ru2->numPortals = j;
 
-        vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0]->memory);
+        vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[0].memory);
 
         i += 1;
     }
@@ -229,10 +229,10 @@ void TestPlayer::memMap(void* ptr)
     tp->renderData.ld.legAngle = tp->legAng;
 
     s_renderPlayerUbo* ru;
-    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory, tp->playerShader->alignedSize2 * imNum,
+    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory, tp->playerShader->alignedSize2 * imNum,
         tp->playerShader->alignedSize2, 0, (void**)&ru);
     memcpy((void*)ru, &tp->renderData, sizeof(s_renderPlayerUbo));
-    vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1]->memory);
+    vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory);
 }
 
 void TestPlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
@@ -246,7 +246,7 @@ void TestPlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, tp->playerShader->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &tp->playerShader->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &tp->playerShader->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         tp->playerShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -276,7 +276,7 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, gunEffectShader->pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &tp->playerShader->buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &tp->playerShader->buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         gunEffectShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);

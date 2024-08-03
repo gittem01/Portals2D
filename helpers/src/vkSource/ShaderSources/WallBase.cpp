@@ -18,11 +18,7 @@ void WallBase::prepareVertexData()
     const int bufferSize = 1;
     buffers.resize(bufferSize);
 
-    for (int i = 0; i < bufferSize; i++)
-    {
-        buffers[i] = (s_buffers*)malloc(sizeof(s_buffers));
-    }
-    s_buffers* vertices = buffers[0];
+    s_buffers* vertices = &buffers[0];
 
     std::vector<s_basicVertex> vertexBuffer =
     {
@@ -49,7 +45,7 @@ void WallBase::render(VkCommandBuffer cmdBuff, int layer, float camX, float camY
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &buffers[0]->buffer, &offsets);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &buffers[0].buffer, &offsets);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -71,7 +67,7 @@ void WallBase::render(VkCommandBuffer cmdBuff, int layer, float camX, float camY
 
             if (data.numElements == 0) continue;
 
-            vkCmdDraw(cmdBuff, buffers[0]->count, data.numElements, 0, data.offsetStart);
+            vkCmdDraw(cmdBuff, buffers[0].count, data.numElements, 0, data.offsetStart);
         }
     }
 }

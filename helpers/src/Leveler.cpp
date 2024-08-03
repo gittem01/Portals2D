@@ -167,10 +167,10 @@ void Leveler::initOffsets()
 				gData->numElements++;
 
 				void* pData;
-				CHECK_RESULT_VK(vkMapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory,
+				CHECK_RESULT_VK(vkMapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory,
 					gData->offsetEnd * sizeof(s_wallUbo_w), sizeof(s_wallUbo_w), 0, (void**)&pData));
 				memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
-				vkUnmapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory);
 				gData->offsetEnd++;
 
 				continue;
@@ -189,13 +189,13 @@ void Leveler::initOffsets()
 				gData->numElements++;
 
 				s_walLightlUbo* pData;
-				vkMapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0]->memory,
+				vkMapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0].memory,
 					gData->offsetEnd * sizeof(s_walLightlUbo), sizeof(s_walLightlUbo), 0, (void**)&pData);
 				pData->color = glm::vec4(1.0 + r0, 1.0 + g0, 1.0 + b0, 1.0);
 				pData->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
 				pData->data = glm::vec4(sz * 0.6, sz * 0.3, 0.3, -1.5);
 				pData->data2 = glm::vec4(ang, ang2, 0.8, 1.0);
-				vkUnmapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0].memory);
 				gData->offsetEnd++;
 				continue;
 			}
@@ -205,12 +205,12 @@ void Leveler::initOffsets()
 			gData->numElements++;
 
 			s_wallUbo_b* wallUbo;
-			vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
+			vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory,
 				gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
 			wallUbo->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
 			wallUbo->colour = glm::vec4(0.015, 0.015, 0.015, 1.0) * rndVal;
 			wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.8, 0.0);
-			vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
+			vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory);
 			gData->offsetEnd++;
 		}
 	}
@@ -247,7 +247,7 @@ void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->dualParticleShader->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->dualParticleShader->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->dualParticleShader->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->dualParticleShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -255,13 +255,13 @@ void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->dualParticleShader->pipelineLayout, 1, 1, &td->dualParticleShader->descriptorSets[1], 1, &dynamicOffsets);
 
-	vkCmdDraw(cmdBuff, td->dualParticleShader->buffers[0]->count, 300, 0, 0);
+	vkCmdDraw(cmdBuff, td->dualParticleShader->buffers[0].count, 300, 0, 0);
 
 	dynamicOffsets = td->dualParticleShader->alignedSize;
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->dualParticleShader->pipelineLayout, 1, 1, &td->dualParticleShader->descriptorSets[1], 1, &dynamicOffsets);
 
-	vkCmdDraw(cmdBuff, td->dualParticleShader->buffers[0]->count, 300, 0, 0);
+	vkCmdDraw(cmdBuff, td->dualParticleShader->buffers[0].count, 300, 0, 0);
 }
 
 void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
@@ -274,7 +274,7 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->laserShader->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->laserShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -282,7 +282,7 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->laserShader->pipelineLayout, 1, 1, &td->laserShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-	vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, td->laserShader->numLasers, 0, 0);
+	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, td->laserShader->numLasers, 0, 0);
 
 	int laserIndex = getLevelObjectIndex(LASERER);
 
@@ -304,15 +304,15 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
 		int laserOffset = td->laserShader->numLasers + td->lastSwapChainImageIndex;
 
 		s_laserUbo* laserUbo;
-		vkMapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0]->memory,
+		vkMapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0].memory,
 			laserOffset * sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
 		laserUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		laserUbo->colour = glm::vec4(1.0, 0.0, 0.0, 1.0);
 		laserUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
 
-		vkUnmapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0].memory);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, laserOffset);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, laserOffset);
 	}
 }
 
@@ -326,7 +326,7 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->lightBridge->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->lightBridge->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -334,7 +334,7 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->lightBridge->pipelineLayout, 1, 1, &td->lightBridge->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-	vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, td->lightBridge->numbridges, 0, 0);
+	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, td->lightBridge->numbridges, 0, 0);
 
 	int bridgeIndex = getLevelObjectIndex(LIGHT_BRIDGE);
 
@@ -356,14 +356,14 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
 		int bridgeOffset = td->lightBridge->numbridges + td->lastSwapChainImageIndex;
 
 		s_bridgeUbo* bridgeUbo;
-		vkMapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0]->memory,
+		vkMapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0].memory,
 			bridgeOffset * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 		bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		bridgeUbo->data = glm::vec4(0.4, 11.0, 1.0, 0.0);
 
-		vkUnmapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0].memory);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, bridgeOffset);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, bridgeOffset);
 	}
 }
 
@@ -376,7 +376,7 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->funnelShader->pipeline);
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->funnelShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -384,7 +384,7 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->funnelShader->pipelineLayout, 1, 1, &td->funnelShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-	vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, td->funnelShader->numFunnels, 0, 0);
+	vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0].count, td->funnelShader->numFunnels, 0, 0);
 
 	int funnelIndex = getLevelObjectIndex(FUNNEL);
 
@@ -409,7 +409,7 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 		int funnelOffset = td->funnelShader->numFunnels + td->lastSwapChainImageIndex;
 
 		s_funnelUbo* funnelUbo;
-		vkMapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0]->memory,
+		vkMapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0].memory,
 			funnelOffset * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 
 		funnelUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
@@ -419,9 +419,9 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 		funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -1.0);
 		funnelUbo->data2 = glm::vec4(diffLen + 10.0, diffLen - 1.0, diffLen, 0.0);
 
-		vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0].memory);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, funnelOffset);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, funnelOffset);
 	}
 }
 
@@ -444,7 +444,7 @@ void renderTextureds(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mt->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			mt->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -455,7 +455,7 @@ void renderTextureds(VkCommandBuffer cmdBuff, Leveler* leveler)
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			mt->pipelineLayout, 2, 1, &leveler->ol->items[i].tex->set, 0, VK_NULL_HANDLE);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, data.currentOffset - data.offsetStart, 0, data.offsetStart);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, data.currentOffset - data.offsetStart, 0, data.offsetStart);
 	}
 }
 
@@ -483,7 +483,7 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -509,7 +509,7 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 			vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-			vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+			vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 		}
 	}
 
@@ -555,14 +555,14 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 				vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-				vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+				vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 			}
 		}
 	}
 
 	int renderIndex = leveler->textureRenderOffset + td->lastSwapChainImageIndex;
 	s_manyTextureData* mtd;
-	vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, renderIndex * sizeof(s_manyTextureData),
+	vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory, renderIndex * sizeof(s_manyTextureData),
 		sizeof(s_manyTextureData), 0, (void**)&mtd);
 
 	float hAdd = scaleX % 2 == 1 ? 0.5 : 0.0;
@@ -576,11 +576,11 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 	}
 
 	mtd->data.x = leveler->selectedObjectRotation * b2_pi * 0.5;
-	vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
+	vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory);
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mt->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		mt->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -591,7 +591,7 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		mt->pipelineLayout, 2, 1, &item.tex->set, 0, VK_NULL_HANDLE);
 
-	vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, renderIndex);
+	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, renderIndex);
 }
 
 glm::vec2 rotateVec(glm::vec2 vec, float angle)
@@ -654,7 +654,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 	// lines
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -662,12 +662,12 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->debugLineShader->pipelineLayout, 1, 1, &td->debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-	vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, td->debugLineShader->numLines, 0, 0);
+	vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0].count, td->debugLineShader->numLines, 0, 0);
 
 	// platform
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->platformRectangle->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -675,7 +675,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->platformRectangle->pipelineLayout, 1, 1, &td->platformRectangle->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-	vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, td->platformRectangle->numPlatforms, 0, 0);
+	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, td->platformRectangle->numPlatforms, 0, 0);
 
 	if (leveler->ol->selectedItemIndex < 0) return;
 
@@ -703,14 +703,14 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
 		vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 	}
 	else if (leveler->consqClickVec.size() == 1)
 	{
@@ -731,15 +731,15 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		float midY = (minY + maxY) * 0.5 + 0.5;
 
 		s_platformRectUbo* platformUbo;
-		vkMapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory, td->platformRectangle->numPlatforms * sizeof(s_platformRectUbo),
+		vkMapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0].memory, td->platformRectangle->numPlatforms * sizeof(s_platformRectUbo),
 			sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
 		platformUbo->posSize = glm::vec4(midX, midY, xSize, ySize);
 		leveler->fillPlatformData(0, platformUbo);
-		vkUnmapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0].memory);
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->platformRectangle->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -747,12 +747,12 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->platformRectangle->pipelineLayout, 1, 1, &td->platformRectangle->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, td->platformRectangle->numPlatforms);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, td->platformRectangle->numPlatforms);
 
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -778,7 +778,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 				vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-				vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+				vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 			}
 		}
 	}
@@ -786,7 +786,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 	{
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->platformRectangle->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->platformRectangle->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -794,12 +794,12 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->platformRectangle->pipelineLayout, 1, 1, &td->platformRectangle->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, td->platformRectangle->numPlatforms);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, td->platformRectangle->numPlatforms);
 
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -834,7 +834,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 				vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-				vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+				vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 			}
 		}
 
@@ -843,7 +843,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		copyLine.colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
 		copyLine.data.y = 0.02; copyLine.data.z = 0.25;
 		copyLine.data.x = 0.4; copyLine.data.w = 0.2;
-		vkMapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory, td->debugLineShader->numLines * sizeof(s_debugLineUbo),
+		vkMapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0].memory, td->debugLineShader->numLines * sizeof(s_debugLineUbo),
 			sizeof(s_debugLineUbo) * 3, 0, (void**)&lineUbo);
 		*lineUbo = copyLine;
 		lineUbo->positions = glm::vec4(absStart.x, absStart.y, absEnd.x, absEnd.y);
@@ -856,10 +856,10 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		*lineUbo = copyLine;
 		lineUbo->positions = glm::vec4(absEnd.x - absDown.x, absEnd.y - absDown.y, absEnd.x + absDown.x, absEnd.y + absDown.y);
 
-		vkUnmapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0].memory);
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -867,7 +867,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->debugLineShader->pipelineLayout, 1, 1, &td->debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-		vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, 3, 0, td->debugLineShader->numLines);
+		vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0].count, 3, 0, td->debugLineShader->numLines);
 	}
 }
 
@@ -985,7 +985,7 @@ void renderCatapultLines(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->polynomShader->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->polynomShader->buffers[0]->buffer, &offsets);
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->polynomShader->buffers[0].buffer, &offsets);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->polynomShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -1019,7 +1019,7 @@ void renderCatapultLines(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 	vkCmdPushConstants(cmdBuff, td->polynomShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_polynomUbo), &data);
 
-	vkCmdDraw(cmdBuff, td->polynomShader->buffers[0]->count, 1, 0, 0);
+	vkCmdDraw(cmdBuff, td->polynomShader->buffers[0].count, 1, 0, 0);
 }
 
 void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
@@ -1039,7 +1039,7 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 	{
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -1054,7 +1054,7 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 
 		vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, objectData->scale.x * objectData->scale.y, 0, 0);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, objectData->scale.x * objectData->scale.y, 0, 0);
 	}
 
 	if (leveler->connecting && leveler->consqClickVec.size() > 0)
@@ -1078,7 +1078,7 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 		}
 		copyLine.data.y = 0.05; copyLine.data.z = 0.7;
 		copyLine.data.x = 1.0; copyLine.data.w = 0.0;
-		vkMapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory, td->debugLineShader->numLines * sizeof(s_debugLineUbo),
+		vkMapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0].memory, td->debugLineShader->numLines * sizeof(s_debugLineUbo),
 			sizeof(s_debugLineUbo) * 4, 0, (void**)&lineUbo);
 		*lineUbo = copyLine;
 		lineUbo->positions = glm::vec4(p0.x, p0.y, p0.x, p1.y);
@@ -1087,10 +1087,10 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 		*lineUbo = copyLine;
 		lineUbo->positions = glm::vec4(p0.x, p1.y, p1.x, p1.y);
 
-		vkUnmapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->logicalDevice, td->debugLineShader->uniformBuffers[0].memory);
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -1098,7 +1098,7 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->debugLineShader->pipelineLayout, 1, 1, &td->debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-		vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0]->count, 2, 0, td->debugLineShader->numLines);
+		vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0].count, 2, 0, td->debugLineShader->numLines);
 	}
 }
 
@@ -1128,38 +1128,38 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 		leveler->startRenderData.bodyColour1 = glm::vec4(0.0, 0.0, 1.0, 1.0);
 		leveler->startRenderData.bodyColour2 = glm::vec4(0.0, 1.0, 0.0, 1.0);
-		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory, 0,
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1].memory, 0,
 			td->playerShader->alignedSize2, 0, (void**)&ru);
 		memcpy((void*)ru, &leveler->startRenderData, sizeof(s_renderPlayerUbo));
-		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory);
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1].memory);
 
 		leveler->startRenderData.bodyColour1 = glm::vec4(1.0, 0.0, 0.0, 1.0);
 		leveler->startRenderData.bodyColour2 = glm::vec4(1.0, 0.4, 0.0, 1.0);
-		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory, td->playerShader->alignedSize2,
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1].memory, td->playerShader->alignedSize2,
 			td->playerShader->alignedSize2, 0, (void**)&ru);
 		memcpy((void*)ru, &leveler->startRenderData, sizeof(s_renderPlayerUbo));
-		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1]->memory);
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[1].memory);
 
 		s_dRenderPlayerUbo* ru2;
-		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory,
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory,
 			td->playerShader->alignedSize * td->lastSwapChainImageIndex * 2, td->playerShader->alignedSize, 0, (void**)&ru2);
 
 		ru2->posRotD = glm::vec4(leveler->startSquare.x + 0.5, leveler->startSquare.y + 0.75, 0.0, 0.0);
 		ru2->numPortals = 0;
 
-		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory);
 
-		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory,
+		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory,
 			td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2 + 1), td->playerShader->alignedSize, 0, (void**)&ru2);
 
 		ru2->posRotD = glm::vec4(leveler->endSquare.x + 0.5, leveler->endSquare.y + 0.75, 0.0, 0.0);
 		ru2->numPortals = 0;
 
-		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory);
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->playerShader->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->playerShader->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->playerShader->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->playerShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -1200,12 +1200,12 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 	{
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->endlessGrid->pipeline);
 
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->endlessGrid->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 200, 0, 0);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 200, 0, 0);
 	}
 
 	// GridSquare
@@ -1215,7 +1215,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 		{
 			vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
-			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -1232,7 +1232,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 			vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-			vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 25, 0, 0);
+			vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 25, 0, 0);
 
 			if (leveler->clickStart[0] > -50000)
 			{
@@ -1245,7 +1245,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 				vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
 				int drawCount = (abs(x0 - leveler->clickStart[0]) + 1) * (abs(y0 - leveler->clickStart[1]) + 1);
-				vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, drawCount, 0, 0);
+				vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, drawCount, 0, 0);
 			}
 		}
 		else if (lgd.objectType & (SINGLE_DRAWS | PLATFORM) && item.objectType & ERASER)
@@ -1259,7 +1259,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 			vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
-			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0]->buffer, &offsets);
+			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
 
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				td->gridSquare->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
@@ -1278,7 +1278,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 					vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-					vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+					vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 				}
 			}
 
@@ -1291,7 +1291,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 				vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
-				vkCmdDraw(cmdBuff, td->wallLight->buffers[0]->count, 1, 0, 0);
+				vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 			}
 		}
 	}
@@ -1685,10 +1685,10 @@ void Leveler::putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData)
 	if(PortalWorld::isLeft(b2P0, b2P1, b2Vec2(lastPos.x, lastPos.y), 0.0))
 	{
 		s_manyTextureData* mtd;
-		vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, objectData->offset * sizeof(s_manyTextureData),
+		vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory, objectData->offset * sizeof(s_manyTextureData),
 			sizeof(s_manyTextureData), 0, (void**)&mtd);
 		mtd->posSize.z *= -1.0f;
-		vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
+		vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory);
 
 		objectData->mirrored = true;
 	}
@@ -1862,18 +1862,18 @@ void Leveler::putPlatform(s_objectDataGrid* inData)
 	putBarrierOnMemories({ thinDrawer->platformRectangle, thinDrawer->debugLineShader });
 
 	s_platformRectUbo* platformUbo;
-	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory,
 		thinDrawer->platformRectangle->numPlatforms * sizeof(s_platformRectUbo), sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
 	platformUbo->posSize = glm::vec4(platformPos.x, platformPos.y, platformSize.x, platformSize.y);
 	fillPlatformData(platformType, platformUbo);
-	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory);
 
 	s_debugLineUbo* lineUbo;
 	s_debugLineUbo copyLine;
 	copyLine.colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
 	copyLine.data.y = 0.02; copyLine.data.z = 0.25;
 	copyLine.data.x = 0.4; copyLine.data.w = 0.2;
-	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->debugLineShader->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->debugLineShader->uniformBuffers[0].memory,
 		thinDrawer->debugLineShader->numLines * sizeof(s_debugLineUbo), sizeof(s_debugLineUbo) * 3, 0, (void**)&lineUbo);
 
 	*lineUbo = copyLine;
@@ -1887,7 +1887,7 @@ void Leveler::putPlatform(s_objectDataGrid* inData)
 	*lineUbo = copyLine;
 	lineUbo->positions = glm::vec4(lineEnd.x - rightLine.x, lineEnd.y - rightLine.y, lineEnd.x + rightLine.x, lineEnd.y + rightLine.y);
 
-	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->debugLineShader->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->debugLineShader->uniformBuffers[0].memory);
 
 	s_gridData uData; uData.ptr = (void*)inData;
 
@@ -2082,7 +2082,7 @@ bool Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
 	int renderIndex = pdData->currentOffset;
 	lastOffsetPos_M[index].push_back({ startX, startY });
 	s_manyTextureData* mtd;
-	vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, renderIndex * sizeof(s_manyTextureData),
+	vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory, renderIndex * sizeof(s_manyTextureData),
 		sizeof(s_manyTextureData), 0, (void**)&mtd);
 
 	float hAdd = scaleX % 2 == 1 ? 0.5 : 0.0;
@@ -2096,7 +2096,7 @@ bool Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
 	}
 
 	mtd->data.x = rotation * b2_pi * 0.5;
-	vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
+	vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory);
 
 	inData->offset = pdData->currentOffset;
 	inData->objectType = item.objectType;
@@ -2185,13 +2185,13 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 			glm::vec2 p1 = connection->renderPathPoints[i + 1];
 
 			s_lineZUbo* lineZUbo;
-			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 				sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
 			lineZUbo->points = glm::vec4(p0.x, p0.y, p1.x, p1.y);
 			lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
 			if (i == 0) lineZUbo->data.z = 1.0;
 			else if (i == connection->renderPathPoints.size() - 2) lineZUbo->data.y = 1.0;
-			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 		}
 
 		goto setMap;
@@ -2229,7 +2229,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 			lastOffsetPos_Connection.push_back(connection);
 
 			s_lineZUbo* lineZUbo;
-			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 				sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
 			float plus = connection->index * (1.0f / 8.0f) + 0.5f * (1.0f / 8.0f);
 
@@ -2242,7 +2242,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 			lineZUbo->points = glm::vec4(plus2.x, plus2.y,
 				connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus);
 			lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
-			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 
 			connection->renderPathPoints.push_back({ plus2.x, plus2.y });
 			connection->renderPathPoints.push_back({ connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus });
@@ -2255,11 +2255,11 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 				auto val = connection->pathPoints[i];
 				auto backVal = connection->pathPoints[std::max(i - 1, 0)];
 
-				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 					sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
 				lineZUbo->points = glm::vec4(backVal.x + plus, backVal.y + plus, val.x + plus, val.y + plus);
 				lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
-				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 
 				connection->renderPathPoints.push_back({ val.x + plus, val.y + plus });
 			}
@@ -2267,7 +2267,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 			connection->offsets.push_back(thinDrawer->lineZ->numZs);
 			lastOffsetPos_Connection.push_back(connection);
 
-			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
+			vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory, thinDrawer->lineZ->numZs++ * sizeof(s_lineZUbo),
 				sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
 
 			rot = connection->receiver->rotation;
@@ -2280,7 +2280,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 			lineZUbo->points = glm::vec4(connection->pathPoints.back().x + plus, connection->pathPoints.back().y + plus,
 				plus2.x, plus2.y);
 			lineZUbo->data = glm::vec4(0.125, 1.0, 0.8, 0.0);
-			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0]->memory);
+			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 
 			connection->renderPathPoints.push_back({ plus2.x, plus2.y });
 		}
@@ -2703,12 +2703,12 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		ShaderBase* shader = thinDrawer->laserShader;
 		s_laserUbo* laserUbo;
-		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
 		laserUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		laserUbo->colour = glm::vec4(1.0, 0.0, 0.0, objectData->startActive ? 1.0 : 0.3);
 		laserUbo->data = glm::vec4(0.4, 11.0, 36.0, 0.0);
-		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
 		thinDrawer->laserShader->numLasers++;
 	}
@@ -2725,12 +2725,12 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		ShaderBase* shader = thinDrawer->lightBridge;
 		s_bridgeUbo* bridgeUbo;
-		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 		bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		bridgeUbo->data = glm::vec4(0.4, 11.0, objectData->startActive ? 1.0 : 0.3, 0.0);
 		bridgeUbo->portal.x = -45263872644141.1361783f;
-		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
 		thinDrawer->lightBridge->numbridges++;
 	}
@@ -2747,7 +2747,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		ShaderBase* shader = thinDrawer->funnelShader;
 		s_funnelUbo* funnelUbo;
-		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 
 		funnelUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
@@ -2767,7 +2767,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -1.0);
 		}
 
-		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
 		thinDrawer->funnelShader->numFunnels++;
 	}
@@ -2782,14 +2782,14 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		ShaderBase* shader = thinDrawer->hazardShader;
 		s_hazardUbo* hazardUbo;
-		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
 
 		hazardUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		hazardUbo->colour = glm::vec4(1.0, 0.0, 0.0, objectData->startActive ? 1.0 : 0.15);
 		hazardUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
 
-		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
 		thinDrawer->hazardShader->numHazards++;
 	}
@@ -2804,7 +2804,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		ShaderBase* shader = thinDrawer->blueField;
 		s_blueFieldUbo* blueFieldUbo;
-		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory,
+		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 
 		blueFieldUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
@@ -2812,7 +2812,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, objectData->startActive ? 1.0 : 0.15);
 		blueFieldUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
 
-		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0]->memory);
+		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
 		thinDrawer->blueField->numFields++;
 	}
@@ -2834,7 +2834,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		int renderIndex = pdData->currentOffset + 1;
 		s_manyTextureData* mtd;
-		vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory, renderIndex * sizeof(s_manyTextureData),
+		vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory, renderIndex * sizeof(s_manyTextureData),
 			sizeof(s_manyTextureData), 0, (void**)&mtd);
 
 		int objRot = ((rotation + 2) % 4);
@@ -2844,7 +2844,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		mtd->posSize = glm::vec4(p.x, p.y,
 			item.gridRenderScale * item.scaleRatio.x, item.gridRenderScale * item.scaleRatio.y);
 		mtd->data.x = objRot * b2_pi * 0.5;
-		vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0]->memory);
+		vkUnmapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory);
 	}
 }
 
@@ -3297,7 +3297,7 @@ void Leveler::putBarrierOnMemories(std::vector<ShaderBase*> shaders)
 
 	for (int i = 0; i < shaders.size(); i++)
 	{
-		bufferBarrier.buffer = shaders[i]->uniformBuffers[0]->buffer;
+		bufferBarrier.buffer = shaders[i]->uniformBuffers[0].buffer;
 
 		vkCmdPipelineBarrier(
 			cmd,
@@ -3427,10 +3427,10 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
 				sendObjectRay(item, pos.x, pos.y, objectData->rotation, scaleX, scaleY, 0.2, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
 
 				s_laserUbo* laserUbo;
-				vkMapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory,
+				vkMapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0].memory,
 					objectData->extraOffsets[0] * sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
 				laserUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-				vkUnmapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0].memory);
 			}
 			break;
 
@@ -3441,10 +3441,10 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
 				sendObjectRay(item, pos.x, pos.y, objectData->rotation, scaleX, scaleY, 0.0, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
 
 				s_bridgeUbo* bridgeUbo;
-				vkMapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory,
+				vkMapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0].memory,
 					objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 				bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-				vkUnmapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0].memory);
 			}
 			break;
 
@@ -3455,7 +3455,7 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
 				sendObjectRay(item, pos.x, pos.y, objectData->rotation, scaleX, scaleY, 0.1, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
 
 				s_funnelUbo* funnelUbo;
-				vkMapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory,
+				vkMapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory,
 					objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 				float diffBefore = glm::length(glm::vec2(funnelUbo->pointts.z, funnelUbo->pointts.w) - glm::vec2(funnelUbo->pointts.x, funnelUbo->pointts.y));
 				float diffLen = glm::length(endPoint - startPoint);
@@ -3468,7 +3468,7 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
 					funnelUbo->data.y -= data2WChange;
 				}
 
-				vkUnmapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory);
 			}
 			break;
 
@@ -3534,18 +3534,18 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
 			if (squareData.objectType & WHITE_WALL)
 			{
 				s_wallUbo_w* wData;
-				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory,
+				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory,
 					squareData.data.offset, sizeof(s_wallUbo_w), 0, (void**)&wData);
 				wData->sideData.x = sideData;
-				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory);
 			}
 			else if (squareData.objectType & BLACK_WALL)
 			{
 				s_wallUbo_b* wData;
-				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
+				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory,
 					squareData.data.offset, sizeof(s_wallUbo_w), 0, (void**)&wData);
 				wData->sideData.x = sideData;
-				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
+				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory);
 			}
 		}
 	}
@@ -3593,10 +3593,10 @@ void Leveler::addGridSquare_W(short x, short y)
 	gridData->offsetEnd++;
 
 	void* pData;
-	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory,
 		offset, sizeof(s_wallUbo_w), 0, (void**)&pData);
 	memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
-	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory);
 
 	const s_levelGridData& currentGridData = getSquare(x, y);
 
@@ -3615,12 +3615,12 @@ void Leveler::addGridSquare_B(short x, short y)
 	s_wallUbo_b* wallUbo;
 	int offset = gridData->offsetEnd * sizeof(s_wallUbo_b);
 	gridData->offsetEnd++;
-	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory,
 		offset, sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
 	wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
 	wallUbo->colour = glm::vec4(0.15, 0.15, 0.15, 1.0) * rndVal;
 	wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.06, 1.0, 0.0);
-	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory);
 
 	const s_levelGridData& currentGridData = getSquare(x, y);
 
@@ -3638,13 +3638,13 @@ void Leveler::addGridSquare_G(short x, short y)
 	s_wallUbo_l* wallUbo;
 	int offset = gridData->offsetEnd * sizeof(s_wallUbo_l);
 	gridData->offsetEnd++;
-	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory,
 		offset, sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
 	wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
 	wallUbo->colour = glm::vec4(0.0, 0.0, 0.0, 1.0);
 	wallUbo->bgColour = glm::vec4(0.02, 0.02, 0.02, 0.7);
 	wallUbo->data = glm::vec4(2.0, 0.2, 1.0, 1.0);
-	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory);
 
 	const s_levelGridData& currentGridData = getSquare(x, y);
 
@@ -3662,13 +3662,13 @@ void Leveler::addGridSquare_F(short x, short y)
 	s_wallUbo_l* wallUbo;
 	int offset = gridData->offsetEnd * sizeof(s_wallUbo_l);
 	gridData->offsetEnd++;
-	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory,
 		offset, sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
 	wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
 	wallUbo->colour = glm::vec4(0.1, 0.1, 0.1, 1.0);
 	wallUbo->bgColour = glm::vec4(0.0, 0.0, 0.0, 0.0);
 	wallUbo->data = glm::vec4(2.0, 0.4, 1.0, 0.5);
-	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory);
 
 	const s_levelGridData& currentGridData = getSquare(x, y);
 
@@ -3760,15 +3760,15 @@ void Leveler::moveVkMem(ShaderBase* shader, int srcOffset, int destOffset, int s
 	static unsigned char wUboStager[512];
 	void* wUbo;
 
-	vkMapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0].memory,
 		srcOffset, size, 0, (void**)&wUbo);
 	memcpy((void*)&wUboStager, wUbo, size);
-	vkUnmapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0].memory);
 
-	vkMapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0]->memory,
+	vkMapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0].memory,
 		destOffset, size, 0, (void**)&wUbo);
 	memcpy(wUbo, (void*)&wUboStager, size);
-	vkUnmapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0]->memory);
+	vkUnmapMemory(thinDrawer->logicalDevice, shader->uniformBuffers[0].memory);
 }
 
 void Leveler::fillPlatformData(int platformType, s_platformRectUbo* platformUbo)
@@ -3846,10 +3846,10 @@ void Leveler::setRealTimeActivation(s_objectDataGrid* objectData)
 	{
 		putBarrierOnMemories({ thinDrawer->laserShader });
 		s_laserUbo* laserUbo;
-		vkMapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory,
+		vkMapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_laserUbo), sizeof(s_laserUbo), 0, (void**)&laserUbo);
 		laserUbo->colour.w = objectData->startActive ? 1.0 : 0.25;
-		vkUnmapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(thinDrawer->laserShader->logicalDevice, thinDrawer->laserShader->uniformBuffers[0].memory);
 	}
 	break;
 
@@ -3857,10 +3857,10 @@ void Leveler::setRealTimeActivation(s_objectDataGrid* objectData)
 	{
 		putBarrierOnMemories({ thinDrawer->lightBridge });
 		s_bridgeUbo* bridgeUbo;
-		vkMapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory,
+		vkMapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 		bridgeUbo->data.z = objectData->startActive ? 1.0 : 0.25;
-		vkUnmapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0]->memory);
+		vkUnmapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0].memory);
 	}
 	break;
 
@@ -3868,32 +3868,32 @@ void Leveler::setRealTimeActivation(s_objectDataGrid* objectData)
 	{
 		putBarrierOnMemories({ thinDrawer->funnelShader });
 		s_funnelUbo* funnelUbo;
-		vkMapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory,
+		vkMapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 		funnelUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
 		funnelUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
-		vkUnmapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory);
 	}
 	break;
 	case HAZARDER:
 	{
 		putBarrierOnMemories({ thinDrawer->hazardShader });
 		s_hazardUbo* hazardUbo;
-		vkMapMemory(thinDrawer->hazardShader->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory,
+		vkMapMemory(thinDrawer->hazardShader->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
 		hazardUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
-		vkUnmapMemory(thinDrawer->hazardShader->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0]->memory);
+		vkUnmapMemory(thinDrawer->hazardShader->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 	}
 	break;
 	case FORCE_FIELD:
 	{
 		putBarrierOnMemories({ thinDrawer->blueField });
 		s_blueFieldUbo* blueFieldUbo;
-		vkMapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory,
+		vkMapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 		blueFieldUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
 		blueFieldUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
-		vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0]->memory);
+		vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 	}
 	break;
 	default:
@@ -3968,7 +3968,7 @@ void Leveler::handleRightClickClick()
 					putBarrierOnMemories({ thinDrawer->funnelShader });
 
 					s_funnelUbo* funnelUbo;
-					vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory,
+					vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory,
 						objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 					float colorSplitPos = std::max(std::min(funnelUbo->data2.x + funnelUbo->data.w * ((float)game->gameTime - funnelUbo->data2.w) *
 						-200.0f, std::min(funnelUbo->data2.z + 10.0f, 60.0f)), -10.0f);
@@ -3980,7 +3980,7 @@ void Leveler::handleRightClickClick()
 					funnelUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
 					funnelUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
 
-					vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0]->memory);
+					vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory);
 				}
 				else if (ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
 				{
@@ -3991,13 +3991,13 @@ void Leveler::handleRightClickClick()
 						putBarrierOnMemories({ thinDrawer->platformRectangle });
 
 						s_platformRectUbo* platformUbo;
-						vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory,
+						vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory,
 							objectData->offset * sizeof(s_platformRectUbo),
 							sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
 
 						fillPlatformData(objectData->platformType, platformUbo);
 
-						vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0]->memory);
+						vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory);
 					}
 				}
 				
