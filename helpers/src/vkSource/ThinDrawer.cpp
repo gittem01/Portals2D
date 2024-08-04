@@ -551,7 +551,10 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         wallGel->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-    vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        wallGel->pipelineLayout, 1, 1, &wallGel->descriptorSets[1], 0, nullptr);
+
+    vkCmdDraw(cmdBuff, 6, 4, 0, 0);
 
     static glm::vec2 p = glm::vec2(0.0, 0.0);
 

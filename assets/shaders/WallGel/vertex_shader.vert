@@ -1,7 +1,9 @@
 #version 460 core
 
 layout (location = 0) out vec2 localPosition;
-layout (location = 1) out vec2 worldPosition;
+layout (location = 1) flat out ivec4 outData;
+layout (location = 2) flat out float angle;
+layout (location = 3) out vec2 wp;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -10,11 +12,26 @@ layout (set = 0, binding = 0) uniform SharedUboData
     vec4 data; // zoom, unused, unused, unused
 } sharedUboData;
 
-layout (push_constant) uniform PC
+struct perGelLineData
 {
-	vec4 positions;
-    vec4 data; // thickness, unused, unused, unused
-} pc;
+    vec4 positions;
+    ivec4 data; // size, gelDataIndex, prevIndex, nextIndex
+};
+
+struct pergGelTickData
+{
+    vec4 data; // colorIndex, gelHeight, colorIndex, gelHeight
+};
+
+layout (std140, set = 1, binding = 0) readonly buffer UBO
+{
+    perGelLineData sData[];
+} ubo;
+
+layout (std140, set = 1, binding = 1) readonly buffer UBO2
+{
+    pergGelTickData sData[];
+} ubo2;
 
 vec2 vertexArray[6] = 
 {
@@ -41,15 +58,16 @@ vec2 rotateAroundOrigin(vec2 point, float angle)
 
 void main() 
 {
-    vec2 p0 = vec2(-2.0, 0.0);
-    vec2 p1 = vec2(+2.0, 0.0);
-    float angle = atan(p1.y - p0.y, p1.x - p0.x);
+    perGelLineData data = ubo.sData[gl_InstanceIndex];
+    outData = data.data;
+    vec2 p0 = data.positions.xy;
+    vec2 p1 = data.positions.zw;
+    angle = atan(p1.y - p0.y, p1.x - p0.x);
     vec2 p = vertexArray[gl_VertexIndex];
     p.x *= length(p0 - p1);
     localPosition = p;
     p.y *= -0.4;
-    p = rotateAroundOrigin(p, angle) + p0;
-    worldPosition = p;
-    vec4 ppp = sharedUboData.orthoMatrix * vec4(p, 0.0, 1.0);
-	gl_Position = ppp;
+    wp = rotateAroundOrigin(p, angle) + p0;
+
+	gl_Position = sharedUboData.orthoMatrix * vec4(wp, 0.0, 1.0);
 }

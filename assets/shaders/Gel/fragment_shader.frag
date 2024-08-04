@@ -74,7 +74,7 @@ void main()
         vec3 worldPos = vec3(wp, 0.0);
         vec3 viewDir = normalize(worldPos - vec3(sharedUboData.cameraPos.xy * vec2(1.0, -1.0), sharedUboData.cameraPos.z));
         vec3 lightDir = normalize(vec3(-1.0, 1.0, -1.0));
-        vec3 reflectDir = reflect(-lightDir, normal);  
+        vec3 reflectDir = reflect(-lightDir, normal);
 
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
         float diff = dot(normal, -lightDir) + 0.5;
