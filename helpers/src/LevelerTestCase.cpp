@@ -4,6 +4,7 @@
 #include <Game.h>
 #include <TestPlayer.h>
 #include <Overlayer.h>
+#include <DefaultObjects/Gel.h>
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
@@ -652,7 +653,17 @@ void LevelerTestCase::perFrameUpdate()
 
 void LevelerTestCase::onUpdate()
 {
+    static float lastCreationTime = 0.0;
+
     BaseTestCase::onUpdate();
 
-
+    if (g->gameTime - lastCreationTime > 0.05)
+    {
+        lastCreationTime = g->gameTime;
+        float randVal = (float)rand() / RAND_MAX;
+        float randVal2 = (float)rand() / RAND_MAX;
+        float time0 = glfwGetTime();
+        Gel::generateGel(glm::vec2(0.0, 0.0), glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.2, 0);
+        printf("Gel generation time: %f\n", glfwGetTime() - time0);
+    }
 }

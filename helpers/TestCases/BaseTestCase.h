@@ -51,7 +51,7 @@ public:
 
     void afterCreate();
 
-    void onUpdate();
+    virtual void onUpdate();
 
     virtual void perFrameUpdate() {}
 

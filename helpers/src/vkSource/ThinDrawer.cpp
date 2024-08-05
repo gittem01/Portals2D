@@ -79,7 +79,7 @@ void ThinDrawer::initExtra()
     diagonalLiner = new DiagonalLiner(this); shaders.push_back(diagonalLiner);
     platformRectangle = new PlatformRectangle(this); shaders.push_back(platformRectangle);
     polynomShader = new PolynomialShader(this); shaders.push_back(polynomShader);
-    gelShader = new Gel(this); shaders.push_back(gelShader);
+    gelShader = new GelShader(this); shaders.push_back(gelShader);
     wallGel = new WallGel(this); shaders.push_back(wallGel);
     splash = new SplashShader(this); shaders.push_back(splash);
 
@@ -475,7 +475,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     diagonalLiner->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
-    gelShader->preCalculate();
+    /*gelShader->preCalculate();
 
     int gelType = 1;
 
@@ -492,7 +492,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         glm::vec2 p = glm::vec2((i - 1000) * 0.3 + gameTime, sin(i * 0.3 + gameTime) * 2.0);
         gelType = i % 4;
         gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }
+    }*/
 
     gelShader->render(cmdBuff, lastSwapChainImageIndex);
 

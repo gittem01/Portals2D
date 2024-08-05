@@ -6,7 +6,7 @@
 #include <vkInit.h>
 #include <SwapChain.h>
 
-void Gel::preCalculate()
+void GelShader::preCalculate()
 {
     xSquareCount = (thinDrawer->wh->cam->xSides.y - thinDrawer->wh->cam->xSides.x) / GEL_SQUARE_SIZE + 4;
     ySquareCount = (thinDrawer->wh->cam->ySides.y - thinDrawer->wh->cam->ySides.x) / GEL_SQUARE_SIZE + 4;
@@ -22,13 +22,13 @@ void Gel::preCalculate()
     lastIndex = 0;
 }
 
-void Gel::putGel(int gelType, glm::vec2 pos, float radius)
+void GelShader::putGel(int gelType, glm::vec2 pos, float radius)
 {
-    // take these down later
     int i = lastIndex++;
     
     preFillGelData[i].posR.x = pos.x;
     preFillGelData[i].posR.y = pos.y;
+    preFillGelData[i].posR.z = radius;
     preFillGelData[i].color = gelColors[gelType];
 
     glm::vec2 posDiff = pos + glm::vec2(xSquareCount, ySquareCount) * (GEL_SQUARE_SIZE / 2.0f) - thinDrawer->wh->cam->pos * glm::vec2(1.0, -1.0);
@@ -49,7 +49,7 @@ void Gel::putGel(int gelType, glm::vec2 pos, float radius)
     spatialData[sInd / 4][sInd % 4] = i;
 }
 
-void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
+void GelShader::render(VkCommandBuffer cmdBuff, int swapChainImage)
 {
     int memStart1 = sizeof(s_perGelData) * MAX_GEL_COUNT * swapChainImage;
     int memSize1 = sizeof(s_perGelData) * lastIndex;
@@ -92,12 +92,12 @@ void Gel::render(VkCommandBuffer cmdBuff, int swapChainImage)
     vkCmdDraw(cmdBuff, thinDrawer->wallLight->buffers[0].count, numRender, 0, 0);
 }
 
-void Gel::prepareVertexData()
+void GelShader::prepareVertexData()
 {
 
 }
 
-void Gel::prepareUniforms()
+void GelShader::prepareUniforms()
 {
     uniformBuffers.resize(2);
 
@@ -126,7 +126,7 @@ void Gel::prepareUniforms()
     vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }
 
-void Gel::setupDescriptorSetLayout()
+void GelShader::setupDescriptorSetLayout()
 {
     const int descriptorSetLayoutCount = 2;
 
@@ -156,7 +156,7 @@ void Gel::setupDescriptorSetLayout()
     CHECK_RESULT_VK(vkCreatePipelineLayout(logicalDevice, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &pipelineLayout));
 }
 
-void Gel::preparePipeline()
+void GelShader::preparePipeline()
 {
     VkGraphicsPipelineCreateInfo* pipelineCreateInfo = thinDrawer->getPipelineInfoBase();
     pipelineCreateInfo->layout = pipelineLayout;
@@ -196,7 +196,7 @@ void Gel::preparePipeline()
     ThinDrawer::freePipelineData(pipelineCreateInfo);
 }
 
-void Gel::setupDescriptorSet()
+void GelShader::setupDescriptorSet()
 {
     descriptorSets.resize(descriptorSetLayouts.size());
 
@@ -218,4 +218,6 @@ void Gel::setupDescriptorSet()
     writeDescriptorSet.pBufferInfo = &uniformBuffers[1].descriptor;
     writeDescriptorSet.dstBinding = 1;
     vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, VK_NULL_HANDLE);
+
+    preCalculate();
 }

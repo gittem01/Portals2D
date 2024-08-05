@@ -487,7 +487,7 @@ PortalCollisionType Portal::handleCollidingFixtures(b2Contact* contact, b2Fixtur
 
     if (fix2->IsSensor())
     {
-        angle = 0.0;
+        angle = getFixtureSide(fix2) * b2_pi;
     }
     else
     {

@@ -11,6 +11,16 @@ DefaultObject::DefaultObject(PortalWorld* portalWorld, PortalBody* pb)
 	this->pBody = &pb->worldIndex->pbIndices;
 }
 
+void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
+{
+
+}
+
+void DefaultObject::endContact(b2Contact* contact, b2Fixture* otherFix)
+{
+
+}
+
 void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
 

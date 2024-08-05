@@ -136,6 +136,7 @@ friend class RotationJointDef;
 friend class ThinDrawer;
 friend class TestCase8;
 friend class Leveler;
+friend class Gel;
 
 public:
     std::vector<pbWorldData*> bodyIndices;

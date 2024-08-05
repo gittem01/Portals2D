@@ -198,7 +198,7 @@ public:
     DiagonalLiner* diagonalLiner;
     PlatformRectangle* platformRectangle;
     PolynomialShader* polynomShader;;
-    Gel* gelShader;
+    GelShader* gelShader;
     WallGel* wallGel;
     SplashShader* splash;
 

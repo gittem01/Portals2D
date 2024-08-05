@@ -78,6 +78,23 @@ void ContactListener::BeginContact(b2Contact* contact)
         PortalBody* p = (PortalBody*)bDataB->data;
         p->collisionBegin(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
+
+    if (bDataA && bDataA->extraData)
+    {
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
+        if (physicsData->type & DEFAULT_OBJECT_O)
+        {
+            ((DefaultObject*)physicsData->data)->beginContact(contact, contact->GetFixtureB());
+        }
+    }
+    if (bDataB && bDataB->extraData)
+    {
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
+        if (physicsData->type & DEFAULT_OBJECT_O)
+        {
+            ((DefaultObject*)physicsData->data)->beginContact(contact, contact->GetFixtureA());
+        }
+    }
 }
 
 void ContactListener::EndContact(b2Contact* contact)
@@ -97,6 +114,23 @@ void ContactListener::EndContact(b2Contact* contact)
     {
         PortalBody* p = (PortalBody*)bDataB->data;
         p->collisionEnd(contact, contact->GetFixtureB(), contact->GetFixtureA());
+    }
+
+    if (bDataA && bDataA->extraData)
+    {
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
+        if (physicsData->type & DEFAULT_OBJECT_O)
+        {
+            ((DefaultObject*)physicsData->data)->endContact(contact, contact->GetFixtureB());
+        }
+    }
+    if (bDataB && bDataB->extraData)
+    {
+        g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
+        if (physicsData->type & DEFAULT_OBJECT_O)
+        {
+            ((DefaultObject*)physicsData->data)->endContact(contact, contact->GetFixtureA());
+        }
     }
 }
 

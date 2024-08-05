@@ -24,10 +24,10 @@ typedef struct
     glm::ivec4 gels[32];
 } s_gelSpatialData;
 
-class Gel : public ShaderBase
+class GelShader : public ShaderBase
 {
 public:
-    Gel(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
+    GelShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     int numSquares;
     int spatialDataSize;

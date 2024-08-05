@@ -4,6 +4,7 @@
 #include <Leveler.h>
 #include <Overlayer.h>
 #include <DefaultObjects/Turret.h>
+#include <DefaultObjects/Gel.h>
 
 Game* Game::object;
 
@@ -75,6 +76,7 @@ void Game::LevelerState()
 void Game::TestState()
 {
     Turret::staticInit();
+    Gel::staticInit();
 
     if (!leveler)
     {
@@ -102,6 +104,7 @@ void Game::TestState()
 
             testCase->onUpdate();
             Turret::perFrameUpdate();
+            Gel::update();
         }
         else
         {
