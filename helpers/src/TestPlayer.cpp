@@ -164,8 +164,8 @@ void TestPlayer::memMap(void* ptr)
         float sign = (linVel.x > 0) ? -1 : +1;
         float len = linVel.Length();
         tp->rotSpeed += len * Game::object->deltaTime * 10.0 * sign;
-        tp->rotSpeed = fmin(tp->rotSpeed, +len * 1.0 * b2_pi * 0.75);
-        tp->rotSpeed = fmax(tp->rotSpeed, -len * 1.0 * b2_pi * 0.75);
+        tp->rotSpeed = fmin(tp->rotSpeed, +len * b2_pi * 1.0);
+        tp->rotSpeed = fmax(tp->rotSpeed, -len * b2_pi * 1.0);
     }
 
     if ((diff.Length() > 0.2 || linVel.Length() > 1.0) && tp->grounded)

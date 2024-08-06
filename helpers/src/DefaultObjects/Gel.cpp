@@ -18,6 +18,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     b2BodyDef bDef;
     bDef.type = b2_dynamicBody;
     bDef.position.Set(pos.x, pos.y);
+    bDef.linearDamping = 0.6;
 
     b2CircleShape cShape;
     cShape.m_radius = radius;
@@ -100,6 +101,26 @@ void Gel::generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int color
 
 void Gel::update()
 {
+    for (int i = 0; i < gelCount; i++)
+    {
+        Gel* gel = gels[i];
+
+        for (int i = 0; i < gel->numNearGels; i++)
+		{
+            Gel* g = gel->nearGels[i];
+            if (g->gelIndex == -1) continue;
+            PortalBody* pb = (*g->pBody).at(0);
+            PortalBody* tpb = (*gel->pBody).at(0);
+			b2Vec2 pos = tpb->body->GetPosition();
+            b2Vec2 posDiff = pos - pb->body->GetPosition();
+            b2Vec2 velNow = tpb->body->GetLinearVelocity();
+            //tpb->body->SetLinearVelocity(velNow - 0.02f * posDiff);
+		}
+    }
+}
+
+void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
+{
     ThinDrawer::object->gelShader->preCalculate();
 
     for (int i = 0; i < gelCount; i++)
@@ -110,17 +131,10 @@ void Gel::update()
             b2Vec2 pos = pb->body->GetPosition();
             ThinDrawer::object->gelShader->putGel(gel->gelType, glm::vec2(pos.x, pos.y), gel->gelRadius * 2.0);
         }
-
-        b2Body* body = gel->pBody->at(0)->body;
-        if (body->GetLinearVelocity().y < -2.0)
-        {
-            //body->SetLinearVelocity(b2Vec2(body->GetLinearVelocity().x, -2.0f));
-        }
     }
-}
 
-void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
-{
+    ThinDrawer::object->gelShader->render(cmdBuff, ThinDrawer::object->lastSwapChainImageIndex);
+
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ThinDrawer::object->splash->pipeline);
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -132,7 +146,7 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
 
         vkCmdPushConstants(cmdBuff, ThinDrawer::object->splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
 
-        vkCmdDraw(cmdBuff, 6, 50, 0, 0);
+        vkCmdDraw(cmdBuff, 6, 25, 0, 0);
 
 		float dt = Game::object->gameTime - sData.data.y;
 
@@ -140,6 +154,30 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
 		{
             splashEffects[i--] = splashEffects[--splashCount];
 			continue;
+		}
+	}
+}
+
+void Gel::endContact(b2Contact* contact, b2Fixture* otherFix)
+{
+	if (otherFix->IsSensor())
+	{
+		bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
+		if (bData && bData->extraData)
+		{
+			g_PhysicsData* physicsData = (g_PhysicsData*)bData->extraData;
+			if (physicsData->type & GEL_O)
+			{
+				Gel* gel = (Gel*)physicsData->data;
+				for (int i = 0; i < numNearGels; i++)
+				{
+					if (nearGels[i] == gel)
+					{
+						nearGels[i] = nearGels[--numNearGels];
+						break;
+					}
+				}
+			}
 		}
 	}
 }
@@ -154,6 +192,25 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
     }
 
     if (!otherFix->IsSensor())
+    {
+        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
+        Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
+        splash();
+    }
+    else if (numNearGels < std::size(nearGels))
+    {
+        bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
+        if (bData && bData->extraData)
+        {
+            g_PhysicsData* physicsData = (g_PhysicsData*)bData->extraData;
+            if (physicsData->type & GEL_O)
+            {
+                Gel* gel = (Gel*)physicsData->data;
+                nearGels[numNearGels++] = gel;
+            }
+        }
+    }
+    else
     {
         ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
         Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));

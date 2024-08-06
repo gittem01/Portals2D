@@ -220,11 +220,58 @@ short LevelerTestCase::getDirs(glm::i16vec2 p0, glm::i16vec2 p1, short dir)
     return ret;
 }
 
+void LevelerTestCase::wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, int size, int prevIndex, bool initial)
+{
+    int prevOffset = -1;
+    s_wallGelData* mapMem;
+
+    if (prevIndex > -1)
+    {
+        vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory, sizeof(s_wallGelData) * prevIndex, sizeof(s_wallGelData), 0, (void**)&mapMem);
+        prevOffset = mapMem->data.y + mapMem->data.x - 10;
+        mapMem->data.w = offset;
+        vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory);
+    }
+
+    vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory, sizeof(s_wallGelData) * index, sizeof(s_wallGelData), 0, (void**)&mapMem);
+    if (initial)
+    {
+        mapMem->data.z = prevOffset;
+    }
+    else
+    {
+        mapMem->positions = glm::vec4(p0.x, p0.y, p1.x, p1.y);
+        mapMem->data = glm::ivec4(size, offset, prevOffset, -1);
+    }
+    vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory);
+
+    if (initial)
+	{
+		return;
+	}
+
+    s_wallPerGelData* mapMem2;
+    vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[1].memory, offset * sizeof(s_wallPerGelData) / 2, sizeof(s_wallPerGelData), 0, (void**)&mapMem2);
+
+    for (int i = 0; i < size; i++)
+    {
+        int index = i / 2;
+        int remInd = (i % 2) * 2 + 1;
+        mapMem2[index].data[remInd - 1] = 0.0;
+        mapMem2[index].data[remInd] = sin(i * 0.223) * 0.2 + 0.8;
+    }
+
+    vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[1].memory);
+}
+
 void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
 {
     char startDir = 1;
-
+    char prevDir = startDir;
     glm::i16vec2 pos = { x, y };
+    int initialIndex = numEdges;
+    int initialOffset = renderOffset;
+
     while (1)
     {
         glm::i16vec2 nextPos;
@@ -248,6 +295,18 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
         s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
         s_edgeGlobalData* eGlobalData = (s_edgeGlobalData*)eLocalData->globalData;
 
+        eGlobalData->renderOfsset = renderOffset;
+
+        int prevIndex = -1;
+        if ((prevDir - startDir + 4) % 4 == 1 && initialIndex != numEdges)
+        {
+            prevIndex = numEdges - 1;
+        }
+        wallMemFill(p0, p1, numEdges, renderOffset, wallData.size(), prevIndex);
+
+        renderOffset += eGlobalData->unitWalls.size();
+        numEdges++;
+
         assert(eGlobalData->unitWalls.size() == wallData.size());
 
         std::reverse_copy(wallData.begin(), wallData.end(), eGlobalData->unitWalls.begin());
@@ -258,8 +317,11 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
         }
 
         pos = nextPos;
+        prevDir = startDir;
         startDir = nextDir;
     }
+
+    wallMemFill(b2Vec2(), b2Vec2(), initialIndex, initialOffset, -1, numEdges - 1, true);
 }
 
 void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, std::vector<s_unitWallData>& wallData)
@@ -657,13 +719,14 @@ void LevelerTestCase::onUpdate()
 
     BaseTestCase::onUpdate();
 
-    if (g->gameTime - lastCreationTime > 0.05)
+    if (g->gameTime - lastCreationTime > 0.1)
     {
         lastCreationTime = g->gameTime;
         float randVal = (float)rand() / RAND_MAX;
         float randVal2 = (float)rand() / RAND_MAX;
-        float time0 = glfwGetTime();
-        Gel::generateGel(glm::vec2(0.0, 0.0), glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.2, 0);
-        printf("Gel generation time: %f\n", glfwGetTime() - time0);
+        Gel::generateGel(glm::vec2(0.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 0);
+        Gel::generateGel(glm::vec2(3.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 1);
+        Gel::generateGel(glm::vec2(6.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 2);
+        Gel::generateGel(glm::vec2(9.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 3);
     }
 }

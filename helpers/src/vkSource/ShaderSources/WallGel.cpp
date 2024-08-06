@@ -14,8 +14,8 @@ void WallGel::prepareUniforms()
 {
     uniformBuffers.resize(2);
 
-    thinDrawer->uniformHelper(sizeof(s_wallGelData) * 10, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * 1000, &uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_wallGelData) * 5000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * 50000, &uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_wallGelData* mapMem;
 

@@ -83,6 +83,7 @@ typedef struct EdgeGlobalData
     b2Vec2 perpDir;
     float totalSize;
     float perWallSize;
+    int renderOfsset;
 
     EdgeGlobalData(b2Vec2 p0, b2Vec2 p1)
     {

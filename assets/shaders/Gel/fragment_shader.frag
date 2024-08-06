@@ -38,7 +38,7 @@ void main()
 
     vec2 vecSum = vec2(0.0, 0.0);
     float lengthSum = 0.0f;
-    float adjV = 5.0;
+    float adjV = 4.0;
     vec4 endColor = vec4(0.0);
     float extra = 0.0;
     for (int i = 0; i < numGels; i++)

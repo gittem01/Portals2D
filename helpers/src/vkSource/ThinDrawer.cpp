@@ -494,8 +494,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
     }*/
 
-    gelShader->render(cmdBuff, lastSwapChainImageIndex);
-
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, hazardShader->pipeline);
 
     vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0].buffer, &offsets);
@@ -554,7 +552,7 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         wallGel->pipelineLayout, 1, 1, &wallGel->descriptorSets[1], 0, nullptr);
 
-    vkCmdDraw(cmdBuff, 6, 4, 0, 0);
+    vkCmdDraw(cmdBuff, 6, 100, 0, 0);
 
     static glm::vec2 p = glm::vec2(0.0, 0.0);
 
@@ -582,50 +580,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         splash->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
-
-    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
-
-    sData.posSpeed.x = -50.0;
-    sData.posSpeed.y = 25.0;
-    sData.data.x = 0.075;
-    sData.data.y = (int)gameTime;
-    sData.data.z = b2_pi * 2.0;
-    sData.data.w = 0.0;
-
-    sData.color = glm::vec4(1.0, 0.3, 0.0, 0.2);
-
-    sData.data2.z = 3.0;
-    sData.data2.x = 1.0;
-    sData.data2.y = 5.0;
-    sData.data2.w = 0.5;
-
-    sData.data3.x = 0.0;
-    sData.data3.y = 0.8;
-    sData.data3.z = 100000.0;
-    sData.data3.w = 0.5;
-
-    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
-
-    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
-
-    sData.posSpeed.x = -55.0;
-    sData.color = glm::vec4(0.0, 0.3, 1.0, 1.0);
-
-    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
-
-    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
-
-    sData.posSpeed.x = -60.0;
-    sData.color = glm::vec4(1.0, 1.0, 1.0, 1.0);
-
-    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
-
-    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
-
-    sData.posSpeed.x = -65.0;
-    sData.color = glm::vec4(1.0, 1.0, 1.0, 0.01);
 
     vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
 
