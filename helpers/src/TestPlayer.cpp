@@ -767,7 +767,7 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
     {
         s_unitWallData ud = eGlobalData->unitWalls[startIndex];
 
-        if (ud.wallType != PORTALLABLE && (ud.gelAmount <= 3 || ud.gelType != WHITE))
+        if (ud.wallType != PORTALLABLE && (ud.gelAmount <= 0.5 || ud.gelType != WHITE))
         {
             return nullptr;
         }
@@ -798,7 +798,7 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
         if (startIndex + leftCount + 1 <= checkRange[1])
         {
             s_unitWallData& uData = eGlobalData->unitWalls[startIndex + leftCount + 1];
-            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 0.5 && uData.gelType & WHITE))
             {
                 leftCount++;
 
@@ -812,7 +812,7 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
         if (startIndex - rightCount - 1 >= checkRange[0])
         {
             s_unitWallData& uData = eGlobalData->unitWalls[startIndex - rightCount - 1];
-            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 0.5 && uData.gelType & WHITE))
             {
                 rightCount++;
 

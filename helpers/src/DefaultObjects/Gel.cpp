@@ -45,12 +45,108 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
 
 void Gel::staticInit()
 {
+    gelCount = 0;
+    splashCount = 0;
+
     ThinDrawer::object->midDrawFuncs.push_back({ &Gel::render, nullptr });
 }
 
-void Gel::splash()
+float handleGelPut(s_unitWallData* wallData, int gelType, float amnt)
+{
+    float change = 0.0;
+bgn:
+    float val = std::max(pow(amnt, 0.5f) * 0.2f, 0.05f);
+    change += val;
+    if ((wallData->gelType & ((2 << gelType) | NONE | CLEAR) || wallData->gelAmount < 0.25) && gelType != 3)
+    {
+        wallData->gelAmount = std::min(wallData->gelAmount + val, 0.8f);
+        wallData->gelType = (GEL_TYPE)(2 << gelType);
+    }
+	else
+	{
+        wallData->gelAmount = std::max(wallData->gelAmount - val, 0.0f);
+	}
+
+    return change;
+}
+
+int gelTypeToIndex(GEL_TYPE gelType)
+{
+    switch (gelType)
+    {
+    case BLUE:
+		return 0;
+    case ORANGE:
+        return 1;
+    case WHITE:
+        return 2;
+    case CLEAR:
+        return 3;
+    default:
+		return -1;
+    }
+}
+
+void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 {
     if (gelIndex == -1) return;
+
+    ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
+    Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
+
+    fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
+    if (fData && fData->type & F_EDGE)
+    {
+        s_edgeLocalData* eLocalData = (s_edgeLocalData*)fData->data;
+        s_edgeGlobalData* eGlobalData = (s_edgeGlobalData*)eLocalData->globalData;
+        
+        b2Vec2 distVec = contact->GetFixtureB()->GetBody()->GetPosition() - eGlobalData->localPoints[1];
+        float dist = std::max(b2Dot(distVec, -eGlobalData->dir), 0.0f);
+        int off = std::min((int)std::round(dist * 10.0f), (int)eGlobalData->unitWalls.size() - 1);
+        
+        float amnt = gelRadius * 5.0;
+        amnt -= handleGelPut(&eGlobalData->unitWalls[eGlobalData->unitWalls.size() - off - 1], gelType, amnt);
+        
+        int rightPos;
+        int leftPos;
+        for (int i = 1; ; i++)
+        {
+            rightPos = eGlobalData->unitWalls.size() - off - i - 1;
+            leftPos = eGlobalData->unitWalls.size() - off + i - 1;
+
+            float decrease = 0.0f;
+            if (rightPos >= eLocalData->globalRange[0])
+            {
+                decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt);
+            }
+            if (leftPos < eLocalData->globalRange[1])
+			{
+				decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt);
+			}
+
+            amnt -= decrease;
+			if (amnt <= 0.0f || decrease == 0.0f) break;
+        }
+
+        rightPos = std::max(rightPos, eLocalData->globalRange[0]);
+        leftPos = std::min(leftPos, eLocalData->globalRange[1]);
+
+        int mapSize = leftPos - rightPos;
+        s_wallPerGelData* mapMem2;
+        vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+            (eGlobalData->renderOfsset + eGlobalData->unitWalls.size() - leftPos) * sizeof(s_wallPerGelData) / 2, sizeof(s_wallPerGelData) * (mapSize + 1) / 2, 0, (void**)&mapMem2);
+
+        for (int i = 0; i < mapSize; i++)
+        {
+            s_unitWallData wData = eGlobalData->unitWalls[leftPos - i];
+            int index = i / 2;
+            int remInd = (i % 2) * 2 + 1;
+            mapMem2[index].data[remInd - 1] = gelTypeToIndex(wData.gelType);
+            mapMem2[index].data[remInd] = wData.gelAmount;
+        }
+
+        vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+    }
 
     b2Vec2 pos = pBody->at(0)->body->GetPosition();
 
@@ -184,6 +280,8 @@ void Gel::endContact(b2Contact* contact, b2Fixture* otherFix)
 
 void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
 {
+    if (!contact->IsEnabled()) return;
+
     fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
     if (fData && fData->type == F_PORTAL)
     {
@@ -193,9 +291,7 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
 
     if (!otherFix->IsSensor())
     {
-        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
-        Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
-        splash();
+        splash(contact, otherFix);
     }
     else if (numNearGels < std::size(nearGels))
     {
@@ -212,8 +308,6 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
     }
     else
     {
-        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
-        Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
-        splash();
+        splash(contact, otherFix);
     }
 }

@@ -258,7 +258,7 @@ void LevelerTestCase::wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, i
         int index = i / 2;
         int remInd = (i % 2) * 2 + 1;
         mapMem2[index].data[remInd - 1] = 0.0;
-        mapMem2[index].data[remInd] = sin(i * 0.223) * 0.2 + 0.8;
+        mapMem2[index].data[remInd] = 0.0;
     }
 
     vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[1].memory);

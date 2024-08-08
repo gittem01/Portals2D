@@ -47,8 +47,8 @@ typedef struct rayData
 typedef struct bodyData
 {
 	BodyDataType type;
-	void* data;
-    void* extraData;
+	void* data = nullptr;
+    void* extraData = nullptr;
 } bodyData;
 
 typedef struct

@@ -69,7 +69,7 @@ typedef struct UnitWallData
 {
     GEL_TYPE gelType = NONE;
     WALL_TYPE wallType = PORTALLABLE;
-    char gelAmount = 0;
+    float gelAmount = 0.0f;
 } s_unitWallData;
 
 const int unitWallPerMeter = 10;

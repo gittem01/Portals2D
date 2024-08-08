@@ -95,7 +95,7 @@ void main()
 
     float dropAmnt = pow(angDiff / seeAng, 2.0) * float(check);
     v = (max(v2, float(check) * v) - dropAmnt * r) / r;
-    v = abs(pow(v, pc.data2.x)) * sign(v) * pc.data2.y;
+    v = max(abs(pow(v, pc.data2.x)) * sign(v) * pc.data2.y, 0.0);
     vec4 clr = vec4(vec3(normalize(pc.color.xyz * v) + pc.data3.x * v), pc.color.w * min(v * (max(pc.data3.y - (data.y + 1.0) * data.x, 0.0) / pc.data3.y), 1.0));
     
     outFragColor = clr;

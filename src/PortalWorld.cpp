@@ -785,7 +785,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
         if (startIndex + leftCount + 1 <= eLocalData->globalRange[1])
         {
             s_unitWallData& uData = eGlobalData->unitWalls[startIndex + leftCount + 1];
-            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 0.5 && uData.gelType & WHITE))
             {
                 leftCount++;
 
@@ -799,7 +799,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
         if (startIndex - rightCount - 1 >= eLocalData->globalRange[0])
         {
 			s_unitWallData& uData = eGlobalData->unitWalls[startIndex - rightCount - 1];
-            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 3 && uData.gelType & WHITE))
+            if (uData.wallType == PORTALLABLE || (uData.gelAmount > 0.5 && uData.gelType & WHITE))
             {
 				rightCount++;
 

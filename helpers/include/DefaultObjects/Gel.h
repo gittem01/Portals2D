@@ -22,7 +22,7 @@ private:
 public:
 	Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radius, int gelType);
 
-	void splash();
+	void splash(b2Contact* contact, b2Fixture* otherFix);
 
 	static void staticInit();
 	static void generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex);

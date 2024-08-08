@@ -74,7 +74,7 @@ float getSpecularComponent(vec3 normal, vec3 lightDir, vec3 viewDir, float shini
 
 float rand(vec2 seed)
 {
-    return fract(sin(dot(seed, vec2(13.8695, 17.1371))) * 73714.38361);
+    return fract(sin(dot(seed, vec2(2.422001, 5.3131))) * 5.71);
 }
 
 float opSmoothUnion(float d1, float d2, float k)
@@ -99,12 +99,13 @@ void calculate(vec2 pos, float lastVal, vec3 finalClr, int indOffset, int maxSiz
         int ind = int(checkX);
         if (ind >= maxSize || ind < 0) continue;
         ind += indOffset;
-        float randVal = rand(vec2(ind * 1881.1938, ind * 1071.1453));
+        float randVal = rand(vec2(ind * 0.18811938, ind * 0.10711453));
         randVal = sin(sharedUboData.data.y * randVal);
         vec4 dt = ubo2.sData[ind / 2].data;
         int remInd = (ind % 2) * 2;
         float val = dt[remInd + 1] - 0.25;
         val *= 0.85 + randVal * 0.15;
+        if (val < 0.0) val = -0.2;
         vec3 clr = colors[int(round(dt[remInd]))].xyz;
         vec2 diff = vec2(pos.x * perTileGel - 0.5, pos.y * 0.4 * perTileGel) - vec2(checkX, min(val, pos.y) * 0.4 * perTileGel);
         float revDiff = pow(max(1.0 - length(diff), 0.0), 2.0);
@@ -168,7 +169,7 @@ void main()
         pos.y = tmp2;
     }
     
-    vec3 gelClr = 1.5 * finalClr / vecMax(finalClr);
+    vec3 gelClr = 2.0 * finalClr / vecMax(finalClr);
 
     const float vx = 0.1;
     const float vy = vx * 2.5;
@@ -189,9 +190,23 @@ void main()
         viewDir.y *= -1.0;
         //viewDir = normalize(vec3(normalize(viewDir.xy), viewDir.z));
         lightDir = viewDir;
-        float outClr = getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+
+        float outClr = 0.0;
+        
+        lightDir = normalize(vec3(1.0, 0.0, 1.0));
+        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
         outClr += getFinalColor(norm, lightDir);
-        outClr = normalize(vec2(outClr, 3.0)).x;
+        lightDir = normalize(vec3(-1.0, 0.0, 1.0));
+        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+        outClr += getFinalColor(norm, lightDir);
+        lightDir = normalize(vec3(0.0, 1.0, 1.0));
+        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+        outClr += getFinalColor(norm, lightDir);
+        lightDir = normalize(vec3(0.0, -1.0, 1.0));
+        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+        outClr += getFinalColor(norm, lightDir);
+        
+        outClr = normalize(vec2(outClr * 0.25, 4.0)).x;
         
         outFragColor = vec4(vec3(outClr) * gelClr * pow((1.0 - multy) * (1.0 - multx), 0.5), sharedUboData.data.x * 4.0 * (0.5 - lastVal));
         //outFragColor = vec4(viewDir, 1.0);

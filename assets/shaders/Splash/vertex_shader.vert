@@ -84,10 +84,10 @@ void main()
 {
     const float gravity = 5.0;
     const float reqR = pc.data3.w;
-    float rander = pc.data.y * 2362.99 + gl_InstanceIndex * 4.7456;
-    float rnd = rand(vec2(rander * 34718.5));
-    float rnd2 = rand(vec2(rander * 2023.23));
-    r = pc.data.x * (0.3 + rnd2 * 0.7);
+    float rander = pc.data.y * 1.071 + gl_InstanceIndex * 1.453;
+    float rnd = rand(vec2(rander * 1.881));
+    float rnd2 = rand(vec2(rander * 2.023));
+    r = pc.data.x * (0.31 + rnd2 * 0.69);
     vec2 randVec = rotateVec(vec2(1.0, 0.0), rnd * pc.data.z + pc.data.w);
     float randR = rnd2 * reqR * (1.0 - r / reqR) + r;
 
@@ -97,7 +97,7 @@ void main()
     float startTime = pc.data.y;
     float dt = mod(now - startTime, pc.data3.z * (0.5 + rnd * rnd2 * 2.0));
     data.x = dt;
-    data.y = rand(vec2(rander * 2000.5));
+    data.y = rand(vec2(rander * 2.331));
 
     if ((max(pc.data3.y - (data.y + 1.0) * data.x, 0.0) / pc.data3.y) <= 0.0) gl_Position = vec4(0.0);
 
