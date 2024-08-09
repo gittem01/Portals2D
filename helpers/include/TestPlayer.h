@@ -52,6 +52,7 @@ public:
 
     bool grounded;
     b2Fixture* tireFixture;
+    b2Fixture* contactFixture;
     b2Body* contactBody;
     b2Body* platformBody;
     b2Body* l_contactBody;
@@ -66,6 +67,7 @@ public:
     float totalTime = 0.1f;
     float switchTimer;
 
+    int lastOrangeGelSetOffset = -1;
     int lastKey;
     int keyBeforeSwitch;
 
@@ -132,6 +134,9 @@ public:
 
     void handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, float dt);
 
+    void portalEffect(Portal* portal);
+    void runEffect();
+    void jumpEffect();
     void updateReset();
     void update(float dt, int totalIter);
 };

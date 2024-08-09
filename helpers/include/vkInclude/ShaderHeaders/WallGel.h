@@ -12,7 +12,7 @@ typedef struct
 // in wall line
 typedef struct
 {
-    glm::vec4 data; // colorIndex, gelHeight, colorIndex, gelHeight
+    glm::vec4 data; // colorIndex, gelHeight, time, force
 } s_wallPerGelData;
 
 class WallGel : public ShaderBase

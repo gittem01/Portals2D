@@ -40,7 +40,9 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
 
     this->pBody = &portalBody->worldIndex->pbIndices;
 
-    //ThinDrawer::object->debug_addPortalBody(portalBody);
+    // too slow
+    // must be done once in the game initialisation but it is not possible for now
+    // ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
 void Gel::staticInit()
@@ -160,7 +162,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 
     if (eGlobalData)
     {        
-        b2Vec2 distVec = contact->GetFixtureB()->GetBody()->GetPosition() - eGlobalData->localPoints[1];
+        b2Vec2 distVec = contact->GetFixtureB()->GetBody()->GetPosition() - otherFix->GetBody()->GetWorldPoint(eGlobalData->localPoints[1]);
         float dist = std::max(b2Dot(distVec, -eGlobalData->dir), 0.0f);
         int off = std::min((int)std::round(dist * 10.0f), (int)eGlobalData->unitWalls.size() - 1);
         
@@ -191,18 +193,16 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         rightPos = std::max(rightPos, range[0]);
         leftPos = std::min(leftPos, range[1]);
 
-        int mapSize = leftPos - rightPos;
+        int mapSize = leftPos - rightPos + 1;
         s_wallPerGelData* mapMem2;
         vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
-            (eGlobalData->renderOfsset + eGlobalData->unitWalls.size() - leftPos) * sizeof(s_wallPerGelData) / 2, sizeof(s_wallPerGelData) * (mapSize + 1) / 2, 0, (void**)&mapMem2);
+            (eGlobalData->renderOfsset + eGlobalData->unitWalls.size() - leftPos - 1) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * mapSize, 0, (void**)&mapMem2);
 
         for (int i = 0; i < mapSize; i++)
         {
             s_unitWallData wData = eGlobalData->unitWalls[leftPos - i];
-            int index = i / 2;
-            int remInd = (i % 2) * 2 + 1;
-            mapMem2[index].data[remInd - 1] = gelTypeToIndex(wData.gelType);
-            mapMem2[index].data[remInd] = wData.gelAmount;
+            mapMem2[i].data.x = gelTypeToIndex(wData.gelType);
+            mapMem2[i].data.y = wData.gelAmount;
         }
 
         vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);

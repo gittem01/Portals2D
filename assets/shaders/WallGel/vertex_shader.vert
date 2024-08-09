@@ -20,7 +20,7 @@ struct perGelLineData
 
 struct pergGelTickData
 {
-    vec4 data; // colorIndex, gelHeight, colorIndex, gelHeight
+    vec4 data; // colorIndex, gelHeight, time, force
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO

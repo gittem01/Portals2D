@@ -33,7 +33,7 @@ struct perGelLineData
 
 struct perGelTickData
 {
-    vec4 data; // colorIndex, gelHeight, colorIndex, gelHeight
+    vec4 data; // colorIndex, gelHeight, time, force
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -101,12 +101,15 @@ void calculate(vec2 pos, float lastVal, vec3 finalClr, int indOffset, int maxSiz
         ind += indOffset;
         float randVal = rand(vec2(ind * 0.18811938, ind * 0.10711453));
         randVal = sin(sharedUboData.data.y * randVal);
-        vec4 dt = ubo2.sData[ind / 2].data;
-        int remInd = (ind % 2) * 2;
-        float val = dt[remInd + 1] - 0.25;
+        vec4 dt = ubo2.sData[ind].data;
+        float val = dt.y - 0.25;
         val *= 0.8 + randVal * 0.1;
         if (val < 0.0) val = -0.25;
-        vec3 clr = colors[int(round(dt[remInd]))].xyz;
+        
+        float deltaTime = max(sharedUboData.data.y - dt.z, 0.0);
+        val += (sin(deltaTime * 10.0) / (1.0 + pow(deltaTime, 2.0) * 10.0)) * dt.w;
+
+        vec3 clr = colors[int(round(dt.x))].xyz;
         vec2 diff = vec2(pos.x * perTileGel - 0.5, pos.y * 0.4 * perTileGel) - vec2(checkX, min(val, pos.y) * 0.4 * perTileGel);
         float revDiff = pow(max(1.0 - length(diff), 0.0), 2.0);
         norm += normalize(vec3(-diff, revDiff * 3.0)) * revDiff;

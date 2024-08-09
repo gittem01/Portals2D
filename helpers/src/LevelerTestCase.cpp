@@ -234,6 +234,7 @@ void LevelerTestCase::wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, i
     }
 
     vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory, sizeof(s_wallGelData) * index, sizeof(s_wallGelData), 0, (void**)&mapMem);
+    
     if (initial)
     {
         mapMem->data.z = prevOffset;
@@ -243,6 +244,7 @@ void LevelerTestCase::wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, i
         mapMem->positions = glm::vec4(p0.x, p0.y, p1.x, p1.y);
         mapMem->data = glm::ivec4(size, offset, prevOffset, -1);
     }
+
     vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory);
 
     if (initial)
@@ -255,10 +257,7 @@ void LevelerTestCase::wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, i
 
     for (int i = 0; i < size; i++)
     {
-        int index = i / 2;
-        int remInd = (i % 2) * 2 + 1;
-        mapMem2[index].data[remInd - 1] = 0.0;
-        mapMem2[index].data[remInd] = 0.0;
+        mapMem2[i].data = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     }
 
     vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[1].memory);
@@ -681,6 +680,9 @@ void LevelerTestCase::createDynamics()
 
 void LevelerTestCase::onCreate()
 {
+    td->wallGel->numWallLines = 0;
+    td->wallGel->numWallGels = 0;
+
     g->pWorld->SetGravity(b2Vec2(0.0f, -10.0f));
 
     fillReachableMap();

@@ -37,6 +37,7 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
 
     grounded = false;
     contactBody = nullptr;
+    contactFixture = nullptr;
     platformBody = nullptr;
     l_contactBody = nullptr;
     l_platformBody = nullptr;
@@ -346,6 +347,155 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
     }
 }
 
+void TestPlayer::portalEffect(Portal* portal)
+{
+    s_edgeGlobalData* eGlobal = nullptr;
+    if (portal->sideFixtures[0])
+	{
+		fixtureData* fData = (fixtureData*)portal->sideFixtures[0]->GetUserData().pointer;
+        if (fData && fData->type & F_EDGE)
+		    eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+	}
+    else if (portal->sideFixtures[1])
+    {
+        fixtureData* fData = (fixtureData*)portal->sideFixtures[1]->GetUserData().pointer;
+        if (fData && fData->type & F_EDGE)
+            eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+    }
+
+    if (eGlobal)
+    {
+        b2Vec2 diff = portal->pos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
+        int index = (int)(b2Dot(diff, eGlobal->dir) * 10.0);
+        int offset = eGlobal->renderOfsset + eGlobal->unitWalls.size() - portal->range[1] - 1;
+
+        int memMapSize = portal->range[1] - portal->range[0] + 1;
+        s_wallPerGelData* mapMem2;
+        vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+            offset * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
+
+        for (int i = 0; i < memMapSize; i++)
+        {
+            s_unitWallData uData = eGlobal->unitWalls.at(portal->range[1] - i);
+            if (uData.gelType & WHITE)
+            {
+                float dist = (float)abs(index - portal->range[0] - i);
+                mapMem2[i].data.z = gameTime + dist * 0.0075 - 0.075;
+                mapMem2[i].data.w = 0.3;
+            }
+        }
+
+        vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+    }
+}
+
+void TestPlayer::runEffect()
+{
+    if (contactFixture)
+    {
+        fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
+        if (fData && fData->type == F_EDGE)
+        {
+            s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+            s_edgeGlobalData* eGlobal = eLocal->globalData;
+
+            b2Vec2 botPos = pBody->at(0)->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
+            b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
+            int index = (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0);
+            if (index < 0 || index >= eGlobal->unitWalls.size())
+			{
+				return;
+			}
+
+            s_unitWallData uData = eGlobal->unitWalls.at(index);
+			if (uData.gelType & ORANGE && uData.gelAmount > 0.25)
+			{
+                int renderOffset = eGlobal->renderOfsset + (eGlobal->unitWalls.size() - index - 1);
+				b2Vec2 vel = pBody->at(0)->body->GetLinearVelocity();
+                if (renderOffset != lastOrangeGelSetOffset && abs(vel.x) > 3.0)
+                {
+                    lastOrangeGelSetOffset = renderOffset;
+                    s_wallPerGelData* mapMem2;
+                    vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+						renderOffset * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData), 0, (void**)&mapMem2);
+                    mapMem2->data.z = gameTime - 0.03;
+                    mapMem2->data.w = std::min(abs(vel.x) * 0.04, 0.3);
+					vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+                }
+			}
+        }
+    }
+}
+
+void TestPlayer::jumpEffect()
+{
+    if (contactFixture)
+    {
+        fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
+        if (fData && fData->type == F_EDGE)
+        {
+            s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+            s_edgeGlobalData* eGlobal = eLocal->globalData;
+
+            b2Vec2 botPos = pBody->at(0)->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
+            b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
+
+            int index = eGlobal->unitWalls.size() - (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0) - 1;
+            index = std::max(std::min(index, (int)eGlobal->unitWalls.size() - 1), 0);
+
+            int range[2] = { index, index };
+
+            for (int i = 1; i < 11; i++)
+            {
+                bool found = false;
+
+                if (index - i >= 0)
+                {
+                    int arrIndex = eGlobal->unitWalls.size() - index + i - 1;
+                    s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
+                    if (uData.gelType & BLUE && uData.gelAmount > 0.25)
+                    {
+                        range[0] = index - i;
+                        found = true;
+                    }
+                }
+                if (index + i < eGlobal->unitWalls.size())
+                {
+                    int arrIndex = eGlobal->unitWalls.size() - index - i - 1;
+                    s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
+                    if (uData.gelType & BLUE && uData.gelAmount > 0.25)
+                    {
+                        range[1] = index + i;
+                        found = true;
+                    }
+                }
+
+                if (!found)
+                {
+                    break;
+                }
+            }
+
+            if (range[1] != range[0])
+            {
+                int memMapSize = range[1] - range[0] + 1;
+                s_wallPerGelData* mapMem2;
+                vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+                    (eGlobal->renderOfsset + range[0]) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
+
+                for (int i = 0; i < memMapSize; i++)
+                {
+                    float dist = (float)abs(index - range[0] - i) * 0.1;
+                    mapMem2[i].data.z = gameTime + dist * 0.2 - 0.05;
+                    mapMem2[i].data.w = (1.0 - dist) * 0.4;
+                }
+
+                vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+            }
+        }
+    }
+}
+
 void TestPlayer::renderInit()
 {
     ThinDrawer::object->memMapFuncs.push_back({ memMap, this });
@@ -513,6 +663,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
         {
             contactType = fix2->GetBody()->GetType();
             contactBody = fix2->GetBody();
+            contactFixture = fix2;
             if (contactType == b2_dynamicBody)
             {
                 if (fix2->GetDensity() == 0.0f &&
@@ -986,6 +1137,8 @@ void TestPlayer::handlePortalCD(float dt)
 
                 Portal* portal = pWorld->createPortalWithChecks(canCreateBlue, rayCaster.rayPoint, portalSize);
 
+                portalEffect(portal);
+
                 shootDatas.push_back({  { p0.x, p0.y, portal->pos.x, portal->pos.y },   { 0.0, 0.5f, 1.0f, 1.0f },
                                         { NAN, 0.0f, 0.0f, 0.0f },                      { 1.0f, 0.0f, 0.0f, 0.0f } });
 
@@ -1036,6 +1189,7 @@ void TestPlayer::handlePortalCD(float dt)
 
                 Portal* portal = pWorld->createPortalWithChecks(canCreateRed, rayCaster.rayPoint, portalSize);
 
+                portalEffect(portal);
 
                 shootDatas.push_back({  { p0.x, p0.y, portal->pos.x, portal->pos.y },   { 1.0, 0.5f, 0.0f, 1.0f },
                                         { NAN, 0.0f, 0.0f, 0.0f },                      { 1.0f, 0.0f, 0.0f, 0.0f } });
@@ -1411,6 +1565,7 @@ void TestPlayer::updateReset()
     avgNormalX = 0.0;
     numNormals = 0;
     contactBody = nullptr;
+    contactFixture = nullptr;
     platformBody = nullptr;
     right = false;
     left = false;
@@ -1733,12 +1888,16 @@ void TestPlayer::update(float dt, int totalIter)
         ALuint source = Sounder::object->playSound(jumpBuffer, 1.0);
         b2Vec2 pPos = pb->body->GetPosition();
         Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+        jumpEffect();
     }
 
     lv.y = std::fmax(lv.y, -20.0);
     //printf("%f, %f\n", lv.x, lv.y);
 
     pb->body->SetLinearVelocity(lv);
+
+    runEffect();
 
     handleBodyRotation();
 

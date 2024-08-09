@@ -812,6 +812,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     }
 
     int range[2] = { startIndex - rightCount, startIndex + leftCount };
+
     int prevRange[2] = { eLocalData->globalRange[0], eLocalData->globalRange[1] };
     b2Fixture* prevPNFixs[2] = { eLocalData->prevNextFixtures[0], eLocalData->prevNextFixtures[1] };
 
