@@ -269,8 +269,8 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
     char startDir = 1;
     char prevDir = startDir;
     glm::i16vec2 pos = { x, y };
-    int initialIndex = numEdges;
-    int initialOffset = renderOffset;
+    int initialIndex = ThinDrawer::object->wallGel->numWallLines;
+    int initialOffset = ThinDrawer::object->wallGel->numWallGels;
 
     while (1)
     {
@@ -295,17 +295,17 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
         s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
         s_edgeGlobalData* eGlobalData = (s_edgeGlobalData*)eLocalData->globalData;
 
-        eGlobalData->renderOfsset = renderOffset;
+        eGlobalData->renderOfsset = ThinDrawer::object->wallGel->numWallGels;
 
         int prevIndex = -1;
-        if ((prevDir - startDir + 4) % 4 == 1 && initialIndex != numEdges)
+        if ((prevDir - startDir + 4) % 4 == 1 && initialIndex != ThinDrawer::object->wallGel->numWallLines)
         {
-            prevIndex = numEdges - 1;
+            prevIndex = ThinDrawer::object->wallGel->numWallLines - 1;
         }
-        wallMemFill(p0, p1, numEdges, renderOffset, wallData.size(), prevIndex);
+        wallMemFill(p0, p1, ThinDrawer::object->wallGel->numWallLines, ThinDrawer::object->wallGel->numWallGels, wallData.size(), prevIndex);
 
-        renderOffset += eGlobalData->unitWalls.size();
-        numEdges++;
+        ThinDrawer::object->wallGel->numWallGels += eGlobalData->unitWalls.size();
+        ThinDrawer::object->wallGel->numWallLines++;
 
         assert(eGlobalData->unitWalls.size() == wallData.size());
 
@@ -321,7 +321,7 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
         startDir = nextDir;
     }
 
-    wallMemFill(b2Vec2(), b2Vec2(), initialIndex, initialOffset, -1, numEdges - 1, true);
+    wallMemFill(b2Vec2(), b2Vec2(), initialIndex, initialOffset, -1, ThinDrawer::object->wallGel->numWallLines - 1, true);
 }
 
 void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, std::vector<s_unitWallData>& wallData)

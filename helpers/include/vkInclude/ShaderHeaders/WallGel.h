@@ -18,6 +18,9 @@ typedef struct
 class WallGel : public ShaderBase
 {
 public:
+    int numWallLines = 0;
+    int numWallGels = 0;
+
     WallGel(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     void prepareUniforms();

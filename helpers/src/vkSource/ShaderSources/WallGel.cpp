@@ -14,43 +14,8 @@ void WallGel::prepareUniforms()
 {
     uniformBuffers.resize(2);
 
-    thinDrawer->uniformHelper(sizeof(s_wallGelData) * 5000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * 50000, &uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-
-    s_wallGelData* mapMem;
-
-    vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_wallGelData), 0, (void**)&mapMem);
-    mapMem->positions = glm::vec4(-4.0, -3.0, +4.0, -3.0);
-    mapMem->data = glm::ivec4(80, 0, 310, 80);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
-
-    vkMapMemory(logicalDevice, uniformBuffers[0].memory, sizeof(s_wallGelData) * 1, sizeof(s_wallGelData), 0, (void**)&mapMem);
-    mapMem->positions = glm::vec4(+4.0, -3.0, +4.0, -11.0);
-    mapMem->data = glm::ivec4(80, 80, 70, 160);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
-
-    vkMapMemory(logicalDevice, uniformBuffers[0].memory, sizeof(s_wallGelData) * 2, sizeof(s_wallGelData), 0, (void**)&mapMem);
-    mapMem->positions = glm::vec4(+4.0, -11.0, -4.0, -11.0);
-    mapMem->data = glm::ivec4(80, 160, 150, 240);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
-
-    vkMapMemory(logicalDevice, uniformBuffers[0].memory, sizeof(s_wallGelData) * 3, sizeof(s_wallGelData), 0, (void**)&mapMem);
-    mapMem->positions = glm::vec4(-4.0, -11.0, -4.0, -3.0);
-    mapMem->data = glm::ivec4(80, 240, 230, 0);
-    vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
-
-    s_wallPerGelData* mapMem2;
-    vkMapMemory(logicalDevice, uniformBuffers[1].memory, 0, sizeof(s_wallPerGelData), 0, (void**)&mapMem2);
-
-    for (int i = 0; i < 320; i++)
-    {
-        int index = i / 2;
-        int remInd = (i % 2) * 2 + 1;
-        mapMem2[index].data[remInd - 1] = (i / 80) % 3;
-        mapMem2[index].data[remInd] = sin(i * 0.223) * 0.2 + 0.8;
-    }
-
-    vkUnmapMemory(logicalDevice, uniformBuffers[1].memory);
+    thinDrawer->uniformHelper(sizeof(s_wallGelData) * 16000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * 160000, &uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void WallGel::setupDescriptorSetLayout()

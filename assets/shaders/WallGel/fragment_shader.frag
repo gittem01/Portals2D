@@ -104,7 +104,7 @@ void calculate(vec2 pos, float lastVal, vec3 finalClr, int indOffset, int maxSiz
         vec4 dt = ubo2.sData[ind / 2].data;
         int remInd = (ind % 2) * 2;
         float val = dt[remInd + 1] - 0.25;
-        val *= 0.85 + randVal * 0.15;
+        val *= 0.8 + randVal * 0.1;
         if (val < 0.0) val = -0.25;
         vec3 clr = colors[int(round(dt[remInd]))].xyz;
         vec2 diff = vec2(pos.x * perTileGel - 0.5, pos.y * 0.4 * perTileGel) - vec2(checkX, min(val, pos.y) * 0.4 * perTileGel);
@@ -122,8 +122,8 @@ void calculate(vec2 pos, float lastVal, vec3 finalClr, int indOffset, int maxSiz
 void main()
 {
     vec3 colors[3] = {
-        vec3(0.0, 0.2, 1.0),
-        vec3(1.0, 0.2, 0.0),
+        vec3(0.0, 0.5, 1.0),
+        vec3(1.0, 0.5, 0.0),
         vec3(1.0, 1.0, 1.0),
     };
 
@@ -169,7 +169,7 @@ void main()
         pos.y = tmp2;
     }
     
-    vec3 gelClr = 2.0 * finalClr / vecMax(finalClr);
+    vec3 gelClr = 2.5 * finalClr / vecMax(finalClr);
 
     const float vx = 0.1;
     const float vy = vx * 2.5;
@@ -184,31 +184,31 @@ void main()
     {
         vec3 lightDir = normalize(vec3(-1.0, -1.0, 1.0));
         vec3 camPos = sharedUboData.cameraPos.xyz;
-        vec3 viewDir = vec3(wp, 0.0) - vec3(camPos.xy * vec2(1.0, -1.0), -0.5);
+        vec3 viewDir = vec3(wp, 0.0) - vec3(camPos.xy * vec2(1.0, -1.0), -1.0);
         viewDir.xy /= camPos.z;
         viewDir = normalize(viewDir);
         viewDir.y *= -1.0;
-        //viewDir = normalize(vec3(normalize(viewDir.xy), viewDir.z));
-        lightDir = viewDir;
 
         float outClr = 0.0;
-        
+        const float powVal = 50.0;
+        const float multVal = 10.0;
+
         lightDir = normalize(vec3(1.0, 0.0, 1.0));
-        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+        outClr += getSpecularComponent(norm, lightDir, viewDir, powVal) * multVal;
         outClr += getFinalColor(norm, lightDir);
         lightDir = normalize(vec3(-1.0, 0.0, 1.0));
-        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+        outClr += getSpecularComponent(norm, lightDir, viewDir, powVal) * multVal;
         outClr += getFinalColor(norm, lightDir);
         lightDir = normalize(vec3(0.0, 1.0, 1.0));
-        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+        outClr += getSpecularComponent(norm, lightDir, viewDir, powVal) * multVal;
         outClr += getFinalColor(norm, lightDir);
         lightDir = normalize(vec3(0.0, -1.0, 1.0));
-        outClr += getSpecularComponent(norm, lightDir, viewDir, 75.0) * 10.0;
+        outClr += getSpecularComponent(norm, lightDir, viewDir, powVal) * multVal;
         outClr += getFinalColor(norm, lightDir);
         
-        outClr = normalize(vec2(outClr * 0.25, 4.0)).x;
+        outClr = normalize(vec2(outClr * 0.2, 4.0)).x;
         
-        outFragColor = vec4(vec3(outClr) * gelClr * pow((1.0 - multy) * (1.0 - multx), 0.5), sharedUboData.data.x * 4.0 * (0.5 - lastVal));
+        outFragColor = vec4(vec3(outClr) * gelClr * pow((1.0 - multy) * (1.0 - multx), 0.5), pow(1.0 - pos.y, 0.3) * sharedUboData.data.x * 5.0 * (0.5 - lastVal));
         //outFragColor = vec4(viewDir, 1.0);
     }
     else
