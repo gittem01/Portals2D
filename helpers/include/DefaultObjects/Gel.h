@@ -22,6 +22,7 @@ private:
 public:
 	Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radius, int gelType);
 
+	static void getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGlobalData** data);
 	void splash(b2Contact* contact, b2Fixture* otherFix);
 
 	static void staticInit();

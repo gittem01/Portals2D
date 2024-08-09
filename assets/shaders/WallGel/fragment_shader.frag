@@ -105,7 +105,7 @@ void calculate(vec2 pos, float lastVal, vec3 finalClr, int indOffset, int maxSiz
         int remInd = (ind % 2) * 2;
         float val = dt[remInd + 1] - 0.25;
         val *= 0.85 + randVal * 0.15;
-        if (val < 0.0) val = -0.2;
+        if (val < 0.0) val = -0.25;
         vec3 clr = colors[int(round(dt[remInd]))].xyz;
         vec2 diff = vec2(pos.x * perTileGel - 0.5, pos.y * 0.4 * perTileGel) - vec2(checkX, min(val, pos.y) * 0.4 * perTileGel);
         float revDiff = pow(max(1.0 - length(diff), 0.0), 2.0);

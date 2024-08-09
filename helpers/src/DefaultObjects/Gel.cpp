@@ -53,10 +53,7 @@ void Gel::staticInit()
 
 float handleGelPut(s_unitWallData* wallData, int gelType, float amnt)
 {
-    float change = 0.0;
-bgn:
     float val = std::max(pow(amnt, 0.5f) * 0.2f, 0.05f);
-    change += val;
     if ((wallData->gelType & ((2 << gelType) | NONE | CLEAR) || wallData->gelAmount < 0.25) && gelType != 3)
     {
         wallData->gelAmount = std::min(wallData->gelAmount + val, 0.8f);
@@ -67,7 +64,7 @@ bgn:
         wallData->gelAmount = std::max(wallData->gelAmount - val, 0.0f);
 	}
 
-    return change;
+    return val;
 }
 
 int gelTypeToIndex(GEL_TYPE gelType)
@@ -87,6 +84,69 @@ int gelTypeToIndex(GEL_TYPE gelType)
     }
 }
 
+void Gel::getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGlobalData** data)
+{
+    fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
+    if (fData && fData->type & F_PORTAL)
+    {
+        Portal* p = (Portal*)fData->data;
+        if (p->getPointSide(thisPos) != 0)
+        {
+            *data = nullptr;
+            return;
+        }
+
+        if (p->connections->size() == 0)
+        {
+            range[0] = 0;
+            if (p->sideFixtures[0] && (fData = (fixtureData*)p->sideFixtures[0]->GetUserData().pointer) && fData->type & F_EDGE)
+            {
+                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+                *data = eLocal->globalData;
+                range[1] = eLocal->globalData->unitWalls.size() - 1;
+            }
+            else if (p->sideFixtures[1] && (fData = (fixtureData*)p->sideFixtures[1]->GetUserData().pointer) && fData->type & F_EDGE)
+            {
+                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+                *data = eLocal->globalData;
+                range[1] = eLocal->globalData->unitWalls.size() - 1;
+            }
+            else
+			{
+				*data = nullptr;
+			}
+
+            return;
+        }
+        else if (fix == p->yFix[0])
+        {
+            fix = p->sideFixtures[0];
+        }
+        else if (fix == p->yFix[1])
+        {
+            fix = p->sideFixtures[1];
+        }
+        else
+        {
+            *data = nullptr;
+            return;
+        }
+    }
+
+    fData = (fixtureData*)fix->GetUserData().pointer;
+    if (fData && fData->type & F_EDGE)
+    {
+        s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+        *data = eLocal->globalData;
+        range[0] = eLocal->globalRange[0];
+        range[1] = eLocal->globalRange[1];
+    }
+    else
+    {
+        *data = nullptr;
+    }
+}
+
 void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 {
     if (gelIndex == -1) return;
@@ -94,12 +154,12 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
     ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
     Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
 
-    fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
-    if (fData && fData->type & F_EDGE)
-    {
-        s_edgeLocalData* eLocalData = (s_edgeLocalData*)fData->data;
-        s_edgeGlobalData* eGlobalData = (s_edgeGlobalData*)eLocalData->globalData;
-        
+    int range[2];
+    s_edgeGlobalData* eGlobalData;
+    getRangeData(contact->GetFixtureB()->GetBody()->GetPosition(), otherFix, range, &eGlobalData);
+
+    if (eGlobalData)
+    {        
         b2Vec2 distVec = contact->GetFixtureB()->GetBody()->GetPosition() - eGlobalData->localPoints[1];
         float dist = std::max(b2Dot(distVec, -eGlobalData->dir), 0.0f);
         int off = std::min((int)std::round(dist * 10.0f), (int)eGlobalData->unitWalls.size() - 1);
@@ -115,11 +175,11 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
             leftPos = eGlobalData->unitWalls.size() - off + i - 1;
 
             float decrease = 0.0f;
-            if (rightPos >= eLocalData->globalRange[0])
+            if (rightPos >= range[0])
             {
                 decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt);
             }
-            if (leftPos < eLocalData->globalRange[1])
+            if (leftPos <= range[1])
 			{
 				decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt);
 			}
@@ -128,8 +188,8 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 			if (amnt <= 0.0f || decrease == 0.0f) break;
         }
 
-        rightPos = std::max(rightPos, eLocalData->globalRange[0]);
-        leftPos = std::min(leftPos, eLocalData->globalRange[1]);
+        rightPos = std::max(rightPos, range[0]);
+        leftPos = std::min(leftPos, range[1]);
 
         int mapSize = leftPos - rightPos;
         s_wallPerGelData* mapMem2;

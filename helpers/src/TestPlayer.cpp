@@ -1057,7 +1057,7 @@ void TestPlayer::handlePortalCD(float dt)
 
                     auto iter2 = thinDrawer->renderPortalData.find(portalA);
 
-                    iter->second.particlePsh.color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+                    iter->second.particlePsh.color = glm::vec4(1.0f, 0.5f, 0.0f, -1.0f);
                     iter->second.particlePsh.data0.z = thinDrawer->gameTime;
                     iter->second.particlePsh.data1.z = thinDrawer->gameTime;
 
@@ -1425,7 +1425,7 @@ void TestPlayer::update(float dt, int totalIter)
 {
     gameTime = Game::object->gameTime;
 
-    const float maxSpeed = 6.0f;
+    const float maxSpeed = 4.0f;
     float speedOffset = 0.0f;
     avgNormalX /= numNormals;
     setFriction = 0.0;

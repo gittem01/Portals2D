@@ -42,11 +42,6 @@ void main()
         return;
     }
 
-    float pixeller = 0.05;
-    vec2 localPosCopy = localPos;
-    localPosCopy.x = int(localPos.x / pixeller) * pixeller;
-    localPosCopy.y = int(localPos.y / pixeller) * pixeller;
-
     float len = length(localPos);
     if (len > 0.5)
     {
