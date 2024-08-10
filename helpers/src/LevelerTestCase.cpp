@@ -728,14 +728,14 @@ void LevelerTestCase::onUpdate()
 
     BaseTestCase::onUpdate();
 
-    if (g->gameTime - lastCreationTime > 0.1)
+    if (g->gameTime - lastCreationTime > 0.075)
     {
         lastCreationTime = g->gameTime;
         float randVal = (float)rand() / RAND_MAX;
         float randVal2 = (float)rand() / RAND_MAX;
-        Gel::generateGel(glm::vec2(0.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 0);
-        Gel::generateGel(glm::vec2(3.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 1);
-        Gel::generateGel(glm::vec2(6.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 2);
-        Gel::generateGel(glm::vec2(9.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 3);
+        Gel::generateGel(glm::vec2(-4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 0);
+        Gel::generateGel(glm::vec2(-1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 1);
+        Gel::generateGel(glm::vec2(1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 2);
+        Gel::generateGel(glm::vec2(4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 3);
     }
 }

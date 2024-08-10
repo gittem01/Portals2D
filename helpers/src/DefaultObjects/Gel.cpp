@@ -18,7 +18,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     b2BodyDef bDef;
     bDef.type = b2_dynamicBody;
     bDef.position.Set(pos.x, pos.y);
-    bDef.linearDamping = 0.6;
+    bDef.linearDamping = 0.0;
 
     b2CircleShape cShape;
     cShape.m_radius = radius;
@@ -30,7 +30,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     fix->SetSensor(true);
 
     PortalBody* portalBody = portalWorld->createPortalBody(body);
-    *portalBody->gravityScale = 0.3;
+    *portalBody->gravityScale = 0.5;
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
     g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
@@ -265,13 +265,31 @@ void Gel::update()
 		{
             Gel* g = gel->nearGels[i];
             if (g->gelIndex == -1) continue;
-            PortalBody* pb = (*g->pBody).at(0);
-            PortalBody* tpb = (*gel->pBody).at(0);
+            PortalBody* pb = (*g->pBody).at(g->pBody->size() - 1);
+            PortalBody* tpb = (*gel->pBody).at(gel->pBody->size() - 1);
 			b2Vec2 pos = tpb->body->GetPosition();
             b2Vec2 posDiff = pos - pb->body->GetPosition();
-            b2Vec2 velNow = tpb->body->GetLinearVelocity();
-            //tpb->body->SetLinearVelocity(velNow - 0.02f * posDiff);
+            float lenPosDiff = posDiff.Normalize();
+            float maxPosDiff = gel->gelRadius + g->gelRadius;
+
+            float ratio = lenPosDiff - std::max(g->gelRadius, gel->gelRadius);
+
+            if (ratio < maxPosDiff)
+            {
+                b2Vec2 velNow = tpb->body->GetLinearVelocity();
+                tpb->body->SetLinearVelocity(velNow - 0.05f * ratio * posDiff);
+            }
 		}
+
+        for (PortalBody* tpb : *gel->pBody)
+        {
+            b2Vec2 vel = tpb->body->GetLinearVelocity();
+
+            if (vel.Length() > 4.0)
+            {
+                tpb->body->SetLinearVelocity(0.99f * vel);
+            }
+        }
     }
 }
 
@@ -362,7 +380,8 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
             if (physicsData->type & GEL_O)
             {
                 Gel* gel = (Gel*)physicsData->data;
-                nearGels[numNearGels++] = gel;
+                if (gel->gelType == gelType)
+                    nearGels[numNearGels++] = gel;
             }
         }
     }

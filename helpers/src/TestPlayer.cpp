@@ -1938,7 +1938,7 @@ void TestPlayer::update(float dt, int totalIter)
         jumpEffect();
     }
 
-    lv.y = std::fmax(lv.y, -20.0);
+    lv.y = std::fmax(lv.y, -10.0);
     //printf("%f, %f\n", lv.x, lv.y);
 
     pb->body->SetLinearVelocity(lv);

@@ -38,7 +38,7 @@ void main()
 
     vec2 vecSum = vec2(0.0, 0.0);
     float lengthSum = 0.0f;
-    float adjV = 4.0;
+    float adjV = 5.0;
     vec4 endColor = vec4(0.0);
     float extra = 0.0;
     for (int i = 0; i < numGels; i++)
@@ -77,9 +77,7 @@ void main()
         vec3 reflectDir = reflect(-lightDir, normal);
 
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-        float diff = dot(normal, -lightDir) + 0.5;
-        diff = pow(diff, 2.0) * 0.5;
-        
+        float diff = (dot(normal, -lightDir) + 0.5) * 0.5;
         float specular = 1.0 * spec;
         vec4 requestedColor = (specular * gelColor.xyz, specular) + vec4(diff * gelColor.xyz + gelColor.xyz * 0.2, gelColor.w);
         
