@@ -63,7 +63,7 @@ void main()
 	{
         float iTime = sharedUboData.data.y - pc.data.y;
         vec2 uv = worldPosition;
-        uv *= 10.0f;
+        uv *= 4.0;
 		mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
         f  = 0.5000 * noise(uv + iTime); uv = m * uv;
         f += 0.2500 * noise(uv + iTime * 1.5); uv = m * uv;
@@ -72,7 +72,7 @@ void main()
 
         f += 1.0;
         f -= iTime * 2;
-        f *= 20.0;
+        f *= 4.0;
         f = min(f, 1.0);
 
         blackAmount = pow(iTime, 0.5);
@@ -81,5 +81,11 @@ void main()
     vec4 clr = texture(tex, texCoord);
     clr.rgb *= 1.0 - blackAmount;
 
-	outFragColor = clr * f;
+    float yellowAmount = 0.0;
+    if (f > 0.01 && f < 0.99)
+	{
+		yellowAmount = pow(1.0 - abs(0.5 - f) * 2.0, 2.0);
+	}
+
+	outFragColor = clr * f * (1.0 - yellowAmount) + vec4(yellowAmount, yellowAmount, 0.0, yellowAmount * clr.w);
 }

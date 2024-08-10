@@ -249,7 +249,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		for (auto pBody : *trt->pBody)
 		{
 			s_renderBodyPsh pshData;
-			pshData.data.y = -20.0f;
+			pshData.data.y = ThinDrawer::object->gameTime - ThinDrawer::object->adjustableValues.x;;
 
 			float mirrMult = pBody->isMirrored ? -1.0f : 1.0f;
 			float effectiveRotation = trt->rotation * mirrMult;
