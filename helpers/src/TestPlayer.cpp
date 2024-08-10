@@ -365,7 +365,7 @@ void TestPlayer::portalEffect(Portal* portal)
 
     if (eGlobal)
     {
-        b2Vec2 diff = portal->pos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
+        b2Vec2 diff = portal->pos - portal->body->GetWorldPoint(eGlobal->localPoints[0]);
         int index = (int)(b2Dot(diff, eGlobal->dir) * 10.0);
         int offset = eGlobal->renderOfsset + eGlobal->unitWalls.size() - portal->range[1] - 1;
 
@@ -393,12 +393,35 @@ void TestPlayer::runEffect()
 {
     if (contactFixture)
     {
+        s_edgeGlobalData* eGlobal = nullptr;
         fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
-        if (fData && fData->type == F_EDGE)
+        if (fData)
         {
-            s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
-            s_edgeGlobalData* eGlobal = eLocal->globalData;
+            if (fData->type == F_EDGE)
+            {
+                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+                eGlobal = eLocal->globalData;
+            }
+            else if (fData->type == F_PORTAL)
+            {
+                Portal* portal = (Portal*)fData->data;
+                if (portal->sideFixtures[0])
+				{
+					fData = (fixtureData*)portal->sideFixtures[0]->GetUserData().pointer;
+					if (fData && fData->type & F_EDGE)
+						eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+				}
+				else if (portal->sideFixtures[1])
+				{
+					fData = (fixtureData*)portal->sideFixtures[1]->GetUserData().pointer;
+					if (fData && fData->type & F_EDGE)
+						eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+				}
+            }
+        }
 
+        if (eGlobal)
+        {
             b2Vec2 botPos = pBody->at(0)->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
             b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
             int index = (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0);
@@ -431,12 +454,35 @@ void TestPlayer::jumpEffect()
 {
     if (contactFixture)
     {
+        s_edgeGlobalData* eGlobal = nullptr;
         fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
-        if (fData && fData->type == F_EDGE)
+        if (fData)
         {
-            s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
-            s_edgeGlobalData* eGlobal = eLocal->globalData;
+            if (fData->type == F_EDGE)
+            {
+                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+                eGlobal = eLocal->globalData;
+            }
+            else if (fData->type == F_PORTAL)
+            {
+                Portal* portal = (Portal*)fData->data;
+                if (portal->sideFixtures[0])
+                {
+                    fData = (fixtureData*)portal->sideFixtures[0]->GetUserData().pointer;
+                    if (fData && fData->type & F_EDGE)
+                        eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+                }
+                else if (portal->sideFixtures[1])
+                {
+                    fData = (fixtureData*)portal->sideFixtures[1]->GetUserData().pointer;
+                    if (fData && fData->type & F_EDGE)
+                        eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+                }
+            }
+        }
 
+        if (eGlobal)
+        {
             b2Vec2 botPos = pBody->at(0)->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
             b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
 

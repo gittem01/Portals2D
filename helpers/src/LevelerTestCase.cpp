@@ -667,6 +667,13 @@ void LevelerTestCase::createDynamics()
             tr->pBody->at(0)->isMirrored = objectData->mirrored;
         }
         break;
+        case PLATFORM:
+		{
+            printf("lol\n");
+			//Platform* pl = new Platform(g->pWorld);
+			//pl->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+		}
+        break;
 
         default:
             break;
@@ -726,9 +733,9 @@ void LevelerTestCase::onUpdate()
         lastCreationTime = g->gameTime;
         float randVal = (float)rand() / RAND_MAX;
         float randVal2 = (float)rand() / RAND_MAX;
-        Gel::generateGel(glm::vec2(0.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 0);
-        Gel::generateGel(glm::vec2(3.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 1);
-        Gel::generateGel(glm::vec2(6.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 2);
-        Gel::generateGel(glm::vec2(9.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.05 + randVal2 * 0.6, 3);
+        Gel::generateGel(glm::vec2(0.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 0);
+        Gel::generateGel(glm::vec2(3.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 1);
+        Gel::generateGel(glm::vec2(6.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 2);
+        Gel::generateGel(glm::vec2(9.0, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.2 + randVal2 * 0.5, 3);
     }
 }
