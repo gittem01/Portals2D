@@ -53,7 +53,7 @@ void main()
     float sider = outData.y;
 
     vec3 h = hexagon(4.0 * localPos);
-    float hashMult = 0.75 + 0.25 * hash(ivec2(h.xy + float(inInstanceIndex) * 100.0));
+    float hashMult = 0.75 + 0.25 * hash(ivec2(h.xy + float(inInstanceIndex) * 10.0));
 
     float m = smoothstep(outData.x - 0.1, 0.1 + outData.x, h.z) * (inColour.w > 0.0 ? hashMult : 1.0);
 

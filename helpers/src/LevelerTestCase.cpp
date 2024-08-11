@@ -5,6 +5,7 @@
 #include <TestPlayer.h>
 #include <Overlayer.h>
 #include <DefaultObjects/Gel.h>
+#include "GameObjects/Platform.h"
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
@@ -222,6 +223,8 @@ short LevelerTestCase::getDirs(glm::i16vec2 p0, glm::i16vec2 p1, short dir)
 
 void LevelerTestCase::wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, int size, int prevIndex, bool initial)
 {
+    ThinDrawer* td = ThinDrawer::object;
+
     int prevOffset = -1;
     s_wallGelData* mapMem;
 
@@ -253,7 +256,7 @@ void LevelerTestCase::wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, i
 	}
 
     s_wallPerGelData* mapMem2;
-    vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[1].memory, offset * sizeof(s_wallPerGelData) / 2, sizeof(s_wallPerGelData), 0, (void**)&mapMem2);
+    vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[1].memory, offset * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData), 0, (void**)&mapMem2);
 
     for (int i = 0; i < size; i++)
     {
@@ -669,9 +672,7 @@ void LevelerTestCase::createDynamics()
         break;
         case PLATFORM:
 		{
-            printf("lol\n");
-			//Platform* pl = new Platform(g->pWorld);
-			//pl->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+			Platform* pl = new Platform(g->pWorld, objectData);
 		}
         break;
 

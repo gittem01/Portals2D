@@ -29,12 +29,15 @@ b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world)
     return body;
 }
 
-b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDataType type, PortalWorld* world)
+b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDataType type, PortalWorld* world, b2Body* body)
 {
-    b2BodyDef bDef;
-    bDef.type = b2_staticBody;
-    bDef.position = b2Vec2(0.0, 0.0);
-    b2Body* body = world->CreateBody(&bDef);
+    if (!body)
+    {
+        b2BodyDef bDef;
+        bDef.type = b2_staticBody;
+        bDef.position = b2Vec2(0.0, 0.0);
+        body = world->CreateBody(&bDef);
+    }
 
     b2EdgeShape shape;
     shape.SetOneSided(p0, p1, p2, p3);
@@ -42,10 +45,17 @@ b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDa
     fixtureData* fData = new fixtureData();
     fData->type = type;
 
-    s_edgeGlobalData* eGlobalData = new s_edgeGlobalData(p1, p2);
-    s_edgeLocalData* eLocalData = new s_edgeLocalData(eGlobalData);
-
-    fData->data = eLocalData;
+    if (type == F_EDGE)
+    {
+        s_edgeGlobalData* eGlobalData = new s_edgeGlobalData(p1, p2);
+        s_edgeLocalData* eLocalData = new s_edgeLocalData(eGlobalData);
+        fData->data = eLocalData;
+    }
+    else
+    {
+        fData->data = nullptr;
+    }
+    
 
     b2FixtureDef fixDef;
     fixDef.userData.pointer = (uintptr_t)fData;

@@ -51,7 +51,7 @@ public:
 
     LevelerTestCase(Game* game);
 
-    void wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, int size, int prevIndex, bool initial=false);
+    static void wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, int size, int prevIndex, bool initial=false);
 
     void reachableFillFrom(s_gridSquare from, LevelObject mask, ReachableType reachFiller);
     void fillReachableMap();

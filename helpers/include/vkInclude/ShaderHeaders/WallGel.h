@@ -6,7 +6,7 @@
 typedef struct
 {
     glm::vec4 positions;
-    glm::ivec4 data; // size, gelDataIndex, prevIndex, nextIndex
+    glm::ivec4 data; // size, gelDataOffset, prevOffset, nextOffset
 } s_wallGelData;
 
 // in wall line

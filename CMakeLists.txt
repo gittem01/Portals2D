@@ -31,7 +31,8 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/external/OpenALSoft)
 file(GLOB HELPER_SOURCES    ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp
                             ${CMAKE_SOURCE_DIR}/helpers/src/vkSource/*.cpp
                             ${CMAKE_SOURCE_DIR}/helpers/src/vkSource/ShaderSources/*.cpp
-                            ${CMAKE_SOURCE_DIR}/helpers/src/DefaultObjects/*.cpp)
+                            ${CMAKE_SOURCE_DIR}/helpers/src/DefaultObjects/*.cpp
+                            ${CMAKE_SOURCE_DIR}/helpers/src/GameObjects/*.cpp)
                             
 file(GLOB HELPER_HEADERS    ${CMAKE_SOURCE_DIR}/helpers/include/*.h
                             ${CMAKE_SOURCE_DIR}/helpers/include/vkInclude*.h

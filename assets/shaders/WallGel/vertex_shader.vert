@@ -15,7 +15,7 @@ layout (set = 0, binding = 0) uniform SharedUboData
 struct perGelLineData
 {
     vec4 positions;
-    ivec4 data; // size, gelDataIndex, prevIndex, nextIndex
+    ivec4 data; // size, gelDataOffset, prevOffset, nextOffset
 };
 
 struct pergGelTickData

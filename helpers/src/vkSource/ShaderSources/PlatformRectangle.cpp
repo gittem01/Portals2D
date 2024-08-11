@@ -4,6 +4,7 @@
 #include <Shader.h>
 #include <definitions.h>
 #include <vkInit.h>
+#include "SwapChain.h"
 
 void PlatformRectangle::prepareVertexData()
 {
@@ -14,7 +15,7 @@ void PlatformRectangle::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(sizeof(s_platformRectUbo) * 40000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_platformRectUbo) * MAX_PLATFORMS * thinDrawer->swapChain->imageCount, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_platformRectUbo* platformUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_platformRectUbo), 0, (void**)&platformUbo);

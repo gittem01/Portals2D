@@ -64,7 +64,7 @@ void main()
         float iTime = sharedUboData.data.y - pc.data.y;
         vec2 uv = worldPosition;
         uv *= 4.0;
-		mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+		mat2 m = mat2(1.6,  1.2, -1.2,  1.6);
         f  = 0.5000 * noise(uv + iTime); uv = m * uv;
         f += 0.2500 * noise(uv + iTime * 1.5); uv = m * uv;
         f += 0.1250 * noise(uv - iTime * 4.0); uv = m * uv;

@@ -2,6 +2,8 @@
 
 #include <ShaderBase.h>
 
+#define MAX_PLATFORMS 256
+
 typedef struct
 {
     glm::vec4 posSize;

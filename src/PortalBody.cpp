@@ -73,6 +73,7 @@ PortalBody::~PortalBody(){
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
     {  
         fixtureData* fixData = (fixtureData*)fix->GetUserData().pointer;
+        fix->GetUserData().pointer = 0;
         PBFixtureData* pbfData = (PBFixtureData*)fixData->data;
         for (portalCollision* coll : pbfData->pCollisions)
         {

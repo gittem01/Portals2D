@@ -17,6 +17,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     
     b2BodyDef bDef;
     bDef.type = b2_dynamicBody;
+    //bDef.type = b2_kinematicBody;
     bDef.position.Set(pos.x, pos.y);
     bDef.linearDamping = 0.0;
 
@@ -361,11 +362,19 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
     if (!contact->IsEnabled()) return;
 
     fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
-    if (fData && fData->type == F_PORTAL)
+    if (fData)
     {
-        Portal* p = (Portal*)fData->data;
-        if (p->midFixture == otherFix && p->connections[0].size() > 0) return;
+        if (fData->type & F_PORTAL)
+        {
+            Portal* p = (Portal*)fData->data;
+            if (p->midFixture == otherFix && p->connections[0].size() > 0) return;
+        }
+        else if (fData->type & F_FEDGE)
+        {
+            return;
+        }
     }
+    
 
     if (!otherFix->IsSensor())
     {
