@@ -21,5 +21,6 @@ public:
 
 	static void staticInit();
 	static void update();
+	static void memMapFunc(void* ptr);
 	static void render(VkCommandBuffer cmdBuff, void* ptr);
 };

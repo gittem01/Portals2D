@@ -374,8 +374,11 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
             return;
         }
     }
+    else if (otherFix->GetBody()->GetType() == b2_kinematicBody && otherFix->GetShape()->GetType() == b2Shape::e_polygon)
+    {
+        return;
+    }
     
-
     if (!otherFix->IsSensor())
     {
         splash(contact, otherFix);
