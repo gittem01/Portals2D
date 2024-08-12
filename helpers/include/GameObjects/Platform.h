@@ -6,6 +6,8 @@
 #include "Leveler.h"
 #include "PlatformRectangle.h"
 
+const float platformSpeed = 1.5f;
+
 class Platform
 {
 public:
@@ -14,10 +16,15 @@ public:
 
 	b2Body* body;
 	glm::ivec2 size;
+	b2Vec2 basePos;
+	b2Vec2 fwdDir;
+	float limitDist;
+
 	int platformRenderOffset;
 	int edgeRenderIndex;
 
 	Platform(PortalWorld* portalWorld, s_objectDataGrid* objData);
+	void setMovementData(s_objectDataGrid* objData);
 
 	static void staticInit();
 	static void update();

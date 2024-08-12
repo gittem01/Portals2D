@@ -14,6 +14,8 @@ glm::vec2 vertexMults[4][2] =
 	{ glm::vec2(-0.5, -0.5), glm::vec2(-0.5, +0.5) },
 };
 
+b2Vec2 fwdDirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
+
 void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeIndex)
 {
 	b2Fixture* fix = body->GetFixtureList();
@@ -30,8 +32,7 @@ void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeI
 
 Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	size = objData->scale;
-	size[((objData->rotation % 4) % 2) ^ 1] = objData->extraScale.x;
+	setMovementData(objData);
 
 	glm::vec2 halfSize = glm::vec2(size) / 2.0f;
 
@@ -116,7 +117,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	box.SetAsBox(halfSize.x - 0.01, halfSize.y - 0.01);
 	body->CreateFixture(&box, 0.0f);
 
-	body->SetLinearVelocity(b2Vec2(1.0, 0.0));
+	body->SetLinearVelocity(platformSpeed * fwdDir);
 
 	s_platformRectUbo platformData;
 	s_platformRectUbo* platformUbo;
@@ -138,6 +139,23 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	}
 
 	platforms[numPlatforms++] = this;
+}
+
+void Platform::setMovementData(s_objectDataGrid* objData)
+{
+	int rotation = objData->rotation % 4;
+
+	size = objData->scale;
+
+	int ind = (rotation % 2) ^ 1;
+	limitDist = size[ind];
+	size[ind] = objData->extraScale.x;
+
+	limitDist -= (rotation % 2 == 0 ? size.y : size.x);
+
+	basePos = b2Vec2(objData->pos.x + size.x * 0.5f, objData->pos.y + size.y * 0.5f);
+
+	fwdDir = fwdDirs[rotation];
 }
 
 void Platform::staticInit()
@@ -215,5 +233,23 @@ void Platform::memMapFunc(void* ptr)
 
 void Platform::update()
 {
+	for (int i = 0; i < numPlatforms; i++)
+	{
+		Platform* platform = platforms[i];
 
+		b2Body* body = platform->body;
+
+		b2Vec2 speed = body->GetLinearVelocity();
+
+		b2Vec2 posDiff = body->GetPosition() - platform->basePos;
+
+		if (b2Dot(speed, platform->fwdDir) > 0.0f && b2Dot(posDiff, platform->fwdDir) > platform->limitDist)
+		{
+			body->SetLinearVelocity(-platformSpeed * platform->fwdDir);
+		}
+		else if (b2Dot(speed, platform->fwdDir) < 0.0f && b2Dot(posDiff, platform->fwdDir) < 0.0f)
+		{
+			body->SetLinearVelocity(platformSpeed * platform->fwdDir);
+		}
+	}
 }
