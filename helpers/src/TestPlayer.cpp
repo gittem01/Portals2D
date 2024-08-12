@@ -435,6 +435,11 @@ void TestPlayer::runEffect()
 			{
                 int renderOffset = eGlobal->renderOfsset + (eGlobal->unitWalls.size() - index - 1);
 				b2Vec2 vel = pBody->at(0)->body->GetLinearVelocity();
+                if (platformBody)
+                {
+                    vel -= platformBody->GetLinearVelocity();
+                }
+
                 if (renderOffset != lastOrangeGelSetOffset && abs(vel.x) > 3.0)
                 {
                     lastOrangeGelSetOffset = renderOffset;
@@ -710,7 +715,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
             contactType = fix2->GetBody()->GetType();
             contactBody = fix2->GetBody();
             contactFixture = fix2;
-            if (contactType == b2_dynamicBody)
+            if (contactType == b2_dynamicBody || contactType == b2_kinematicBody)
             {
                 if (fix2->GetDensity() == 0.0f &&
                     (contact->GetFixtureA()->GetBody() == pBody->at(0)->body || contact->GetFixtureB()->GetBody() == pBody->at(0)->body))

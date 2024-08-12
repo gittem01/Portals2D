@@ -38,7 +38,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	b2BodyDef bDef;
 	bDef.type = b2_kinematicBody;
-	bDef.position.Set(objData->pos.x + halfSize.x, objData->pos.y + halfSize.y);
+	bDef.position = basePos;
 	body = portalWorld->CreateBody(&bDef);
 
 	FixtureDataType pType;
@@ -154,6 +154,10 @@ void Platform::setMovementData(s_objectDataGrid* objData)
 	limitDist -= (rotation % 2 == 0 ? size.y : size.x);
 
 	basePos = b2Vec2(objData->pos.x + size.x * 0.5f, objData->pos.y + size.y * 0.5f);
+	if (rotation == 0)
+		basePos.y += limitDist;
+	else if (rotation == 3)
+		basePos.x += limitDist;
 
 	fwdDir = fwdDirs[rotation];
 }
