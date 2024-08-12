@@ -30,7 +30,9 @@ void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeI
 
 Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	size = glm::ivec2(5, 2);
+	size = objData->scale;
+	size[((objData->rotation % 4) % 2) ^ 1] = objData->extraScale.x;
+
 	glm::vec2 halfSize = glm::vec2(size) / 2.0f;
 
 	b2BodyDef bDef;
@@ -49,6 +51,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	WALL_TYPE wType = (WALL_TYPE)(1 << objData->platformType);
 
 	int initialOffset = -1;
+	int edgeRenderIndexStart = ThinDrawer::object->wallGel->numWallLines + numPlatforms * 4;
 
 	createEdgeOneSided(b2Vec2(+halfSize.x, -halfSize.y), b2Vec2(+halfSize.x, +halfSize.y),
 		b2Vec2(-halfSize.x, +halfSize.y), b2Vec2(-halfSize.x, -halfSize.y),
@@ -56,7 +59,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	if (pType == F_EDGE)
 	{
 		initialOffset = ThinDrawer::object->wallGel->numWallGels;
-		fillWallGelData(body, wType, ThinDrawer::object->wallGel->numWallLines, -1);
+		fillWallGelData(body, wType, edgeRenderIndexStart, -1);
 	}
 
 	createEdgeOneSided(b2Vec2(-halfSize.x, -halfSize.y), b2Vec2(+halfSize.x, -halfSize.y),
@@ -64,7 +67,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		pType, portalWorld, body);
 	if (pType == F_EDGE)
 	{
-		fillWallGelData(body, wType, ThinDrawer::object->wallGel->numWallLines + 1, ThinDrawer::object->wallGel->numWallLines);
+		fillWallGelData(body, wType, edgeRenderIndexStart + 1, edgeRenderIndexStart);
 	}
 
 	createEdgeOneSided(	b2Vec2(-halfSize.x, +halfSize.y), b2Vec2(-halfSize.x, -halfSize.y),
@@ -72,7 +75,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 						pType, portalWorld, body);
 	if (pType == F_EDGE)
 	{
-		fillWallGelData(body, wType, ThinDrawer::object->wallGel->numWallLines + 2, ThinDrawer::object->wallGel->numWallLines + 1);
+		fillWallGelData(body, wType, edgeRenderIndexStart + 2, edgeRenderIndexStart + 1);
 	}
 
 	createEdgeOneSided(	b2Vec2(+halfSize.x, +halfSize.y), b2Vec2(-halfSize.x, +halfSize.y),
@@ -80,11 +83,11 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 						pType, portalWorld, body);
 	if (pType == F_EDGE)
 	{
-		fillWallGelData(body, wType, ThinDrawer::object->wallGel->numWallLines + 3, ThinDrawer::object->wallGel->numWallLines + 2);
+		fillWallGelData(body, wType, edgeRenderIndexStart + 3, edgeRenderIndexStart + 2);
 		
-		LevelerTestCase::wallMemFill(b2Vec2(), b2Vec2(), ThinDrawer::object->wallGel->numWallLines, initialOffset, -1, ThinDrawer::object->wallGel->numWallLines + 3, true);
+		LevelerTestCase::wallMemFill(b2Vec2(), b2Vec2(), edgeRenderIndexStart, initialOffset, -1, edgeRenderIndexStart + 3, true);
 
-		edgeRenderIndex = ThinDrawer::object->wallGel->numWallLines + numPlatforms * 4;
+		edgeRenderIndex = edgeRenderIndexStart;
 
 		for (int i = 1; i < ThinDrawer::object->swapChain->imageCount; i++)
 		{
@@ -103,8 +106,6 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 				vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory);
 			}
 		}
-
-		//ThinDrawer::object->wallGel->numWallLines += 4;
 	}
 	else
 	{
