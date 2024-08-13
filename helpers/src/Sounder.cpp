@@ -41,6 +41,7 @@ Sounder::Sounder()
     // load default
     ALuint src = loadSound("portalRadio.wav");
     loadSound("jumpTest.wav");
+    loadSound("blueGelJump.wav");
     src = loadSound("wav_stereo.wav");
     loadSound("blueShoot.wav");
     loadSound("orangeShoot.wav");

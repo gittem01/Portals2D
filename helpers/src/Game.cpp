@@ -147,6 +147,7 @@ void Game::TestState()
 
             testCase->destroy();
             Turret::turrets.clear();
+            Platform::numPlatforms = 0;
             delete testCase;
         }
 

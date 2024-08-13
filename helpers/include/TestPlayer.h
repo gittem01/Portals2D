@@ -39,6 +39,8 @@ public:
     float angVal;
     bool shouldRelease;
     bool holdColliding;
+    int extraJumpRange[2];
+    bool fastRun;
 
     std::vector<PortalBody*>* gun;
     Game* game;
@@ -88,6 +90,7 @@ public:
     b2Vec2 lastDirs[2];
 
     ALuint jumpBuffer;
+    ALuint blueJumpBuffer;
     ALuint blueShootBuffer;
     ALuint orangeShootBuffer;
 

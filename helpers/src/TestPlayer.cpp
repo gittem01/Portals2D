@@ -63,6 +63,7 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
     rotSpeed = 0.0;
 
     jumpBuffer = Sounder::object->bufferMap["jumpTest.wav"];
+    blueJumpBuffer = Sounder::object->bufferMap["blueGelJump.wav"];
     blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
     orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
 
@@ -391,6 +392,8 @@ void TestPlayer::portalEffect(Portal* portal)
 
 void TestPlayer::runEffect()
 {
+    fastRun = false;
+
     if (contactFixture)
     {
         s_edgeGlobalData* eGlobal = nullptr;
@@ -433,6 +436,8 @@ void TestPlayer::runEffect()
             s_unitWallData uData = eGlobal->unitWalls.at(index);
 			if (uData.gelType & ORANGE && uData.gelAmount > 0.25)
 			{
+                fastRun = true;
+
                 int renderOffset = eGlobal->renderOfsset + (eGlobal->unitWalls.size() - index - 1);
 				b2Vec2 vel = pBody->at(0)->body->GetLinearVelocity();
                 if (platformBody)
@@ -457,9 +462,15 @@ void TestPlayer::runEffect()
 
 void TestPlayer::jumpEffect()
 {
+    int index = 0;
+    extraJumpRange[0] = 0;
+    extraJumpRange[1] = 0;
+
+    b2Body* body = pBody->at(0)->body;
+    s_edgeGlobalData* eGlobal = nullptr;
+
     if (contactFixture)
     {
-        s_edgeGlobalData* eGlobal = nullptr;
         fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
         if (fData)
         {
@@ -488,13 +499,14 @@ void TestPlayer::jumpEffect()
 
         if (eGlobal)
         {
-            b2Vec2 botPos = pBody->at(0)->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
+            b2Vec2 botPos = body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
             b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
 
-            int index = eGlobal->unitWalls.size() - (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0) - 1;
+            index = eGlobal->unitWalls.size() - (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0) - 1;
             index = std::max(std::min(index, (int)eGlobal->unitWalls.size() - 1), 0);
 
-            int range[2] = { index, index };
+            extraJumpRange[0] = index;
+            extraJumpRange[1] = index;
 
             for (int i = 1; i < 11; i++)
             {
@@ -506,7 +518,7 @@ void TestPlayer::jumpEffect()
                     s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
                     if (uData.gelType & BLUE && uData.gelAmount > 0.25)
                     {
-                        range[0] = index - i;
+                        extraJumpRange[0] = index - i;
                         found = true;
                     }
                 }
@@ -516,7 +528,7 @@ void TestPlayer::jumpEffect()
                     s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
                     if (uData.gelType & BLUE && uData.gelAmount > 0.25)
                     {
-                        range[1] = index + i;
+                        extraJumpRange[1] = index + i;
                         found = true;
                     }
                 }
@@ -526,24 +538,61 @@ void TestPlayer::jumpEffect()
                     break;
                 }
             }
-
-            if (range[1] != range[0])
-            {
-                int memMapSize = range[1] - range[0] + 1;
-                s_wallPerGelData* mapMem2;
-                vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
-                    (eGlobal->renderOfsset + range[0]) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
-
-                for (int i = 0; i < memMapSize; i++)
-                {
-                    float dist = (float)abs(index - range[0] - i) * 0.1;
-                    mapMem2[i].data.z = gameTime + dist * 0.2 - 0.05;
-                    mapMem2[i].data.w = (1.0 - dist) * 0.4;
-                }
-
-                vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
-            }
         }
+    }
+
+    bool jumped = false;
+
+    static double jumpPressTime = 0.0;
+
+    b2Vec2 lv = body->GetLinearVelocity();
+
+    grounded = ((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) || (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f);
+
+    if (wh->keyData[GLFW_KEY_W] == 2)
+    {
+        jumpPressTime = gameTime;
+    }
+
+    float checkXSpeed = lv.x -= contactBody ? contactBody->GetLinearVelocity().x : 0.0f;
+    if (grounded && (gameTime < jumpPressTime + 0.04 || abs(lv.x) > 6.0f && (extraJumpRange[1] - extraJumpRange[0] > 4)))
+    {
+        jumped = true;
+        bool extraJump = (extraJumpRange[1] - extraJumpRange[0] > 4);
+
+        lv.y = (6.0f + 4.0f * extraJump) * (float)pBody->size();
+
+        jumpPressTime = 0.0;
+
+        ALuint source;
+        if (!extraJump)
+            source = Sounder::object->playSound(jumpBuffer, 1.0);
+        else
+            source = Sounder::object->playSound(blueJumpBuffer, 1.0);
+        b2Vec2 pPos = body->GetPosition();
+        Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+    }
+
+    lv.y = std::fmax(lv.y, -10.0);
+
+    body->SetLinearVelocity(lv);
+
+    int memMapSize = extraJumpRange[1] - extraJumpRange[0] + 1;
+    if (jumped && eGlobal && memMapSize > 5)
+    {
+        int memMapSize = extraJumpRange[1] - extraJumpRange[0] + 1;
+        s_wallPerGelData* mapMem2;
+        vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+            (eGlobal->renderOfsset + extraJumpRange[0]) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
+
+        for (int i = 0; i < memMapSize; i++)
+        {
+            float dist = (float)abs(index - extraJumpRange[0] - i) * 0.1;
+            mapMem2[i].data.z = gameTime + dist * 0.2 - 0.05;
+            mapMem2[i].data.w = (1.0 - dist) * 0.4;
+        }
+
+        vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
     }
 }
 
@@ -674,6 +723,8 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
     }
 
     contact->SetRestitution(0.0f);
+
+    if (wManifold.separations[0] < -0.04f && contact->IsEnabled()); // dead
 }
 
 void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
@@ -1629,9 +1680,15 @@ void TestPlayer::updateReset()
 
 void TestPlayer::update(float dt, int totalIter)
 {
-    gameTime = Game::object->gameTime;
+    static float lastMaxSpeed = 0.0f;
 
-    const float maxSpeed = 4.0f;
+    gameTime = Game::object->gameTime;
+    
+    runEffect();
+
+    const float maxSpeed = lastMaxSpeed + (4.0f + fastRun * 4.0f - lastMaxSpeed) * dt * 2.0f;
+    lastMaxSpeed = maxSpeed;
+
     float speedOffset = 0.0f;
     avgNormalX /= numNormals;
     setFriction = 0.0;
@@ -1756,14 +1813,12 @@ void TestPlayer::update(float dt, int totalIter)
 
     if (!left && !right && platformBody)
     {
-        //printf("1\n");
         float diff = platformBody->GetLinearVelocity().x - lv.x;
         lv.x += diff * dt * 15.0f * pBody->size();
         setFriction = 2.0;
     }
     if (left || right)
     {
-        //printf("2\n");
         const float groundMult = 40.0f;
         const float airMult = 10.0f;
         const float fwdGrndSlw = 5.0f;
@@ -1903,52 +1958,24 @@ void TestPlayer::update(float dt, int totalIter)
     }
     else if (!contactBody)
     {
-        //printf("3\n");
         setFriction = 0.0;
     }
     else if (contactBody && contactBody->GetMass() != 0.0f && onAirFor == 0.0f)
     {
-        //printf("4\n");
         // kinematic body
         setFriction = 2.0;
     }
     else if (contactBody && contactType != b2_dynamicBody && onAirFor == 0.0f)
     {
-        //printf("5\n");
         setFriction = 2.0;
     }
 
     if (!contactBody) onAirFor += dt;
     else onAirFor = 0.0f;
 
-    static double jumpPressTime = 0.0;
+    jumpEffect();
 
-    grounded = ((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) || (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f);
-
-    if (wh->keyData[GLFW_KEY_W] == 2)
-    {
-        jumpPressTime = gameTime;
-    }
-
-    if (grounded && gameTime < jumpPressTime + 0.04)
-    {
-        lv.y = 6.0f * (float)pBody->size();
-
-        jumpPressTime = 0.0;
-
-        ALuint source = Sounder::object->playSound(jumpBuffer, 1.0);
-        b2Vec2 pPos = pb->body->GetPosition();
-        Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
-
-        jumpEffect();
-    }
-
-    lv.y = std::fmax(lv.y, -10.0);
-    //printf("%f, %f\n", lv.x, lv.y);
-
-    pb->body->SetLinearVelocity(lv);
-
-    runEffect();
+    pb->body->SetLinearVelocity(b2Vec2(lv.x, pb->body->GetLinearVelocity().y));
 
     handleBodyRotation();
 

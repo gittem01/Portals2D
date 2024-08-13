@@ -768,8 +768,8 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     s_edgeGlobalData* eGlobalData = eLocalData->globalData;
 
     int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
-    int requiredRangeSize = std::ceil(size / eGlobalData->perWallSize);
-    requiredRangeSize += requiredRangeSize % 2;
+    int requiredRangeSize = std::round(size / eGlobalData->perWallSize);
+    requiredRangeSize += requiredRangeSize % 2 - 1;
 
     b2EdgeShape* eShape = (b2EdgeShape*)edgeFix->GetShape();
     pos = edgeFix->GetBody()->GetLocalPoint(pos);
