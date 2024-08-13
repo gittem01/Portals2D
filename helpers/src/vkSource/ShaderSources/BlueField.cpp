@@ -18,7 +18,7 @@ void BlueField::prepareUniforms()
 
     s_blueFieldUbo* blueFieldUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
-    blueFieldUbo->pointts = glm::vec4(-10.0, 2.5, +10.0, 2.5);
+    blueFieldUbo->points = glm::vec4(-10.0, 2.5, +10.0, 2.5);
     blueFieldUbo->colour = glm::vec4(0.0, 0.3, 1.0, 0.7);
     blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, 1.0);
     blueFieldUbo->data = glm::vec4(0.8, 0.0, 1.0, -1.0);

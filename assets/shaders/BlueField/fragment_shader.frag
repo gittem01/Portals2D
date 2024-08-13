@@ -52,7 +52,7 @@ float voronoi(vec2 x)
 void main()
 {
     float c = voronoi(localPos * 10.0 + worldPos);
-    float c2 = voronoi(localPos * 4.0 + worldPos);
+    float c2 = voronoi(localPos * 3.0 + worldPos);
     float v = 1.0 - pow(c + c2, 3.0);
     
     float sideMult = smoothstep(0.0, 0.5, 2.0 * (size.y * 0.5 - abs(localPos.y)) / size.y);
@@ -65,11 +65,12 @@ void main()
 
     float fullMult = min(max(splitX - (size.x * 0.5 - abs(localPos.x)), 0.0), smoothSize) / smoothSize;
 
-    float currentRadius = (sharedUboData.data.y - shootData.z) * 10.0;
+    float currentRadius = max((sharedUboData.data.y - shootData.z), 0.01) * 10.0;
     vec2 worldDiff = worldPos - shootData.xy;
     float wl = length(worldDiff);
-    if (currentRadius > wl)
-        c2.x += min(max(5.0 - (currentRadius - wl), 0.0) * 0.4 / currentRadius, 2.0);
 
-    FragColour = (colour * v + pow(c2.x, 3.0) * colour2 * sideMult * 0.5) * fullMult;
+    float add = max(-abs(currentRadius - wl) + 1.0, 0.0) / pow(currentRadius, 1.0);
+    c2 = add;
+    
+    FragColour = (colour * v + pow(c2, 2.0) * colour2 * sideMult * 0.5) * fullMult;
 }

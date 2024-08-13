@@ -4,7 +4,7 @@
 
 typedef struct
 {
-    glm::vec4 pointts;
+    glm::vec4 points;
     glm::vec4 colour;
     glm::vec4 colour2;
     glm::vec4 data; // thickness, timeOffset, status, statusChangeTime

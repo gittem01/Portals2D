@@ -18,12 +18,19 @@ public:
 
     float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction)
     {
-        if (fixture->GetType() == b2Shape::e_edge && fraction < closestFraction)
+        if ((fixture->GetType() == b2Shape::e_edge || fixture->GetType() == b2Shape::e_polygon) && fraction < closestFraction)
         {
             fixtureData* fixData = (fixtureData*)fixture->GetUserData().pointer;
-            if (fixData && fixData->type & F_FEDGE)
+            if (fixData)
             {
-				return -1.0f;
+                if (fixData->type & F_FEDGE)
+                {
+				    return -1.0f;
+                }
+                else if (!(fixData->type & F_FORCE_FIELD) && fixture->GetType() == b2Shape::e_polygon)
+				{
+					return -1.0f;
+				}
 			}
 
             found = true;

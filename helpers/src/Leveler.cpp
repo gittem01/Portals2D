@@ -2807,7 +2807,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 
-		blueFieldUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+		blueFieldUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		blueFieldUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
 		blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, objectData->startActive ? 1.0 : 0.15);
 		blueFieldUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);

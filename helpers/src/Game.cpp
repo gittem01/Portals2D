@@ -6,6 +6,7 @@
 #include <DefaultObjects/Turret.h>
 #include <DefaultObjects/Gel.h>
 #include "GameObjects/Platform.h"
+#include "GameObjects/ForceField.h"
 
 Game* Game::object;
 
@@ -79,6 +80,7 @@ void Game::TestState()
     Turret::staticInit();
     Gel::staticInit();
     Platform::staticInit();
+    ForceField::staticInit();
 
     if (!leveler)
     {

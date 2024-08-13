@@ -1,4 +1,5 @@
 #include <TestPlayer.h>
+#include <GameObjects/ForceField.h>
 
 TestPlayer* TestPlayer::object;
 
@@ -1222,6 +1223,21 @@ void TestPlayer::handlePortalCD(float dt)
 
         if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
+            fixtureData* fData = (fixtureData*)rayCaster.edgeFix->GetUserData().pointer;
+            if (fData && fData->type == F_FORCE_FIELD)
+            {
+                ForceField* ff = (ForceField*)fData->data;
+
+                s_blueFieldUbo* blueFieldUbo;
+                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
+                    ff->fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
+
+                blueFieldUbo->colour2 = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+                blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, gameTime, 0.0f);
+
+                vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
+            }
+
             if (canCreateBlue)
             {
                 if (portalA)
@@ -1275,6 +1291,21 @@ void TestPlayer::handlePortalCD(float dt)
         }
         else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
+            fixtureData* fData = (fixtureData*)rayCaster.edgeFix->GetUserData().pointer;
+            if (fData && fData->type == F_FORCE_FIELD)
+            {
+                ForceField* ff = (ForceField*)fData->data;
+
+                s_blueFieldUbo* blueFieldUbo;
+                vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
+                    ff->fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
+
+                blueFieldUbo->colour2 = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, gameTime, 0.0f);
+
+                vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
+            }
+
             if (canCreateRed)
             {
                 if (portalB)
