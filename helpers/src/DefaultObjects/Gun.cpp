@@ -41,6 +41,11 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     ThinDrawer::object->addPortalBody(pb, { "gun2.png" });
 }
 
+void Gun::beginContact(b2Contact* contact, b2Fixture* otherFix)
+{
+	
+}
+
 void Gun::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
     if (fix2->GetShape()->GetType() != b2Shape::e_edge)

@@ -69,7 +69,7 @@ void main()
     vec2 worldDiff = worldPos - shootData.xy;
     float wl = length(worldDiff);
 
-    float add = max(-abs(currentRadius - wl) + 1.0, 0.0) / pow(currentRadius, 1.0);
+    float add = max((currentRadius - abs(currentRadius - wl)) * 4.0, 0.0) / pow(currentRadius, 3.0);
     c2 = add;
     
     FragColour = (colour * v + pow(c2, 2.0) * colour2 * sideMult * 0.5) * fullMult;

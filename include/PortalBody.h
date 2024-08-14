@@ -105,7 +105,7 @@ friend class ContactListener;
 
 public:
     pbWorldData* worldIndex;
-    std::vector<bodyCollisionStatus*>* bodyMaps;
+    std::vector<bodyCollisionStatus*> bodyMaps;
 
     // arrangement of the fixtures are fixed always
     std::vector<b2Fixture*> fixtures;

@@ -72,6 +72,7 @@ public:
     int lastOrangeGelSetOffset = -1;
     int lastKey;
     int keyBeforeSwitch;
+    int numCollidingForceFields = 0;
 
     bool right;
     bool left;
@@ -109,9 +110,11 @@ public:
 
     void createBody(b2Vec2 pos);
 
+    void beginContact(b2Contact* contact, b2Fixture* otherFix);
+    void endContact(b2Contact* contact, b2Fixture* otherFix);
     void preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2);
-
     void reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2);
+    
     void camHandle();
     void handleBodyRotation();
 

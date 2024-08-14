@@ -42,7 +42,7 @@ Portal::~Portal()
             Portal* outPortal = this;
             int side = i;
 
-            for (bodyCollisionStatus* bcs : *pb->bodyMaps)
+            for (bodyCollisionStatus* bcs : pb->bodyMaps)
             {
                 b2Vec2 center = bcs->body->getWorldCenterOfMass();
                 if (bcs->connection->portal2->getPointSide(center) == bcs->connection->side2)
@@ -102,7 +102,7 @@ Portal::~Portal()
                 leftOutBody->outFixtures[i].clear();
                 leftOutBody->createDestroyMap[i].clear();
             }
-            leftOutBody->bodyMaps->clear();
+            leftOutBody->bodyMaps.clear();
         }
     }
 

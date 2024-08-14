@@ -303,9 +303,9 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
         {
             pc = tp->holdConnection;
         }
-        else if (tp->holdBody->bodyMaps->size() > 0)
+        else if (tp->holdBody->bodyMaps.size() > 0)
         {
-            pc = tp->holdBody->bodyMaps->at(0)->connection;
+            pc = tp->holdBody->bodyMaps.at(0)->connection;
         }
 
         if (pc)
@@ -343,7 +343,18 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
             tp->shootDatas.erase(tp->shootDatas.begin() + i);
             continue;
         }
+        
+        if (shootData->data.x < 0.9)
+        {
+            glm::vec2 shootDir = glm::vec2(shootData->positions.z - shootData->positions.x, shootData->positions.w - shootData->positions.y);
+            shootData->positions.x += shootDir.x * Game::object->deltaTime * 10.0f;
+            shootData->positions.y += shootDir.y * Game::object->deltaTime * 10.0f;
 
+            shootDir = glm::normalize(shootDir);
+            shootData->positions.z += shootDir.x * Game::object->deltaTime;
+            shootData->positions.w += shootDir.y * Game::object->deltaTime;
+        }
+        
         vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)shootData);
         vkCmdDraw(cmdBuff, 6, 1, 0, 0);
     }
@@ -687,6 +698,56 @@ void TestPlayer::createBody(b2Vec2 pos)
     pWorld->CreateJoint(&jDef);
 }
 
+void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
+{
+    if (!contact->IsEnabled()) return;
+
+    fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
+    if (fixData && fixData->type == F_FORCE_FIELD)
+    {
+        numCollidingForceFields++;
+        game->singleTaskRegistry.push_back(
+            [this]()
+            {
+                if (portalA && portalB) getBodyOut();
+                if (portalA)
+                {
+                    portalA->getPreDestructionFixture();
+                    pWorld->destroyPortal(portalA);
+                }
+                if (portalB)
+                {
+                    portalB->getPreDestructionFixture();
+                    pWorld->destroyPortal(portalB);
+                }
+                portalA = nullptr; portalB = nullptr;
+            }
+        );
+    }
+}
+
+void TestPlayer::endContact(b2Contact* contact, b2Fixture* otherFix)
+{
+    if (otherFix == contactFixture)
+	{
+		contactFixture = nullptr;
+		contactBody = nullptr;
+		platformBody = nullptr;
+		leftCollisionType = b2_staticBody;
+		rightCollisionType = b2_staticBody;
+		numNormals = 0;
+		avgNormalX = 0.0f;
+	}
+
+    if (!contact->IsEnabled()) return;
+
+    fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
+    if (fixData && fixData->type == F_FORCE_FIELD)
+    {
+        numCollidingForceFields--;
+    }
+}
+
 void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
     if (holdBody)
@@ -902,7 +963,7 @@ void TestPlayer::handleGunRotation()
         if (playerBody)
         {
             portalConnection* pConnection = nullptr;
-            for (bodyCollisionStatus* stat : *pb->bodyMaps)
+            for (bodyCollisionStatus* stat : pb->bodyMaps)
             {
                 if (stat->body == playerBody)
                 {
@@ -1129,7 +1190,7 @@ PortalBody* TestPlayer::getOuterGun()
     {
         bool ok = true;
         b2Vec2 p = gb->body->GetWorldPoint(b2Vec2(0.0, -0.35));
-        for (bodyCollisionStatus* bcs : *gb->bodyMaps)
+        for (bodyCollisionStatus* bcs : gb->bodyMaps)
         {
             if (bcs->connection->portal1->getPointSide(p) != bcs->connection->side1)
             {
@@ -1186,16 +1247,23 @@ void TestPlayer::handlePortalCD(float dt)
     vecAngle += portalGun->body->GetAngle();
     vec = b2Vec2(cos(vecAngle) * rayLength, sin(vecAngle) * rayLength);
 
-    PortalGunRayCast rayCaster = PortalGunRayCast(pWorld);
-
-    b2Vec2 rayPoint1 = p0;
-    b2Vec2 rayPoint2 = p0 + vec;
-
     handleObjectHold(portalGun, p0, vec, dt);
     if (holdBody)
     {
         return;
     }
+    else if (numCollidingForceFields > 0)
+    {
+        gData.positions.y = -1299.0f;
+        gData.positions.w = -1922.0;
+
+        return;
+    }
+
+    PortalGunRayCast rayCaster = PortalGunRayCast(pWorld);
+
+    b2Vec2 rayPoint1 = p0;
+    b2Vec2 rayPoint2 = p0 + vec;
 
     thinDrawer->registerDebugLine(glm::vec4(rayPoint1.x, rayPoint1.y, rayPoint2.x, rayPoint2.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.03, 0.5);
 
@@ -1232,10 +1300,13 @@ void TestPlayer::handlePortalCD(float dt)
                 vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
                     ff->fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 
-                blueFieldUbo->colour2 = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+                blueFieldUbo->colour2 = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
                 blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, gameTime, 0.0f);
 
                 vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
+
+                shootDatas.push_back({  { p0.x, p0.y, np1.x, np1.y },   { 0.0, 1.0f, 1.0f, 1.0f },
+                                        { NAN, 0.0f, 0.0f, 0.0f },      { 0.5f, 0.0f, 0.0f, 0.0f } });
             }
 
             if (canCreateBlue)
@@ -1300,10 +1371,13 @@ void TestPlayer::handlePortalCD(float dt)
                 vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
                     ff->fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 
-                blueFieldUbo->colour2 = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                blueFieldUbo->colour2 = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
                 blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, gameTime, 0.0f);
 
                 vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
+
+                shootDatas.push_back({  { p0.x, p0.y, np1.x, np1.y },   { 1.0, 0.5f, 0.0f, 1.0f },
+                                        { NAN, 0.0f, 0.0f, 0.0f },      { 0.5f, 0.0f, 0.0f, 0.0f } });
             }
 
             if (canCreateRed)
@@ -1357,6 +1431,11 @@ void TestPlayer::handlePortalCD(float dt)
             lastPortalCreationTime = gameTime;
         }
     }
+    else
+    {
+        gData.positions.x = -1881.0f;
+        gData.positions.z = -1938.0f;
+    }
 }
 
 void TestPlayer::gunDestrCallback(PortalBody* gb, void* ptr)
@@ -1368,7 +1447,7 @@ void TestPlayer::gunDestrCallback(PortalBody* gb, void* ptr)
         return;
     }
 
-    bodyCollisionStatus* bcs = gb->bodyMaps->at(0);
+    bodyCollisionStatus* bcs = gb->bodyMaps.at(0);
     tp->holdGun = bcs->body;
 
     if (tp->holdConnection == nullptr)
@@ -1394,7 +1473,7 @@ void TestPlayer::objectDestrCallback(PortalBody* pb, void* ptr)
         return;
     }
 
-    bodyCollisionStatus* bcs = pb->bodyMaps->at(0);
+    bodyCollisionStatus* bcs = pb->bodyMaps.at(0);
     tp->holdBody = bcs->body;
     if (bcs->connection->portal1 == tp->destrPortal || bcs->connection->portal2 == tp->destrPortal)
     {
@@ -1587,13 +1666,13 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
         {
             if (holdGun != gunBody)
             {
-                if (gunBody->bodyMaps->size() == 0)
+                if (gunBody->bodyMaps.size() == 0)
                 {
                     releaseB();
                     return;
                 }
 
-                portalConnection* newConnection = gunBody->bodyMaps->at(0)->connection;
+                portalConnection* newConnection = gunBody->bodyMaps.at(0)->connection;
                 if (holdConnection == nullptr)
                 {
                     holdConnection = newConnection;

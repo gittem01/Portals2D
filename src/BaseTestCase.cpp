@@ -177,6 +177,12 @@ void BaseTestCase::onUpdate()
         tp->update(dt, requiredIters);
 
         g->pWorld->PortalStep(dt, 8, 3);
+
+        for (auto func : Game::object->singleTaskRegistry)
+        {
+            func();
+        }
+        Game::object->singleTaskRegistry.clear();
     }
     
     if (followPlayer) tp->camHandle();

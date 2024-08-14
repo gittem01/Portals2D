@@ -307,7 +307,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             PortalBody* pbB = (PortalBody*)bd->data;
 
             b2RevoluteJoint* rj = (b2RevoluteJoint*)j;
-            for (bodyCollisionStatus* bcs : *pbB->bodyMaps)
+            for (bodyCollisionStatus* bcs : pbB->bodyMaps)
             {
                 if (bcs->connection == c)
                 {
@@ -585,8 +585,8 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
         npb->numFixtures = pBody->numFixtures;
         npb->outFixtures[c->side2][portal2] = npb->numFixtures + fixMargin;
-        pBody->bodyMaps->push_back(t_bcs);
-        npb->bodyMaps->push_back(bcs);
+        pBody->bodyMaps.push_back(t_bcs);
+        npb->bodyMaps.push_back(bcs);
 
         if (allOut)
         {

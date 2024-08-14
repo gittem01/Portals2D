@@ -9,7 +9,6 @@ PortalBody::PortalBody(b2Body* bBody, PortalWorld* pWorld)
 {
     this->pWorld = pWorld;
     this->body = bBody;
-    this->bodyMaps = new std::vector<bodyCollisionStatus*>();
 
     this->body->SetGravityScale(0.0f);
 
@@ -51,15 +50,15 @@ PortalBody::~PortalBody(){
         delete baseDensities;
     }
 
-    for (int i = 0; i < bodyMaps->size(); i++)
+    for (int i = 0; i < bodyMaps.size(); i++)
     {
-        bodyCollisionStatus* bodyCollStatus = bodyMaps->at(i);
-		for (int j = 0; j < bodyCollStatus->body->bodyMaps->size(); j++)
+        bodyCollisionStatus* bodyCollStatus = bodyMaps.at(i);
+		for (int j = 0; j < bodyCollStatus->body->bodyMaps.size(); j++)
         {
-			bodyCollisionStatus* bcs = bodyCollStatus->body->bodyMaps->at(j);
+			bodyCollisionStatus* bcs = bodyCollStatus->body->bodyMaps.at(j);
 			if (bcs->body == this)
             {
-				bodyCollStatus->body->bodyMaps->erase(bodyCollStatus->body->bodyMaps->begin() + j);
+				bodyCollStatus->body->bodyMaps.erase(bodyCollStatus->body->bodyMaps.begin() + j);
                 bcs->connection->portal1->collidingBodies[bcs->connection->side1].erase(bodyCollStatus->body);
                 bcs->connection->portal2->collidingBodies[bcs->connection->side2].erase(this);
 				j--;
@@ -68,7 +67,6 @@ PortalBody::~PortalBody(){
 		}
         delete bodyCollStatus;
     }
-    delete bodyMaps;
 
     for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
     {  
@@ -168,8 +166,8 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         Portal* portal = (Portal*)fData->data;
         if (fix2 != portal->yFix[0] && fix2 != portal->yFix[1])
         {
-            for (bodyCollisionStatus* stat : *bodyMaps){
-                if (stat->body->bodyMaps->size() < 2)
+            for (bodyCollisionStatus* stat : bodyMaps){
+                if (stat->body->bodyMaps.size() < 2)
                 {
                     continue;
                 }
@@ -316,7 +314,7 @@ int PortalBody::shouldCollideHelper(portalCollision* coll, PBFixtureData* pbfDat
     }
 
     b2Fixture* otherFix2 = NULL;
-    for (bodyCollisionStatus* bcs : *pb->bodyMaps){
+    for (bodyCollisionStatus* bcs : pb->bodyMaps){
         if (bcs->connection->portal1 == coll->portal){
             otherFix2 = bcs->body->fixtures[pbfData2->index];
         }
@@ -326,8 +324,8 @@ int PortalBody::shouldCollideHelper(portalCollision* coll, PBFixtureData* pbfDat
         return 1;
     }
     
-    for (bodyCollisionStatus* bcs : *bodyMaps){
-        if (bcs->body->bodyMaps->size() < 2){
+    for (bodyCollisionStatus* bcs : bodyMaps){
+        if (bcs->body->bodyMaps.size() < 2){
             continue;
         }
 
@@ -459,7 +457,7 @@ void PortalBody::postHandle()
             }
             else if (iter.second < 0)
             {
-                for (bodyCollisionStatus* s : *bodyMaps)
+                for (bodyCollisionStatus* s : bodyMaps)
                 {
                     if (s->connection->portal1 == iter.first && s->connection->side1 == side)
                     {
@@ -473,13 +471,13 @@ void PortalBody::postHandle()
 
     if (destroyRequests.size() == 1)
     {
-        if (bodyMaps->size() == 1)
+        if (bodyMaps.size() == 1)
         {
             pWorld->destroyBodies.insert(this);
         }
         else
         {
-            for (bodyCollisionStatus* bcs : *bodyMaps)
+            for (bodyCollisionStatus* bcs : bodyMaps)
             {
                 if (bcs->connection->portal1 == destroyRequests.at(0))
                 {
@@ -494,7 +492,7 @@ void PortalBody::postHandle()
         {
             for (Portal* portal : destroyRequests)
             {
-                for (bodyCollisionStatus* bcs : *bodyMaps)
+                for (bodyCollisionStatus* bcs : bodyMaps)
                 {
                     if (bcs->connection->portal1 == portal)
                     {
@@ -522,7 +520,7 @@ void PortalBody::postHandle()
         b2MassData md;
         body->GetMassData(&md);
         centerOfMass = body->GetWorldPoint(md.center);
-        for (bodyCollisionStatus* bcs : *bodyMaps)
+        for (bodyCollisionStatus* bcs : bodyMaps)
         {
             if (bcs->connection->portal1->getPointSide(centerOfMass) == bcs->connection->side1)
             {
@@ -534,7 +532,7 @@ void PortalBody::postHandle()
 #else
     if (body->IsAwake() && *gravityScale > 0.0)
     {
-        if (bodyMaps->size() > 0)
+        if (bodyMaps.size() > 0)
         {
             for (b2Fixture* fix = body->GetFixtureList(); fix; fix = fix->GetNext())
             {
@@ -658,9 +656,9 @@ void PortalBody::getBodyOut(pbWorldData* worldData)
 
     PortalBody* pb = worldData->pbIndices[0];
 
-    if (pb->bodyMaps->size() == 0) return;
+    if (pb->bodyMaps.size() == 0) return;
 
-    bodyCollisionStatus* bcs = pb->bodyMaps->at(0);
+    bodyCollisionStatus* bcs = pb->bodyMaps.at(0);
 
     b2Vec2 center = pb->getWorldCenterOfMass();
     if (bcs->connection->portal1->getPointSide(center) == bcs->connection->side1)
@@ -719,7 +717,7 @@ void PortalBody::getBodyOut(pbWorldData* worldData)
         leftOutBody->outFixtures[i].clear();
         leftOutBody->createDestroyMap[i].clear();
     }
-    leftOutBody->bodyMaps->clear();
+    leftOutBody->bodyMaps.clear();
 }
 
 float PortalBody::findPolygonArea(b2Vec2* vertices, int numVertices){
@@ -873,7 +871,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         // validity check for loopCenterOfMass is probably extra
         // just to be sure program does not crash
         if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-            body->ApplyForce(*gravityScale * ((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
+            body->ApplyForce(*gravityScale * ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
         }
     }
     else{
@@ -939,7 +937,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
 
                 b2Vec2 force = loopArea * fixture->GetDensity() * pWorld->GetGravity();
                 if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-                    body->ApplyForce(*gravityScale * ((float)bodyMaps->size() + 1) * force, loopCenterOfMass, false);
+                    body->ApplyForce(*gravityScale * ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
                 }
             }
         }

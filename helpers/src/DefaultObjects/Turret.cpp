@@ -137,6 +137,7 @@ void Turret::staticInit()
 	coverTex = IOHelper::loadTexture("turretCover.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	gunTex = IOHelper::loadTexture("turretGun.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	glowTex = IOHelper::loadTexture("glow.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+	IOHelper::loadTexture("turretBody.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
 	std::vector<s_vertex> coverVertices = 
 	{
@@ -249,7 +250,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		for (auto pBody : *trt->pBody)
 		{
 			s_renderBodyPsh pshData;
-			pshData.data.y = ThinDrawer::object->gameTime - ThinDrawer::object->adjustableValues.x;;
+			pshData.data.y = pBody->worldIndex->destrTime;
 
 			float mirrMult = pBody->isMirrored ? -1.0f : 1.0f;
 			float effectiveRotation = trt->rotation * mirrMult;
@@ -457,7 +458,7 @@ void Turret::perFrameUpdate()
 			tPb = trt->pBody->at(0);
 			b2Vec2 eyePos = b2Vec2(tEyePos.x * (tPb->isMirrored ? -1.0f : 1.0f), tEyePos.y);
 			eyePos = tPb->body->GetWorldPoint(eyePos);
-			portalConnection* pc = tPb->bodyMaps->at(0)->connection;
+			portalConnection* pc = tPb->bodyMaps[0]->connection;
 			if (pc->portal1->getPointSide(eyePos) != pc->side1)
 			{
 				tPb = trt->pBody->at(1);

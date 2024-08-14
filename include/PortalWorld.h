@@ -64,8 +64,10 @@ typedef struct point
     float r;
 } point;
 
-typedef struct
+typedef struct PbWorldData
 {
+    float destrTime = -20.0f;
+
     std::vector<PortalBody*> pbIndices;
     
     std::vector<b2Shape*> shapes;
