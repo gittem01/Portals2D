@@ -27,7 +27,7 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 		b2Vec2 pPos = npBody.at(0)->body->GetPosition();
 		Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
 
-		if (TestPlayer::object->holdBody->worldIndex == npBody[0]->worldIndex)
+		if (TestPlayer::object->holdBody && TestPlayer::object->holdBody->worldIndex == npBody[0]->worldIndex)
 		{
 			TestPlayer::object->releaseB();
 		}

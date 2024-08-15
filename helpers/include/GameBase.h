@@ -47,6 +47,7 @@ enum FixtureDataType
     F_GEDGE         = 0x1 << 4,
     F_FEDGE         = 0x1 << 5,
     F_FORCE_FIELD   = 0x1 << 6,
+    F_HAZARD_FIELD  = 0x1 << 7,
 
     F_END           = 0x1 << 30,
 };

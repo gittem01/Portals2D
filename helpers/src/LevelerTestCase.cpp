@@ -6,6 +6,7 @@
 #include <Overlayer.h>
 #include <DefaultObjects/Gel.h>
 #include "GameObjects/ForceField.h"
+#include "GameObjects/HazardField.h"
 #include "GameObjects/Platform.h"
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
@@ -684,6 +685,12 @@ void LevelerTestCase::createDynamics()
 		{
 			ForceField* ff = new ForceField(g->pWorld, objectData);
 		}
+        break;
+        case HAZARDER:
+        {
+            HazardField* hf = new HazardField(g->pWorld, objectData);
+		}
+        break;
         default:
             break;
         }

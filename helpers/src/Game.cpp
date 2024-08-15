@@ -7,6 +7,7 @@
 #include <DefaultObjects/Gel.h>
 #include "GameObjects/Platform.h"
 #include "GameObjects/ForceField.h"
+#include "GameObjects/HazardField.h"
 
 Game* Game::object;
 
@@ -81,6 +82,7 @@ void Game::TestState()
     Gel::staticInit();
     Platform::staticInit();
     ForceField::staticInit();
+    HazardField::staticInit();
 
     if (!leveler)
     {
