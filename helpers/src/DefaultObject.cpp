@@ -27,6 +27,11 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 		b2Vec2 pPos = npBody.at(0)->body->GetPosition();
 		Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
 
+		if (TestPlayer::object->holdBody->worldIndex == npBody[0]->worldIndex)
+		{
+			TestPlayer::object->releaseB();
+		}
+
 		ForceField::destroyCList.push(npBody[0]->worldIndex);
 		npBody[0]->worldIndex->destrTime = Game::object->gameTime - 0.5;
 		*npBody[0]->gravityScale = 0.0f;

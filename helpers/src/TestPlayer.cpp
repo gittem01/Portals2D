@@ -1600,6 +1600,7 @@ void TestPlayer::releaseB()
             fix->SetFriction(holdFrictions[i++]);
         }
     }
+
     holdRestitutions.clear();
     holdFrictions.clear();
 
@@ -1656,12 +1657,15 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
                     if (pData && pData->type & PICKABLES)
                     {
                         PortalBody* pb = (PortalBody*)bData->data;
-                        holdB(pb, gunBody);
-
-                        if (pWorld->rayHandler->rayResult.size() == 2 && pWorld->rayHandler->rayResult[0].portal)
+                        if (pb->worldIndex->destrTime < -10.0f)
                         {
-                            portalConnection* revConnection = pWorld->rayHandler->rayResult[0].portal->connections[0][0];
-                            holdConnection = revConnection->portal2->connections[0][0];
+                            holdB(pb, gunBody);
+                            
+                            if (pWorld->rayHandler->rayResult.size() == 2 && pWorld->rayHandler->rayResult[0].portal)
+                            {
+                                portalConnection* revConnection = pWorld->rayHandler->rayResult[0].portal->connections[0][0];
+                                holdConnection = revConnection->portal2->connections[0][0];
+                            }
                         }
                     }
                 }
