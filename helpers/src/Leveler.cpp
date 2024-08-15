@@ -3095,7 +3095,7 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 					break;
 				}
 
-				levelObject midMask = (levelObject)((objectData->objectType << (47 + (objectData->rotation % 2) * 2)) ^ -1ll);
+				levelObject midMask = (levelObject)((objectData->objectType << (37 + (objectData->rotation % 2) * 2)) ^ -1ll);
 				setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & midMask), lgd.data });
 			}
 		}

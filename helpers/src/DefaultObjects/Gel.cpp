@@ -168,23 +168,27 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         int off = std::min((int)std::round(dist * 10.0f), (int)eGlobalData->unitWalls.size() - 1);
         
         float amnt = gelRadius * 5.0;
-        amnt -= handleGelPut(&eGlobalData->unitWalls[eGlobalData->unitWalls.size() - off - 1], gelType, amnt);
-        
-        int rightPos;
-        int leftPos;
+
+        int startPos = eGlobalData->unitWalls.size() - off - 1;
+        if (eGlobalData->unitWalls[startPos].wallType & (PORTALLABLE | NOT_PORTALLABLE))
+            amnt -= handleGelPut(&eGlobalData->unitWalls[startPos], gelType, amnt);
+        else
+            goto out;
+
+        int rightPos = startPos;
+        int leftPos = startPos;
         for (int i = 1; ; i++)
         {
-            rightPos = eGlobalData->unitWalls.size() - off - i - 1;
-            leftPos = eGlobalData->unitWalls.size() - off + i - 1;
-
             float decrease = 0.0f;
-            if (rightPos >= range[0])
+            if (rightPos >= range[0] && (eGlobalData->unitWalls[rightPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
             {
                 decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt);
+                rightPos = startPos - i;
             }
-            if (leftPos <= range[1])
+            if (leftPos <= range[1] && (eGlobalData->unitWalls[leftPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
 			{
 				decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt);
+                leftPos = startPos + i;
 			}
 
             amnt -= decrease;
@@ -209,6 +213,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
     }
 
+out:
     b2Vec2 pos = pBody->at(0)->body->GetPosition();
 
     splashData sData;

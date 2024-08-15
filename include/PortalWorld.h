@@ -139,6 +139,7 @@ friend class ThinDrawer;
 friend class TestCase8;
 friend class Leveler;
 friend class Gel;
+friend class ForceField;
 
 public:
     std::vector<pbWorldData*> bodyIndices;

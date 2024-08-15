@@ -65,6 +65,7 @@ public:
     ~mouseJointHandler(){
         delete queryCallback;
         free((void*)mouseBody->GetUserData().pointer);
+        mouseBody->GetUserData().pointer = 0;
         for (int i = 0; i < 2; i++){
             if (clicks[i]){
                 free(clicks[i]);

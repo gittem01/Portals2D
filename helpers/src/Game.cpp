@@ -110,6 +110,7 @@ void Game::TestState()
             Turret::perFrameUpdate();
             Gel::update();
             Platform::update();
+            ForceField::update();
         }
         else
         {
@@ -150,6 +151,7 @@ void Game::TestState()
             testCase->destroy();
             Turret::turrets.clear();
             Platform::numPlatforms = 0;
+            thinDrawer->wallGel->numWallLines = 0;
             delete testCase;
         }
 

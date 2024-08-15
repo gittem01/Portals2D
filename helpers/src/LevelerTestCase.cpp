@@ -347,15 +347,19 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
             const s_levelGridData& upLgd = g->leveler->getSquare(upPos.x, upPos.y);
             s_objectDataGrid* objectData = (s_objectDataGrid*)upLgd.data.ptr;
             s_gridItemData iData = g->leveler->ol->items[getLevelObjectIndex(upLgd.objectType)];
-            if (upLgd.objectType & WALL_EDGE_OCCUPIERS && objectData->rotation == (dir + 3) % 4)
+
+            int dirVal = (dir + 3) % 4;
+            bool secCond = objectData && upLgd.objectType & (FORCE_FIELD | HAZARDER) && objectData->rotation == (dirVal + 2) % 4;
+            if (upLgd.objectType & WALL_EDGE_OCCUPIERS && (objectData && objectData->rotation == dirVal || secCond))
             {
 				float rendIScale = iData.tex->width > iData.tex->height ? iData.gridRenderScale : iData.gridRenderScale * (float)iData.tex->width / iData.tex->height;
                 glm::i16vec2 objPos = (objectData->rotation == 0 || objectData->rotation == 1) ? objectData->pos :
                                         (objectData->pos - (short)(iData.gridScale.x - 1) * dirs[dir].asGlm());
+                if (secCond) objPos = objectData->extraPos;
                 glm::i16vec2 pDiff = objPos - upPos;
                 short lenDiff = std::max(std::abs(pDiff.x), std::abs(pDiff.y));
                 limits[0] = (iData.gridScale.x - rendIScale) * 0.5 - lenDiff + 0.05;
-                limits[1] = rendIScale + limits[0] - 0.1;
+                limits[1] = rendIScale + limits[0] - 0.05;
             }
 		}
 		

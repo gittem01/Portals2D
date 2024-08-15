@@ -1,5 +1,6 @@
 #include "DefaultObject.h"
 #include <Game.h>
+#include "GameObjects/ForceField.h"
 
 DefaultObject::DefaultObject(PortalWorld* portalWorld)
 {
@@ -21,8 +22,13 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 
 		if (npBody[0]->worldIndex->destrTime > -10.0f)
 			return;
-		
-		npBody[0]->worldIndex->destrTime = Game::object->gameTime - 0.1;
+	
+		ALuint source = Sounder::object->playSound(ForceField::emancipationBuffer, 0.5);
+		b2Vec2 pPos = npBody.at(0)->body->GetPosition();
+		Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+		ForceField::destroyCList.push(npBody[0]->worldIndex);
+		npBody[0]->worldIndex->destrTime = Game::object->gameTime - 0.5;
 		*npBody[0]->gravityScale = 0.0f;
 
 		Game::object->singleTaskRegistry.push_back([npBody]() -> void
@@ -45,8 +51,6 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 				pb->body->SetMassData(&massData);
 			}
 		});
-
-		
 	}
 }
 

@@ -67,6 +67,9 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
     blueJumpBuffer = Sounder::object->bufferMap["blueGelJump.wav"];
     blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
     orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
+    blueShootBufferJ = Sounder::object->bufferMap["blueShootJ.wav"];
+    orangeShootBufferJ = Sounder::object->bufferMap["orangeShootJ.wav"];
+    fizzleBuffer = Sounder::object->bufferMap["portalFizzle.wav"];
 
     pWorld->portalDestroyCallbacks.push_back(portalDestrCallBack);
 
@@ -585,7 +588,7 @@ void TestPlayer::jumpEffect()
         Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
     }
 
-    lv.y = std::fmax(lv.y, -10.0);
+    lv.y = std::fmax(lv.y, -15.0);
 
     body->SetLinearVelocity(lv);
 
@@ -710,6 +713,14 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
             [this]()
             {
                 if (portalA && portalB) getBodyOut();
+                
+                if (portalA || portalB)
+                {
+                    ALuint source = Sounder::object->playSound(fizzleBuffer, 1.0);
+                    b2Vec2 bPos = pBody->at(0)->body->GetPosition();
+                    Sounder::object->setSoundPosition(source, glm::vec3(bPos.x, bPos.y, 0.0));
+                }
+                
                 if (portalA)
                 {
                     portalA->getPreDestructionFixture();
@@ -1307,6 +1318,10 @@ void TestPlayer::handlePortalCD(float dt)
 
                 shootDatas.push_back({  { p0.x, p0.y, np1.x, np1.y },   { 0.0, 1.0f, 1.0f, 1.0f },
                                         { NAN, 0.0f, 0.0f, 0.0f },      { 0.5f, 0.0f, 0.0f, 0.0f } });
+
+                ALuint source = Sounder::object->playSound(blueShootBufferJ, 1.0);
+                b2Vec2 pPos = rayCaster.rayPoint;
+                Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
             }
 
             if (canCreateBlue)
@@ -1378,6 +1393,10 @@ void TestPlayer::handlePortalCD(float dt)
 
                 shootDatas.push_back({  { p0.x, p0.y, np1.x, np1.y },   { 1.0, 0.5f, 0.0f, 1.0f },
                                         { NAN, 0.0f, 0.0f, 0.0f },      { 0.5f, 0.0f, 0.0f, 0.0f } });
+
+                ALuint source = Sounder::object->playSound(orangeShootBufferJ, 1.0);
+                b2Vec2 pPos = rayCaster.rayPoint;
+                Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
             }
 
             if (canCreateRed)

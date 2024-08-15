@@ -1797,13 +1797,14 @@ void ThinDrawer::releaseRenderResources()
 
     for (s_renderGroup* renderGroup : renderGroups)
     {
-        for (int i = 0; i < (*renderGroup->renderBodies.begin())->renderFixtures.size(); i++)
+        for (int i = 0; renderGroup->renderBodies.size() > 0 && i < (*renderGroup->renderBodies.begin())->renderFixtures.size(); i++)
         {
             s_buffers* buffer0 = renderGroup->vertexBuffers[i];
             vkDestroyBuffer(logicalDevice, buffer0->buffer, nullptr);
             vkFreeMemory(logicalDevice, buffer0->memory, nullptr);
             free(buffer0);
         }
+
         for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
             delete renderBody;

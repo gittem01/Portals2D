@@ -61,7 +61,7 @@ void main()
     float blackAmount = 0.0;
 	if (pc.data.y > -10.0f)
 	{
-        float iTime = sharedUboData.data.y - pc.data.y;
+        float iTime = (sharedUboData.data.y - pc.data.y) * 0.4;
         vec2 uv = worldPosition;
         uv *= 4.0;
 		mat2 m = mat2(1.6,  1.2, -1.2,  1.6);

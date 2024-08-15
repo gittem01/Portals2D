@@ -45,6 +45,9 @@ Sounder::Sounder()
     src = loadSound("wav_stereo.wav");
     loadSound("blueShoot.wav");
     loadSound("orangeShoot.wav");
+    loadSound("blueShootJ.wav");
+    loadSound("orangeShootJ.wav");
+    loadSound("portalFizzle.wav");
 
     //playLoopingSound(src);
 
