@@ -219,6 +219,8 @@ out:
     splashData sData;
     sData.posSpeed.x = pos.x;
     sData.posSpeed.y = pos.y;
+    sData.posSpeed.z = (float)rand() / RAND_MAX;
+    sData.posSpeed.w = 1.0;
     sData.data.x = 0.075;
     sData.data.y = Game::object->gameTime;
     sData.data.z = b2_pi * 2.0;

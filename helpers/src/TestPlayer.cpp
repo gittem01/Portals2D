@@ -146,6 +146,14 @@ void TestPlayer::memMap(void* ptr)
 
     b2Body* body = pb0->body;
     b2Vec2 linVel = body->GetLinearVelocity();
+
+    float vx0 = linVel.x;
+
+    float desiredValue = 0.06 - std::min(std::max(vx0, -8.0f), 8.0f) * 0.01;
+    desiredValue = std::max(std::min(desiredValue, 0.12f), 0.01f);
+    tp->renderData.headCircles[0] -= (tp->renderData.headCircles[0] - desiredValue) * Game::object->deltaTime * 6.0f;
+    tp->renderData.headCircles[1] = 0.12 - tp->renderData.headCircles[0];
+
     if (tp->l_platformBody)
     {
         linVel -= tp->l_platformBody->GetLinearVelocity();
@@ -228,7 +236,7 @@ void TestPlayer::memMap(void* ptr)
     float ratio01 = 1.0 - (tp->renderData.legRatio - 0.25) / 0.25;
     ratio01 = pow(ratio01, 15.0);
 
-    tp->renderData.ld.legThick = 0.12;
+    tp->renderData.ld.legCircleSize = 0.025 * ratio01 + 0.055 * (1.0 - ratio01);
     tp->renderData.ld.circR = tp->renderData.legRatio * 0.5 * (1.0 - ratio01) + 10.0 * ratio01;
     tp->renderData.ld.legLen = tp->renderData.legRatio * 0.5;
     tp->renderData.ld.legOuterCircAng = tp->legAng;
@@ -570,7 +578,8 @@ void TestPlayer::jumpEffect()
     }
 
     float checkXSpeed = lv.x -= contactBody ? contactBody->GetLinearVelocity().x : 0.0f;
-    if (grounded && (gameTime < jumpPressTime + 0.04 || abs(lv.x) > 6.0f && (extraJumpRange[1] - extraJumpRange[0] > 4)))
+
+    if (grounded && (gameTime < jumpPressTime + 0.04 || abs(checkXSpeed) > 6.0f && (extraJumpRange[1] - extraJumpRange[0] > 4)))
     {
         jumped = true;
         bool extraJump = (extraJumpRange[1] - extraJumpRange[0] > 4);
@@ -632,7 +641,7 @@ void TestPlayer::renderInit()
     renderData.headCircles = glm::vec2(0.07, 0.07);
     renderData.bodyCircles = 0.1;
 
-    renderData.ld.legThick = 0.1;
+    renderData.ld.legThick = 0.12;
     renderData.ld.circR = renderData.legRatio * 1000.5;
     renderData.ld.legLen = 0.25 * 0.5;
     renderData.ld.legOuterCircAng = 0.0;
@@ -1819,7 +1828,7 @@ void TestPlayer::update(float dt, int totalIter)
     
     runEffect();
 
-    const float maxSpeed = lastMaxSpeed + (4.0f + fastRun * 4.0f - lastMaxSpeed) * dt * 2.0f;
+    const float maxSpeed = lastMaxSpeed + (4.0f + fastRun * 4.0f - lastMaxSpeed) * dt * (1.0f + lastMaxSpeed * 0.25);
     lastMaxSpeed = maxSpeed;
 
     float speedOffset = 0.0f;

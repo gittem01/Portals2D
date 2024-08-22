@@ -48,7 +48,7 @@ typedef struct
 {
     glm::mat4 orthoMatrix;
     glm::vec4 cameraPos;
-    glm::vec4 data;
+    glm::vec4 data; // zoom, gametime, mouseX, mouseY
 } s_sharedUniformData;
 
 typedef struct
