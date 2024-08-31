@@ -21,6 +21,7 @@ Game::Game()
     deltaTime = 0.0;
     lastTime = 0.0;
     gameTime = 0.0;
+    dtMult = 1.0;
     testCase = nullptr;
     leveler = nullptr;
     pWorld = nullptr;
@@ -78,6 +79,7 @@ void Game::LevelerState()
 
 void Game::TestState()
 {
+    dtMult = 1.0;
     Turret::staticInit();
     Gel::staticInit();
     Platform::staticInit();
@@ -102,23 +104,25 @@ void Game::TestState()
 
         frame++;
 
+        double timeNow = glfwGetTime();
+        deltaTime = (timeNow - lastTime) * dtMult;
+        lastTime = timeNow;
         if ((!isPaused || tick) && testCase)
         {
-            deltaTime = glfwGetTime() - lastTime;
             gameTime += deltaTime;
-            lastTime = glfwGetTime();
-
+            
             testCase->onUpdate();
             Turret::perFrameUpdate();
             Gel::update();
             Platform::update();
             ForceField::update();
         }
-        else
+
+        for (auto func : singleTaskRegistry)
         {
-            deltaTime = 0.0;
-            lastTime = glfwGetTime();
+            func();
         }
+        singleTaskRegistry.clear();
 
         sounder->update();
 
@@ -142,27 +146,25 @@ void Game::TestState()
         thinDrawer->gameTime = gameTime;
         thinDrawer->renderLoop();
     }
-    
+
+    if (testCase)
+    {
+        testCase->shouldQuit = false;
+
+        testCase->destroy();
+        Turret::turrets.clear();
+        Platform::numPlatforms = 0;
+        thinDrawer->wallGel->numWallLines = 0;
+        DefaultObject::defaultObjects.clear();
+        delete testCase;
+    }
+
     if (leveler)
     {
         gameStater = &Game::LevelerState;
-        if (testCase)
-        {
-            testCase->shouldQuit = false;
-
-            testCase->destroy();
-            Turret::turrets.clear();
-            Platform::numPlatforms = 0;
-            thinDrawer->wallGel->numWallLines = 0;
-            delete testCase;
-        }
 
         leveler->pushRenderFunctions();
         leveler->ol->pushRenderFunctions();
-    }
-    else
-    {
-        gameStater = nullptr;
     }
 }
 

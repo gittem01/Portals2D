@@ -2,7 +2,7 @@
 #include <ThinDrawer.h>
 
 
-Sphere::Sphere(PortalWorld* portalWorld) : DefaultObject(portalWorld)
+Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
 {
 	this->pWorld = portalWorld;
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
@@ -10,8 +10,10 @@ Sphere::Sphere(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
-    bodyDef.position = b2Vec2(0.0, 0.0);
+    bodyDef.position = pos;
     
+    initialPos = pos;
+
 	b2Body* body = portalWorld->CreateBody(&bodyDef);
     b2CircleShape cShape;
     cShape.m_radius = 0.5f;
@@ -20,12 +22,12 @@ Sphere::Sphere(PortalWorld* portalWorld) : DefaultObject(portalWorld)
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = (g_DataType)(DEFAULT_OBJECT_O | SPHERE_CUBE_O);
-    physicsData->data = this;
-    bData->extraData = physicsData;
+    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+    pData->type = (g_DataType)(DEFAULT_OBJECT_O | SPHERE_CUBE_O);
+    pData->data = this;
+    bData->extraData = pData;
     
-    this->pBody = &portalBody->worldIndex->pbIndices;
+    this->wData = portalBody->worldIndex;
 
     ThinDrawer::object->addPortalBody(portalBody, {"sphere.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);

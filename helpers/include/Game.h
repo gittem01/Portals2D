@@ -14,6 +14,7 @@ public:
 	double gameTime;
 	double deltaTime;
 	double lastTime;
+	double dtMult;
 
 	std::vector<std::function<void(void)>> singleTaskRegistry;
 

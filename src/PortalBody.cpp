@@ -45,10 +45,6 @@ PortalBody::~PortalBody(){
             break;
         }
     }
-    if (worldIndex->pbIndices.size() == 0)
-    {
-        delete baseDensities;
-    }
 
     for (int i = 0; i < bodyMaps.size(); i++)
     {
@@ -530,7 +526,7 @@ void PortalBody::postHandle()
         }
     }
 #else
-    if (body->IsAwake() && *gravityScale > 0.0)
+    if (body->IsAwake() && worldIndex->gravityScale > 0.0f)
     {
         if (bodyMaps.size() > 0)
         {
@@ -541,7 +537,7 @@ void PortalBody::postHandle()
         }
         else
         {
-            body->ApplyForceToCenter(*gravityScale * body->GetMass() * pWorld->GetGravity(), true);
+            body->ApplyForceToCenter(worldIndex->gravityScale * body->GetMass() * pWorld->GetGravity(), true);
         }
     }
 #endif
@@ -774,7 +770,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         }
 
         b2Vec2 force = area * fixture->GetDensity() * pWorld->GetGravity();
-        body->ApplyForce(*gravityScale * force, center, false);
+        body->ApplyForce(worldIndex->gravityScale * force, center, false);
 
         return;
     }
@@ -871,7 +867,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         // validity check for loopCenterOfMass is probably extra
         // just to be sure program does not crash
         if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-            body->ApplyForce(*gravityScale * ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
+            body->ApplyForce(worldIndex->gravityScale* ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
         }
     }
     else{
@@ -937,7 +933,7 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
 
                 b2Vec2 force = loopArea * fixture->GetDensity() * pWorld->GetGravity();
                 if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-                    body->ApplyForce(*gravityScale * ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
+                    body->ApplyForce(worldIndex->gravityScale * ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
                 }
             }
         }

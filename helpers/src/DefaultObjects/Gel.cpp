@@ -31,15 +31,15 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     fix->SetSensor(true);
 
     PortalBody* portalBody = portalWorld->createPortalBody(body);
-    *portalBody->gravityScale = 0.5;
+    wData->gravityScale = 0.5;
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = (g_DataType)(DEFAULT_OBJECT_O | GEL_O);
-    physicsData->data = this;
-    bData->extraData = physicsData;
+    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+    pData->type = (g_DataType)(DEFAULT_OBJECT_O | GEL_O);
+    pData->data = this;
+    bData->extraData = pData;
 
-    this->pBody = &portalBody->worldIndex->pbIndices;
+    this->wData = portalBody->worldIndex;
 
     // too slow
     // must be done once in the game initialisation but it is not possible for now
@@ -155,7 +155,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
     if (gelIndex == -1) return;
 
     ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
-    Sounder::object->setSoundPosition(source, glm::vec3(pBody->at(0)->body->GetPosition().x, pBody->at(0)->body->GetPosition().y, 0.0));
+    Sounder::object->setSoundPosition(source, glm::vec3(wData->pbIndices[0]->body->GetPosition().x, wData->pbIndices[0]->body->GetPosition().y, 0.0));
 
     int range[2];
     s_edgeGlobalData* eGlobalData;
@@ -214,7 +214,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
     }
 
 out:
-    b2Vec2 pos = pBody->at(0)->body->GetPosition();
+    b2Vec2 pos = wData->pbIndices[0]->body->GetPosition();
 
     splashData sData;
     sData.posSpeed.x = pos.x;
@@ -246,7 +246,7 @@ out:
     gels[gelIndex] = lastGel;
     gelIndex = -1;
 
-    for (PortalBody* pb : *pBody)
+    for (PortalBody* pb : wData->pbIndices)
     {
         pWorld->destroyBodies.insert(pb);
     }
@@ -273,8 +273,8 @@ void Gel::update()
 		{
             Gel* g = gel->nearGels[i];
             if (g->gelIndex == -1) continue;
-            PortalBody* pb = (*g->pBody).at(g->pBody->size() - 1);
-            PortalBody* tpb = (*gel->pBody).at(gel->pBody->size() - 1);
+            PortalBody* pb = g->wData->pbIndices[g->wData->pbIndices.size() - 1];
+            PortalBody* tpb = gel->wData->pbIndices[gel->wData->pbIndices.size() - 1];
 			b2Vec2 pos = tpb->body->GetPosition();
             b2Vec2 posDiff = pos - pb->body->GetPosition();
             float lenPosDiff = posDiff.Normalize();
@@ -289,7 +289,7 @@ void Gel::update()
             }
 		}
 
-        for (PortalBody* tpb : *gel->pBody)
+        for (PortalBody* tpb : gel->wData->pbIndices)
         {
             b2Vec2 vel = tpb->body->GetLinearVelocity();
 
@@ -308,7 +308,7 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
     for (int i = 0; i < gelCount; i++)
     {
         Gel* gel = gels[i];
-        for (PortalBody* pb : *gel->pBody)
+        for (PortalBody* pb : gel->wData->pbIndices)
         {
             b2Vec2 pos = pb->body->GetPosition();
             ThinDrawer::object->gelShader->putGel(gel->gelType, glm::vec2(pos.x, pos.y), gel->gelRadius * 2.0);

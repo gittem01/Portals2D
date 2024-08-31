@@ -7,14 +7,19 @@
 class DefaultObject
 {
 public:
-	std::vector<PortalBody*>* pBody;
+	PbWorldData* wData;
+	g_PhysicsData* pData;
 	PortalWorld* pWorld;
 	
+	b2Vec2 initialPos;
+
+	static std::vector<DefaultObject*> defaultObjects;
 	std::vector<ALuint> onHitSoundBuffers;
 
 	DefaultObject(PortalWorld* portalWorld);
 	DefaultObject(PortalWorld* portalWorld, PortalBody* pb);
 
+	virtual void recreate();
 	virtual void beginContact(b2Contact* contact, b2Fixture* otherFix);
 	virtual void endContact(b2Contact* contact, b2Fixture* otherFix);
 	virtual void preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2);

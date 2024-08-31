@@ -41,6 +41,8 @@ public:
     bool holdColliding;
     int extraJumpRange[2];
     bool fastRun;
+    int health;
+    double deathTimer;
 
     std::vector<PortalBody*>* gun;
     Game* game;
@@ -100,10 +102,15 @@ public:
 
     TestPlayer(Game* game, b2Vec2 pos = b2Vec2(0, 0), b2Vec2 size = b2Vec2(0.75f, 1.5f));
 
+    void init();
+
     static void portalDestrCallBack(Portal* portal);
     static float springMovement(float value, float vel, float springFactor, float dampingFactor, float deltaTime);
 
     static void memMap(void* ptr);
+    static void memMapDeathByElectrocution(void* ptr);
+    static void memMapDeathNatural(void* ptr);
+    static void zoomOut(void* ptr);
 
     static void draw(VkCommandBuffer cmdBuff, void* ptr);
 
@@ -146,6 +153,7 @@ public:
     void portalEffect(Portal* portal);
     void runEffect();
     void jumpEffect();
+    void healthCheck();
     void updateReset();
     void update(float dt, int totalIter);
 };

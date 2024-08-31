@@ -70,6 +70,9 @@ typedef struct PbWorldData
 
     std::vector<PortalBody*> pbIndices;
     
+    std::vector<float> baseDensities;
+    float gravityScale;
+
     std::vector<b2Shape*> shapes;
     std::vector<b2Shape*> mirroredShapes;
 
@@ -86,6 +89,31 @@ typedef struct PbWorldData
 
     std::vector<std::pair<void (*) (PortalBody*, void*), void*>> createCallbacks;
     std::vector<std::pair<void (*) (PortalBody*, void*), void*>> destroyCallbacks;
+
+
+    void swapMirrored()
+    {
+        auto temp1 = mirroredShapes;
+        mirroredShapes = shapes;
+        shapes = temp1;
+
+        auto temp2 = mirroredOuterVertices;
+        mirroredOuterVertices = outerVertices;
+        outerVertices = temp2;
+
+        auto temp3 = mirroredOuterEdges;
+        mirroredOuterEdges = outerEdges;
+        outerEdges = temp3;
+
+        auto temp4 = mirroredAngles;
+        mirroredAngles = angles;
+        angles = temp4;
+
+        auto temp5 = mirroredMassCenter;
+        mirroredMassCenter = massCenter;
+        massCenter = temp5;
+    }
+
 } pbWorldData;
 
 class PortalRay : public b2RayCastCallback
@@ -144,6 +172,7 @@ friend class ForceField;
 public:
     std::vector<pbWorldData*> bodyIndices;
     std::vector<Portal*> portals;
+    std::set<PortalBody*> destroyBodies;
 
     PortalWorld();
     ~PortalWorld();
@@ -154,6 +183,7 @@ public:
     void destroyPortal(Portal* portal);
 
     PortalBody* createPortalBody(b2Body* body);
+    PortalBody* createCloneBody0(pbWorldData* wData, b2Vec2 pos, float angle, bool isMirrored);
 
     std::vector<void (*) (Portal*)> portalCreateCallbacks;
     std::vector<void (*) (Portal*)> portalDestroyCallbacks;
@@ -170,7 +200,6 @@ public:
 private:
     Portal* createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, float size);
 
-    std::set<PortalBody*> destroyBodies;
     std::set<pbWorldData*> handledBodies;
 
     static float normalizeAngle(float angle);

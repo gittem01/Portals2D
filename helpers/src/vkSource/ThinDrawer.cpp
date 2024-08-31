@@ -1243,6 +1243,8 @@ s_renderGroup* ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std
         renderGroup->imageSets.push_back(&(IOHelper::textureMap["null.png"]->set));
     }
 
+    float xm = portalBody->isMirrored ? -1.0f : 1.0f;
+
     s_renderBody* renderBody = new s_renderBody;
     
     int numFixtures = portalBody->fixtures.size();
@@ -1265,6 +1267,7 @@ s_renderGroup* ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std
         {
             b2CircleShape* circShape = (b2CircleShape*)fix->GetShape();
             b2Vec2 centerPos = circShape->m_p;
+            centerPos.x *= xm;
             float r = circShape->m_radius;
 
             if (centerPos.x - r < minPoint.x)
@@ -1291,6 +1294,7 @@ s_renderGroup* ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std
             for (int j = 0; j < polyShape->m_count; j++)
             {
                 b2Vec2 vertex = polyShape->m_vertices[j];
+                vertex.x *= xm;
                 if (vertex.x < minPoint.x)
                 {
                     minPoint.x = vertex.x;
@@ -1336,14 +1340,8 @@ s_renderGroup* ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std
             for (int j = 0; j < vertexCount; j++)
             {
 				float angle = j * 2.0f * b2_pi / vertexCount;
-				initialVertices[j].pos = glm::vec2(centerPos.x + r * cos(angle), centerPos.y + r * sin(angle));
+				initialVertices[j].pos = glm::vec2(centerPos.x * xm + r * cos(angle), centerPos.y + r * sin(angle));
 			}
-
-            // render circles as squares
-            //initialVertices[0].pos = glm::vec2(centerPos.x - r, centerPos.y - r);
-            //initialVertices[1].pos = glm::vec2(centerPos.x - r, centerPos.y + r);
-            //initialVertices[2].pos = glm::vec2(centerPos.x + r, centerPos.y + r);
-            //initialVertices[3].pos = glm::vec2(centerPos.x + r, centerPos.y - r);
         }
         else if (fix->GetType() == b2Shape::e_polygon)
         {
@@ -1354,7 +1352,7 @@ s_renderGroup* ThinDrawer::addPortalBody(PortalBody* portalBody, std::vector<std
             for (int j = 0; j < polyShape->m_count; j++)
             {
                 b2Vec2 vertex = polyShape->m_vertices[j];
-                initialVertices[j].pos = glm::vec2(vertex.x, vertex.y);
+                initialVertices[j].pos = glm::vec2(vertex.x * xm, vertex.y);
             }
         }
 
@@ -1559,6 +1557,11 @@ void ThinDrawer::debug_addPortalBody(PortalBody* portalBody)
 
     portalBody->worldIndex->createCallbacks.push_back(std::make_pair(debug_portalBodyCreateCallback, (void*)renderGroup));
     portalBody->worldIndex->destroyCallbacks.push_back(std::make_pair(debug_portalBodyDestroyCallback, (void*)renderGroup));
+
+    if (portalBody->isMirrored)
+    {
+        renderGroup->swapMirroredBuffers();
+    }
 }
 
 void ThinDrawer::debug_portalBodyCreateCallback(PortalBody* portalBody, void* data)

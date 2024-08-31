@@ -8,6 +8,8 @@ Cyber::Cyber(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
 	onHitSoundBuffers.push_back(onHitSoundBuffer);
 
+    initialPos = pos;
+
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.position = pos;
@@ -42,12 +44,12 @@ Cyber::Cyber(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = DEFAULT_OBJECT_O;
-    physicsData->data = this;
-    bData->extraData = physicsData;
+    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+    pData->type = DEFAULT_OBJECT_O;
+    pData->data = this;
+    bData->extraData = pData;
     
-    this->pBody = &portalBody->worldIndex->pbIndices;
+    this->wData = portalBody->worldIndex;
 
     ThinDrawer::object->addPortalBody(portalBody, {"cyber.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);

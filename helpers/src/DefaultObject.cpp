@@ -2,15 +2,45 @@
 #include <Game.h>
 #include "GameObjects/ForceField.h"
 
+std::vector<DefaultObject*> DefaultObject::defaultObjects;
+
 DefaultObject::DefaultObject(PortalWorld* portalWorld)
 {
 	this->pWorld = portalWorld;
+
+	defaultObjects.push_back(this);
 }
 
 DefaultObject::DefaultObject(PortalWorld* portalWorld, PortalBody* pb)
 {
 	this->pWorld = portalWorld;
-	this->pBody = &pb->worldIndex->pbIndices;
+	this->wData = pb->worldIndex;
+
+	defaultObjects.push_back(this);
+}
+
+void DefaultObject::recreate()
+{
+	int i = wData->pbIndices.size() - 1;
+	for (; i >= 0; i--)
+	{
+		PortalBody* portalBody = wData->pbIndices[i];
+
+		for (auto pair : wData->destroyCallbacks)
+		{
+			pair.first(portalBody, pair.second);
+		}
+
+		delete portalBody;
+	}
+
+	PortalBody* portalBody = pWorld->createCloneBody0(wData, initialPos, 0.0f, false);
+
+	portalBody->worldIndex->gravityScale = 1.0f;
+	portalBody->worldIndex->destrTime = -20.0f;
+
+	bodyData* bData = (bodyData*)portalBody->body->GetUserData().pointer;
+	bData->extraData = (void*)pData;
 }
 
 void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
@@ -18,7 +48,7 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 	fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
 	if (fData && fData->type == F_FORCE_FIELD)
 	{
-		auto npBody = *pBody;
+		auto npBody = wData->pbIndices;
 
 		if (npBody[0]->worldIndex->destrTime > -10.0f)
 			return;
@@ -34,7 +64,7 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 
 		ForceField::destroyCList.push(npBody[0]->worldIndex);
 		npBody[0]->worldIndex->destrTime = Game::object->gameTime - 0.5;
-		*npBody[0]->gravityScale = 0.0f;
+		npBody[0]->worldIndex->gravityScale = 0.0f;
 
 		Game::object->singleTaskRegistry.push_back([npBody]() -> void
 		{

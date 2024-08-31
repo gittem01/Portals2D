@@ -78,7 +78,42 @@ void PortalWorld::destroyPortal(Portal* portal)
     }
 }
 
-PortalBody* PortalWorld::createPortalBody(b2Body* body){
+PortalBody* PortalWorld::createCloneBody0(pbWorldData* wData, b2Vec2 pos, float angle, bool isMirrored)
+{
+    b2BodyDef bDef;
+    bDef.type = b2_dynamicBody;
+    bDef.position = pos;
+    bDef.angle = angle;
+    
+    b2Body* body = CreateBody(&bDef);
+
+    std::vector<b2Shape*> shapes = isMirrored ? wData->mirroredShapes : wData->shapes;
+
+    for (int i = shapes.size() - 1; i >= 0; i--)
+    {
+        b2FixtureDef fDef;
+        fDef.density = wData->baseDensities[i];
+        fDef.shape = shapes[i];
+        body->CreateFixture(&fDef, false);
+    }
+
+    PortalBody* pb = new PortalBody(body, this);
+
+    wData->pbIndices.push_back(pb);
+
+    pb->isMirrored = isMirrored;
+    pb->worldIndex = wData;
+
+    for (auto pair : wData->createCallbacks)
+    {
+        pair.first(pb, pair.second);
+    }
+
+    return pb;
+}
+
+PortalBody* PortalWorld::createPortalBody(b2Body* body)
+{
     PortalBody* pBody = new PortalBody(body, this);
 
     createNewPortalBody_i(pBody);
@@ -99,13 +134,11 @@ void PortalWorld::createNewPortalBody_i(PortalBody* pBody)
     pbData->massCenter = mData.center;
     pbData->mirroredMassCenter = b2Vec2(-mData.center.x, mData.center.y);
 
-    std::vector<float>* baseDensities = new std::vector<float>();
-    pBody->baseDensities = baseDensities;
-    pBody->gravityScale = new float(1.0);
+    pbData->gravityScale = 1.0f;
 
     for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext())
     {
-        baseDensities->push_back(fix->GetDensity());
+        pbData->baseDensities.push_back(fix->GetDensity());
 
         if (fix->GetType() == b2Shape::e_polygon)
         {
@@ -200,12 +233,15 @@ void PortalWorld::globalPostHandle()
         delete portalBody;
     }
 
-    for (auto& hBody : handledBodies){
+    for (auto& hBody : handledBodies)
+    {
         int numBodies = hBody->pbIndices.size();
-        for (PortalBody* portBody : hBody->pbIndices){
+        for (PortalBody* portBody : hBody->pbIndices)
+        {
             int i = 0;
-            for (b2Fixture* fix = portBody->body->GetFixtureList(); fix; fix = fix->GetNext()){
-                fix->SetDensity(portBody->baseDensities->at(i++) / numBodies);
+            for (b2Fixture* fix = portBody->body->GetFixtureList(); fix; fix = fix->GetNext())
+            {
+                fix->SetDensity(portBody->worldIndex->baseDensities[i++] / numBodies);
             }
             portBody->body->ResetMassData();
         }
@@ -271,8 +307,6 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
         bodyData* extraDataFiller = (bodyData*)body2->GetUserData().pointer;
         extraDataFiller->extraData = extraData0;
 
-        npb->baseDensities = pBody->baseDensities;
-        npb->gravityScale = pBody->gravityScale;
         npb->isMirrored = pBody->isMirrored ^ c->isReversed;
 
         for (b2JointEdge* edge = body1->GetJointList(); edge != NULL; edge = edge->next)

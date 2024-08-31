@@ -79,6 +79,11 @@ void ContactListener::BeginContact(b2Contact* contact)
         p->collisionBegin(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
 
+    if (!contact->IsEnabled())
+    {
+        return;
+    }
+
     if (bDataA && bDataA->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
@@ -116,6 +121,11 @@ void ContactListener::EndContact(b2Contact* contact)
         p->collisionEnd(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
 
+    if (!contact->IsEnabled())
+    {
+        return;
+    }
+
     if (bDataA && bDataA->extraData)
     {
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
@@ -148,6 +158,11 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
     {
         PortalBody* p = (PortalBody*)bDataB->data;
         p->preCollision(contact, contact->GetFixtureB(), contact->GetFixtureA());
+    }
+
+    if (!contact->IsEnabled())
+    {
+        return;
     }
 
     if (bDataA && bDataA->extraData)

@@ -26,6 +26,8 @@ public:
 	static s_buffers* coverVertexBuffer;
 	static std::vector<uint32_t> soundBuffers;
 
+	bool mirrored;
+
 	PortalBody* eyeBody;
 	std::vector<centerLaser> laserPoints;
 	float midX;
@@ -51,9 +53,9 @@ public:
 	uint32_t firstLaserIndex = 0;
 	uint32_t lastLaserIndex = 0;
 
-	Turret(PortalWorld* portalWorld);
+	Turret(PortalWorld* portalWorld, b2Vec2 pos, bool mirrored);
 
-	void createBody();
+	void createBody(b2Vec2 pos);
 
 	void shoot();
 
@@ -62,6 +64,8 @@ public:
 	void deploy();
 	void retract();
 	void sayGoodbye();
+
+	void recreate();
 
 	static void staticInit();
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);

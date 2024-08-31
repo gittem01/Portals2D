@@ -147,8 +147,9 @@ void main()
     vec2 midUv = localPos;
     
     vec4 edgeColour = c_ubo.edgeColour;
-    vec4 bodyColour = c_ubo.bodyColour1 * uv.y + c_ubo.bodyColour2 * (1.0 - uv.y);
-    
+    float uvVal = min(uv.y * 1.35, 1.0);
+    vec4 bodyColour = c_ubo.bodyColour1 * uvVal + c_ubo.bodyColour2 * (1.0 - uvVal);
+
     float topMargin = c_ubo.topMargin;
     float headRatio = c_ubo.headRatio;
     float bodyRatio = c_ubo.bodyRatio;

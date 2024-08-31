@@ -213,14 +213,13 @@ public:
         td->debug_addPortalBody(pbx);
         td->addPortalBody(pbx, {});
 
-        DefaultCube* dc1 = new DefaultCube(g->pWorld);
-        DefaultCube* dc2 = new DefaultCube(g->pWorld);
-        dc2->pBody->at(0)->body->SetTransform(b2Vec2(5.0, 0.0), 0.0);
+        DefaultCube* dc1 = new DefaultCube(g->pWorld, b2Vec2(0.0, 0.0));
+        DefaultCube* dc2 = new DefaultCube(g->pWorld, b2Vec2(5.0, 0.0));
 
         Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0, 0.0));
 
-        Turret* tr = new Turret(g->pWorld);
-        tr->pBody->at(0)->body->SetTransform(b2Vec2(-3.0f, 3.0f), 0.0);
+        Turret* tr = new Turret(g->pWorld, b2Vec2(0.0f, 0.0f), false);
+        dc2->wData->pbIndices[0]->body->SetTransform(b2Vec2(-3.0f, 3.0f), 0.0);
     }
 
     void onUpdate()

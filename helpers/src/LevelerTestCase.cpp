@@ -544,6 +544,63 @@ void LevelerTestCase::walkFwrdAndCreateEdgeGF(  glm::i16vec2 pos, char dir, Leve
     }
 }
 
+b2Body* eBodyy;
+
+void createHammerTest(PortalWorld* pw, ThinDrawer* td)
+{
+    pw->SetAllowSleeping(false);
+    // hammer
+    b2Body* body = createBox(b2Vec2(0.0f, 20.0f), 0.4f * b2Vec2(2.5, 1.2), pw, b2_dynamicBody, 1.0);
+    
+    b2PolygonShape pShape2;
+    pShape2.SetAsBox(0.3f, 2.8f, b2Vec2(-0.1f, -3.2f), 0.0f);
+    body->CreateFixture(&pShape2, 1.0f);
+    
+    PortalBody* pb = pw->createPortalBody(body);
+    td->addPortalBody(pb, {"g4.png"});
+    td->debug_addPortalBody(pb);
+
+    // nail
+    body = createBox(b2Vec2(5.0f, 20.0f), 0.1f * b2Vec2(4.54, 11.61), pw, b2_dynamicBody, 0.002);
+    pb = pw->createPortalBody(body);
+    td->addPortalBody(pb, { "g5.png" });
+
+    body = createBox(b2Vec2(4.0f, 20.0f), 0.1f * b2Vec2(4.54, 11.61), pw, b2_dynamicBody, 0.002);
+    pb = pw->createPortalBody(body);
+    td->addPortalBody(pb, { "g5.png" });
+
+    body = createBox(b2Vec2(3.0f, 20.0f), 0.1f * b2Vec2(4.54, 11.61), pw, b2_dynamicBody, 0.002);
+    pb = pw->createPortalBody(body);
+    td->addPortalBody(pb, { "g5.png" });
+
+    //createEdgeOneSided(b2Vec2(+100.0f, 16.0f), b2Vec2(+90.0f, 16.0f), b2Vec2(-90.0f, 16.0f), b2Vec2(-100.0f, 16.0f), F_EDGE, pw);
+
+    b2Vec2 ePos = b2Vec2(-2.5f, 18.0f);
+    b2BodyDef bd;
+    bd.type = b2_kinematicBody;
+    bd.position = ePos;
+    eBodyy = pw->CreateBody(&bd);
+    createEdgeOneSided( b2Vec2(-10.0f, 0.0f), b2Vec2(-1.35f, 0.0f),
+                        b2Vec2(+1.35f, 0.0f), b2Vec2(+10.0f, 0.0f), F_EDGE, pw, eBodyy);
+
+    bd.type = b2_dynamicBody;
+    bd.position = b2Vec2(0.0f, 0.0f);
+    b2PolygonShape pShape;
+    b2Vec2 points[3] =
+    {
+        b2Vec2(30.0f, 16.0f),
+        b2Vec2(30.0f, 50.0f),
+        b2Vec2(5.0f, 16.0f),
+    };
+    pShape.Set(points, 3);
+
+    body = pw->CreateBody(&bd);
+    b2Fixture* fix = body->CreateFixture(&pShape, 0.0f);
+    fix->SetSensor(true);
+    pb = pw->createPortalBody(body);
+    td->addPortalBody(pb, { "wood.png" });
+}
+
 void createRagDoll(PortalWorld* pw, ThinDrawer* td)
 {
     // create a 2d ragdoll
@@ -653,27 +710,22 @@ void LevelerTestCase::createDynamics()
         {
         case DEFAULT_CUBE:
         {
-            DefaultCube* dc = new DefaultCube(g->pWorld);
-            dc->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+            DefaultCube* dc = new DefaultCube(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f));
         }
         break;
         case LASER_CUBE:
         {
-			LaserCube* lc = new LaserCube(g->pWorld);
-			lc->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+			LaserCube* lc = new LaserCube(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f));
 		}
         break;
         case SPHERE_CUBE:
         {
-            Sphere* sp = new Sphere(g->pWorld);
-            sp->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.5f), 0.0);
+            Sphere* sp = new Sphere(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f));
         }
         break;
         case TURRET:
         {
-            Turret* tr = new Turret(g->pWorld);
-            tr->pBody->at(0)->body->SetTransform(b2Vec2(pos.x + 0.5f, pos.y + 0.85f), 0.0);
-            tr->pBody->at(0)->isMirrored = objectData->mirrored;
+            Turret* tr = new Turret(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.85f), objectData->mirrored);
         }
         break;
         case PLATFORM:
@@ -696,9 +748,11 @@ void LevelerTestCase::createDynamics()
         }
     }
 
-    Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0f, 4.0f));
+    //createHammerTest(g->pWorld, td);
 
-    createRagDoll(g->pWorld, td);
+    /*Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0f, 4.0f));
+
+    createRagDoll(g->pWorld, td);*/
 }
 
 void LevelerTestCase::onCreate()
@@ -744,7 +798,33 @@ void LevelerTestCase::onUpdate()
 
     BaseTestCase::onUpdate();
 
-    if (g->gameTime - lastCreationTime > 0.075)
+    /*if (td->wh->keyData[GLFW_KEY_RIGHT])
+    {
+        eBodyy->SetAngularVelocity(2.0f);
+    }
+    else if (td->wh->keyData[GLFW_KEY_LEFT])
+	{
+		eBodyy->SetAngularVelocity(-1.0f);
+	}
+	else
+	{
+		eBodyy->SetAngularVelocity(0.0f);
+	}
+
+    if (td->wh->keyData[GLFW_KEY_DOWN])
+    {
+        eBodyy->SetLinearVelocity(b2Vec2(0.0f, -1.0f));
+    }
+    else if (td->wh->keyData[GLFW_KEY_UP])
+    {
+        eBodyy->SetLinearVelocity(b2Vec2(0.0f, +1.0f));
+    }
+    else
+    {
+        eBodyy->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+    }*/
+
+    /*if (g->gameTime - lastCreationTime > 0.075)
     {
         lastCreationTime = g->gameTime;
         float randVal = (float)rand() / RAND_MAX;
@@ -753,5 +833,5 @@ void LevelerTestCase::onUpdate()
         Gel::generateGel(glm::vec2(-1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 1);
         Gel::generateGel(glm::vec2(1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 2);
         Gel::generateGel(glm::vec2(4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 3);
-    }
+    }*/
 }

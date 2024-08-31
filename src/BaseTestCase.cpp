@@ -167,27 +167,20 @@ void BaseTestCase::onUpdate()
         return;
     }
 
-    //requiredDt = 1.0 / 60.0;
-    //requiredIters = 1;
     float dt = requiredDt * 2.0;
     for (int i = 0; i < requiredIters; i++)
     {
-        g->mjh->mouseHandler(g->frame, requiredIters);
-
-        tp->update(dt, requiredIters);
-
-        g->pWorld->PortalStep(dt, 8, 3);
-
-        for (auto func : Game::object->singleTaskRegistry)
+        if (g->deltaTime > 0.0)
         {
-            func();
+            g->mjh->mouseHandler(g->frame, requiredIters);
+
+            tp->update(dt, requiredIters);
+
+            g->pWorld->PortalStep(dt, 8, 3);
         }
-        Game::object->singleTaskRegistry.clear();
     }
     
     if (followPlayer) tp->camHandle();
-
-    //printf("dt: %f\n", glfwGetTime() - physicsTickTime);
 }
 
 void BaseTestCase::keyHandler(WindowHandler* wh)

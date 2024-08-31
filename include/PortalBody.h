@@ -102,6 +102,7 @@ class PortalBody
 friend class PortalWorld;
 friend class Portal;
 friend class ContactListener;
+friend class DefaultObject;
 
 public:
     pbWorldData* worldIndex;
@@ -114,8 +115,6 @@ public:
     int numFixtures;
     bool isMirrored;
 
-    float* gravityScale;
-
     b2Vec2 getWorldCenterOfMass();
 
     static void getBodyOut(pbWorldData* worldData);
@@ -127,8 +126,6 @@ private:
 
     std::map<Portal*, int> outFixtures[2];
     std::map<Portal*, int> createDestroyMap[2];
-
-    std::vector<float>* baseDensities;
 
     PortalWorld* pWorld;
 

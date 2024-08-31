@@ -3,7 +3,6 @@
 
 Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(portalWorld)
 {
-    this->pWorld = portalWorld;
     ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
     onHitSoundBuffers.push_back(onHitSoundBuffer);
 
@@ -26,16 +25,18 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
 
     b2Body* gBody = pWorld->CreateBody(&bodyDef);
 
+    initialPos = pos;
+
     gBody->CreateFixture(&fDef);
 
     PortalBody* pb = pWorld->createPortalBody(gBody);
-    this->pBody = &pb->worldIndex->pbIndices;
+    this->wData = pb->worldIndex;
 
     bodyData* bData = (bodyData*)gBody->GetUserData().pointer;
-    g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = DEFAULT_OBJECT_O;
-    physicsData->data = this;
-    bData->extraData = physicsData;
+    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+    pData->type = DEFAULT_OBJECT_O;
+    pData->data = this;
+    bData->extraData = pData;
 
     ThinDrawer::object->debug_addPortalBody(pb);
     ThinDrawer::object->addPortalBody(pb, { "gun2.png" });

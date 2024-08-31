@@ -65,7 +65,7 @@ typedef struct
 } s_debug_renderBody;
 
 // per worldIndex
-typedef struct
+typedef struct DebugRenderGroup
 {
     // ordered consistently with the fixture list
     std::vector<s_buffers*> vertexBuffers;
@@ -79,6 +79,21 @@ typedef struct
     std::vector<b2Vec2> circlePositioningsMirrored;
 
     std::set<s_debug_renderBody*> renderBodies;
+
+    void swapMirroredBuffers()
+    {
+        auto temp1 = vertexBuffers;
+        vertexBuffers = vertexBuffersMirrored;
+        vertexBuffersMirrored = temp1;
+
+        auto temp2 = vertexStorageOffsets;
+        vertexStorageOffsets = vertexStorageOffsetsMirrored;
+        vertexStorageOffsetsMirrored = temp2;
+
+        auto temp3 = circlePositionings;
+        circlePositionings = circlePositioningsMirrored;
+        circlePositioningsMirrored = temp3;
+    }
 } s_debug_renderGroup;
 
 typedef struct renderOffsets

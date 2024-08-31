@@ -7,13 +7,32 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
 {
     TestPlayer::object = this;
 
+    initialPos = pos;
+
     this->game = game;
-    this->wh = game->thinDrawer->wh;
+    wh = game->thinDrawer->wh;
     bodySize = size;
     createBody(pos);
 
     gameTime = 0.0;
 
+    init();
+
+    jumpBuffer = Sounder::object->bufferMap["jumpTest.wav"];
+    blueJumpBuffer = Sounder::object->bufferMap["blueGelJump.wav"];
+    blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
+    orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
+    blueShootBufferJ = Sounder::object->bufferMap["blueShootJ.wav"];
+    orangeShootBufferJ = Sounder::object->bufferMap["orangeShootJ.wav"];
+    fizzleBuffer = Sounder::object->bufferMap["portalFizzle.wav"];
+
+    pWorld->portalDestroyCallbacks.push_back(portalDestrCallBack);
+
+    renderInit();
+}
+
+void TestPlayer::init()
+{
     holdBody = nullptr;
     holdGun = nullptr;
     destrPortal = nullptr;
@@ -45,6 +64,8 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
     oldJoint = nullptr;
     contactType = (b2BodyType)INT_MAX;
 
+    health = 100;
+
     bodySwitch = false;
     lastBody = nullptr;
     lastKey = -1;
@@ -62,18 +83,6 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
 
     legAng = 0.0;
     rotSpeed = 0.0;
-
-    jumpBuffer = Sounder::object->bufferMap["jumpTest.wav"];
-    blueJumpBuffer = Sounder::object->bufferMap["blueGelJump.wav"];
-    blueShootBuffer = Sounder::object->bufferMap["blueShoot.wav"];
-    orangeShootBuffer = Sounder::object->bufferMap["orangeShoot.wav"];
-    blueShootBufferJ = Sounder::object->bufferMap["blueShootJ.wav"];
-    orangeShootBufferJ = Sounder::object->bufferMap["orangeShootJ.wav"];
-    fizzleBuffer = Sounder::object->bufferMap["portalFizzle.wav"];
-
-    pWorld->portalDestroyCallbacks.push_back(portalDestrCallBack);
-
-    renderInit();
 }
 
 void TestPlayer::portalDestrCallBack(Portal* portal)
@@ -94,18 +103,12 @@ float TestPlayer::springMovement(float value, float vel, float springFactor, flo
     return vel;
 }
 
-void TestPlayer::memMap(void* ptr)
+void write0(TestPlayer* tp)
 {
-    static b2Vec2 lastLinVel = b2Vec2(0.0, 0.0);
-    static float aimedRatio = 0.5;
-    static float bodyPos = 0.0;
-    static float bodyVel = 0.0;
-
-    TestPlayer* tp = (TestPlayer*)ptr;
     uint32_t imNum = ThinDrawer::object->lastSwapChainImageIndex;
 
     int i = 0;
-    for (PortalBody* pb : *tp->pBody)
+    for (PortalBody* pb : tp->wData->pbIndices)
     {
         b2Body* body = pb->body;
 
@@ -140,16 +143,26 @@ void TestPlayer::memMap(void* ptr)
 
         i += 1;
     }
+}
+
+void TestPlayer::memMap(void* ptr)
+{
+    static b2Vec2 lastLinVel = b2Vec2(0.0, 0.0);
+    static float aimedRatio = 0.5;
+    static float bodyPos = 0.0;
+    static float bodyVel = 0.0;
+
+    TestPlayer* tp = (TestPlayer*)ptr;
+
+    write0(tp);
 
     const float maxSpeed = 100.0f;
-    PortalBody* pb0 = tp->pBody->at(0);
+    PortalBody* pb0 = tp->wData->pbIndices[0];
 
     b2Body* body = pb0->body;
     b2Vec2 linVel = body->GetLinearVelocity();
 
-    float vx0 = linVel.x;
-
-    float desiredValue = 0.06 - std::min(std::max(vx0, -8.0f), 8.0f) * 0.01;
+    float desiredValue = 0.06 - std::min(std::max(linVel.x, -8.0f), 8.0f) * 0.01;
     desiredValue = std::max(std::min(desiredValue, 0.12f), 0.01f);
     tp->renderData.headCircles[0] -= (tp->renderData.headCircles[0] - desiredValue) * Game::object->deltaTime * 6.0f;
     tp->renderData.headCircles[1] = 0.12 - tp->renderData.headCircles[0];
@@ -243,10 +256,142 @@ void TestPlayer::memMap(void* ptr)
     tp->renderData.ld.legAngle = tp->legAng;
 
     s_renderPlayerUbo* ru;
-    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory, tp->playerShader->alignedSize2 * imNum,
+    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory, tp->playerShader->alignedSize2 * ThinDrawer::object->lastSwapChainImageIndex,
         tp->playerShader->alignedSize2, 0, (void**)&ru);
     memcpy((void*)ru, &tp->renderData, sizeof(s_renderPlayerUbo));
     vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory);
+}
+
+void TestPlayer::memMapDeathByElectrocution(void* ptr)
+{
+    double realDt = Game::object->deltaTime / std::max(Game::object->dtMult, 0.000001);
+    Game::object->dtMult = std::max(Game::object->dtMult - realDt * Game::object->dtMult * 30.0, 0.0);
+
+    TestPlayer* tp = (TestPlayer*)ptr;
+
+    tp->deathTimer += realDt;
+    double time01 = glm::smoothstep(0.0, 0.5, tp->deathTimer);
+    
+    write0(tp);
+    
+    s_renderPlayerUbo* ru;
+    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory,
+        tp->playerShader->alignedSize2 * ThinDrawer::object->lastSwapChainImageIndex, tp->playerShader->alignedSize2, 0, (void**)&ru);
+    memcpy((void*)ru, &tp->renderData, sizeof(s_renderPlayerUbo));
+    vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory);
+
+    glm::vec2 camPos = ThinDrawer::object->wh->cam->pos;
+    b2Vec2 headPos1 = b2Vec2(0.0f, -tp->bodySize.y * 0.4f);
+    headPos1 = PortalWorld::rotateVec(headPos1, -tp->wData->pbIndices[0]->body->GetAngle());
+    headPos1 += b2Vec2(tp->wData->pbIndices[0]->body->GetPosition().x, -tp->wData->pbIndices[0]->body->GetPosition().y);
+    glm::vec2 headPos = glm::vec2(headPos1.x, headPos1.y);
+    glm::vec2 diff = headPos - camPos;
+    float lenDiff = glm::length(diff);
+    camPos += diff * (float)time01 * 0.1f;
+    ThinDrawer::object->wh->cam->zoom += (10.0f - ThinDrawer::object->wh->cam->zoom) * (float)time01 * std::max(1.0f - lenDiff, 0.0f) * 0.01;
+    ThinDrawer::object->wh->cam->pos = camPos;
+
+    if (lenDiff < 0.01f && ThinDrawer::object->wh->cam->zoom > 9.0f)
+    {
+        Game::object->singleTaskRegistry.push_back([tp]()
+		{
+            ThinDrawer* thinDrawer = ThinDrawer::object;
+
+            tp->health = 100;
+
+            Game::object->dtMult = 1.0f;
+            Game::object->isPaused = true;
+            thinDrawer->wh->cam->pos = glm::vec2(tp->initialPos.x, -tp->initialPos.y - tp->bodySize.y * 0.4f);
+            thinDrawer->wh->cam->updateOrtho();
+
+            tp->renderData.topMargin = 0.0;
+            tp->renderData.headRatio = 0.25;
+            tp->renderData.bodyRatio = 0.4;
+            tp->renderData.legRatio = 0.25;
+            tp->renderData.margin1 = (1.0 - tp->renderData.headRatio - tp->renderData.bodyRatio - tp->renderData.legRatio) * 0.5;
+            tp->renderData.margin2 = (1.0 - tp->renderData.headRatio - tp->renderData.bodyRatio - tp->renderData.legRatio) * 0.5;
+            tp->renderData.lineSize = 0.035;
+            tp->renderData.headCircles = glm::vec2(0.07, 0.07);
+            tp->renderData.bodyCircles = 0.1;
+
+            tp->renderData.ld.legThick = 0.12;
+            tp->renderData.ld.circR = tp->renderData.legRatio * 1000.5;
+            tp->renderData.ld.legLen = 0.25 * 0.5;
+            tp->renderData.ld.legOuterCircAng = 0.0;
+            tp->renderData.ld.legAngle = tp->renderData.ld.legOuterCircAng;
+            tp->renderData.ld.legCircleSize = 0.025;
+            tp->renderData.size = glm::vec2(0.75, 1.5);
+
+            for (auto iter = thinDrawer->memMapFuncs.begin(); iter != thinDrawer->memMapFuncs.end(); iter++)
+            {
+                if ((*iter).first == memMapDeathByElectrocution)
+                {
+                    (*iter).first = zoomOut;
+                    break;
+                }
+            }
+
+            for (DefaultObject* obj : DefaultObject::defaultObjects)
+            {
+                obj->recreate();
+            }
+
+            tp->getBodyOut();
+
+            if (tp->portalA)
+            {
+                tp->portalA->getPreDestructionFixture();
+                tp->pWorld->destroyPortal(tp->portalA);
+            }
+            if (tp->portalB)
+            {
+                tp->portalB->getPreDestructionFixture();
+                tp->pWorld->destroyPortal(tp->portalB);
+            }
+            tp->portalA = nullptr; tp->portalB = nullptr;
+
+            tp->init();
+
+            ForceField::destroyCList = std::queue<pbWorldData*>();
+		});
+    }
+
+    ThinDrawer::object->wh->cam->updateOrtho();
+}
+
+void TestPlayer::zoomOut(void* ptr)
+{
+    TestPlayer* tp = (TestPlayer*)ptr;
+
+    ThinDrawer::object->wh->cam->zoom -= Game::object->deltaTime * 2.0f * ThinDrawer::object->wh->cam->zoom;
+
+    write0(tp);
+
+    s_renderPlayerUbo* ru;
+    vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory,
+        tp->playerShader->alignedSize2 * ThinDrawer::object->lastSwapChainImageIndex, tp->playerShader->alignedSize2, 0, (void**)&ru);
+    memcpy((void*)ru, &tp->renderData, sizeof(s_renderPlayerUbo));
+    vkUnmapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory);
+
+    if (ThinDrawer::object->wh->cam->zoom < 0.5f)
+    {
+        ThinDrawer::object->wh->cam->zoom = 0.5f;
+        Game::object->singleTaskRegistry.push_back([tp]()
+        {
+            Game::object->isPaused = false;
+            
+            for (auto iter = ThinDrawer::object->memMapFuncs.begin(); iter != ThinDrawer::object->memMapFuncs.end(); iter++)
+            {
+                if ((*iter).first == zoomOut)
+                {
+                    (*iter).first = memMap;
+                    break;
+                }
+            }
+        });
+    }
+
+    ThinDrawer::object->wh->cam->updateOrtho();
 }
 
 void TestPlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
@@ -266,7 +411,7 @@ void TestPlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         tp->playerShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
     int i = 0;
-    for (PortalBody* pb : *tp->pBody)
+    for (PortalBody* pb : tp->wData->pbIndices)
     {
         uint32_t dynOff1 = tp->playerShader->alignedSize * (i + imNum * 8);
         uint32_t dynOffsets[] = { dynOff1, dynOff2 };
@@ -448,7 +593,7 @@ void TestPlayer::runEffect()
 
         if (eGlobal)
         {
-            b2Vec2 botPos = pBody->at(0)->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
+            b2Vec2 botPos = wData->pbIndices[0]->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
             b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
             int index = (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0);
             if (index < 0 || index >= eGlobal->unitWalls.size())
@@ -462,7 +607,7 @@ void TestPlayer::runEffect()
                 fastRun = true;
 
                 int renderOffset = eGlobal->renderOfsset + (eGlobal->unitWalls.size() - index - 1);
-				b2Vec2 vel = pBody->at(0)->body->GetLinearVelocity();
+				b2Vec2 vel = wData->pbIndices[0]->body->GetLinearVelocity();
                 if (platformBody)
                 {
                     vel -= platformBody->GetLinearVelocity();
@@ -489,7 +634,7 @@ void TestPlayer::jumpEffect()
     extraJumpRange[0] = 0;
     extraJumpRange[1] = 0;
 
-    b2Body* body = pBody->at(0)->body;
+    b2Body* body = wData->pbIndices[0]->body;
     s_edgeGlobalData* eGlobal = nullptr;
 
     if (contactFixture)
@@ -584,7 +729,7 @@ void TestPlayer::jumpEffect()
         jumped = true;
         bool extraJump = (extraJumpRange[1] - extraJumpRange[0] > 4);
 
-        lv.y = (6.0f + 4.0f * extraJump) * (float)pBody->size();
+        lv.y = (6.0f + 4.0f * extraJump) * (float)wData->pbIndices.size();
 
         jumpPressTime = 0.0;
 
@@ -629,7 +774,7 @@ void TestPlayer::renderInit()
 
     renderData.edgeColour = glm::vec4(1.0, 1.0, 1.0, 1.0);
     renderData.bodyColour1 = glm::vec4(0.0, 0.0, 0.0, 1.0);
-    renderData.bodyColour2 = glm::vec4(0.04, 0.04, 0.04, 1.0);
+    renderData.bodyColour2 = glm::vec4(0.0, 0.0, 0.3, 1.0);
 
     renderData.topMargin = 0.0;
     renderData.headRatio = 0.25;
@@ -687,20 +832,20 @@ void TestPlayer::createBody(b2Vec2 pos)
     ThinDrawer::object->debug_addPortalBody(pb);
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    g_PhysicsData* physicsData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    physicsData->type = (g_DataType)(DEFAULT_OBJECT_O | PLAYER_O);
-    physicsData->data = this;
-    bData->extraData = physicsData;
+    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
+    pData->type = (g_DataType)(DEFAULT_OBJECT_O | PLAYER_O);
+    pData->data = this;
+    bData->extraData = pData;
 
-    pBody = &pb->worldIndex->pbIndices;
+    wData = pb->worldIndex;
 
     gunSize = b2Vec2(0.3f, 0.8f);
     Gun* dGun = new Gun(pWorld, pos, gunSize);
 
-    this->gun = dGun->pBody;
+    this->gun = &dGun->wData->pbIndices;
 
     b2RevoluteJointDef jDef;
-    jDef.bodyA = pBody->at(0)->body;
+    jDef.bodyA = wData->pbIndices[0]->body;
     jDef.bodyB = gun->at(0)->body;
     jDef.collideConnected = false;
     jDef.localAnchorA = b2Vec2(0.0f, +0.35f);
@@ -715,34 +860,42 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
     if (!contact->IsEnabled()) return;
 
     fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
-    if (fixData && fixData->type == F_FORCE_FIELD)
+    if (fixData)
     {
-        numCollidingForceFields++;
-        game->singleTaskRegistry.push_back(
-            [this]()
-            {
-                if (portalA && portalB) getBodyOut();
-                
-                if (portalA || portalB)
+        if (fixData->type == F_FORCE_FIELD)
+        {
+            numCollidingForceFields++;
+            game->singleTaskRegistry.push_back(
+                [this]()
                 {
-                    ALuint source = Sounder::object->playSound(fizzleBuffer, 1.0);
-                    b2Vec2 bPos = pBody->at(0)->body->GetPosition();
-                    Sounder::object->setSoundPosition(source, glm::vec3(bPos.x, bPos.y, 0.0));
+                    if (portalA && portalB) getBodyOut();
+
+                    if (portalA || portalB)
+                    {
+                        ALuint source = Sounder::object->playSound(fizzleBuffer, 1.0);
+                        b2Vec2 bPos = wData->pbIndices[0]->body->GetPosition();
+                        Sounder::object->setSoundPosition(source, glm::vec3(bPos.x, bPos.y, 0.0));
+                    }
+
+                    if (portalA)
+                    {
+                        portalA->getPreDestructionFixture();
+                        pWorld->destroyPortal(portalA);
+                    }
+                    if (portalB)
+                    {
+                        portalB->getPreDestructionFixture();
+                        pWorld->destroyPortal(portalB);
+                    }
+                    portalA = nullptr; portalB = nullptr;
                 }
-                
-                if (portalA)
-                {
-                    portalA->getPreDestructionFixture();
-                    pWorld->destroyPortal(portalA);
-                }
-                if (portalB)
-                {
-                    portalB->getPreDestructionFixture();
-                    pWorld->destroyPortal(portalB);
-                }
-                portalA = nullptr; portalB = nullptr;
-            }
-        );
+            );
+        }
+        else if (fixData->type == F_HAZARD_FIELD)
+        {
+            health = -1000;
+            healthCheck();
+        }
     }
 }
 
@@ -788,16 +941,16 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
 
-    PortalBody* contactingPBody = (PortalBody*)((bodyData*)thisBody->GetUserData().pointer)->data;
+    PortalBody* contactingwData = (PortalBody*)((bodyData*)thisBody->GetUserData().pointer)->data;
     float tHold = 0.2f;
-    b2Vec2 bodyPos = contactingPBody->body->GetPosition();
+    b2Vec2 bodyPos = contactingwData->body->GetPosition();
     b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
     botVector = pWorld->rotateVec(botVector, thisBody->GetAngle());
 
     float botY = bodyPos.y + (bodySize.y / 2.0f) * botVector.y;
     if (wManifold.points[0].y < botY + tHold && wManifold.points[0].y > botY - tHold)
     {
-        b2Vec2 normal = pWorld->rotateVec(wManifold.normal, -contactingPBody->body->GetAngle());
+        b2Vec2 normal = pWorld->rotateVec(wManifold.normal, -contactingwData->body->GetAngle());
         if (abs(normal.x) <= normXToWalk)
         {
             contact->SetFriction(setFriction);
@@ -811,16 +964,21 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 
 void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
-    if (!contact->IsEnabled() || fix2->IsSensor())
+    if (!contact->IsEnabled())
+    {
+        assert(false);
+    }
+
+    if (fix2->IsSensor())
     {
         return;
     }
 
-    PortalBody* contactingPBody = (PortalBody*)((bodyData*)contactingBody->GetUserData().pointer)->data;
+    PortalBody* contactingwData = (PortalBody*)((bodyData*)contactingBody->GetUserData().pointer)->data;
 
     b2WorldManifold wManifold;
     contact->GetWorldManifold(&wManifold);
-    b2Vec2 normal = pWorld->rotateVec(wManifold.normal, -contactingPBody->body->GetAngle());
+    b2Vec2 normal = pWorld->rotateVec(wManifold.normal, -contactingwData->body->GetAngle());
 
     b2Vec2 cPos = wManifold.points[0];
 
@@ -831,7 +989,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
     }
 
     float tHold = 0.25f;
-    b2Vec2 bodyPos = contactingPBody->body->GetPosition();
+    b2Vec2 bodyPos = contactingwData->body->GetPosition();
     b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
     botVector = pWorld->rotateVec(botVector, contactingBody->GetAngle());
 
@@ -851,7 +1009,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
             if (contactType == b2_dynamicBody || contactType == b2_kinematicBody)
             {
                 if (fix2->GetDensity() == 0.0f &&
-                    (contact->GetFixtureA()->GetBody() == pBody->at(0)->body || contact->GetFixtureB()->GetBody() == pBody->at(0)->body))
+                    (contact->GetFixtureA()->GetBody() == wData->pbIndices[0]->body || contact->GetFixtureB()->GetBody() == wData->pbIndices[0]->body))
                 {
                     platformBody = fix2->GetBody();
                 }
@@ -875,7 +1033,7 @@ void TestPlayer::camHandle()
     glm::f64vec2 mp = wh->cam->getMouseCoords();
     glm::f64vec2 camDiff = glm::f64vec2(wh->mouseData[0] - wh->windowSizes.x * 0.5, wh->mouseData[1] - wh->windowSizes.y * 0.5);
 
-    b2Vec2 bp = pBody->at(0)->body->GetPosition();
+    b2Vec2 bp = wData->pbIndices[0]->body->GetPosition();
     glm::f64vec2 diff1 = (glm::f64vec2(bp.x, bp.y) - glm::f64vec2(wh->cam->pos.x, -wh->cam->pos.y)) * game->deltaTime * 4.0;
     glm::f64vec2 diff2 = (!holdBody ? (game->deltaTime * 0.04 / wh->cam->zoom) * glm::f64vec2(camDiff.x, -camDiff.y) : glm::f64vec2(0.0f, 0.0f));
     diff1.x += diff2.x;
@@ -888,11 +1046,11 @@ void TestPlayer::camHandle()
 
 void TestPlayer::handleBodyRotation()
 {
-    PortalBody* pb = pBody->at(0);
+    PortalBody* pb = wData->pbIndices[0];
     float ang = PortalWorld::normalizeAngle(pb->body->GetAngle());
     if (ang > 0.0f)
     {
-        for (PortalBody* l_portalBody : *pBody)
+        for (PortalBody* l_portalBody : wData->pbIndices)
         {
             l_portalBody->body->SetAngularVelocity(0.0f);
         }
@@ -900,7 +1058,7 @@ void TestPlayer::handleBodyRotation()
     }
     else
     {
-        for (PortalBody* l_portalBody : *pBody)
+        for (PortalBody* l_portalBody : wData->pbIndices)
         {
             l_portalBody->body->SetAngularVelocity(0.0f);
         }
@@ -912,7 +1070,7 @@ void TestPlayer::handleGunRotation()
 {
     float ang;
     float mult = 1.0f;
-    PortalBody* pb = pBody->at(0);
+    PortalBody* pb = wData->pbIndices[0];
     PortalBody* gunBody = nullptr;
     PortalBody* playerBody = nullptr;
     b2RevoluteJoint* rj = nullptr;
@@ -1025,7 +1183,7 @@ void TestPlayer::handleGunRotation()
 
     if (oldJoint != rj && oldJoint != nullptr)
     {
-        for (PortalBody* l_portalBody : *pBody)
+        for (PortalBody* l_portalBody : wData->pbIndices)
         {
             if (l_portalBody == oldPortalBody)
             {
@@ -1171,10 +1329,10 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
 
 void TestPlayer::getBodyOut()
 {
-    PortalBody::getBodyOut(pBody->at(0)->worldIndex);
+    PortalBody::getBodyOut(wData->pbIndices[0]->worldIndex);
     PortalBody::getBodyOut(gun->at(0)->worldIndex);
 
-    b2Body* playerBody = pBody->at(0)->body;
+    b2Body* playerBody = wData->pbIndices[0]->body;
     b2Body* gunBody = gun->at(0)->body;
 
     bool jointFound = false;
@@ -1470,7 +1628,7 @@ void TestPlayer::gunDestrCallback(PortalBody* gb, void* ptr)
 {
     TestPlayer* tp = (TestPlayer*)ptr;
 
-    if (gb != tp->holdGun)
+    if (gb != tp->holdGun || gb->bodyMaps.size() == 0)
     {
         return;
     }
@@ -1496,7 +1654,7 @@ void TestPlayer::objectDestrCallback(PortalBody* pb, void* ptr)
 {
     TestPlayer* tp = (TestPlayer*)ptr;
 
-    if (pb != tp->holdBody)
+    if (pb != tp->holdBody || pb->bodyMaps.size() == 0)
     {
         return;
     }
@@ -1525,7 +1683,7 @@ void TestPlayer::objectDestrCallback(PortalBody* pb, void* ptr)
 
 void TestPlayer::holdB(PortalBody* pb, PortalBody* gunBody)
 {
-    *pb->gravityScale = 0.0f;
+    pb->worldIndex->gravityScale = 0.0f;
     holdBody = pb;
     holdGun = gunBody;
     lastHoldPos = pb->body->GetPosition();
@@ -1565,6 +1723,7 @@ void TestPlayer::holdB(PortalBody* pb, PortalBody* gunBody)
 void TestPlayer::releaseB()
 {
     pbWorldData* indx = holdBody->worldIndex;
+    indx->gravityScale = 1.0f;
     for (auto iter = indx->destroyCallbacks.rbegin(); iter != indx->destroyCallbacks.rend(); iter++)
     {
         if ((*iter).first == objectDestrCallback)
@@ -1613,7 +1772,6 @@ void TestPlayer::releaseB()
     holdRestitutions.clear();
     holdFrictions.clear();
 
-    *holdBody->gravityScale = 1.0f;
     holdBody = nullptr;
     holdGun = nullptr;
     holdConnection = nullptr;
@@ -1646,7 +1804,7 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
         }
         else
         {
-            pWorld->rayHandler->sendRay(pos, dir, 1.5f, pBody);
+            pWorld->rayHandler->sendRay(pos, dir, 1.5f, wData);
             if (pWorld->rayHandler->rayResult.size() < 3 && pWorld->rayHandler->closestFixture)
             {
                 bodyData* bData = (bodyData*)pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
@@ -1746,7 +1904,7 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
             if (!holdColliding)
             {
                 b2Vec2 newDir = PortalWorld::rotateVec(dir, holdAngle);
-                pWorld->rayHandler->sendRay(pos, newDir, 1.5f, pBody);
+                pWorld->rayHandler->sendRay(pos, newDir, 1.5f, wData);
                 if (pWorld->rayHandler->closestFixture)
                 {
                     bool rel = true;
@@ -1801,6 +1959,24 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
     }
 }
 
+void TestPlayer::healthCheck()
+{
+    ThinDrawer* thinDrawer = ThinDrawer::object;
+
+    if (health < -999)
+    {
+        for (auto iter = thinDrawer->memMapFuncs.begin(); iter != thinDrawer->memMapFuncs.end(); iter++)
+		{
+			if ((*iter).first == memMap)
+			{
+                (*iter).first = memMapDeathByElectrocution;
+                deathTimer = 0.0;
+				break;
+			}
+		}
+    }
+}
+
 void TestPlayer::updateReset()
 {
     l_contactBody = contactBody;
@@ -1816,7 +1992,7 @@ void TestPlayer::updateReset()
     contactType = (b2BodyType)INT_MAX; // NULL
     rightCollisionType = b2_dynamicBody;
     leftCollisionType = b2_dynamicBody;
-    lastBody = pBody->at(0);
+    lastBody = wData->pbIndices[0];
     holdColliding = false;
 }
 
@@ -1834,7 +2010,7 @@ void TestPlayer::update(float dt, int totalIter)
     float speedOffset = 0.0f;
     avgNormalX /= numNormals;
     setFriction = 0.0;
-    PortalBody* pb = pBody->at(0);
+    PortalBody* pb = wData->pbIndices[0];
 
     if (pb != lastBody && lastBody != nullptr)
     {
@@ -1884,10 +2060,10 @@ void TestPlayer::update(float dt, int totalIter)
         left = true;
     }
 
-    if (pBody->size() > 1)
+    if (wData->pbIndices.size() > 1)
     {
-        PortalBody* b1 = pBody->at(0);
-        PortalBody* b2 = pBody->at(1);
+        PortalBody* b1 = wData->pbIndices[0];
+        PortalBody* b2 = wData->pbIndices[1];
         fixtureData* fixData1 = (fixtureData*)b1->body->GetFixtureList()->GetUserData().pointer;
         PBFixtureData* pbfData1 = (PBFixtureData*)fixData1->data;
         fixtureData* fixData2 = (fixtureData*)b2->body->GetFixtureList()->GetUserData().pointer;
@@ -1956,7 +2132,7 @@ void TestPlayer::update(float dt, int totalIter)
     if (!left && !right && platformBody)
     {
         float diff = platformBody->GetLinearVelocity().x - lv.x;
-        lv.x += diff * dt * 15.0f * pBody->size();
+        lv.x += diff * dt * 15.0f * wData->pbIndices.size();
         setFriction = 2.0;
     }
     if (left || right)
@@ -1969,11 +2145,11 @@ void TestPlayer::update(float dt, int totalIter)
             float addition;
             if (contactBody != nullptr)
             {
-                addition = groundMult * dt * pBody->size() * mult;
+                addition = groundMult * dt * wData->pbIndices.size() * mult;
             }
             else if (rightCollisionType == b2_dynamicBody)
             {
-                addition = airMult * dt * pBody->size() * mult;
+                addition = airMult * dt * wData->pbIndices.size() * mult;
                 if (lv.x < -maxSpeed * 2.0)
                 {
                     addition = 0.0;
@@ -1994,7 +2170,7 @@ void TestPlayer::update(float dt, int totalIter)
                     {
                         if (lv.x - addition > maxSpeed + speedOffset)
                         {
-                            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                            lv.x *= fmax(0.0f, 1.0f - dt * (float)wData->pbIndices.size() * fwdGrndSlw);
                         }
                         else
                         {
@@ -2007,7 +2183,7 @@ void TestPlayer::update(float dt, int totalIter)
                 {
                     if (rightCollisionType == b2_dynamicBody && mult > 0.0f)
                     {
-                        lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 5.0f);
+                        lv.x *= fmax(0.0f, 1.0f - dt * (float)wData->pbIndices.size() * 5.0f);
                         lv.x = lv.x - addition;
                     }
                     else
@@ -2016,7 +2192,7 @@ void TestPlayer::update(float dt, int totalIter)
                         {
                             if (lv.x - addition < -maxSpeed + speedOffset)
                             {
-                                lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                                lv.x *= fmax(0.0f, 1.0f - dt * (float)wData->pbIndices.size() * fwdGrndSlw);
                             }
                             else
                             {
@@ -2035,11 +2211,11 @@ void TestPlayer::update(float dt, int totalIter)
             float subtraction;
             if (contactBody != nullptr)
             {
-                subtraction = groundMult * dt * pBody->size() * mult;
+                subtraction = groundMult * dt * wData->pbIndices.size() * mult;
             }
             else if (leftCollisionType == b2_dynamicBody)
             {
-                subtraction = airMult * dt * pBody->size() * mult;
+                subtraction = airMult * dt * wData->pbIndices.size() * mult;
                 if (lv.x > maxSpeed * 2.0)
                 {
                     subtraction = 0.0;
@@ -2058,7 +2234,7 @@ void TestPlayer::update(float dt, int totalIter)
                 {
                     if (rightCollisionType == b2_dynamicBody && mult > 0.0f)
                     {
-                        lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * 5.0f);
+                        lv.x *= fmax(0.0f, 1.0f - dt * (float)wData->pbIndices.size() * 5.0f);
                         lv.x = lv.x + subtraction;
                     }
                     else
@@ -2067,7 +2243,7 @@ void TestPlayer::update(float dt, int totalIter)
                         {
                             if (lv.x + subtraction > maxSpeed + speedOffset)
                             {
-                                lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                                lv.x *= fmax(0.0f, 1.0f - dt * (float)wData->pbIndices.size() * fwdGrndSlw);
                             }
                             else
                             {
@@ -2083,7 +2259,7 @@ void TestPlayer::update(float dt, int totalIter)
                     {
                         if (lv.x + subtraction < -maxSpeed + speedOffset)
                         {
-                            lv.x *= fmax(0.0f, 1.0f - dt * (float)pBody->size() * fwdGrndSlw);
+                            lv.x *= fmax(0.0f, 1.0f - dt * (float)wData->pbIndices.size() * fwdGrndSlw);
                         }
                         else
                         {
@@ -2124,6 +2300,9 @@ void TestPlayer::update(float dt, int totalIter)
     handleGunRotation();
     
     handlePortalCD(dt);
+
+    if (health <= 0)
+        healthCheck();
 
     updateReset();
 }
