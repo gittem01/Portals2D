@@ -5,6 +5,13 @@
 #include <DefaultObjects/Sphere.h>
 #include <DefaultObjects/Cyber.h>
 #include <DefaultObjects/Turret.h>
+
+#include <DefaultObjects/Gel.h>
+#include "GameObjects/ForceField.h"
+#include "GameObjects/HazardField.h"
+#include "GameObjects/Platform.h"
+#include "GameObjects/Geller.h"
+
 #include <Leveler.h>
 
 enum ReachableType

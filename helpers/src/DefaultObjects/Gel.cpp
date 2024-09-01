@@ -31,6 +31,8 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     fix->SetSensor(true);
 
     PortalBody* portalBody = portalWorld->createPortalBody(body);
+    wData = portalBody->worldIndex;
+    
     wData->gravityScale = 0.5;
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
@@ -38,8 +40,6 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     pData->type = (g_DataType)(DEFAULT_OBJECT_O | GEL_O);
     pData->data = this;
     bData->extraData = pData;
-
-    this->wData = portalBody->worldIndex;
 
     // too slow
     // must be done once in the game initialisation but it is not possible for now
@@ -285,18 +285,33 @@ void Gel::update()
             if (ratio < maxPosDiff)
             {
                 b2Vec2 velNow = tpb->body->GetLinearVelocity();
-                tpb->body->SetLinearVelocity(velNow - 0.05f * ratio * posDiff);
+                tpb->body->SetLinearVelocity(velNow - 0.01f * ratio * posDiff);
             }
 		}
+    }
+}
+
+void Gel::perFrameUpdate()
+{
+    for (int i = 0; i < gelCount; i++)
+    {
+        Gel* gel = gels[i];
 
         for (PortalBody* tpb : gel->wData->pbIndices)
         {
             b2Vec2 vel = tpb->body->GetLinearVelocity();
 
-            if (vel.Length() > 4.0)
+            if (vel.Length() > 5.0)
             {
-                tpb->body->SetLinearVelocity(0.99f * vel);
+                vel.Normalize(); vel *= 5.0;
             }
+
+            float randValx = (float)rand() / RAND_MAX;
+            float randValy = (float)rand() / RAND_MAX;
+
+            vel += 10.0f * Game::object->deltaTime * b2Vec2(randValx - 0.5, randValy - 0.5);
+
+            tpb->body->SetLinearVelocity(vel);
         }
     }
 }
@@ -311,7 +326,15 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
         for (PortalBody* pb : gel->wData->pbIndices)
         {
             b2Vec2 pos = pb->body->GetPosition();
-            ThinDrawer::object->gelShader->putGel(gel->gelType, glm::vec2(pos.x, pos.y), gel->gelRadius * 2.0);
+            float opRadius = gel->gelRadius * 2.0;
+            for (auto bm : pb->bodyMaps)
+            {
+                float dist = PortalWorld::getRealDist(bm->connection->portal1->points[0], bm->connection->portal1->points[1], pos);
+                float remVal = std::max((gel->gelRadius + dist) - 0.5f, 0.0f);
+                opRadius = std::min(gel->gelRadius * 2.0f - remVal, opRadius);
+            }
+
+            ThinDrawer::object->gelShader->putGel(gel->gelType, glm::vec2(pos.x, pos.y), opRadius);
         }
     }
 
@@ -376,7 +399,7 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
             Portal* p = (Portal*)fData->data;
             if (p->midFixture == otherFix && p->connections[0].size() > 0) return;
         }
-        else if (fData->type & F_FEDGE)
+        else if (fData->type & GEL_COLLISION_IGNORE)
         {
             return;
         }

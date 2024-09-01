@@ -115,7 +115,9 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	b2PolygonShape box;
 	box.SetAsBox(halfSize.x - 0.01, halfSize.y - 0.01);
-	body->CreateFixture(&box, 0.0f);
+	b2Fixture* fix = body->CreateFixture(&box, 0.0f);
+
+	fix->GetUserData().pointer = fix->GetNext()->GetUserData().pointer;
 
 	body->SetLinearVelocity(platformSpeed * fwdDir);
 

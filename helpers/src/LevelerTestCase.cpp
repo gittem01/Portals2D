@@ -4,10 +4,6 @@
 #include <Game.h>
 #include <TestPlayer.h>
 #include <Overlayer.h>
-#include <DefaultObjects/Gel.h>
-#include "GameObjects/ForceField.h"
-#include "GameObjects/HazardField.h"
-#include "GameObjects/Platform.h"
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
@@ -350,11 +346,14 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
             s_gridItemData iData = g->leveler->ol->items[getLevelObjectIndex(upLgd.objectType)];
 
             int dirVal = (dir + 3) % 4;
-            bool secCond = objectData && upLgd.objectType & (FORCE_FIELD | HAZARDER) && objectData->rotation == (dirVal + 2) % 4;
-            if (upLgd.objectType & WALL_EDGE_OCCUPIERS && (objectData && objectData->rotation == dirVal || secCond))
+            int rot = 0;
+            if (objectData)
+                rot = (upLgd.objectType & GELS) ? (objectData->rotation + 2) % 4 : objectData->rotation;
+            bool secCond = objectData && upLgd.objectType & (FORCE_FIELD | HAZARDER) && rot == (dirVal + 2) % 4;
+            if (upLgd.objectType & WALL_EDGE_OCCUPIERS && (objectData && rot == dirVal || secCond))
             {
 				float rendIScale = iData.tex->width > iData.tex->height ? iData.gridRenderScale : iData.gridRenderScale * (float)iData.tex->width / iData.tex->height;
-                glm::i16vec2 objPos = (objectData->rotation == 0 || objectData->rotation == 1) ? objectData->pos :
+                glm::i16vec2 objPos = (rot == 0 || rot == 1) ? objectData->pos :
                                         (objectData->pos - (short)(iData.gridScale.x - 1) * dirs[dir].asGlm());
                 if (secCond) objPos = objectData->extraPos;
                 glm::i16vec2 pDiff = objPos - upPos;
@@ -373,7 +372,7 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
 				shiftAmnt = 2;
 			}
 
-            wallData.push_back({ NONE, (WALL_TYPE)(lgd.objectType << shiftAmnt), 0 });
+            wallData.push_back({ NONE, (WALL_TYPE)((lgd.objectType & 3) << shiftAmnt), 0 });
         }
 
         bool fwdEmp = !g->leveler->isInBounds(fwdPos.x, fwdPos.y) || !(g->leveler->getSquare(fwdPos.x, fwdPos.y).objectType & (BLACK_WALL | WHITE_WALL));
@@ -743,6 +742,14 @@ void LevelerTestCase::createDynamics()
             HazardField* hf = new HazardField(g->pWorld, objectData);
 		}
         break;
+        case BLUE_GELLER:
+        case ORANGE_GELLER:
+        case WHITE_GELLER:
+        case WATER_GELLER:
+		{
+			Geller::createGeller(g->pWorld, objectData);
+		}
+        break;
         default:
             break;
         }
@@ -824,14 +831,14 @@ void LevelerTestCase::onUpdate()
         eBodyy->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
     }*/
 
-    /*if (g->gameTime - lastCreationTime > 0.075)
+    if (g->gameTime - lastCreationTime > 0.075)
     {
         lastCreationTime = g->gameTime;
         float randVal = (float)rand() / RAND_MAX;
         float randVal2 = (float)rand() / RAND_MAX;
-        Gel::generateGel(glm::vec2(-4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 0);
+        /*Gel::generateGel(glm::vec2(-4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 0);
         Gel::generateGel(glm::vec2(-1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 1);
         Gel::generateGel(glm::vec2(1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 2);
-        Gel::generateGel(glm::vec2(4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 3);
-    }*/
+        Gel::generateGel(glm::vec2(4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 3);*/
+    }
 }

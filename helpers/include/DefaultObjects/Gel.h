@@ -3,8 +3,12 @@
 #include <DefaultObject.h>
 #include <SplashShader.h>
 
+#define GEL_COLLISION_IGNORE (F_FEDGE | F_GELLER)
+
 class Gel : public DefaultObject
 {
+	friend class Geller;
+
 private:
 	int gelIndex;
 	int gelType;
@@ -28,6 +32,7 @@ public:
 	static void staticInit();
 	static void generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex);
 	static void update();
+	static void perFrameUpdate();
 	static void render(VkCommandBuffer cmdBuff, void* ptr);
 	void endContact(b2Contact* contact, b2Fixture* otherFix);
 	void beginContact(b2Contact* contact, b2Fixture* otherFix);

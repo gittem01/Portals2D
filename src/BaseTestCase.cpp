@@ -5,6 +5,7 @@
 #include "ThinDrawer.h"
 #include <Game.h>
 #include <BaseTestCase.h>
+#include "DefaultObjects/Gel.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -177,6 +178,8 @@ void BaseTestCase::onUpdate()
             tp->update(dt, requiredIters);
 
             g->pWorld->PortalStep(dt, 8, 3);
+
+            Gel::update();
         }
     }
     

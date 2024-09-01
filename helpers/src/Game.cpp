@@ -8,6 +8,7 @@
 #include "GameObjects/Platform.h"
 #include "GameObjects/ForceField.h"
 #include "GameObjects/HazardField.h"
+#include "GameObjects/Geller.h"
 
 Game* Game::object;
 
@@ -85,6 +86,7 @@ void Game::TestState()
     Platform::staticInit();
     ForceField::staticInit();
     HazardField::staticInit();
+    Geller::staticInit();;
 
     if (!leveler)
     {
@@ -113,9 +115,10 @@ void Game::TestState()
             
             testCase->onUpdate();
             Turret::perFrameUpdate();
-            Gel::update();
             Platform::update();
             ForceField::update();
+            Geller::update();
+            Gel::perFrameUpdate();
         }
 
         for (auto func : singleTaskRegistry)
@@ -156,6 +159,7 @@ void Game::TestState()
         Platform::numPlatforms = 0;
         thinDrawer->wallGel->numWallLines = 0;
         DefaultObject::defaultObjects.clear();
+        Geller::gellers.clear();
         delete testCase;
     }
 

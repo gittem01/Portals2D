@@ -185,6 +185,11 @@ void ContactListener::PreSolve(b2Contact* contact, const b2Manifold* oldManifold
 
 void ContactListener::PostSolve(b2Contact* contact, const b2ContactImpulse* impulse)
 {
+    if (!contact->IsEnabled())
+    {
+        return;
+    }
+
     bodyData* bDataA = (bodyData*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
     bodyData* bDataB = (bodyData*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
     
