@@ -14,6 +14,17 @@
 
 #include <Leveler.h>
 
+typedef struct ConnectionSignaller
+{
+    std::vector<int> offsets;
+    void (*ssFunc)(void* ptr);
+    void (*usFunc)(void* ptr);
+
+    void ssignal();
+    void usignal();
+
+} connectionSignaller;
+
 enum ReachableType
 {
     NOT_REACHABLE = 0x0,

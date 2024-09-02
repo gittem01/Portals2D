@@ -13,7 +13,7 @@ HazardField::HazardField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
 	fieldRenderOffset = objData->extraOffsets[0];
 
-	b2Vec2 midPos = 0.5f * (b2Vec2(objData->pos.x, objData->pos.y) + b2Vec2(objData->extraPos.x, objData->extraPos.y));
+	b2Vec2 midPos = 0.5f * (b2Vec2(objData->pos.x, objData->pos.y) + b2Vec2(objData->extraPos.x, objData->extraPos.y)) + b2Vec2(0.5f, 0.5f);
 	b2Vec2 size;
 
 	b2PolygonShape pShapes[2];
@@ -23,19 +23,17 @@ HazardField::HazardField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	if ((objData->rotation % 4) % 2 == 0)
 	{
-		midPos.x += 0.5f;
-		size = b2Vec2(0.3f, abs(objData->extraPos.y - objData->pos.y) * 0.5f);
+		size = b2Vec2(0.3f, abs(objData->extraPos.y - objData->pos.y) * 0.5f + 0.5f);
 
 		pShapes[0].SetAsBox(hWidth, height, b2Vec2(0.0f, -size.y + height * 0.5), 0.0f);
-		pShapes[1].SetAsBox(hWidth, height, b2Vec2(0.0f, +size.y - height * 0.5 + 1.0), 0.0f);
+		pShapes[1].SetAsBox(hWidth, height, b2Vec2(0.0f, +size.y - height * 0.5), 0.0f);
 	}
 	else
 	{
-		midPos.y += 0.5f;
-		size = b2Vec2(abs(objData->extraPos.x - objData->pos.x) * 0.5f, 0.3f);
+		size = b2Vec2(abs(objData->extraPos.x - objData->pos.x) * 0.5f + 0.5f, 0.3f);
 
 		pShapes[0].SetAsBox(height, hWidth, b2Vec2(-size.x + height * 0.5, 0.0f), 0.0f);
-		pShapes[1].SetAsBox(height, hWidth, b2Vec2(+size.x - height * 0.5 + 1.0, 0.0f), 0.0f);
+		pShapes[1].SetAsBox(height, hWidth, b2Vec2(+size.x - height * 0.5, 0.0f), 0.0f);
 	}
 
 	b2BodyDef bDef;
