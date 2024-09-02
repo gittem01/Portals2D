@@ -801,8 +801,6 @@ void LevelerTestCase::perFrameUpdate()
 
 void LevelerTestCase::onUpdate()
 {
-    static float lastCreationTime = 0.0;
-
     BaseTestCase::onUpdate();
 
     /*if (td->wh->keyData[GLFW_KEY_RIGHT])
@@ -830,15 +828,4 @@ void LevelerTestCase::onUpdate()
     {
         eBodyy->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
     }*/
-
-    if (g->gameTime - lastCreationTime > 0.075)
-    {
-        lastCreationTime = g->gameTime;
-        float randVal = (float)rand() / RAND_MAX;
-        float randVal2 = (float)rand() / RAND_MAX;
-        /*Gel::generateGel(glm::vec2(-4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 0);
-        Gel::generateGel(glm::vec2(-1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 1);
-        Gel::generateGel(glm::vec2(1.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 2);
-        Gel::generateGel(glm::vec2(4.5, 0.0), 2.0f * glm::vec2(1.0 * (0.8 + randVal * 0.4), 1.0), 0.3 + randVal2 * 0.4, 3);*/
-    }
 }

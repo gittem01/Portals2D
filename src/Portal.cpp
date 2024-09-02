@@ -67,6 +67,10 @@ Portal::~Portal()
             }
 
             float d = PortalWorld::getDistanceFromPortal(outPortal, leftOutBody);
+            if (leftOutBody->body->GetFixtureList()->IsSensor())
+            {
+                d += 0.2f;
+            }
 
             if (d > 0.0)
             {

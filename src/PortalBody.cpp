@@ -499,8 +499,7 @@ void PortalBody::postHandle()
         }
         else
         {
-            // How did this happen?
-            // I want to see it happen and then fix it
+            assert(false);
         }
     }
 
