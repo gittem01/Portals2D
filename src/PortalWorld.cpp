@@ -32,9 +32,11 @@ PortalWorld::~PortalWorld()
         delete worldData;
     }
 
+    portalDestroyCallbacks.clear();
+
     for (int i = 0; i < portals.size(); i++)
     {
-        destroyPortal(portals.at(i));
+        destroyPortal(portals[i]);
         i--;
     }
 
