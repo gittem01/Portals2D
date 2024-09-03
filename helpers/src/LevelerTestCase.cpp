@@ -4,6 +4,9 @@
 #include <Game.h>
 #include <TestPlayer.h>
 #include <Overlayer.h>
+#include "GameObjects/UseButton.h"
+#include "GameObjects/Receiver.h"
+#include "GameObjects/Transmitter.h"
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
@@ -356,6 +359,7 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
                 glm::i16vec2 objPos = (rot == 0 || rot == 1) ? objectData->pos :
                                         (objectData->pos - (short)(iData.gridScale.x - 1) * dirs[dir].asGlm());
                 if (secCond) objPos = objectData->extraPos;
+                if (upLgd.objectType & CLICK_BUTTON && (rot == 1 || rot == 2)) objPos -= dirs[(dir + 1) % 4].asGlm();
                 glm::i16vec2 pDiff = objPos - upPos;
                 short lenDiff = std::max(std::abs(pDiff.x), std::abs(pDiff.y));
                 limits[0] = (iData.gridScale.x - rendIScale) * 0.5 - lenDiff + 0.05;
@@ -699,6 +703,42 @@ void createRagDoll(PortalWorld* pw, ThinDrawer* td)
     pw->CreateJoint(&jd);
 }
 
+void LevelerTestCase::receiverToTransmitter(s_objectDataGrid* objectData, Receiver* receiver)
+{
+    connMap.insert({ objectData, (void*)receiver });
+
+    for (auto conn : objectData->connections)
+    {
+        auto iter = connMap.find(conn->transmitter);
+        if (iter != connMap.end())
+        {
+            Transmitter* transmitter = (Transmitter*)iter->second;
+            if (conn->changePolarization)
+                transmitter->connections.push_back({ conn->offsets, receiver, true });
+            else
+                transmitter->connections.push_back({ conn->offsets, receiver, false });
+        }
+    }
+}
+
+void LevelerTestCase::transmitterToReceiver(s_objectDataGrid* objectData, Transmitter* transmitter)
+{
+    connMap.insert({ objectData, (void*)transmitter });
+    
+    for (auto conn : objectData->connections)
+    {
+        auto iter = connMap.find(conn->receiver);
+        if (iter != connMap.end())
+        {
+            Receiver* receiver = (Receiver*)iter->second;
+            if (conn->changePolarization)
+                transmitter->connections.push_back({ conn->offsets, receiver, true });
+            else
+                transmitter->connections.push_back({ conn->offsets, receiver, false });
+        }
+    }
+}
+
 void LevelerTestCase::createDynamics()
 {
     for (s_objectDataGrid* objectData : g->leveler->levelObjects)
@@ -730,16 +770,19 @@ void LevelerTestCase::createDynamics()
         case PLATFORM:
 		{
 			Platform* pl = new Platform(g->pWorld, objectData);
-		}
+            receiverToTransmitter(objectData, pl);
+        }
         break;
         case FORCE_FIELD:
 		{
 			ForceField* ff = new ForceField(g->pWorld, objectData);
+            receiverToTransmitter(objectData, ff);
 		}
         break;
         case HAZARDER:
         {
             HazardField* hf = new HazardField(g->pWorld, objectData);
+            receiverToTransmitter(objectData, hf);
 		}
         break;
         case BLUE_GELLER:
@@ -748,6 +791,13 @@ void LevelerTestCase::createDynamics()
         case WATER_GELLER:
 		{
 			Geller::createGeller(g->pWorld, objectData);
+            receiverToTransmitter(objectData, &Geller::gellers[Geller::numGellers - 1]);
+		}
+        break;
+        case CLICK_BUTTON:
+        {
+			UseButton* ub = new UseButton(g->pWorld, objectData);
+            transmitterToReceiver(objectData, ub);
 		}
         break;
         default:

@@ -37,6 +37,7 @@ typedef enum GameDataType
 } g_DataType;
 
 #define PICKABLES (DEFAULT_CUBE_O | LASER_CUBE_O | SPHERE_CUBE_O | TURRET_O)
+#define DESTRUCTABLES (DEFAULT_CUBE_O | LASER_CUBE_O | SPHERE_CUBE_O | TURRET_O)
 
 enum FixtureDataType
 {
@@ -49,6 +50,7 @@ enum FixtureDataType
     F_FORCE_FIELD   = 0x1 << 6,
     F_HAZARD_FIELD  = 0x1 << 7,
     F_GELLER        = 0x1 << 8,
+    F_USE_BUTTON    = 0x1 << 9,
 
     F_END           = 0x1 << 30,
 };

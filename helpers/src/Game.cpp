@@ -9,6 +9,7 @@
 #include "GameObjects/ForceField.h"
 #include "GameObjects/HazardField.h"
 #include "GameObjects/Geller.h"
+#include "GameObjects/UseButton.h"
 
 Game* Game::object;
 
@@ -86,7 +87,8 @@ void Game::TestState()
     Platform::staticInit();
     ForceField::staticInit();
     HazardField::staticInit();
-    Geller::staticInit();;
+    Geller::staticInit();
+    UseButton::staticInit();
 
     if (!leveler)
     {
@@ -119,6 +121,7 @@ void Game::TestState()
             ForceField::update();
             Geller::update();
             Gel::perFrameUpdate();
+            UseButton::update();
         }
 
         for (auto func : singleTaskRegistry)
@@ -152,14 +155,26 @@ void Game::TestState()
 
     if (testCase)
     {
+        if (leveler)
+        {
+            ForceField::toLeveler();
+            HazardField::toLeveler();
+            Platform::toLeveler();
+            UseButton::toLeveler();
+        }
+
         testCase->shouldQuit = false;
 
         testCase->destroy();
         Turret::turrets.clear();
         Platform::numPlatforms = 0;
         thinDrawer->wallGel->numWallLines = 0;
+        thinDrawer->wallGel->numWallGels = 0;
         DefaultObject::defaultObjects.clear();
-        Geller::gellers.clear();
+        Geller::numGellers = 0;
+        Gel::gelCount = 0;
+        Gel::splashCount = 0;
+        UseButton::checkButtons.clear();
         delete testCase;
     }
 

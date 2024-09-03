@@ -32,6 +32,9 @@ void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeI
 
 Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
+	startEnabled = objData->startActive;
+	signalCount = (int)startEnabled;
+
 	setMovementData(objData);
 
 	glm::vec2 halfSize = glm::vec2(size) / 2.0f;
@@ -143,6 +146,16 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	platforms[numPlatforms++] = this;
 }
 
+void Platform::ssignal()
+{
+	signalCount++;
+}
+
+void Platform::usignal()
+{
+	signalCount--;
+}
+
 void Platform::setMovementData(s_objectDataGrid* objData)
 {
 	int rotation = objData->rotation % 4;
@@ -162,6 +175,32 @@ void Platform::setMovementData(s_objectDataGrid* objData)
 		basePos.x += limitDist;
 
 	fwdDir = fwdDirs[rotation];
+	dirMult = platformSpeed;
+}
+
+void Platform::toDeath()
+{
+	for (int i = 0; i < numPlatforms; i++)
+	{
+		Platform* platform = platforms[i];
+
+		platform->body->SetTransform(platform->basePos, 0.0f);
+	}
+}
+
+void Platform::toLeveler()
+{
+	for (int i = 0; i < numPlatforms; i++)
+	{
+		Platform* platform = platforms[i];
+
+		s_platformRectUbo* platformUbo;
+		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory,
+			platform->platformRenderOffset, sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
+		platformUbo->posSize.x = platform->basePos.x;
+		platformUbo->posSize.y = platform->basePos.y;
+		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
+	}
 }
 
 void Platform::staticInit()
@@ -245,17 +284,26 @@ void Platform::update()
 
 		b2Body* body = platform->body;
 
-		b2Vec2 speed = body->GetLinearVelocity();
-
-		b2Vec2 posDiff = body->GetPosition() - platform->basePos;
-
-		if (b2Dot(speed, platform->fwdDir) > 0.0f && b2Dot(posDiff, platform->fwdDir) > platform->limitDist)
+		if (platform->signalCount > 0)
 		{
-			body->SetLinearVelocity(-platformSpeed * platform->fwdDir);
+			b2Vec2 speed = platform->dirMult * platform->fwdDir;
+
+			b2Vec2 posDiff = body->GetPosition() - platform->basePos;
+
+			if (b2Dot(speed, platform->fwdDir) > 0.0f && b2Dot(posDiff, platform->fwdDir) > platform->limitDist)
+			{
+				platform->dirMult = -platformSpeed;
+			}
+			else if (b2Dot(speed, platform->fwdDir) < 0.0f && b2Dot(posDiff, platform->fwdDir) < 0.0f)
+			{
+				platform->dirMult = platformSpeed;
+			}
+
+			body->SetLinearVelocity(platform->dirMult * platform->fwdDir);
 		}
-		else if (b2Dot(speed, platform->fwdDir) < 0.0f && b2Dot(posDiff, platform->fwdDir) < 0.0f)
+		else
 		{
-			body->SetLinearVelocity(platformSpeed * platform->fwdDir);
+			body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
 		}
 	}
 }

@@ -1,5 +1,6 @@
 #include <TestPlayer.h>
 #include <GameObjects/ForceField.h>
+#include "GameObjects/UseButton.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -353,6 +354,11 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
             tp->init();
 
             ForceField::destroyCList = std::queue<pbWorldData*>();
+
+            UseButton::toDeath();
+            ForceField::toDeath();
+            Platform::toDeath();
+            Gel::toDeath();
 		});
     }
 
@@ -808,7 +814,7 @@ void TestPlayer::createBody(b2Vec2 pos)
     b2Body* body = pWorld->CreateBody(&bodyDef);
 
     b2PolygonShape boxShape;
-    boxShape.SetAsBox(bodySize.x * 0.5, bodySize.y * 0.5 - bodySize.x * 0.5);
+    boxShape.SetAsBox(bodySize.x * 0.5 - 0.01, bodySize.y * 0.5 - bodySize.x * 0.5);
 
     b2FixtureDef fDef;
     fDef.density = 1.0f;
@@ -855,6 +861,36 @@ void TestPlayer::createBody(b2Vec2 pos)
     pWorld->CreateJoint(&jDef);
 }
 
+void TestPlayer::enterForceField(ForceField* forceField)
+{
+    collidingForceFields.insert(forceField);
+    game->singleTaskRegistry.push_back(
+        [this]()
+        {
+            if (portalA && portalB) getBodyOut();
+
+            if (portalA || portalB)
+            {
+                ALuint source = Sounder::object->playSound(fizzleBuffer, 1.0);
+                b2Vec2 bPos = wData->pbIndices[0]->body->GetPosition();
+                Sounder::object->setSoundPosition(source, glm::vec3(bPos.x, bPos.y, 0.0));
+            }
+
+            if (portalA)
+            {
+                portalA->getPreDestructionFixture();
+                pWorld->destroyPortal(portalA);
+            }
+            if (portalB)
+            {
+                portalB->getPreDestructionFixture();
+                pWorld->destroyPortal(portalB);
+            }
+            portalA = nullptr; portalB = nullptr;
+        }
+    );
+}
+
 void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
 {
     if (!contact->IsEnabled()) return;
@@ -864,32 +900,7 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
     {
         if (fixData->type == F_FORCE_FIELD)
         {
-            numCollidingForceFields++;
-            game->singleTaskRegistry.push_back(
-                [this]()
-                {
-                    if (portalA && portalB) getBodyOut();
-
-                    if (portalA || portalB)
-                    {
-                        ALuint source = Sounder::object->playSound(fizzleBuffer, 1.0);
-                        b2Vec2 bPos = wData->pbIndices[0]->body->GetPosition();
-                        Sounder::object->setSoundPosition(source, glm::vec3(bPos.x, bPos.y, 0.0));
-                    }
-
-                    if (portalA)
-                    {
-                        portalA->getPreDestructionFixture();
-                        pWorld->destroyPortal(portalA);
-                    }
-                    if (portalB)
-                    {
-                        portalB->getPreDestructionFixture();
-                        pWorld->destroyPortal(portalB);
-                    }
-                    portalA = nullptr; portalB = nullptr;
-                }
-            );
+            enterForceField((ForceField*)fixData->data);
         }
         else if (fixData->type == F_HAZARD_FIELD)
         {
@@ -917,7 +928,7 @@ void TestPlayer::endContact(b2Contact* contact, b2Fixture* otherFix)
     fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
     if (fixData && fixData->type == F_FORCE_FIELD)
     {
-        numCollidingForceFields--;
+        collidingForceFields.erase((ForceField*)fixData->data);
     }
 }
 
@@ -1425,7 +1436,7 @@ void TestPlayer::handlePortalCD(float dt)
     {
         return;
     }
-    else if (numCollidingForceFields > 0)
+    else if (collidingForceFields.size() > 0)
     {
         gData.positions.y = -1299.0f;
         gData.positions.w = -1922.0;
@@ -1830,6 +1841,14 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
                             }
                         }
                     }
+                }
+
+                fixtureData* fData = (fixtureData*)pWorld->rayHandler->closestFixture->GetUserData().pointer;
+                if (fData && fData->type == F_USE_BUTTON)
+                {
+                    UseButton* ub = (UseButton*)fData->data;
+                    ub->enable();
+                    holdERequestTime = -1.0f;
                 }
             }
         }

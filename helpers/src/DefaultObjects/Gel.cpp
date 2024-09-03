@@ -46,6 +46,16 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     // ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
+void Gel::recreate()
+{
+    for (int j = wData->pbIndices.size() - 1; j >= 0; j--)
+    {
+        PortalBody* portalBody = wData->pbIndices[j];
+
+        delete portalBody;
+    }
+}
+
 void Gel::staticInit()
 {
     gelCount = 0;
@@ -291,6 +301,54 @@ void Gel::update()
     }
 }
 
+void Gel::toDeath()
+{
+    ThinDrawer* thinDrawer = ThinDrawer::object;
+
+    Gel::gelCount = 0;
+    Gel::splashCount = 0;
+
+    s_wallPerGelData* perGelData;
+    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->wallGel->uniformBuffers[1].memory,
+        0, sizeof(s_wallPerGelData) * thinDrawer->wallGel->numWallGels, 0, (void**)&perGelData);
+
+    for (int i = 0; i < thinDrawer->wallGel->numWallGels; i++)
+    {
+        perGelData[i].data = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->wallGel->uniformBuffers[1].memory);
+
+    for (b2Body* body = Game::object->pWorld->GetBodyList(); body; body = body->GetNext())
+    {
+        b2Fixture* fix = body->GetFixtureList();
+        if (!fix)
+        {
+            continue;
+        }
+
+        for (; fix; fix = fix->GetNext())
+        {
+            fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
+            if (fData && fData->type == F_EDGE && fix->GetType() == b2Shape::e_edge)
+            {
+                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+                s_edgeGlobalData* eGlobal = eLocal->globalData;
+                for (auto& unitWall : eGlobal->unitWalls)
+                {
+                    unitWall.gelAmount = 0.0f;
+                    unitWall.gelType = NONE;
+                }
+            }
+        }
+    }
+}
+
+void Gel::toLeveler()
+{
+
+}
+
 void Gel::perFrameUpdate()
 {
     for (int i = 0; i < gelCount; i++)
@@ -399,14 +457,11 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
             Portal* p = (Portal*)fData->data;
             if (p->midFixture == otherFix && p->connections[0].size() > 0) return;
         }
-        else if (fData->type & GEL_COLLISION_IGNORE)
+        else if (fData->type & GEL_COLLISION_IGNORE ||
+            otherFix->GetBody()->GetType() == b2_kinematicBody && otherFix->GetShape()->GetType() == b2Shape::e_polygon)
         {
             return;
         }
-    }
-    else if (otherFix->GetBody()->GetType() == b2_kinematicBody && otherFix->GetShape()->GetType() == b2Shape::e_polygon)
-    {
-        return;
     }
     
     if (!otherFix->IsSensor())

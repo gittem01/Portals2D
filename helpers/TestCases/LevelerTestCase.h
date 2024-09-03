@@ -1,3 +1,5 @@
+#pragma once
+
 #include <BaseTestCase.h>
 #include <GameBase.h>
 #include <DefaultObjects/DefaultCube.h>
@@ -14,25 +16,21 @@
 
 #include <Leveler.h>
 
-typedef struct ConnectionSignaller
+typedef struct
 {
     std::vector<int> offsets;
-    void (*ssFunc)(void* ptr);
-    void (*usFunc)(void* ptr);
-
-    void ssignal();
-    void usignal();
-
+    Receiver* receiver;
+    bool secondaryFunc;
 } connectionSignaller;
 
-enum ReachableType
+typedef enum
 {
     NOT_REACHABLE = 0x0,
     BW_REACHABLE = 0x1,
     GBW_REACHABLE = 0x2,
-};
+} ReachableType;
 
-enum EdgeUse
+typedef enum
 {
     DOWN_W      = 0x1 << 0,
     RIGHT_W     = 0x1 << 1,
@@ -48,7 +46,7 @@ enum EdgeUse
     RIGHT_F     = 0x1 << 9,
     UP_F        = 0x1 << 10,
     LEFT_F      = 0x1 << 11,
-};
+} EdgeUse;
 
 inline ReachableType& operator |=(ReachableType& a, ReachableType b)
 {
@@ -60,12 +58,16 @@ inline EdgeUse& operator |=(EdgeUse& a, EdgeUse b)
     return a = (EdgeUse)(a | b);
 }
 
+class Transmitter;
+class Receiver;
+
 class LevelerTestCase : public BaseTestCase
 {
 public:
     std::vector<s_gridSquare> nextVisitSquares[2];
     std::vector<std::vector<ReachableType>> reachableMap;
     std::vector<std::vector<EdgeUse>> edgeUsedMap;
+    std::map<s_objectDataGrid*, void*> connMap;
 
     LevelerTestCase(Game* game);
 
@@ -82,6 +84,8 @@ public:
     void walkFwrdAndCreateEdgeGF(   glm::i16vec2 pos, char dir, LevelObject wallMask, ReachableType empMask, int extraShift,
                                     glm::i16vec2* nextPos, glm::i16vec2* endPos, char* nextDir, bool* emptyFound);
 
+    void receiverToTransmitter(s_objectDataGrid* objectData, Receiver* receiver);
+    void transmitterToReceiver(s_objectDataGrid* objectData, Transmitter* transmitter);
     void createDynamics();
 
     void perFrameUpdate();

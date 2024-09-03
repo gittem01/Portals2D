@@ -17,18 +17,22 @@ private:
 
 	Gel* nearGels[16];
 	int numNearGels = 0;
-
-	static std::vector<Gel*> gels;
+	
 	static std::vector<splashData> splashEffects;
+
+public:
+	static std::vector<Gel*> gels;
 	static int gelCount;
 	static int splashCount;
 
-public:
 	Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radius, int gelType);
 
 	static void getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGlobalData** data);
 	void splash(b2Contact* contact, b2Fixture* otherFix);
+	void recreate();
 
+	static void toDeath();
+	static void toLeveler();
 	static void staticInit();
 	static void generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex);
 	static void update();

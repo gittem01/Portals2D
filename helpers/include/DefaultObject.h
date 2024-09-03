@@ -19,6 +19,8 @@ public:
 	DefaultObject(PortalWorld* portalWorld);
 	DefaultObject(PortalWorld* portalWorld, PortalBody* pb);
 
+	void enterForceField(ForceField* forceField);
+
 	virtual void recreate();
 	virtual void beginContact(b2Contact* contact, b2Fixture* otherFix);
 	virtual void endContact(b2Contact* contact, b2Fixture* otherFix);

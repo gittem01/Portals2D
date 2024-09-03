@@ -5,7 +5,8 @@
 #include "Gel.h"
 #include "Overlayer.h"
 
-std::vector<Geller> Geller::gellers;
+Geller Geller::gellers[64];
+int Geller::numGellers = 0;
 s_perTextureData* Geller::ptData[4];
 s_texture* Geller::tex[4];
 
@@ -29,11 +30,22 @@ int getGellerIndex(LevelObject obj)
 	}
 }
 
+void Geller::ssignal()
+{
+	signalCount++;
+}
+
+void Geller::usignal()
+{
+	signalCount--;
+}
+
 Geller::Geller(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
+	startEnabled = objData->startActive;
 	gellerIndex = getGellerIndex(objData->objectType);
 	lastGelCreationTime = -10.0;
-	enabled = objData->startActive;
+	signalCount = (int)startEnabled;
 	gelCreationPos = glm::vec2(objData->pos.x + 1.0f, objData->pos.y + 1.0f);
 	gellerRotation = objData->rotation;
 
@@ -63,7 +75,7 @@ Geller::~Geller()
 
 void Geller::createGeller(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	gellers.push_back(Geller(portalWorld, objData));
+	gellers[numGellers++] = Geller(portalWorld, objData);
 }
 
 void Geller::staticInit()
@@ -112,11 +124,12 @@ void Geller::render(VkCommandBuffer cmdBuff, void* ptr)
 
 void Geller::update()
 {
-	if (Gel::gelCount > 256) return;
+	if (Gel::gelCount >= MAX_GEL_COUNT) return;
 
-	for (Geller& g : gellers)
+	for (int i = 0; i < numGellers; i++)
 	{
-		if (!g.enabled) continue;
+		Geller& g = gellers[i];
+		if (g.signalCount <= 0) continue;
 
 		if (Game::object->gameTime - g.lastGelCreationTime > 0.075)
 		{

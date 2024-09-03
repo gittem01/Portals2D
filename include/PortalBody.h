@@ -103,6 +103,7 @@ friend class PortalWorld;
 friend class Portal;
 friend class ContactListener;
 friend class DefaultObject;
+friend class Gel;
 
 public:
     pbWorldData* worldIndex;

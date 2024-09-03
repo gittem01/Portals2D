@@ -43,15 +43,6 @@
 //    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 //}
 
-// blue shoot
-//if (wh->keyData[GLFW_KEY_SPACE] == 2)
-//{
-//    s_blueFieldUbo* blueUbo;
-//    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
-//    blueUbo->shootData = glm::vec4(0.0, 2.9, game->gameTime, 0.0);
-//    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
-//}
-
 Overlayer::Overlayer(Game* game)
 {
 	this->game = game;

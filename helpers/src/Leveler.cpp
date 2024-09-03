@@ -2189,6 +2189,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 				sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
 			lineZUbo->points = glm::vec4(p0.x, p0.y, p1.x, p1.y);
 			lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
+			lineZUbo->colour = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
 			if (i == 0) lineZUbo->data.z = 1.0;
 			else if (i == connection->renderPathPoints.size() - 2) lineZUbo->data.y = 1.0;
 			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
@@ -2242,6 +2243,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 			lineZUbo->points = glm::vec4(plus2.x, plus2.y,
 				connection->pathPoints.front().x + plus, connection->pathPoints.front().y + plus);
 			lineZUbo->data = glm::vec4(0.125, 0.8, 1.0, 0.0);
+			lineZUbo->colour = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
 			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 
 			connection->renderPathPoints.push_back({ plus2.x, plus2.y });
@@ -2259,6 +2261,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 					sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
 				lineZUbo->points = glm::vec4(backVal.x + plus, backVal.y + plus, val.x + plus, val.y + plus);
 				lineZUbo->data = glm::vec4(0.125, 0.8, 0.8, 0.0);
+				lineZUbo->colour = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
 				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 
 				connection->renderPathPoints.push_back({ val.x + plus, val.y + plus });
@@ -2280,6 +2283,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 			lineZUbo->points = glm::vec4(connection->pathPoints.back().x + plus, connection->pathPoints.back().y + plus,
 				plus2.x, plus2.y);
 			lineZUbo->data = glm::vec4(0.125, 1.0, 0.8, 0.0);
+			lineZUbo->colour = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
 			vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 
 			connection->renderPathPoints.push_back({ plus2.x, plus2.y });

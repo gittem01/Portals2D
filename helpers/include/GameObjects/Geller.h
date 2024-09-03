@@ -4,11 +4,13 @@
 #include <glm/glm.hpp>
 #include "GameBase.h"
 #include "Leveler.h"
+#include "GameObjects/Receiver.h"
 
-class Geller
+class Geller : public Receiver
 {
 public:
-	static std::vector<Geller> gellers;
+	static Geller gellers[64];
+	static int numGellers;
 	static s_perTextureData* ptData[4];
 	static s_texture* tex[4];
 
@@ -16,10 +18,14 @@ public:
 	double lastGelCreationTime;
 	int gellerIndex;
 	char gellerRotation;
-	bool enabled;
+	bool startEnabled;
 
 	Geller(PortalWorld* portalWorld, s_objectDataGrid* objData);
+	Geller() {};
 	~Geller();
+
+	void ssignal();
+	void usignal();
 
 	static void createGeller(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void staticInit();

@@ -4,6 +4,7 @@ layout (location = 0) in vec2 vertex;
 
 layout (location = 0) out vec2 localPos;
 layout (location = 1) flat out vec2 size;
+layout (location = 2) flat out vec4 colour;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -35,6 +36,8 @@ void main()
     int vertexType = (vertexTypes & (1 << vId)) > 0 ? 1 : 0;
     int iId = gl_InstanceIndex;
     storageData data = ubo.sData[iId];
+
+    colour = data.colour;
 
     vec2 ps[2];
     ps[0] = ubo.sData[iId].pointts.zw;
