@@ -10,6 +10,7 @@
 #include "GameObjects/HazardField.h"
 #include "GameObjects/Geller.h"
 #include "GameObjects/UseButton.h"
+#include "GameObjects/DownButton.h"
 
 Game* Game::object;
 
@@ -89,6 +90,7 @@ void Game::TestState()
     HazardField::staticInit();
     Geller::staticInit();
     UseButton::staticInit();
+    DownButton::staticInit();
 
     if (!leveler)
     {
@@ -161,6 +163,7 @@ void Game::TestState()
             HazardField::toLeveler();
             Platform::toLeveler();
             UseButton::toLeveler();
+            DownButton::toLeveler();
         }
 
         testCase->shouldQuit = false;

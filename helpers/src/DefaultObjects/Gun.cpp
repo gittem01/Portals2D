@@ -33,10 +33,9 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     this->wData = pb->worldIndex;
 
     bodyData* bData = (bodyData*)gBody->GetUserData().pointer;
-    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    pData->type = DEFAULT_OBJECT_O;
-    pData->data = this;
-    bData->extraData = pData;
+    pData.type = DEFAULT_OBJECT_O;
+    pData.data = this;
+    bData->extraData = &pData;
 
     ThinDrawer::object->debug_addPortalBody(pb);
     ThinDrawer::object->addPortalBody(pb, { "gun2.png" });

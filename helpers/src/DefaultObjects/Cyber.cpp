@@ -44,10 +44,9 @@ Cyber::Cyber(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    pData->type = DEFAULT_OBJECT_O;
-    pData->data = this;
-    bData->extraData = pData;
+    pData.type = DEFAULT_OBJECT_O;
+    pData.data = this;
+    bData->extraData = &pData;
     
     this->wData = portalBody->worldIndex;
 

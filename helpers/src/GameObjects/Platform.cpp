@@ -14,7 +14,7 @@ glm::vec2 vertexMults[4][2] =
 	{ glm::vec2(-0.5, -0.5), glm::vec2(-0.5, +0.5) },
 };
 
-b2Vec2 fwdDirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
+static b2Vec2 fwdDirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 
 void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeIndex)
 {

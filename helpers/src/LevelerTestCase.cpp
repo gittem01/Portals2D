@@ -5,6 +5,7 @@
 #include <TestPlayer.h>
 #include <Overlayer.h>
 #include "GameObjects/UseButton.h"
+#include "GameObjects/DownButton.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -800,6 +801,11 @@ void LevelerTestCase::createDynamics()
             transmitterToReceiver(objectData, ub);
 		}
         break;
+        case DOWN_BUTTON:
+        {
+            DownButton* db = new DownButton(g->pWorld, objectData);
+            transmitterToReceiver(objectData, db);
+        }
         default:
             break;
         }

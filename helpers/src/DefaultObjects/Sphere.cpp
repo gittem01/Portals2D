@@ -22,10 +22,9 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    pData->type = (g_DataType)(DEFAULT_OBJECT_O | SPHERE_CUBE_O);
-    pData->data = this;
-    bData->extraData = pData;
+    pData.type = (g_DataType)(DEFAULT_OBJECT_O | SPHERE_CUBE_O);
+    pData.data = this;
+    bData->extraData = &pData;
     
     this->wData = portalBody->worldIndex;
 

@@ -40,7 +40,7 @@ void DefaultObject::recreate()
 	portalBody->worldIndex->destrTime = -20.0f;
 
 	bodyData* bData = (bodyData*)portalBody->body->GetUserData().pointer;
-	bData->extraData = (void*)pData;
+	bData->extraData = (void*)&pData;
 }
 
 void DefaultObject::enterForceField(ForceField* forceField)

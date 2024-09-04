@@ -8,19 +8,17 @@ class DefaultObject
 {
 public:
 	PbWorldData* wData;
-	g_PhysicsData* pData;
+	g_PhysicsData pData;
 	PortalWorld* pWorld;
-	
+	std::vector<ALuint> onHitSoundBuffers;
 	b2Vec2 initialPos;
 
 	static std::vector<DefaultObject*> defaultObjects;
-	std::vector<ALuint> onHitSoundBuffers;
 
 	DefaultObject(PortalWorld* portalWorld);
 	DefaultObject(PortalWorld* portalWorld, PortalBody* pb);
 
-	void enterForceField(ForceField* forceField);
-
+	virtual void enterForceField(ForceField* forceField);
 	virtual void recreate();
 	virtual void beginContact(b2Contact* contact, b2Fixture* otherFix);
 	virtual void endContact(b2Contact* contact, b2Fixture* otherFix);

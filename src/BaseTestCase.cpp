@@ -6,6 +6,7 @@
 #include <Game.h>
 #include <BaseTestCase.h>
 #include "DefaultObjects/Gel.h"
+#include "GameObjects/DownButton.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -180,6 +181,7 @@ void BaseTestCase::onUpdate()
             g->pWorld->PortalStep(dt, 8, 3);
 
             Gel::update();
+            DownButton::update();
         }
     }
     

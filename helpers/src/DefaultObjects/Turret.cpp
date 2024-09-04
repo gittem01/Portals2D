@@ -133,10 +133,9 @@ void Turret::createBody(b2Vec2 pos)
 	}
 
 	bodyData* bData = (bodyData*)body->GetUserData().pointer;
-	pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-	pData->type = (g_DataType)(DEFAULT_OBJECT_O | TURRET_O);
-	pData->data = this;
-	bData->extraData = pData;
+	pData.type = (g_DataType)(DEFAULT_OBJECT_O | TURRET_O);
+	pData.data = this;
+	bData->extraData = &pData;
 
 	bodyFixDataIndex = 2;
 
@@ -154,7 +153,7 @@ void Turret::recreate()
 		portalBody->worldIndex->destrTime = -20.0f;
 
 		bodyData* bData = (bodyData*)portalBody->body->GetUserData().pointer;
-		bData->extraData = (void*)pData;
+		bData->extraData = (void*)&pData;
 	}
 	else
 	{
@@ -173,13 +172,13 @@ void Turret::staticInit()
 
 	std::vector<s_vertex> coverVertices = 
 	{
-		{ { -0.5f, +0.5f }, { 0.0f, 1.0f } },
-		{ { -0.5f, -0.5f }, { 0.0f, 0.0f } },
-		{ { +0.5f, -0.5f }, { 1.0f, 0.0f } },
+		{ { -0.5f, +0.5f }, { 0.0f, 0.0f } },
+		{ { -0.5f, -0.5f }, { 0.0f, 1.0f } },
+		{ { +0.5f, -0.5f }, { 1.0f, 1.0f } },
 		
-		{ { +0.5f, -0.5f }, { 1.0f, 0.0f } },
-		{ { +0.5f, +0.5f }, { 1.0f, 1.0f } },
-		{ { -0.5f, +0.5f }, { 0.0f, 1.0f } },
+		{ { +0.5f, -0.5f }, { 1.0f, 1.0f } },
+		{ { +0.5f, +0.5f }, { 1.0f, 0.0f } },
+		{ { -0.5f, +0.5f }, { 0.0f, 0.0f } },
 	};
 
 	coverVertexBuffer = (s_buffers*)malloc(sizeof(s_buffers));

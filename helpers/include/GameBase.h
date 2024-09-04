@@ -51,6 +51,7 @@ enum FixtureDataType
     F_HAZARD_FIELD  = 0x1 << 7,
     F_GELLER        = 0x1 << 8,
     F_USE_BUTTON    = 0x1 << 9,
+    F_DOWNBUTTON	= 0x1 << 10,
 
     F_END           = 0x1 << 30,
 };

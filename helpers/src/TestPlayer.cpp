@@ -1,6 +1,7 @@
 #include <TestPlayer.h>
 #include <GameObjects/ForceField.h>
 #include "GameObjects/UseButton.h"
+#include "GameObjects/DownButton.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -359,6 +360,7 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
             ForceField::toDeath();
             Platform::toDeath();
             Gel::toDeath();
+            DownButton::toDeath();
 		});
     }
 
@@ -838,10 +840,9 @@ void TestPlayer::createBody(b2Vec2 pos)
     ThinDrawer::object->debug_addPortalBody(pb);
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    pData->type = (g_DataType)(DEFAULT_OBJECT_O | PLAYER_O);
-    pData->data = this;
-    bData->extraData = pData;
+    pData.type = (g_DataType)(DEFAULT_OBJECT_O | PLAYER_O);
+    pData.data = this;
+    bData->extraData = &pData;
 
     wData = pb->worldIndex;
 
@@ -898,14 +899,17 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
     fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
     if (fixData)
     {
-        if (fixData->type == F_FORCE_FIELD)
+        switch (fixData->type)
         {
+        case F_FORCE_FIELD:
             enterForceField((ForceField*)fixData->data);
-        }
-        else if (fixData->type == F_HAZARD_FIELD)
-        {
+            break;
+        case F_HAZARD_FIELD:
             health = -1000;
-            healthCheck();
+			healthCheck();
+			break;
+        default:
+            break;
         }
     }
 }

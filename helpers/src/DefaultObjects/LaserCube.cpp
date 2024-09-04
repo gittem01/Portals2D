@@ -14,10 +14,9 @@ LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(porta
     initialPos = pos;
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
-    pData = (g_PhysicsData*)malloc(sizeof(g_PhysicsData));
-    pData->type = (g_DataType)(DEFAULT_OBJECT_O | LASER_CUBE_O);
-    pData->data = this;
-    bData->extraData = pData;
+    pData.type = (g_DataType)(DEFAULT_OBJECT_O | LASER_CUBE_O);
+    pData.data = this;
+    bData->extraData = &pData;
 
     this->wData = portalBody->worldIndex;
 
