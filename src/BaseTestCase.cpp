@@ -7,6 +7,7 @@
 #include <BaseTestCase.h>
 #include "DefaultObjects/Gel.h"
 #include "GameObjects/DownButton.h"
+#include "GameObjects/CubeButton.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -182,6 +183,7 @@ void BaseTestCase::onUpdate()
 
             Gel::update();
             DownButton::update();
+            CubeButton::update();
         }
     }
     

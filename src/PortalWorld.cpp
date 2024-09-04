@@ -871,7 +871,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
         }
         else
         {
-            float oneDimensionLen = (range[0] + 0.5f) * eGlobalData->perWallSize + size * 0.5;
+            float oneDimensionLen = (range[0]) * eGlobalData->perWallSize + size * 0.5;
             portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
     }

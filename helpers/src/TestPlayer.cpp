@@ -2,6 +2,7 @@
 #include <GameObjects/ForceField.h>
 #include "GameObjects/UseButton.h"
 #include "GameObjects/DownButton.h"
+#include "GameObjects/CubeButton.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -361,6 +362,7 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
             Platform::toDeath();
             Gel::toDeath();
             DownButton::toDeath();
+            CubeButton::toDeath();
 		});
     }
 

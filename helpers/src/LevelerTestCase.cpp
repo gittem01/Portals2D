@@ -6,6 +6,7 @@
 #include <Overlayer.h>
 #include "GameObjects/UseButton.h"
 #include "GameObjects/DownButton.h"
+#include "GameObjects/CubeButton.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -363,8 +364,11 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
                 if (upLgd.objectType & CLICK_BUTTON && (rot == 1 || rot == 2)) objPos -= dirs[(dir + 1) % 4].asGlm();
                 glm::i16vec2 pDiff = objPos - upPos;
                 short lenDiff = std::max(std::abs(pDiff.x), std::abs(pDiff.y));
-                limits[0] = (iData.gridScale.x - rendIScale) * 0.5 - lenDiff + 0.05;
-                limits[1] = rendIScale + limits[0] - 0.05;
+                limits[0] = std::round(((iData.gridScale.x - rendIScale) * 0.5 - lenDiff) * 10.0) * 0.1 + 0.01;
+                limits[1] = rendIScale + limits[0];
+
+                float diffToLower = limits[0] - std::floor(limits[0] + 0.02);
+                limits[1] = std::ceil(limits[1] - 0.02) - diffToLower;
             }
 		}
 		
@@ -806,6 +810,12 @@ void LevelerTestCase::createDynamics()
             DownButton* db = new DownButton(g->pWorld, objectData);
             transmitterToReceiver(objectData, db);
         }
+        break;
+        case CUBE_BUTTON:
+        {
+			CubeButton* cb = new CubeButton(g->pWorld, objectData);
+			transmitterToReceiver(objectData, cb);
+		}
         default:
             break;
         }

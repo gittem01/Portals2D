@@ -11,6 +11,7 @@
 #include "GameObjects/Geller.h"
 #include "GameObjects/UseButton.h"
 #include "GameObjects/DownButton.h"
+#include "GameObjects/CubeButton.h"
 
 Game* Game::object;
 
@@ -91,6 +92,7 @@ void Game::TestState()
     Geller::staticInit();
     UseButton::staticInit();
     DownButton::staticInit();
+    CubeButton::staticInit();
 
     if (!leveler)
     {
@@ -118,6 +120,7 @@ void Game::TestState()
             gameTime += deltaTime;
             
             testCase->onUpdate();
+
             Turret::perFrameUpdate();
             Platform::update();
             ForceField::update();
@@ -164,6 +167,7 @@ void Game::TestState()
             Platform::toLeveler();
             UseButton::toLeveler();
             DownButton::toLeveler();
+            CubeButton::toLeveler();
         }
 
         testCase->shouldQuit = false;

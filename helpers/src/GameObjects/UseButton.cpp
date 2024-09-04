@@ -60,22 +60,18 @@ void UseButton::toDeath()
 
 void UseButton::toLeveler()
 {
-	for (UseButton* button : checkButtons)
-	{
-		ThinDrawer* thinDrawer = Leveler::object->thinDrawer;
+	ThinDrawer* thinDrawer = Leveler::object->thinDrawer;
 
-		for (auto& conn : button->connections)
-		{
-			for (int offset : conn.offsets)
-			{
-				s_lineZUbo* lineZUbo;
-				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory, offset * sizeof(s_lineZUbo),
-					sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
-				lineZUbo->colour = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
-				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
-			}
-		}
+	s_lineZUbo* lineZUbo;
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory, 0,
+		thinDrawer->lineZ->numZs * sizeof(s_lineZUbo), 0, (void**)&lineZUbo);
+
+	for (int i = 0; i < thinDrawer->lineZ->numZs; i++)
+	{
+		lineZUbo[i].colour = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
 	}
+
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 }
 
 void UseButton::staticInit()
