@@ -7,6 +7,7 @@
 #include "GameObjects/UseButton.h"
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
+#include "GameObjects/CircleButton.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -816,6 +817,13 @@ void LevelerTestCase::createDynamics()
 			CubeButton* cb = new CubeButton(g->pWorld, objectData);
 			transmitterToReceiver(objectData, cb);
 		}
+        break;
+        case SPHERE_BUTTON:
+		{
+			CircleButton* cb = new CircleButton(g->pWorld, objectData);
+            transmitterToReceiver(objectData, cb);
+		}
+        break;
         default:
             break;
         }

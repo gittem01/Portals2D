@@ -18,12 +18,9 @@ public:
 	b2Vec2 fwdDir;
 	b2Vec2 initialPos;
 	b2Body* button;
-	bodyData bData;
 	double contactReportTime;
 
 	DownButton(PortalWorld* portalWorld, s_objectDataGrid* objData);
-
-	void enable();
 
 	static void toDeath();
 	static void toLeveler();

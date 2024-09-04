@@ -3,6 +3,7 @@
 #include "GameObjects/UseButton.h"
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
+#include "GameObjects/CircleButton.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -363,6 +364,7 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
             Gel::toDeath();
             DownButton::toDeath();
             CubeButton::toDeath();
+            CircleButton::toDeath();
 		});
     }
 

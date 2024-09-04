@@ -112,13 +112,6 @@ CubeButton::CubeButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	cubeButtons.push_back(this);
 }
 
-void CubeButton::enable()
-{
-	if (enabled) return;
-
-	Transmitter::enable();
-}
-
 void CubeButton::toDeath()
 {
 	for (CubeButton* db : cubeButtons)

@@ -12,6 +12,7 @@
 #include "GameObjects/UseButton.h"
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
+#include "GameObjects/CircleButton.h"
 
 Game* Game::object;
 
@@ -93,6 +94,7 @@ void Game::TestState()
     UseButton::staticInit();
     DownButton::staticInit();
     CubeButton::staticInit();
+    CircleButton::staticInit();
 
     if (!leveler)
     {
@@ -168,6 +170,7 @@ void Game::TestState()
             UseButton::toLeveler();
             DownButton::toLeveler();
             CubeButton::toLeveler();
+            CircleButton::toLeveler();
         }
 
         testCase->shouldQuit = false;

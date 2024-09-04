@@ -28,7 +28,7 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld
     
     this->wData = portalBody->worldIndex;
 
-    ThinDrawer::object->addPortalBody(portalBody, {"sphere.png"});
+    renderGroup = ThinDrawer::object->addPortalBody(portalBody, {"sphere.png", "sphereEnabled.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 

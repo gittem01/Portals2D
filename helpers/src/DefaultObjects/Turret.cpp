@@ -139,7 +139,7 @@ void Turret::createBody(b2Vec2 pos)
 
 	bodyFixDataIndex = 2;
 
-	ThinDrawer::object->addPortalBody(eyeBody, { "turretBody.png" });
+	renderGroup = ThinDrawer::object->addPortalBody(eyeBody, { "turretBody.png" });
 	ThinDrawer::object->debug_addPortalBody(eyeBody);
 }
 

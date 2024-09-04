@@ -37,8 +37,8 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     pData.data = this;
     bData->extraData = &pData;
 
+    renderGroup = ThinDrawer::object->addPortalBody(pb, { "gun2.png" });
     ThinDrawer::object->debug_addPortalBody(pb);
-    ThinDrawer::object->addPortalBody(pb, { "gun2.png" });
 }
 
 void Gun::beginContact(b2Contact* contact, b2Fixture* otherFix)

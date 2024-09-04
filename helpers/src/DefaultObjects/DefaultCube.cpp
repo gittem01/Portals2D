@@ -72,7 +72,7 @@ DefaultCube::DefaultCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(p
     
     this->wData = portalBody->worldIndex;
 
-    ThinDrawer::object->addPortalBody(portalBody, {"cube.png"});
+    renderGroup = ThinDrawer::object->addPortalBody(portalBody, {"cube.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 

@@ -8,6 +8,7 @@
 #include "DefaultObjects/Gel.h"
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
+#include "GameObjects/CircleButton.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -184,6 +185,7 @@ void BaseTestCase::onUpdate()
             Gel::update();
             DownButton::update();
             CubeButton::update();
+            CircleButton::update(dt);
         }
     }
     

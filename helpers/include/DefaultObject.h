@@ -3,6 +3,7 @@
 #include <PortalWorld.h>
 #include <PortalBody.h>
 #include <Sounder.h>
+#include "ThinDrawer.h"
 
 class DefaultObject
 {
@@ -10,6 +11,7 @@ public:
 	PbWorldData* wData;
 	g_PhysicsData pData;
 	PortalWorld* pWorld;
+	s_renderGroup* renderGroup;
 	std::vector<ALuint> onHitSoundBuffers;
 	b2Vec2 initialPos;
 

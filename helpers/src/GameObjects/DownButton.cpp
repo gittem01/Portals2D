@@ -77,13 +77,6 @@ DownButton::DownButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	downButtons.push_back(this);
 }
 
-void DownButton::enable()
-{
-	if (enabled) return;
-
-	Transmitter::enable();
-}
-
 void DownButton::toDeath()
 {
 	for (DownButton* db : downButtons)

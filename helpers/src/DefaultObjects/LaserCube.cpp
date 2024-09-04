@@ -20,7 +20,7 @@ LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(porta
 
     this->wData = portalBody->worldIndex;
 
-    ThinDrawer::object->addPortalBody(portalBody, { "laserCube.png" });
+    renderGroup = ThinDrawer::object->addPortalBody(portalBody, { "laserCube.png" });
     ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
