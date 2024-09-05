@@ -60,7 +60,7 @@ void Gel::staticInit()
     gelCount = 0;
     splashCount = 0;
 
-    ThinDrawer::object->midDrawFuncs.push_back({ &Gel::render, nullptr });
+    ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
 }
 
 float handleGelPut(s_unitWallData* wallData, int gelType, float amnt)
@@ -395,7 +395,8 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
         }
     }
 
-    ThinDrawer::object->gelShader->render(cmdBuff, ThinDrawer::object->lastSwapChainImageIndex);
+    if (gelCount > 0)
+        ThinDrawer::object->gelShader->render(cmdBuff, ThinDrawer::object->lastSwapChainImageIndex);
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ThinDrawer::object->splash->pipeline);
 

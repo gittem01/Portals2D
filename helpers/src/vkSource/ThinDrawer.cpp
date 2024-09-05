@@ -469,7 +469,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     
     glm::vec2 camPos = wh->cam->pos;
 
-
     blackWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     whiteWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
@@ -828,6 +827,8 @@ void ThinDrawer::beforeCreate()
 
 void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
 {
+    if (renderPortalData.size() == 0) return;
+
     VkDeviceSize offsets = 0;
 
     for (auto& pair : renderPortalData)
@@ -1751,6 +1752,7 @@ void ThinDrawer::releaseRenderResources()
     midDrawFuncs.clear();
     drawFuncs.clear();
     lateDrawFuncs.clear();
+    renderPortalData.clear();
 
     drawData = nullptr;
 
