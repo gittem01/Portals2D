@@ -42,10 +42,9 @@ void Geller::usignal()
 
 Geller::Geller(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	startEnabled = objData->startActive;
 	gellerIndex = getGellerIndex(objData->objectType);
 	lastGelCreationTime = -10.0;
-	signalCount = (int)startEnabled;
+	signalCount = (int)objData->startActive;
 	gelCreationPos = glm::vec2(objData->pos.x + 1.0f, objData->pos.y + 1.0f);
 	gellerRotation = objData->rotation;
 

@@ -18,7 +18,6 @@ public:
 	double lastGelCreationTime;
 	int gellerIndex;
 	char gellerRotation;
-	bool startEnabled;
 
 	Geller(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	Geller() {};

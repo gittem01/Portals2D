@@ -217,9 +217,6 @@ void PortalWorld::PortalStep(float timeStep, int32 velocityIterations, int32 pos
         p->calculatePoints();
     }
 
-    b2Vec2 sp = b2Vec2(0.0f, 3.0f);
-    rayHandler->sendRay(sp, b2Vec2(-1, 0.2), 100.0f);
-
     globalPostHandle();
 }
 

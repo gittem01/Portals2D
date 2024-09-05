@@ -52,6 +52,7 @@ enum FixtureDataType
     F_GELLER        = 0x1 << 8,
     F_USE_BUTTON    = 0x1 << 9,
     F_DOWNBUTTON	= 0x1 << 10,
+    F_LASER_EMITTER = 0x1 << 11,
 
     F_END           = 0x1 << 30,
 };

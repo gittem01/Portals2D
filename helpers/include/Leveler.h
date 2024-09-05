@@ -12,7 +12,7 @@
 
 typedef union GridData
 {
-	void* ptr;
+	void* ptr = nullptr;
 	int offset;
 	char ext;
 } s_gridData;

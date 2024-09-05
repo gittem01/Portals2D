@@ -124,7 +124,7 @@ public:
     PortalWorld* pWorld;
     float minFraction = 1.0f;
 
-    int maxRayCount = 30;
+    int maxRayCount = 5;
 
     // ray fraction of the portal midFixture (collision point on the midFixture)
     float portalFraction = 1.0f;
@@ -134,6 +134,7 @@ public:
     b2Fixture* closestFixture;
     b2Fixture* closestPortalFixture;
     void* filterBody;
+    b2Vec2 endNormal;
 
     std::vector<rayData> rayResult;
 

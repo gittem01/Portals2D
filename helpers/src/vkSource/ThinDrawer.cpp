@@ -142,6 +142,8 @@ void ThinDrawer::renderLoop()
     uniformFiller();
 
     vkResetCommandBuffer(frames[lastSwapChainImageIndex].commandBuffer, 0);
+
+
     buildCommandBuffers();
 
     VkSubmitInfo submit = { };
@@ -552,37 +554,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         wallGel->pipelineLayout, 1, 1, &wallGel->descriptorSets[1], 0, nullptr);
 
     vkCmdDraw(cmdBuff, 6, wallGel->numWallLines, 0, 0);
-
-    static glm::vec2 p = glm::vec2(0.0, 0.0);
-
-    splashData sData;
-    sData.posSpeed.x = 5.8;
-    sData.posSpeed.y = 0.5;
-    sData.data.x = 0.1;
-    sData.data.y = -1000.0;
-    sData.data.z = b2_pi * 0.25;
-    sData.data.w = 0.0;
-    
-    sData.color = glm::vec4(1.0, 0.0, 0.0, 1.0);
-
-    sData.data2.z = 2.0;
-    sData.data2.x = 2.0;
-    sData.data2.y = 3.0;
-    sData.data2.w = 0.2;
-
-    sData.data3.x = 0.15;
-    sData.data3.y = 1.0;
-    sData.data3.z = 2.0;
-    sData.data3.w = 0.0;
-
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, splash->pipeline);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        splash->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    vkCmdPushConstants(cmdBuff, splash->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(splashData), &sData);
-
-    vkCmdDraw(cmdBuff, 6, 200, 0, 0);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)

@@ -21,7 +21,7 @@ typedef struct s_sourceInUse
 
 class Sounder
 {
-public:	
+public:
 	int lastAvailableOnetimeSource;
 	int lastAvailableLoopingSource;
 

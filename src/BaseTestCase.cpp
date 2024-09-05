@@ -9,6 +9,7 @@
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
+#include "GameObjects/LaserEmitter.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -157,9 +158,7 @@ void BaseTestCase::afterCreate()
 }
 
 void BaseTestCase::onUpdate()
-{
-    double physicsTickTime = glfwGetTime();
-
+{    
     td->debugLineRegistry.clear();
 
     int requiredIters = std::max((int)std::round(g->deltaTime / requestedDtPerStep), 1);
@@ -186,9 +185,10 @@ void BaseTestCase::onUpdate()
             DownButton::update();
             CubeButton::update();
             CircleButton::update(dt);
+            LaserEmitter::update(dt);
         }
     }
-    
+   
     if (followPlayer) tp->camHandle();
 }
 

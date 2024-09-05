@@ -8,6 +8,7 @@
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
+#include "GameObjects/LaserEmitter.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -822,6 +823,12 @@ void LevelerTestCase::createDynamics()
 		{
 			CircleButton* cb = new CircleButton(g->pWorld, objectData);
             transmitterToReceiver(objectData, cb);
+		}
+        break;
+        case LASERER:
+        {
+            LaserEmitter::createLaserEmitter(g->pWorld, objectData);
+            receiverToTransmitter(objectData, &LaserEmitter::laserEmitters[LaserEmitter::numLaserEmitters - 1]);
 		}
         break;
         default:

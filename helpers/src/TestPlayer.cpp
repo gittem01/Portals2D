@@ -4,6 +4,7 @@
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
+#include "GameObjects/LaserEmitter.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -1044,17 +1045,17 @@ void TestPlayer::camHandle()
 {
     WindowHandler* wh = game->thinDrawer->wh;
 
-    glm::f64vec2 mp = wh->cam->getMouseCoords();
-    glm::f64vec2 camDiff = glm::f64vec2(wh->mouseData[0] - wh->windowSizes.x * 0.5, wh->mouseData[1] - wh->windowSizes.y * 0.5);
+    glm::vec2 mp = wh->cam->getMouseCoords();
+    glm::vec2 camDiff = glm::f64vec2(wh->mouseData[0] - wh->windowSizes.x * 0.5, wh->mouseData[1] - wh->windowSizes.y * 0.5);
 
     b2Vec2 bp = wData->pbIndices[0]->body->GetPosition();
-    glm::f64vec2 diff1 = (glm::f64vec2(bp.x, bp.y) - glm::f64vec2(wh->cam->pos.x, -wh->cam->pos.y)) * game->deltaTime * 4.0;
-    glm::f64vec2 diff2 = (!holdBody ? (game->deltaTime * 0.04 / wh->cam->zoom) * glm::f64vec2(camDiff.x, -camDiff.y) : glm::f64vec2(0.0f, 0.0f));
+    glm::vec2 diff1 = (glm::vec2(bp.x, bp.y) - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y)) * (float)game->deltaTime * 4.0f;
+    glm::vec2 diff2 = (!holdBody ? (float)(game->deltaTime * 0.04 / wh->cam->zoom) * camDiff : glm::vec2(0.0f, 0.0f));
     diff1.x += diff2.x;
     diff1.y += diff2.y;
-    wh->cam->pos += glm::f64vec2(diff1.x, -diff1.y);
+    wh->cam->pos += glm::vec2(diff1.x, -diff1.y);
 
-    wh->cam->pos = glm::f64vec2(bp.x, -bp.y);
+    wh->cam->pos = glm::vec2(bp.x, -bp.y);
     wh->cam->updateOrtho();
 }
 

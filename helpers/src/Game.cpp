@@ -13,6 +13,7 @@
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
+#include "GameObjects/LaserEmitter.h"
 
 Game* Game::object;
 
@@ -95,6 +96,7 @@ void Game::TestState()
     DownButton::staticInit();
     CubeButton::staticInit();
     CircleButton::staticInit();
+    LaserEmitter::staticInit();
 
     if (!leveler)
     {
@@ -115,7 +117,7 @@ void Game::TestState()
         frame++;
 
         double timeNow = glfwGetTime();
-        deltaTime = (timeNow - lastTime) * dtMult;
+        deltaTime = std::min((timeNow - lastTime) * dtMult, 0.1);
         lastTime = timeNow;
         if ((!isPaused || tick) && testCase)
         {

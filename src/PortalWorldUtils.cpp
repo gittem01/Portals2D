@@ -314,7 +314,7 @@ void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* f
     for (int i = 0; i < rayResult.size(); i++)
     {
         rayData res = rayResult[i];
-        //ThinDrawer::object->registerDebugLine(glm::vec4(res.startPos.x, res.startPos.y, res.endPos.x, res.endPos.y), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f, 0.5f);
+        ThinDrawer::object->registerDebugLine(glm::vec4(res.startPos.x, res.startPos.y, res.endPos.x, res.endPos.y), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.02f, 0.5f);
     }
 }
 
@@ -372,7 +372,7 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
 float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction)
 {
-    if (fixture->IsSensor()) return 1.0f;
+    if (fixture->IsSensor()) return minFraction;
 
     bool isPortal = false;
     fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
@@ -388,7 +388,7 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
             }
             else if (p->connections[side ^ 1].size() != 0)
             {
-                return 1.0f;
+                return minFraction;
             }
         }
 
@@ -397,7 +397,7 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
             bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
             PortalBody* pb = (PortalBody*)bData->data;
 
-            if (&pb->worldIndex->pbIndices == filterBody) return 1.0f;
+            if (pb->worldIndex == filterBody) return minFraction;
 
             PBFixtureData* pbfData = (PBFixtureData*)fData->data;
             std::vector<portalCollision*> collidingPortals = pbfData->pCollisions;
@@ -405,7 +405,7 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
             {
                 if (pc->status < 1 || PortalWorld::isLeft(pc->portal->points[1], pc->portal->points[0], point, 0.000001f) == (pc->side ^ 1))
                 {
-                    return 1.0f;
+                    return minFraction;
                 }
             }
         }
@@ -424,9 +424,10 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
     {
         minFraction = fraction;
         closestFixture = fixture;
+        endNormal = normal;
     }
 
-    return 1.0f;
+    return minFraction;
 }
 
 void PortalRay::reset()
