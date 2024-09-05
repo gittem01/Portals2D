@@ -5,6 +5,8 @@
 #include <Sounder.h>
 #include "ThinDrawer.h"
 
+class ForceField;
+
 class DefaultObject
 {
 public:
