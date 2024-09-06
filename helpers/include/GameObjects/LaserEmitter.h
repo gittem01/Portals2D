@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include "GameBase.h"
 #include "Leveler.h"
+#include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/Receiver.h"
 
 typedef struct
@@ -22,6 +23,7 @@ public:
 
 	std::vector<s_simpleRay> laserRays;
 	std::set<pbWorldData*> collidedLaserCubes;
+	WallLaserReceiver* lastWallReceiver;
 	b2Vec2 laserDir;
 	b2Vec2 laserPos;
 	b2Vec2 endPos;
@@ -36,6 +38,6 @@ public:
 
 	static void createLaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void staticInit();
-	static void update(float dt);
+	static void update();
 	static void render(VkCommandBuffer cmdBuff, void* ptr);
 };

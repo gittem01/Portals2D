@@ -301,13 +301,15 @@ void PortalRay::prepareRaySend()
     closestFixture = nullptr;
     closestPortalFixture = nullptr;
     filterBody = nullptr;
+    filterMask = 0;
 }
 
 #include <ThinDrawer.h>
-void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody, int rayIndex, Portal* rayOutPortal)
+void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody, uint32_t filterMask, int rayIndex, Portal* rayOutPortal)
 {
     prepareRaySend();
     this->filterBody = filterBody;
+    this->filterMask = filterMask;
 
     sendRay_i(rayStart, dirVec, rayLength, rayIndex, rayOutPortal);
 
@@ -391,7 +393,6 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
                 return minFraction;
             }
         }
-
         else if (fData->type == F_PORTAL_BODY)
         {
             bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
@@ -408,6 +409,10 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
                     return minFraction;
                 }
             }
+        }
+        else if ((uint32_t)fData->type & filterMask)
+        {
+            return minFraction;
         }
     }
 

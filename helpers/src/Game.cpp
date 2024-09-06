@@ -14,6 +14,7 @@
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
 #include "GameObjects/LaserEmitter.h"
+#include "GameObjects/WallLaserReceiver.h"
 
 Game* Game::object;
 
@@ -97,6 +98,7 @@ void Game::TestState()
     CubeButton::staticInit();
     CircleButton::staticInit();
     LaserEmitter::staticInit();
+    WallLaserReceiver::staticInit();
 
     if (!leveler)
     {
@@ -131,6 +133,8 @@ void Game::TestState()
             Geller::update();
             Gel::perFrameUpdate();
             UseButton::update();
+            LaserEmitter::update();
+            WallLaserReceiver::update();
         }
 
         for (auto func : singleTaskRegistry)
@@ -187,6 +191,9 @@ void Game::TestState()
         Gel::gelCount = 0;
         Gel::splashCount = 0;
         UseButton::checkButtons.clear();
+        LaserEmitter::numLaserEmitters = 0;
+        WallLaserReceiver::disableChecks.clear();
+        WallLaserReceiver::enableChecks.clear();
         delete testCase;
     }
 

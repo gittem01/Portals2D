@@ -9,7 +9,6 @@
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
-#include "GameObjects/LaserEmitter.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -185,7 +184,6 @@ void BaseTestCase::onUpdate()
             DownButton::update();
             CubeButton::update();
             CircleButton::update(dt);
-            LaserEmitter::update(dt);
         }
     }
    

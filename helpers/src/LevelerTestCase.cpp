@@ -9,6 +9,7 @@
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
 #include "GameObjects/LaserEmitter.h"
+#include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -119,14 +120,14 @@ void LevelerTestCase::createDefaultEdges()
             int gridX = x + g->leveler->xSize_H;
             int gridY = y + g->leveler->ySize_H;
 
-            if (!(edgeUsedMap[gridY][gridX] & 0xF) && g->leveler->getSquare(x, y).objectType & (BLACK_WALL | WHITE_WALL))
+            if (!(edgeUsedMap[gridY][gridX] & RIGHT_W) && g->leveler->getSquare(x, y).objectType & (BLACK_WALL | WHITE_WALL))
             {
                 bool topOK = false;
                 for (int i = 0; i < 4; i++)
                 {
                     const s_gridSquare dir = dirs[i];
                     bool ok =   !g->leveler->isInBounds(x + dir.x, y + dir.y) ||
-                                (reachableMap[gridY + dir.y][gridX + dir.x] & GBW_REACHABLE);
+                                (reachableMap[gridY + dir.y][gridX + dir.x] & BW_REACHABLE);
 
                     if (ok)
                     {
@@ -135,14 +136,15 @@ void LevelerTestCase::createDefaultEdges()
                     }
                 }
 
-                topOK &= !g->leveler->isInBounds(x, y + 1) || !(g->leveler->getSquare(x, y + 1).objectType & (BLACK_WALL | WHITE_WALL));
+                topOK &= !g->leveler->isInBounds(x, y + 1) ||
+                    (!(g->leveler->getSquare(x, y + 1).objectType & (BLACK_WALL | WHITE_WALL)) && reachableMap[gridY + 1][gridX] & BW_REACHABLE);
 
                 if (topOK)
                 {
                     walkArndAndCreateEdge(x, y);
                 }
 			}
-            else if (!(edgeUsedMap[gridY][gridX] & (0xF << 4)) && g->leveler->getSquare(x, y).objectType & GLASS_WALL)
+            else if (!(edgeUsedMap[gridY][gridX] & RIGHT_G) && g->leveler->getSquare(x, y).objectType & GLASS_WALL)
             {
                 bool topOK = false;
                 for (int i = 0; i < 4; i++)
@@ -165,7 +167,7 @@ void LevelerTestCase::createDefaultEdges()
                     walkArndAndCreateEdgeGF(x, y, GLASS_WALL);
                 }
             }
-            else if (!(edgeUsedMap[gridY][gridX] & (0xF << 8)) && g->leveler->getSquare(x, y).objectType & FENCE_WALL)
+            else if (!(edgeUsedMap[gridY][gridX] & RIGHT_F) && g->leveler->getSquare(x, y).objectType & FENCE_WALL)
             {
                 bool topOK = false;
                 for (int i = 0; i < 4; i++)
@@ -354,7 +356,7 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
 
             int dirVal = (dir + 3) % 4;
             int rot = 0;
-            if (objectData)
+            if (upLgd.objectType & (SINGLE_DRAWS | PLATFORM))
                 rot = (upLgd.objectType & GELS) ? (objectData->rotation + 2) % 4 : objectData->rotation;
             bool secCond = objectData && upLgd.objectType & (FORCE_FIELD | HAZARDER) && rot == (dirVal + 2) % 4;
             if (upLgd.objectType & WALL_EDGE_OCCUPIERS && (objectData && rot == dirVal || secCond))
@@ -829,6 +831,12 @@ void LevelerTestCase::createDynamics()
         {
             LaserEmitter::createLaserEmitter(g->pWorld, objectData);
             receiverToTransmitter(objectData, &LaserEmitter::laserEmitters[LaserEmitter::numLaserEmitters - 1]);
+		}
+        break;
+        case LASER_REC_WALL:
+		{
+			WallLaserReceiver* wallLaserReceiver = new WallLaserReceiver(g->pWorld, objectData);
+			transmitterToReceiver(objectData, wallLaserReceiver);
 		}
         break;
         default:

@@ -5,7 +5,7 @@ s_perTextureData* UseButton::ptData;
 s_texture* UseButton::tex;
 std::list<UseButton*> UseButton::checkButtons;
 
-const float ySize = 1.45f;
+const float ySize = 1.35f;
 
 b2Vec2 offsets[4] =
 {

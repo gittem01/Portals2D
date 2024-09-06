@@ -5,6 +5,8 @@
 #include "Gel.h"
 #include "Overlayer.h"
 
+#define FILTER_MASK (F_FEDGE | F_GEDGE)
+
 std::vector<LaserEmitter> LaserEmitter::laserEmitters(64);
 int LaserEmitter::numLaserEmitters = 0;
 s_perTextureData* LaserEmitter::ptData;
@@ -39,6 +41,7 @@ LaserEmitter::LaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	signalCount = (int)objData->startActive;
 	laserDir = fwdDirs[objData->rotation % 4];
 	lastLaserCube = false;
+	lastWallReceiver = nullptr;
 
 	b2Vec2 offset = bodyOffsets[objData->rotation % 4];
 	laserPos = b2Vec2(objData->pos.x + offset.x, objData->pos.y + offset.y);
@@ -179,15 +182,27 @@ void LaserEmitter::render(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, ptData->currentOffset - ptData->offsetStart, 0, ptData->offsetStart);
 }
 
-void LaserEmitter::update(float dt)
+void LaserEmitter::update()
 {
 	for (int i = 0; i < numLaserEmitters; i++)
 	{
 		LaserEmitter& lsr = laserEmitters[i];
 		
 		lsr.laserRays.clear();
-		lsr.collidedLaserCubes.clear();
+		
+		if (lsr.signalCount == 0)
+		{
+			if (lsr.lastWallReceiver)
+			{
+				lsr.lastWallReceiver->disable(&lsr);
+				lsr.lastWallReceiver = nullptr;
+			}
 
+			continue;
+		}
+		
+		lsr.collidedLaserCubes.clear();
+		
 		PortalWorld* pWorld = Game::object->pWorld;
 
 		pbWorldData* pbData = nullptr;
@@ -197,7 +212,7 @@ void LaserEmitter::update(float dt)
 	ray_send:
 		lsr.lastLaserCube = false;
 
-		pWorld->rayHandler->sendRay(laserPos, laserDir, 400.0f, pbData);
+		pWorld->rayHandler->sendRay(laserPos, laserDir, 400.0f, pbData, (uint32_t)FILTER_MASK);
 
 		for (int j = 0; j < pWorld->rayHandler->rayResult.size(); j++)
 		{
@@ -255,11 +270,31 @@ void LaserEmitter::update(float dt)
 			}
 		}
 
+		WallLaserReceiver* wlr = nullptr;
 		if (lsr.laserRays.size() > 0 && !lsr.lastLaserCube)
 		{
-			b2Vec2 vec = pWorld->rayHandler->endNormal;
-			lsr.endAngle = atan2(vec.y, vec.x);
-			lsr.endPos = pWorld->rayHandler->rayResult[0].endPos;
+			fixtureData* fData = nullptr;
+			if (pWorld->rayHandler->closestFixture) fData = (fixtureData*)pWorld->rayHandler->closestFixture->GetUserData().pointer;
+
+			if (fData && fData->type == F_WALL_RECEIVER)
+			{
+				wlr = (WallLaserReceiver*)fData->data;
+				wlr->enable(&lsr);
+				lsr.lastLaserCube = true;
+			}
+			else
+			{
+				b2Vec2 vec = pWorld->rayHandler->endNormal;
+				lsr.endAngle = atan2(vec.y, vec.x);
+				lsr.endPos = pWorld->rayHandler->rayResult[0].endPos;
+			}
 		}
+
+		if (lsr.lastWallReceiver && wlr != lsr.lastWallReceiver)
+		{
+			lsr.lastWallReceiver->disable(&lsr);
+		}
+
+		lsr.lastWallReceiver = wlr;
 	}
 }

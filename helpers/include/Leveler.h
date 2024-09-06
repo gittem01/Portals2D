@@ -175,7 +175,7 @@ typedef struct GridSquare_S
 typedef struct GridData_S
 {
 	levelObject objectType;
-	s_gridData data;
+	s_gridData data = { 0 };
 } s_levelGridData;
 
 typedef struct ObjectDataGrid

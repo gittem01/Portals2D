@@ -185,7 +185,6 @@ void ThinDrawer::renderLoop()
 
 void ThinDrawer::buildCommandBuffers()
 {
-    double t0 = glfwGetTime();
     VkCommandBuffer cmdBuff = frames[lastSwapChainImageIndex].commandBuffer;
 
     renderCommandBeginner(cmdBuff);
@@ -237,8 +236,6 @@ void ThinDrawer::buildCommandBuffers()
 
     vkCmdEndRenderPass(cmdBuff);
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
-
-    //printf("%f\n", glfwGetTime() - t0);
 }
 
 void ThinDrawer::preparePipelines()

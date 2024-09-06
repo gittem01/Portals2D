@@ -31,7 +31,6 @@ enum BodyDataType
 	B_PORTAL_BODY   = 0x1 << 1,
     B_EDGE          = 0x1 << 2,
 
-
 	B_MOUSE         = 0x1 << 30,
 };
 
@@ -135,10 +134,12 @@ public:
     b2Fixture* closestPortalFixture;
     void* filterBody;
     b2Vec2 endNormal;
+    uint32_t filterMask;
 
     std::vector<rayData> rayResult;
 
-    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody=nullptr, int rayIndex=0, Portal* rayOutPortal=nullptr);
+    void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody=nullptr,
+        uint32_t filterMask=0, int rayIndex = 0, Portal* rayOutPortal = nullptr);
 
 private:
     void prepareRaySend();
