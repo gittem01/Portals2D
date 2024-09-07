@@ -42,7 +42,8 @@ public:
 
 	void handleGroundReceivers();
 
-	static void createLaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData);
+	static void toDeath();
+	static LaserEmitter* createLaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void staticInit();
 	static void update();
 	static void render(VkCommandBuffer cmdBuff, void* ptr);

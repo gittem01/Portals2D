@@ -5,6 +5,8 @@
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
 #include "GameObjects/LaserEmitter.h"
+#include "GameObjects/GndLaserReceiver.h"
+#include "GameObjects/WallLaserReceiver.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -366,6 +368,9 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
             DownButton::toDeath();
             CubeButton::toDeath();
             CircleButton::toDeath();
+            LaserEmitter::toDeath();
+            GndLaserReceiver::toDeath();
+            WallLaserReceiver::toDeath();
 		});
     }
 
@@ -904,14 +909,14 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
         switch (fixData->type)
         {
         case F_FORCE_FIELD:
+        {
+            ForceField* forceField = (ForceField*)fixData->data;
+            if (forceField->signalCount > 0)
             {
-                ForceField* forceField = (ForceField*)fixData->data;
-                if (forceField->signalCount > 0)
-                {
-                    enterForceField((ForceField*)fixData->data);
-                }
+                enterForceField((ForceField*)fixData->data);
             }
-            break;
+        }
+        break;
         case F_HAZARD_FIELD:
             health = -1000;
 			healthCheck();

@@ -11,6 +11,7 @@
 #include "GameObjects/LaserEmitter.h"
 #include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/GndLaserReceiver.h"
+#include "GameObjects/Funnel.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -830,13 +831,13 @@ void LevelerTestCase::createDynamics()
         break;
         case LASERER:
         {
-            LaserEmitter::createLaserEmitter(g->pWorld, objectData);
-            receiverToTransmitter(objectData, &LaserEmitter::laserEmitters[LaserEmitter::numLaserEmitters - 1]);
+            LaserEmitter* le = LaserEmitter::createLaserEmitter(g->pWorld, objectData);
+            receiverToTransmitter(objectData, le);
 		}
         break;
         case LASER_REC_WALL:
 		{
-			WallLaserReceiver* wallLaserReceiver = new WallLaserReceiver(g->pWorld, objectData);
+			WallLaserReceiver* wallLaserReceiver = WallLaserReceiver::createWallLaserReceiver(g->pWorld, objectData);
 			transmitterToReceiver(objectData, wallLaserReceiver);
 		}
         break;
@@ -845,6 +846,12 @@ void LevelerTestCase::createDynamics()
             GndLaserReceiver* glr = GndLaserReceiver::create(g->pWorld, objectData);
 		    transmitterToReceiver(objectData, glr);
 		}
+        break;
+        case FUNNEL:
+        {
+            Funnel* fn = new Funnel(g->pWorld, objectData);
+            receiverToTransmitter(objectData, fn);
+        }
         break;
         default:
             break;

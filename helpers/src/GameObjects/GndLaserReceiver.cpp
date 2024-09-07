@@ -114,6 +114,23 @@ GndLaserReceiver* GndLaserReceiver::create(PortalWorld* portalWorld, s_objectDat
 	return new (glr) GndLaserReceiver(portalWorld, objData);
 }
 
+void GndLaserReceiver::toDeath()
+{
+	disableChecks.clear();
+	enableChecks.clear();
+
+	for (int i = 0; i < numGndLaserReceivers; i++)
+	{
+		GndLaserReceiver& glr = gndLaserReceivers[i];
+
+		glr.Transmitter::disable();
+
+		glr.disableTime = -10.0;
+		glr.enableTime = -10.0;
+		glr.enablers.clear();
+	}
+}
+
 void GndLaserReceiver::staticInit()
 {
 	constexpr int index = getLevelObjectIndex(LASER_REC_GND) - 4;

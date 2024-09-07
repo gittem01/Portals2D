@@ -16,6 +16,7 @@
 #include "GameObjects/LaserEmitter.h"
 #include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/GndLaserReceiver.h"
+#include "GameObjects/Funnel.h"
 
 Game* Game::object;
 
@@ -101,6 +102,7 @@ void Game::TestState()
     LaserEmitter::staticInit();
     WallLaserReceiver::staticInit();
     GndLaserReceiver::staticInit();
+    Funnel::staticInit();
 
     if (!leveler)
     {
@@ -138,6 +140,7 @@ void Game::TestState()
             LaserEmitter::update();
             WallLaserReceiver::update();
             GndLaserReceiver::update();
+            Funnel::update();
         }
 
         for (auto func : singleTaskRegistry)
@@ -200,6 +203,8 @@ void Game::TestState()
         GndLaserReceiver::disableChecks.clear();
         GndLaserReceiver::enableChecks.clear();
         GndLaserReceiver::numGndLaserReceivers = 0;
+        Funnel::funnels.clear();
+
         delete testCase;
     }
 

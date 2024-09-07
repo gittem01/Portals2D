@@ -34,6 +34,7 @@ public:
 	void enable(LaserEmitter* le);
 	void disable(LaserEmitter* le);
 
+	static void toDeath();
 	static GndLaserReceiver* create(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void staticInit();
 	static void update();

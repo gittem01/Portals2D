@@ -5,6 +5,8 @@
 #include "Overlayer.h"
 #include "GameObjects/LaserEmitter.h"
 
+std::vector<WallLaserReceiver> WallLaserReceiver::wallLaserReceivers(64);
+int WallLaserReceiver::numWallLaserReceivers = 0;
 std::list<WallLaserReceiver*> WallLaserReceiver::disableChecks;
 std::list<WallLaserReceiver*> WallLaserReceiver::enableChecks;
 s_perTextureData* WallLaserReceiver::ptData;
@@ -94,6 +96,26 @@ void WallLaserReceiver::disable(LaserEmitter* le)
 			}
 		}
 	}
+}
+
+void WallLaserReceiver::toDeath()
+{
+	for (int i = 0; i < numWallLaserReceivers; i++)
+	{
+		WallLaserReceiver& wlr = wallLaserReceivers[i];
+
+		wlr.Transmitter::disable();
+
+		wlr.enablers.clear();
+		wlr.enableTime = -10.0;
+		wlr.disableTime = -10.0;
+	}
+}
+
+WallLaserReceiver* WallLaserReceiver::createWallLaserReceiver(PortalWorld* portalWorld, s_objectDataGrid* objData)
+{
+	WallLaserReceiver* wlr = &wallLaserReceivers[numWallLaserReceivers++];
+	return new (wlr) WallLaserReceiver(portalWorld, objData);
 }
 
 void WallLaserReceiver::staticInit()

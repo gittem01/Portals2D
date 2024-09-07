@@ -70,9 +70,24 @@ LaserEmitter::LaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	//fix->GetUserData().pointer = (uintptr_t)fData;
 }
 
-void LaserEmitter::createLaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
+LaserEmitter* LaserEmitter::createLaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	laserEmitters[numLaserEmitters++] = LaserEmitter(portalWorld, objData);
+	LaserEmitter* lsr = &laserEmitters[numLaserEmitters++];
+	return new (lsr) LaserEmitter(portalWorld, objData);
+}
+
+void LaserEmitter::toDeath()
+{
+	for (int i = 0; i < numLaserEmitters; i++)
+	{
+		LaserEmitter& lsr = laserEmitters[i];
+
+		lsr.laserRays.clear();
+		lsr.lastLaserCube = true;
+		lsr.gndLaserMasks.reset();
+		lsr.enableSet.reset();
+		lsr.lastWallReceiver = nullptr;
+	}
 }
 
 void LaserEmitter::staticInit()
