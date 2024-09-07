@@ -3,6 +3,7 @@
 #include <RotationJoint.h>
 #include <PositionJoint.h>
 #include <GameBase.h>
+#include "GameObjects/GndLaserReceiver.h"
 
 b2Vec2 PortalWorld::getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect)
 {
@@ -296,6 +297,7 @@ PortalRay::PortalRay(PortalWorld* pWorld)
 void PortalRay::prepareRaySend()
 {
     rayResult.clear();
+    groundReceivers.clear();
 
     closestPortal = nullptr;
     closestFixture = nullptr;
@@ -412,6 +414,12 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
         }
         else if ((uint32_t)fData->type & filterMask)
         {
+            if (fData->type & filterMask & F_GND_RECEIVER)
+            {
+                GndLaserReceiver* receiver = (GndLaserReceiver*)fData->data;
+                groundReceivers.push_back({ receiver->arrIndex, fraction });
+            }
+
             return minFraction;
         }
     }

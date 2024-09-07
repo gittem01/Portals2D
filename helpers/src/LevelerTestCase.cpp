@@ -10,6 +10,7 @@
 #include "GameObjects/CircleButton.h"
 #include "GameObjects/LaserEmitter.h"
 #include "GameObjects/WallLaserReceiver.h"
+#include "GameObjects/GndLaserReceiver.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -837,6 +838,12 @@ void LevelerTestCase::createDynamics()
 		{
 			WallLaserReceiver* wallLaserReceiver = new WallLaserReceiver(g->pWorld, objectData);
 			transmitterToReceiver(objectData, wallLaserReceiver);
+		}
+        break;
+        case LASER_REC_GND:
+        {
+            GndLaserReceiver* glr = GndLaserReceiver::create(g->pWorld, objectData);
+		    transmitterToReceiver(objectData, glr);
 		}
         break;
         default:

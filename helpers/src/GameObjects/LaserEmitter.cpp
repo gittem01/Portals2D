@@ -5,7 +5,7 @@
 #include "Gel.h"
 #include "Overlayer.h"
 
-#define FILTER_MASK (F_FEDGE | F_GEDGE)
+#define FILTER_MASK (F_FEDGE | F_GEDGE | F_GND_RECEIVER)
 
 std::vector<LaserEmitter> LaserEmitter::laserEmitters(64);
 int LaserEmitter::numLaserEmitters = 0;
@@ -182,6 +182,23 @@ void LaserEmitter::render(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, ptData->currentOffset - ptData->offsetStart, 0, ptData->offsetStart);
 }
 
+void LaserEmitter::handleGroundReceivers()
+{
+	for (auto pair : Game::object->pWorld->rayHandler->groundReceivers)
+	{
+		if (pair.second <= Game::object->pWorld->rayHandler->minFraction)
+		{
+			enableSet[pair.first] = true;
+
+			if (!gndLaserMasks[pair.first])
+			{
+				GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[pair.first];
+				glr.enable(this);
+			}
+		}
+	}
+}
+
 void LaserEmitter::update()
 {
 	for (int i = 0; i < numLaserEmitters; i++)
@@ -202,7 +219,8 @@ void LaserEmitter::update()
 		}
 		
 		lsr.collidedLaserCubes.clear();
-		
+		lsr.enableSet.reset();
+
 		PortalWorld* pWorld = Game::object->pWorld;
 
 		pbWorldData* pbData = nullptr;
@@ -213,6 +231,8 @@ void LaserEmitter::update()
 		lsr.lastLaserCube = false;
 
 		pWorld->rayHandler->sendRay(laserPos, laserDir, 400.0f, pbData, (uint32_t)FILTER_MASK);
+
+		lsr.handleGroundReceivers();
 
 		for (int j = 0; j < pWorld->rayHandler->rayResult.size(); j++)
 		{
@@ -268,6 +288,20 @@ void LaserEmitter::update()
 					}
 				}
 			}
+		}
+
+		if (lsr.gndLaserMasks != lsr.enableSet)
+		{
+			for (int i = 0; i < MAX_GND_LASER_RECEIVERS; i++)
+			{
+				if (lsr.gndLaserMasks[i] && !lsr.enableSet[i])
+				{
+					GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[i];
+					glr.disable(&lsr);
+				}
+			}
+
+			lsr.gndLaserMasks = lsr.enableSet;
 		}
 
 		WallLaserReceiver* wlr = nullptr;

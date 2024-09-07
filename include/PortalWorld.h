@@ -137,6 +137,7 @@ public:
     uint32_t filterMask;
 
     std::vector<rayData> rayResult;
+    std::vector<std::pair<int, float>> groundReceivers;
 
     void sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody=nullptr,
         uint32_t filterMask=0, int rayIndex = 0, Portal* rayOutPortal = nullptr);

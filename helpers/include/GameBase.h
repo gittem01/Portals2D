@@ -54,6 +54,7 @@ enum FixtureDataType
     F_DOWNBUTTON	= 0x1 << 10,
     F_LASER_EMITTER = 0x1 << 11,
     F_WALL_RECEIVER = 0x1 << 12,
+    F_GND_RECEIVER  = 0x1 << 13,
 
     F_END           = 0x1 << 30,
 };
