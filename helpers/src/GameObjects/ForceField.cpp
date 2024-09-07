@@ -10,12 +10,19 @@ s_perTextureData* ForceField::ptData;
 s_texture* ForceField::tex;
 std::queue<pbWorldData*> ForceField::destroyCList;
 
+static b2Vec2 dirs[4] = { { 0.0, 1.0 }, { -1.0, 0.0 }, { 0.0, -1.0 }, { 1.0, 0.0 } };
+static b2Vec2 perpDirs[4] = { { 1.0, 0.0 }, { 0.0, 1.0 }, { 1.0, 0.0 }, { 0.0, 1.0 } };
+
 ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
 	signalCount = (int)objData->startActive;
 	fieldRenderOffset = objData->extraOffsets[0];
 
+	b2Vec2 perpDir = perpDirs[objData->rotation % 4];
+	b2Vec2 dir = dirs[objData->rotation % 4];
+
 	b2Vec2 midPos = 0.5f * (b2Vec2(objData->pos.x, objData->pos.y) + b2Vec2(objData->extraPos.x, objData->extraPos.y)) + b2Vec2(0.5f, 0.5f);
+	float len;
 	b2Vec2 size;
 
 	b2PolygonShape pShapes[2];
@@ -26,6 +33,7 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	if ((objData->rotation % 4) % 2 == 0)
 	{
 		size = b2Vec2(0.3f, abs(objData->extraPos.y - objData->pos.y) * 0.5f + 0.5f);
+		len = size.y;
 
 		pShapes[0].SetAsBox(hWidth, height, b2Vec2(0.0f, -size.y + height * 0.5), 0.0f);
 		pShapes[1].SetAsBox(hWidth, height, b2Vec2(0.0f, +size.y - height * 0.5), 0.0f);
@@ -33,7 +41,8 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	else
 	{
 		size = b2Vec2(abs(objData->extraPos.x - objData->pos.x) * 0.5f + 0.5f, 0.3f);
-		
+		len = size.x;
+
 		pShapes[0].SetAsBox(height, hWidth, b2Vec2(-size.x + height * 0.5, 0.0f), 0.0f);
 		pShapes[1].SetAsBox(height, hWidth, b2Vec2(+size.x - height * 0.5, 0.0f), 0.0f);
 	}
@@ -44,23 +53,27 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	body = portalWorld->CreateBody(&bDef);
 
-	b2PolygonShape pShape;
-	pShape.SetAsBox(size.x, size.y);
-
-	b2FixtureDef fDef;
-	fDef.shape = &pShape;
-	fDef.isSensor = true;
-
 	body->CreateFixture(&pShapes[0], 0.0f);
 	body->CreateFixture(&pShapes[1], 0.0f);
-
-	b2Fixture* fix = body->CreateFixture(&fDef);
 
 	fixtureData* fData = new fixtureData();
 	fData->type = F_FORCE_FIELD;
 	fData->data = (void*)this;
 	fData->extraData = nullptr;
 
+	b2EdgeShape eShape;
+	eShape.SetTwoSided(len * dir + 0.3f * perpDir, -len * dir + 0.3f * perpDir);
+
+	b2FixtureDef fDef;
+	fDef.shape = &eShape;
+	fDef.isSensor = true;
+
+	b2Fixture* fix = body->CreateFixture(&fDef);
+	fix->GetUserData().pointer = (uintptr_t)fData;
+
+	eShape.SetTwoSided(len * dir - 0.3f * perpDir, -len * dir - 0.3f * perpDir);
+
+	fix = body->CreateFixture(&fDef);
 	fix->GetUserData().pointer = (uintptr_t)fData;
 
 	fields.push_back(this);
@@ -75,7 +88,6 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	if (!startEnabled)
 	{
 		blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
-		fData->type = F_OTHER;
 	}
 	else
 	{
@@ -109,14 +121,11 @@ void ForceField::ssignal()
 				g_PhysicsData* otherData = (g_PhysicsData*)bData->extraData;
 				if (otherData)
 				{
-					if (otherData->type & PLAYER_O)
+					if (otherData->type & PLAYER_O && !runPlayer)
 					{
-						if (!runPlayer)
-						{
-							runPlayer = true;
-							TestPlayer* tp = (TestPlayer*)otherData->data;
-							tp->enterForceField(this);
-						}
+						runPlayer = true;
+						TestPlayer* tp = (TestPlayer*)otherData->data;
+						tp->enterForceField(this);
 					}
 					else if (otherData->type & DESTRUCTABLES)
 					{
@@ -124,7 +133,6 @@ void ForceField::ssignal()
 						dObj->enterForceField(this);
 					}
 				}
-				
 			}
 		}
 
@@ -144,30 +152,6 @@ void ForceField::usignal()
 
 	if (signalCount == 0)
 	{
-		fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
-		fData->type = F_OTHER;
-
-		for (b2ContactEdge* contactEdge = body->GetContactList(); contactEdge != nullptr; contactEdge = contactEdge->next)
-		{
-			b2Fixture* otherFix = contactEdge->contact->GetFixtureA()->IsSensor() ?
-				contactEdge->contact->GetFixtureB() : contactEdge->contact->GetFixtureA();
-
-			bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
-			if (bData && bData->extraData)
-			{
-				g_PhysicsData* otherData = (g_PhysicsData*)bData->extraData;
-				if (otherData)
-				{
-					if (otherData->type & PLAYER_O)
-					{
-						TestPlayer* tp = (TestPlayer*)otherData->data;
-						tp->collidingForceFields.erase(this);
-						break;
-					}
-				}
-			}
-		}
-
 		s_blueFieldUbo* blueUbo;
 		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
 			fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);

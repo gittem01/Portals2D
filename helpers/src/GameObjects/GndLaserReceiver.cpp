@@ -6,7 +6,7 @@
 #include "GameObjects/LaserEmitter.h"
 
 std::vector<GndLaserReceiver> GndLaserReceiver::gndLaserReceivers(MAX_GND_LASER_RECEIVERS);
-int GndLaserReceiver::numGndLaserReceivers;
+int GndLaserReceiver::numGndLaserReceivers = 0;
 std::list<GndLaserReceiver*> GndLaserReceiver::disableChecks;
 std::list<GndLaserReceiver*> GndLaserReceiver::enableChecks;
 s_perTextureData* GndLaserReceiver::ptData;
@@ -116,8 +116,6 @@ GndLaserReceiver* GndLaserReceiver::create(PortalWorld* portalWorld, s_objectDat
 
 void GndLaserReceiver::staticInit()
 {
-	numGndLaserReceivers = 0;
-
 	constexpr int index = getLevelObjectIndex(LASER_REC_GND) - 4;
 	ptData = &Leveler::object->perTextureData[index];
 	tex = Leveler::object->ol->items[index + 4].tex;

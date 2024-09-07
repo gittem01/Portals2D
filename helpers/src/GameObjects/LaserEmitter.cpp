@@ -214,6 +214,19 @@ void LaserEmitter::update()
 				lsr.lastWallReceiver->disable(&lsr);
 				lsr.lastWallReceiver = nullptr;
 			}
+			if (lsr.gndLaserMasks.any())
+			{
+				for (int i = 0; i < GndLaserReceiver::numGndLaserReceivers; i++)
+				{
+					if (lsr.gndLaserMasks[i])
+					{
+						GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[i];
+						glr.disable(&lsr);
+					}
+				}
+
+				lsr.gndLaserMasks.reset();
+			}
 
 			continue;
 		}

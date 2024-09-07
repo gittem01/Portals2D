@@ -76,7 +76,6 @@ public:
     int lastOrangeGelSetOffset = -1;
     int lastKey;
     int keyBeforeSwitch;
-    std::set<ForceField*> collidingForceFields;
 
     bool right;
     bool left;

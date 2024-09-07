@@ -92,7 +92,11 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 	fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
 	if (fData && fData->type == F_FORCE_FIELD)
 	{
-		enterForceField((ForceField*)fData->data);
+		ForceField* forceField = (ForceField*)fData->data;
+		if (forceField->signalCount > 0)
+		{
+			enterForceField((ForceField*)fData->data);
+		}
 	}
 }
 

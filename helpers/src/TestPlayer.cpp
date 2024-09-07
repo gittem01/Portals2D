@@ -869,7 +869,6 @@ void TestPlayer::createBody(b2Vec2 pos)
 
 void TestPlayer::enterForceField(ForceField* forceField)
 {
-    collidingForceFields.insert(forceField);
     game->singleTaskRegistry.push_back(
         [this]()
         {
@@ -899,15 +898,19 @@ void TestPlayer::enterForceField(ForceField* forceField)
 
 void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
 {
-    if (!contact->IsEnabled()) return;
-
     fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
     if (fixData)
     {
         switch (fixData->type)
         {
         case F_FORCE_FIELD:
-            enterForceField((ForceField*)fixData->data);
+            {
+                ForceField* forceField = (ForceField*)fixData->data;
+                if (forceField->signalCount > 0)
+                {
+                    enterForceField((ForceField*)fixData->data);
+                }
+            }
             break;
         case F_HAZARD_FIELD:
             health = -1000;
@@ -933,12 +936,6 @@ void TestPlayer::endContact(b2Contact* contact, b2Fixture* otherFix)
 	}
 
     if (!contact->IsEnabled()) return;
-
-    fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
-    if (fixData && fixData->type == F_FORCE_FIELD)
-    {
-        collidingForceFields.erase((ForceField*)fixData->data);
-    }
 }
 
 void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
@@ -1443,13 +1440,6 @@ void TestPlayer::handlePortalCD(float dt)
     handleObjectHold(portalGun, p0, vec, dt);
     if (holdBody)
     {
-        return;
-    }
-    else if (collidingForceFields.size() > 0)
-    {
-        gData.positions.y = -1299.0f;
-        gData.positions.w = -1922.0;
-
         return;
     }
 

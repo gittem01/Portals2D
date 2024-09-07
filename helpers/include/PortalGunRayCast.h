@@ -2,6 +2,7 @@
 
 #include <box2d/box2d.h>
 #include <PortalBody.h>
+#include "GameObjects/Receiver.h"
 
 class PortalGunRayCast : public b2RayCastCallback
 {
@@ -29,7 +30,15 @@ public:
                 {
 				    return -1.0f;
                 }
-                else if (!(fixData->type & F_FORCE_FIELD) && fixture->GetType() == b2Shape::e_polygon)
+                else if (fixData->type & F_FORCE_FIELD)
+                {
+                    Receiver* receiver = (Receiver*)fixData->data;
+                    if (receiver->signalCount <= 0)
+					{
+						return -1.0f;
+					}
+                }
+                else if (fixture->GetType() == b2Shape::e_polygon)
 				{
 					return -1.0f;
 				}
