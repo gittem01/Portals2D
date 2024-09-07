@@ -292,7 +292,7 @@ void LaserEmitter::update()
 
 		if (lsr.gndLaserMasks != lsr.enableSet)
 		{
-			for (int i = 0; i < MAX_GND_LASER_RECEIVERS; i++)
+			for (int i = 0; i < GndLaserReceiver::numGndLaserReceivers; i++)
 			{
 				if (lsr.gndLaserMasks[i] && !lsr.enableSet[i])
 				{
