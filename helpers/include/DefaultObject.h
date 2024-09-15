@@ -3,9 +3,11 @@
 #include <PortalWorld.h>
 #include <PortalBody.h>
 #include <Sounder.h>
+#include <bitset>
 #include "ThinDrawer.h"
 
 class ForceField;
+class Funnel;
 
 class DefaultObject
 {
@@ -16,6 +18,10 @@ public:
 	s_renderGroup* renderGroup;
 	std::vector<ALuint> onHitSoundBuffers;
 	b2Vec2 initialPos;
+	std::bitset<MAX_FUNNELS * 2> funnelMasks;
+	std::bitset<MAX_FUNNELS * 2> newFunnelMasks;
+	Funnel* effectiveFunnel;
+	bool inPortalFunel;
 
 	static std::vector<DefaultObject*> defaultObjects;
 

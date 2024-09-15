@@ -724,10 +724,7 @@ void LevelerTestCase::receiverToTransmitter(s_objectDataGrid* objectData, Receiv
         if (iter != connMap.end())
         {
             Transmitter* transmitter = (Transmitter*)iter->second;
-            if (conn->changePolarization)
-                transmitter->connections.push_back({ conn->offsets, receiver, true });
-            else
-                transmitter->connections.push_back({ conn->offsets, receiver, false });
+            transmitter->connections.push_back({ conn->offsets, receiver, conn->changePolarization });
         }
     }
 }
@@ -742,16 +739,15 @@ void LevelerTestCase::transmitterToReceiver(s_objectDataGrid* objectData, Transm
         if (iter != connMap.end())
         {
             Receiver* receiver = (Receiver*)iter->second;
-            if (conn->changePolarization)
-                transmitter->connections.push_back({ conn->offsets, receiver, true });
-            else
-                transmitter->connections.push_back({ conn->offsets, receiver, false });
+            transmitter->connections.push_back({ conn->offsets, receiver, conn->changePolarization });
         }
     }
 }
 
 void LevelerTestCase::createDynamics()
 {
+    Funnel::funnels.resize(ThinDrawer::object->funnelShader->numFunnels);
+
     for (s_objectDataGrid* objectData : g->leveler->levelObjects)
     {
         glm::i16vec2 pos = objectData->pos;
@@ -849,8 +845,8 @@ void LevelerTestCase::createDynamics()
         break;
         case FUNNEL:
         {
-            Funnel* fn = new Funnel(g->pWorld, objectData);
-            receiverToTransmitter(objectData, fn);
+            Funnel* funnel = Funnel::createFunnel(g->pWorld, objectData);
+            receiverToTransmitter(objectData, funnel);
         }
         break;
         default:

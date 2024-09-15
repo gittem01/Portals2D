@@ -100,6 +100,9 @@ void WallLaserReceiver::disable(LaserEmitter* le)
 
 void WallLaserReceiver::toDeath()
 {
+	disableChecks.clear();
+	enableChecks.clear();
+
 	for (int i = 0; i < numWallLaserReceivers; i++)
 	{
 		WallLaserReceiver& wlr = wallLaserReceivers[i];

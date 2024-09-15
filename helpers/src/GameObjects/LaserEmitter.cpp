@@ -5,8 +5,6 @@
 #include "Gel.h"
 #include "Overlayer.h"
 
-#define FILTER_MASK (F_FEDGE | F_GEDGE | F_GND_RECEIVER)
-
 std::vector<LaserEmitter> LaserEmitter::laserEmitters(64);
 int LaserEmitter::numLaserEmitters = 0;
 s_perTextureData* LaserEmitter::ptData;
@@ -258,7 +256,7 @@ void LaserEmitter::update()
 	ray_send:
 		lsr.lastLaserCube = false;
 
-		pWorld->rayHandler->sendRay(laserPos, laserDir, 400.0f, pbData, (uint32_t)FILTER_MASK);
+		pWorld->rayHandler->sendRay(laserPos, laserDir, 400.0f, pbData, (uint32_t)LSR_FILTER_MASK);
 
 		lsr.handleGroundReceivers();
 
@@ -286,7 +284,7 @@ void LaserEmitter::update()
 						if (lc->wData->pbIndices.size() <= 1)
 						{
 							laserPos = collBody->GetPosition();
-							laserDir = collBody->GetTransform().q.GetYAxis();
+							laserDir = collBody->GetTransform().q.GetXAxis();
 						}
 						else
 						{
@@ -297,13 +295,13 @@ void LaserEmitter::update()
 								{
 									b2Body* body2 = bcs->body->body;
 									laserPos = body2->GetPosition() + 0.001f * bcs->connection->portal2->dir;
-									laserDir = body2->GetTransform().q.GetYAxis();
+									laserDir = body2->GetTransform().q.GetXAxis();
 								}
 								else
 								{
 									b2Body* body = pb->body;
 									laserPos = body->GetPosition() + 0.001f * bcs->connection->portal1->dir;
-									laserDir = body->GetTransform().q.GetYAxis();
+									laserDir = body->GetTransform().q.GetXAxis();
 								}
 							}
 						}

@@ -9,6 +9,8 @@
 #include "GameObjects/GndLaserReceiver.h"
 #include "GameObjects/Receiver.h"
 
+#define LSR_FILTER_MASK (F_FEDGE | F_GEDGE | F_GND_RECEIVER)
+
 typedef struct
 {
 	b2Vec2 startPos;

@@ -4,6 +4,7 @@
 #include <PositionJoint.h>
 #include <GameBase.h>
 #include "GameObjects/GndLaserReceiver.h"
+#include "GameObjects/LaserEmitter.h"
 
 b2Vec2 PortalWorld::getRelativePortalPosition_L(b2Vec2 point, portalConnection* pConnect)
 {
@@ -250,6 +251,46 @@ void PortalWorld::calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<
     assert(angles[0] >= 0.0);
 }
 
+float PortalWorld::getDistanceFromVec(b2Vec2 p0, b2Vec2 p1, PortalBody* portalBody)
+{
+    b2Vec2 dir = p0 - p1; dir = b2Vec2(-dir.y, dir.x);
+
+    float dirAng = PortalWorld::calcAngle2(PortalWorld::rotateVec(dir, -portalBody->body->GetAngle()));
+    std::vector<float> angles;
+    std::vector<point> outerVertices;
+    if (portalBody->isMirrored)
+    {
+        angles = portalBody->worldIndex->mirroredAngles;
+        outerVertices = portalBody->worldIndex->mirroredOuterVertices;
+    }
+    else
+    {
+        angles = portalBody->worldIndex->angles;
+        outerVertices = portalBody->worldIndex->outerVertices;
+    }
+
+    int s = 0;
+    int e = angles.size() - 1;
+    for (; e - s > 1; )
+    {
+        int p = (e - s) / 2 + s;
+        if (angles[p] < dirAng)
+        {
+            s = p;
+        }
+        else
+        {
+            e = p;
+        }
+    }
+
+    if (angles[0] > dirAng || angles[angles.size() - 1] < dirAng) e = 0;
+
+    b2Vec2 worldPos = portalBody->body->GetWorldPoint(b2Vec2(outerVertices[e].pos.x, outerVertices[e].pos.y));
+
+    return PortalWorld::getRealDist(p0, p1, worldPos) + outerVertices[e].r;
+}
+
 float PortalWorld::getDistanceFromPortal(Portal* portal, PortalBody* portalBody)
 {
     float dirAng = PortalWorld::calcAngle2(PortalWorld::rotateVec(-portal->dir, -portalBody->body->GetAngle()));
@@ -281,8 +322,7 @@ float PortalWorld::getDistanceFromPortal(Portal* portal, PortalBody* portalBody)
         }
     }
 
-    if (angles[0] > dirAng) e = 0;
-    if (angles[angles.size() - 1] < dirAng) e = 0;
+    if (angles[0] > dirAng || angles[angles.size() - 1] < dirAng) e = 0;
 
     b2Vec2 worldPos = portalBody->body->GetWorldPoint(b2Vec2(outerVertices[e].pos.x, outerVertices[e].pos.y));
 
@@ -414,7 +454,7 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
         }
         else if ((uint32_t)fData->type & filterMask)
         {
-            if (fData->type & filterMask & F_GND_RECEIVER)
+            if (fData->type & filterMask && (filterMask == LSR_FILTER_MASK))
             {
                 GndLaserReceiver* receiver = (GndLaserReceiver*)fData->data;
                 groundReceivers.push_back({ receiver->arrIndex, fraction });

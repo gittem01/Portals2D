@@ -7,6 +7,7 @@
 #include "GameObjects/LaserEmitter.h"
 #include "GameObjects/GndLaserReceiver.h"
 #include "GameObjects/WallLaserReceiver.h"
+#include "GameObjects/Funnel.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -655,7 +656,7 @@ void TestPlayer::jumpEffect()
     b2Body* body = wData->pbIndices[0]->body;
     s_edgeGlobalData* eGlobal = nullptr;
 
-    if (contactFixture)
+    if (contactFixture && !effectiveFunnel)
     {
         fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
         if (fData)
@@ -1063,24 +1064,16 @@ void TestPlayer::camHandle()
 
 void TestPlayer::handleBodyRotation()
 {
+    if (effectiveFunnel) return;
+
     PortalBody* pb = wData->pbIndices[0];
     float ang = PortalWorld::normalizeAngle(pb->body->GetAngle());
-    if (ang > 0.0f)
+    
+    for (PortalBody* l_portalBody : wData->pbIndices)
     {
-        for (PortalBody* l_portalBody : wData->pbIndices)
-        {
-            l_portalBody->body->SetAngularVelocity(0.0f);
-        }
-        pb->body->SetAngularVelocity(-18.0f * (abs(ang) / b2_pi));
+        l_portalBody->body->SetAngularVelocity(0.0f);
     }
-    else
-    {
-        for (PortalBody* l_portalBody : wData->pbIndices)
-        {
-            l_portalBody->body->SetAngularVelocity(0.0f);
-        }
-        pb->body->SetAngularVelocity(+18.0f * (abs(ang) / b2_pi));
-    }
+    pb->body->SetAngularVelocity(-5.0f * ang);
 }
 
 void TestPlayer::handleGunRotation()
@@ -1733,7 +1726,12 @@ void TestPlayer::holdB(PortalBody* pb, PortalBody* gunBody)
 void TestPlayer::releaseB()
 {
     pbWorldData* indx = holdBody->worldIndex;
-    indx->gravityScale = 1.0f;
+    
+    bodyData* bData = (bodyData*)holdBody->body->GetUserData().pointer;
+    g_PhysicsData* pData = (g_PhysicsData*)bData->extraData;
+    DefaultObject* obj = (DefaultObject*)pData->data;
+    if (!obj->effectiveFunnel) indx->gravityScale = 1.0f;
+    
     for (auto iter = indx->destroyCallbacks.rbegin(); iter != indx->destroyCallbacks.rend(); iter++)
     {
         if ((*iter).first == objectDestrCallback)
@@ -2153,7 +2151,7 @@ void TestPlayer::update(float dt, int totalIter)
         lv.x += diff * dt * 15.0f * wData->pbIndices.size();
         setFriction = 2.0;
     }
-    if (left || right)
+    if (!effectiveFunnel && (left || right))
     {
         const float groundMult = 40.0f;
         const float airMult = 10.0f;
@@ -2309,9 +2307,22 @@ void TestPlayer::update(float dt, int totalIter)
     if (!contactBody) onAirFor += dt;
     else onAirFor = 0.0f;
 
+
     jumpEffect();
 
-    pb->body->SetLinearVelocity(b2Vec2(lv.x, pb->body->GetLinearVelocity().y));
+    if (effectiveFunnel)
+    {
+        lv.y += wh->keyData[GLFW_KEY_W] ? 0.01f : 0.0f;
+        lv.x += wh->keyData[GLFW_KEY_A] ? -0.03f : 0.0f;
+        lv.y += wh->keyData[GLFW_KEY_S] ? -0.03f : 0.0f;
+        lv.x += wh->keyData[GLFW_KEY_D] ? 0.03f : 0.0f;
+
+        pb->body->SetLinearVelocity(lv);
+    }
+    else
+    {
+        pb->body->SetLinearVelocity(b2Vec2(lv.x, pb->body->GetLinearVelocity().y));
+    }
 
     handleBodyRotation();
 

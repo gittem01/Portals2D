@@ -171,6 +171,7 @@ friend class TestCase8;
 friend class Leveler;
 friend class Gel;
 friend class ForceField;
+friend class Funnel;
 
 public:
     std::vector<pbWorldData*> bodyIndices;
@@ -220,6 +221,7 @@ private:
     static glm::vec4 tangenter(point p1, point p2, float mult);
     static void calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<point>& outerVertices, std::vector<glm::vec4>& outerEdges, std::vector<float>& angles);
     static float getDistanceFromPortal(Portal* portal, PortalBody* portalBody);
+    static float getDistanceFromVec(b2Vec2 p0, b2Vec2 p1, PortalBody* portalBody);
 
     void globalPostHandle();
 

@@ -7,6 +7,9 @@ std::vector<DefaultObject*> DefaultObject::defaultObjects;
 DefaultObject::DefaultObject(PortalWorld* portalWorld)
 {
 	this->pWorld = portalWorld;
+	funnelMasks.reset();
+	newFunnelMasks.reset();
+	effectiveFunnel = nullptr;
 
 	defaultObjects.push_back(this);
 }
@@ -15,6 +18,9 @@ DefaultObject::DefaultObject(PortalWorld* portalWorld, PortalBody* pb)
 {
 	this->pWorld = portalWorld;
 	this->wData = pb->worldIndex;
+	funnelMasks.reset();
+	newFunnelMasks.reset();
+	effectiveFunnel = nullptr;
 
 	defaultObjects.push_back(this);
 }

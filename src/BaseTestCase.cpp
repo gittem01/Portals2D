@@ -9,6 +9,7 @@
 #include "GameObjects/DownButton.h"
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
+#include "GameObjects/Funnel.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -184,6 +185,7 @@ void BaseTestCase::onUpdate()
             DownButton::update();
             CubeButton::update();
             CircleButton::update(dt);
+            Funnel::perTickUpdate();
         }
     }
    

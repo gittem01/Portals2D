@@ -4,6 +4,7 @@
 #include <Shader.h>
 #include <definitions.h>
 #include <vkInit.h>
+#include "SwapChain.h"
 
 void FunnelShader::prepareVertexData()
 {
@@ -14,7 +15,7 @@ void FunnelShader::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(sizeof(s_funnelUbo) * 80000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_funnelUbo) * thinDrawer->swapChain->imageCount * (MAX_FUNNELS + 8), &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_funnelUbo* funnelUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_funnelUbo), 0, (void**)&funnelUbo);

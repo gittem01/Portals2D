@@ -39,5 +39,5 @@ Japanese
 日本語
 <local_3>
 <selected_language_index>
-0
+1
 <selected_language_index>

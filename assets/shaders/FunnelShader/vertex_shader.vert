@@ -48,6 +48,12 @@ void main()
     instanceIndex = gl_InstanceIndex;
     storageData data = ubo.sData[instanceIndex];
 
+    if (data.colour.w < 0.01 && data.colour2.w < 0.01)
+    {
+        gl_Position = vec4(0.0f, 0.0f, 0.0f, -1.0f);
+        return;
+    }
+
     vec2 diffVec = data.pointts.zw - data.pointts.xy;
     vec2 midPoint = (data.pointts.xy + data.pointts.zw) * 0.5f;
     float dist = length(diffVec);
@@ -69,7 +75,7 @@ void main()
         angle = atan(diffVec.y, diffVec.x);
     }
 
-    size = vec2(dist, data.data.x);
+    size = vec2(dist, abs(data.data.x));
 
     localPos = vec2(vCopy.x, vertex.y * 2.0);
 

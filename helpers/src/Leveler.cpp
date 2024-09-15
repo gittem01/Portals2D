@@ -416,7 +416,7 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 		float diffLen = glm::length(endPoint - startPoint);
 		funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 1.0);
 		funnelUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
-		funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -1.0);
+		funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -3.0);
 		funnelUbo->data2 = glm::vec4(diffLen + 10.0, diffLen - 1.0, diffLen, 0.0);
 
 		vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0].memory);
@@ -2761,14 +2761,14 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 0.0);
 			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, objectData->startActive ? 1.0 : 0.15);
 			funnelUbo->data2 = glm::vec4(std::min(50.0f, diffLen), diffLen - 1.0, diffLen, game->gameTime);
-			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, 1.0);
+			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, 3.0);
 		}
 		else
 		{
 			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
 			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, 0.0);
 			funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, game->gameTime);
-			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -1.0);
+			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -3.0);
 		}
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
@@ -3980,7 +3980,7 @@ void Leveler::handleRightClickClick()
 					funnelUbo->data2.x = colorSplitPos;
 					funnelUbo->data2.w = game->gameTime;
 
-					funnelUbo->data.w = objectData->startPolarized ? 1.0 : -1.0;
+					funnelUbo->data.w = objectData->startPolarized ? 3.0 : -3.0;
 					funnelUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
 					funnelUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
 

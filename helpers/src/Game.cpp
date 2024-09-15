@@ -183,6 +183,7 @@ void Game::TestState()
             DownButton::toLeveler();
             CubeButton::toLeveler();
             CircleButton::toLeveler();
+            Funnel::toLeveler();
         }
 
         testCase->shouldQuit = false;

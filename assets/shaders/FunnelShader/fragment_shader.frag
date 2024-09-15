@@ -52,24 +52,6 @@ float noise(vec2 p)
                    hash(i + ivec2(1, 1)), u.x), u.y);
 }
 
-float getNoise()
-{
-    mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
-    float f = 0.0;
-    float sv = 0.5;
-    int mx = 5;
-    vec2 uv = worldPos + vec2(sharedUboData.data.y * 0.5, sharedUboData.data.y * 0.363);
-    uv *= 4.0;
-    for (int i = 0; i < mx; i++)
-    {
-        f += sv * noise(uv);
-        uv = m * uv;
-        sv /= 2.0;
-    }
-
-    return 0.8 + 0.2 * f;
-}
-
 float getClosestDistance(vec2 point, float midX, int iterations)
 {
     float t = 0.5;
@@ -120,7 +102,7 @@ void main()
 
     const float colourSmoother = 5.0;
     vec4 clr;
-    float colorSplitPos = data.data2.x + data.data.w * (iTime - data.data2.w) * -200.0;
+    float colorSplitPos = data.data2.x + data.data.w * (iTime - data.data2.w) * -50.0;
     if (xFromStart > colorSplitPos)
     {
         float m = min(((xFromStart - colorSplitPos) / colourSmoother + 1.0) * 0.5, 1.0);
@@ -177,6 +159,6 @@ void main()
     }
 
     lastVal = max(min(lastVal, 1.0), 0.0);
-       
+    
     FragColour = clr * (sumLn * yMult + lastVal) * endMult;
 }
