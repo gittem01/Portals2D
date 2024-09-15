@@ -12,6 +12,8 @@ class FunnelRay;
 class Funnel : public Receiver
 {
 public:
+	static std::vector<DefaultObject*> handleObjects;
+	static int numHandleObjects;
 	static std::vector<Funnel> funnels;
 	static int numFunnels;
 	static s_perTextureData* ptData;

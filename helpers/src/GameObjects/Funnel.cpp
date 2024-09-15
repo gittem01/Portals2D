@@ -8,6 +8,8 @@
 #define FUNNEL_FILTER_MASK ~(uint32_t)(F_EDGE | F_GEDGE | F_PORTAL)
 #define FUNNEL_FILTER_MASK_NP ~(uint32_t)(F_EDGE | F_GEDGE)
 
+std::vector<DefaultObject*> Funnel::handleObjects;
+int Funnel::numHandleObjects = 0;
 FunnelRay* Funnel::funnelRay = nullptr;
 std::vector<Funnel> Funnel::funnels;
 int Funnel::numFunnels = 0;
@@ -239,12 +241,16 @@ void Funnel::usignal2()
 void Funnel::toDeath()
 {
 	extraRenderChecker[0] = false; extraRenderChecker[1] = false;
+	handleObjects.clear();
+	numHandleObjects = 0;
 }
 
 void Funnel::toLeveler()
 {
 	numFunnels = 0;
 	extraRenderChecker[0] = false; extraRenderChecker[1] = false;
+	handleObjects.clear();
+	numHandleObjects = 0;
 }
 
 Funnel* Funnel::createFunnel(PortalWorld* portalWorld, s_objectDataGrid* objData)
@@ -356,14 +362,16 @@ void Funnel::render(VkCommandBuffer cmdBuff, void* ptr)
 
 void handleObjs()
 {
-	for (DefaultObject* dobj : DefaultObject::defaultObjects)
+	for (int i = 0; i < Funnel::numHandleObjects; i++)
 	{
+		DefaultObject* dobj = Funnel::handleObjects[i];
 		if (dobj->newFunnelMasks != dobj->funnelMasks)
 		{
 			if (dobj->newFunnelMasks.none())
 			{
 				dobj->effectiveFunnel = nullptr;
 				dobj->wData->gravityScale = 1.0f;
+				Funnel::handleObjects[i--] = Funnel::handleObjects[--Funnel::numHandleObjects];
 			}
 			else
 			{
@@ -457,6 +465,12 @@ void Funnel::update()
 		{
 			if (pair.first < minLen)
 			{
+				if (pair.second->funnelMasks.none() && pair.second->newFunnelMasks.none())
+				{
+					handleObjects.resize(numHandleObjects + 1);
+					handleObjects[numHandleObjects++] = pair.second;
+				}
+
 				pair.second->newFunnelMasks[funnel->arrIndex] = true;
 			}
 		}
@@ -493,6 +507,12 @@ void Funnel::update()
 			{
 				if (pair.first < minLen2)
 				{
+					if (pair.second->funnelMasks.none() && pair.second->newFunnelMasks.none())
+					{
+						handleObjects.resize(numHandleObjects + 1);
+						handleObjects[numHandleObjects++] = pair.second;
+					}
+
 					pair.second->newFunnelMasks[funnel->arrIndex + MAX_FUNNELS] = true;
 				}
 			}
@@ -585,9 +605,11 @@ float sdSegment(b2Vec2 p, b2Vec2 a, b2Vec2 b)
 
 void Funnel::perTickUpdate()
 {
-	for (DefaultObject* dobj : DefaultObject::defaultObjects)
+	for (int i = 0; i < numHandleObjects; i++)
 	{
-		if (dobj->effectiveFunnel && dobj->wData->destrTime < -5.0f)
+		DefaultObject* dobj = handleObjects[i];
+
+		if (dobj->wData->destrTime < -5.0f)
 		{
 			Funnel* f = dobj->effectiveFunnel;
  			b2Body* body;

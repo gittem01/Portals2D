@@ -33,8 +33,6 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     PortalBody* portalBody = portalWorld->createPortalBody(body);
     wData = portalBody->worldIndex;
     
-    wData->gravityScale = 0.5;
-
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
     pData.type = (g_DataType)(DEFAULT_OBJECT_O | GEL_O);
     pData.data = this;
