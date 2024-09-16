@@ -469,6 +469,12 @@ void Funnel::update()
 				{
 					handleObjects.resize(numHandleObjects + 1);
 					handleObjects[numHandleObjects++] = pair.second;
+
+					b2Body* body = pair.second->wData->pbIndices[0]->body;
+					b2Vec2 linVel = body->GetLinearVelocity();
+					float len = linVel.Normalize();
+					linVel *= std::min(len, 3.0f);
+					body->SetLinearVelocity(linVel);
 				}
 
 				pair.second->newFunnelMasks[funnel->arrIndex] = true;
@@ -489,9 +495,11 @@ void Funnel::update()
 			funnel->turnAngle2 = funnel->turnAngle + otherPortal->dirAngle - portal->dirAngle + b2_pi;
 			funnel->turnAngle2 = PortalWorld::normalizeAngle(funnel->turnAngle2);
 
+			funnel->data2.data.x = funnel->data.data.x * (conn->isReversed ? -1.0f : 1.0f);
+
 			b2Vec2 p10 = PortalWorld::getRelativePortalPosition_W(endPoint1, conn);
 
-			funnel->relativeSpeed = b2Dot(portal->body->GetLinearVelocity(), funnel->funnelDir) + b2Dot(otherPortal->body->GetLinearVelocity(), funnel->funnelDir2);
+			funnel->relativeSpeed = b2Dot(portal->body->GetLinearVelocity(), funnel->funnelDir) - b2Dot(otherPortal->body->GetLinearVelocity(), funnel->funnelDir2);
 			maxLen = 400.0f;
 			funnel->funnelDir2 = otherPortal->dir;
 			b2Vec2 perpDir = otherPortal->rotDir;
@@ -511,6 +519,12 @@ void Funnel::update()
 					{
 						handleObjects.resize(numHandleObjects + 1);
 						handleObjects[numHandleObjects++] = pair.second;
+
+						b2Body* body = pair.second->wData->pbIndices[0]->body;
+						b2Vec2 linVel = body->GetLinearVelocity();
+						float len = linVel.Normalize();
+						linVel *= std::min(len, 3.0f);
+						body->SetLinearVelocity(linVel);
 					}
 
 					pair.second->newFunnelMasks[funnel->arrIndex + MAX_FUNNELS] = true;
@@ -559,6 +573,7 @@ void Funnel::update()
 			funnel->extraRenderIndex = -1;
 			funnel->data.data2.y = minLen - 0.3f;
 			funnel->reqMapCount = ThinDrawer::object->swapChain->imageCount;
+			funnel->lastLen2 = 10000.0f;
 		}
 
 		float diff = funnel->lastLen - minLen;
@@ -651,11 +666,9 @@ void Funnel::perTickUpdate()
 					f->lastStartPos2 + f->funnelDir2, body->GetPosition());
 
 				b2Vec2 linVel = body->GetLinearVelocity();
-				float len = linVel.Normalize();
-				linVel *= std::min(len, 3.0f);
 
 				b2Vec2 fwdDiff = linVel - (reqSpeed - f->relativeSpeed) * f->funnelDir2;
-				linVel -= indSize * 0.01f * fwdDiff;
+				linVel -= indSize * 0.005f * fwdDiff;
 
 				b2Vec2 rightVec = b2Vec2(-f->funnelDir2.y, f->funnelDir2.x);
 				linVel += indSize * 0.02f * dist * rightVec;
@@ -664,7 +677,7 @@ void Funnel::perTickUpdate()
 
 				float angle = body->GetAngle();
 				float diff = PortalWorld::normalizeAngle(f->turnAngle2 - angle);
-				body->SetAngularVelocity(5.0f * diff);
+				body->SetAngularVelocity(indSize * 2.0f * diff);
 			}
 			else
 			{
@@ -672,11 +685,9 @@ void Funnel::perTickUpdate()
 					f->funnelPos + f->funnelDir, body->GetPosition());
 
 				b2Vec2 linVel = body->GetLinearVelocity();
-				float len = linVel.Normalize();
-				linVel *= std::min(len, 3.0f);
 
 				b2Vec2 fwdDiff = linVel - reqSpeed * f->funnelDir;
-				linVel -= indSize * 0.01f * fwdDiff;
+				linVel -= indSize * 0.005f * fwdDiff;
 
 				b2Vec2 rightVec = b2Vec2(-f->funnelDir.y, f->funnelDir.x);
 				linVel += indSize * 0.02f * dist * rightVec;
@@ -685,7 +696,7 @@ void Funnel::perTickUpdate()
 
 				float angle = body->GetAngle();
 				float diff = PortalWorld::normalizeAngle(f->turnAngle - angle);
-				body->SetAngularVelocity(5.0f * diff);
+				body->SetAngularVelocity(2.0f * diff);
 			}
 		}
 	}
