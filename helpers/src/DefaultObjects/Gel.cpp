@@ -466,7 +466,7 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
     {
         splash(contact, otherFix);
     }
-    else if (numNearGels < std::size(nearGels))
+   /* else if (numNearGels < std::size(nearGels))
     {
         bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
         if (bData && bData->extraData)
@@ -483,5 +483,5 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
     else
     {
         splash(contact, otherFix);
-    }
+    }*/
 }

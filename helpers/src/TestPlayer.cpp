@@ -1257,12 +1257,11 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
     s_edgeGlobalData* eGlobalData = eLocalData->globalData;
     int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
 
-    int requiredRangeSize = std::ceil(size / eGlobalData->perWallSize);
-    requiredRangeSize += requiredRangeSize % 2;
+    int requiredRangeSize = std::ceil(size * 10.0f);
 
     b2EdgeShape* eShape = (b2EdgeShape*)checkFixture->GetShape();
     pos = checkFixture->GetBody()->GetLocalPoint(pos);
-    float dist = (pos - eGlobalData->localPoints[0]).Length() / eGlobalData->perWallSize;
+    float dist = (pos - eGlobalData->localPoints[0]).Length() * 10.0f;
 
     int startIndex = std::min(std::max((int)std::floor(dist), eLocalData->globalRange[0]), eLocalData->globalRange[1]);
 
@@ -1292,15 +1291,17 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
         }
     }
 
+    if (checkRange[1] - checkRange[0] + 1 < requiredRangeSize) return nullptr;
+
     int leftCount = 0;
     int rightCount = 0;
     int lastSum = 0;
 
     while (true)
     {
-        if (startIndex + leftCount + 1 <= checkRange[1])
+        if (startIndex + leftCount <= checkRange[1])
         {
-            s_unitWallData& uData = eGlobalData->unitWalls[startIndex + leftCount + 1];
+            s_unitWallData& uData = eGlobalData->unitWalls[startIndex + leftCount];
             if (uData.wallType == PORTALLABLE || (uData.gelAmount > 0.5 && uData.gelType & WHITE))
             {
                 leftCount++;
@@ -1312,9 +1313,9 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
             }
         }
 
-        if (startIndex - rightCount - 1 >= checkRange[0])
+        if (startIndex - rightCount >= checkRange[0])
         {
-            s_unitWallData& uData = eGlobalData->unitWalls[startIndex - rightCount - 1];
+            s_unitWallData& uData = eGlobalData->unitWalls[startIndex - rightCount];
             if (uData.wallType == PORTALLABLE || (uData.gelAmount > 0.5 && uData.gelType & WHITE))
             {
                 rightCount++;
