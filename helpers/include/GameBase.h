@@ -56,6 +56,7 @@ enum FixtureDataType
     F_WALL_RECEIVER = 0x1 << 12,
     F_GND_RECEIVER  = 0x1 << 13,
     F_FUNNEL		= 0x1 << 14,
+    F_LIGHT_BRIDGE  = 0x1 << 15,
 
     F_END           = 0x1 << 30,
 };

@@ -4,27 +4,27 @@
 #include <Shader.h>
 #include <definitions.h>
 #include <vkInit.h>
+#include <SwapChain.h>
 
-void LightBridge::prepareVertexData()
+void LightBridgeShader::prepareVertexData()
 {
 
 }
 
-void LightBridge::prepareUniforms()
+void LightBridgeShader::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(sizeof(s_bridgeUbo) * 2000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_bridgeUbo) * 32 * 4 * ThinDrawer::object->swapChain->imageCount, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_bridgeUbo* bridgeUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
     bridgeUbo->points = glm::vec4(-10.0, -5.0, 0.0, 10.0);
     bridgeUbo->data = glm::vec4(0.6, 0.0, 0.0, 0.0);
-    bridgeUbo->portal.x = -317653618351378.8376137f;
     vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }
 
-void LightBridge::setupDescriptorSetLayout()
+void LightBridgeShader::setupDescriptorSetLayout()
 {
     const int descriptorSetLayoutCount = 2;
 
@@ -43,7 +43,7 @@ void LightBridge::setupDescriptorSetLayout()
     CHECK_RESULT_VK(vkCreatePipelineLayout(logicalDevice, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &pipelineLayout));
 }
 
-void LightBridge::preparePipeline()
+void LightBridgeShader::preparePipeline()
 {
     VkGraphicsPipelineCreateInfo* pipelineCreateInfo = thinDrawer->getPipelineInfoBase();
     pipelineCreateInfo->layout = pipelineLayout;
@@ -83,7 +83,7 @@ void LightBridge::preparePipeline()
     ThinDrawer::freePipelineData(pipelineCreateInfo);
 }
 
-void LightBridge::setupDescriptorSet()
+void LightBridgeShader::setupDescriptorSet()
 {
     descriptorSets.resize(descriptorSetLayouts.size());
 

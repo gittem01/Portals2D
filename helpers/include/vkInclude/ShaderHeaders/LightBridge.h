@@ -5,17 +5,16 @@
 typedef struct
 {
     glm::vec4 points;
-    glm::vec4 data; // thickness, startX, none, none
-    glm::vec4 portal;
+    glm::vec4 data; // thickness, totalSize, clrr, offset
 } s_bridgeUbo;
 
-class LightBridge : public ShaderBase
+class LightBridgeShader : public ShaderBase
 {
 public:
 
     int numbridges = 0;
 
-    LightBridge(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
+    LightBridgeShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     void prepareUniforms();
     void setupDescriptorSetLayout();

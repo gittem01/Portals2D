@@ -65,7 +65,7 @@ void ThinDrawer::initExtra()
     laserShader = new LaserShader(this); shaders.push_back(laserShader);
     laserPshShader = new LaserPshShader(this); shaders.push_back(laserPshShader);
     lineZ = new LineZ(this); shaders.push_back(lineZ);
-    lightBridge = new LightBridge(this); shaders.push_back(lightBridge);
+    lightBridge = new LightBridgeShader(this); shaders.push_back(lightBridge);
     funnelShader = new FunnelShader(this); shaders.push_back(funnelShader);
     hazardShader = new HazardShader(this); shaders.push_back(hazardShader);
     blueField = new BlueField(this); shaders.push_back(blueField);

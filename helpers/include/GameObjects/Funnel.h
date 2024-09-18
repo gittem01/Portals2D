@@ -18,7 +18,7 @@ public:
 	static int numFunnels;
 	static s_perTextureData* ptData;
 	static s_texture* tex;
-	static FunnelRay* funnelRay;
+	static FunnelRay funnelRay;
 	static bool extraRenderChecker[2];
 
 	s_funnelUbo data;

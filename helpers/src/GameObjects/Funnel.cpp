@@ -10,7 +10,7 @@
 
 std::vector<DefaultObject*> Funnel::handleObjects;
 int Funnel::numHandleObjects = 0;
-FunnelRay* Funnel::funnelRay = nullptr;
+FunnelRay Funnel::funnelRay;
 std::vector<Funnel> Funnel::funnels;
 int Funnel::numFunnels = 0;
 s_perTextureData* Funnel::ptData;
@@ -265,8 +265,6 @@ Funnel* Funnel::createFunnel(PortalWorld* portalWorld, s_objectDataGrid* objData
 
 void Funnel::staticInit()
 {
-	funnelRay = new FunnelRay();
-
 	constexpr int index = getLevelObjectIndex(FUNNEL) - 4;
 
 	ptData = &Leveler::object->perTextureData[index];
@@ -450,18 +448,18 @@ void Funnel::update()
 		b2Fixture* lastFix = nullptr;
 		for (int i = 0; i < 4; i++)
 		{
-			funnelRay->sendRay(funnel->rayPositions[i], funnel->funnelDir, maxLen + 0.1f, FUNNEL_FILTER_MASK);
-			maxLen = funnelRay->minFraction * (maxLen + 0.1f);
+			funnelRay.sendRay(funnel->rayPositions[i], funnel->funnelDir, maxLen + 0.1f, FUNNEL_FILTER_MASK);
+			maxLen = funnelRay.minFraction * (maxLen + 0.1f);
 			minLen = std::min(minLen, maxLen);
-			if (funnelRay->closestFixture && (lastFix == funnelRay->closestFixture || lastFix == nullptr))
+			if (funnelRay.closestFixture && (lastFix == funnelRay.closestFixture || i == 0))
 			{
-				fixtureData* fData = (fixtureData*)funnelRay->closestFixture->GetUserData().pointer;
+				fixtureData* fData = (fixtureData*)funnelRay.closestFixture->GetUserData().pointer;
 				portalBits[i] = fData && (uint32_t)fData->type & F_PORTAL && ((Portal*)fData->data)->connections->size() > 0;
 			}
-			lastFix = funnelRay->closestFixture;
+			lastFix = funnelRay.closestFixture;
 		}
 
-		for (auto pair : funnelRay->objMap)
+		for (auto pair : funnelRay.objMap)
 		{
 			if (pair.first < minLen)
 			{
@@ -481,13 +479,13 @@ void Funnel::update()
 			}
 		}
 
-		funnelRay->objMap.clear();
+		funnelRay.objMap.clear();
 
 		endPoint1 = funnel->funnelPos + minLen * funnel->funnelDir;
 
 		if (portalBits.all())
 		{
-			fixtureData* fData = (fixtureData*)funnelRay->closestFixture->GetUserData().pointer;
+			fixtureData* fData = (fixtureData*)funnelRay.closestFixture->GetUserData().pointer;
 			Portal* portal = (Portal*)fData->data;
 			portalConnection* conn = portal->connections[0].front();
 			Portal* otherPortal = conn->portal2;
@@ -506,12 +504,12 @@ void Funnel::update()
 			for (int i = 0; i < 4; i++)
 			{
 				b2Vec2 p = p10 + rayStepSize * sideMults[i] * perpDir - 0.5f * otherPortal->dir;
-				funnelRay->sendRay(p, otherPortal->dir, maxLen + 0.1f, FUNNEL_FILTER_MASK_NP);
-				maxLen = funnelRay->minFraction * (maxLen + 0.1f);
+				funnelRay.sendRay(p, otherPortal->dir, maxLen + 0.1f, FUNNEL_FILTER_MASK_NP);
+				maxLen = funnelRay.minFraction * (maxLen + 0.1f);
 				minLen2 = std::min(minLen2, maxLen);
 			}
 
-			for (auto pair : funnelRay->objMap)
+			for (auto pair : funnelRay.objMap)
 			{
 				if (pair.first < minLen2)
 				{
@@ -531,7 +529,7 @@ void Funnel::update()
 				}
 			}
 
-			funnelRay->objMap.clear();
+			funnelRay.objMap.clear();
 
 			float posChange = (p10 - funnel->lastStartPos2).LengthSquared();
 			funnel->lastStartPos2 = p10;

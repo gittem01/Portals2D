@@ -184,7 +184,7 @@ public:
     LaserShader* laserShader;
     LaserPshShader* laserPshShader;
     LineZ* lineZ;
-    LightBridge* lightBridge;
+    LightBridgeShader* lightBridge;
     FunnelShader* funnelShader;
     HazardShader* hazardShader;
     BlueField* blueField;

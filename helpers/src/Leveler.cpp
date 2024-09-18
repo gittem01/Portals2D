@@ -359,7 +359,7 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
 		vkMapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0].memory,
 			bridgeOffset * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 		bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-		bridgeUbo->data = glm::vec4(0.4, 11.0, 1.0, 0.0);
+		bridgeUbo->data = glm::vec4(0.4, glm::length(startPoint - endPoint), 1.0, 0.0);
 
 		vkUnmapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0].memory);
 
@@ -2732,8 +2732,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		vkMapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory,
 			objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 		bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-		bridgeUbo->data = glm::vec4(0.4, 11.0, objectData->startActive ? 1.0 : 0.3, 0.0);
-		bridgeUbo->portal.x = -45263872644141.1361783f;
+		bridgeUbo->data = glm::vec4(0.4, glm::length(startPoint - endPoint), objectData->startActive ? 1.0 : 0.3, 0.0);
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
 		thinDrawer->lightBridge->numbridges++;
@@ -3448,6 +3447,7 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
 				vkMapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0].memory,
 					objectData->extraOffsets[0] * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 				bridgeUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+				bridgeUbo->data.y = glm::length(startPoint - endPoint);
 				vkUnmapMemory(thinDrawer->lightBridge->logicalDevice, thinDrawer->lightBridge->uniformBuffers[0].memory);
 			}
 			break;

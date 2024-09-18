@@ -17,6 +17,7 @@
 #include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/GndLaserReceiver.h"
 #include "GameObjects/Funnel.h"
+#include "GameObjects/LightBridge.h"
 
 Game* Game::object;
 
@@ -89,6 +90,7 @@ void Game::LevelerState()
 void Game::TestState()
 {
     dtMult = 1.0;
+    LightBridge::staticInit();
     Turret::staticInit();
     Gel::staticInit();
     Platform::staticInit();
@@ -141,6 +143,7 @@ void Game::TestState()
             WallLaserReceiver::update();
             GndLaserReceiver::update();
             Funnel::update();
+            LightBridge::update();
         }
 
         for (auto func : singleTaskRegistry)
@@ -184,6 +187,7 @@ void Game::TestState()
             CubeButton::toLeveler();
             CircleButton::toLeveler();
             Funnel::toLeveler();
+            LightBridge::toLeveler();
         }
 
         testCase->shouldQuit = false;

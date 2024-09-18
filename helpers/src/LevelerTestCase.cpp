@@ -12,6 +12,7 @@
 #include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/GndLaserReceiver.h"
 #include "GameObjects/Funnel.h"
+#include "GameObjects/LightBridge.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 
@@ -747,6 +748,7 @@ void LevelerTestCase::transmitterToReceiver(s_objectDataGrid* objectData, Transm
 void LevelerTestCase::createDynamics()
 {
     Funnel::funnels.resize(ThinDrawer::object->funnelShader->numFunnels);
+    LightBridge::lightBridges.resize(ThinDrawer::object->lightBridge->numbridges);
 
     for (s_objectDataGrid* objectData : g->leveler->levelObjects)
     {
@@ -848,6 +850,12 @@ void LevelerTestCase::createDynamics()
             Funnel* funnel = Funnel::createFunnel(g->pWorld, objectData);
             receiverToTransmitter(objectData, funnel);
         }
+        break;
+        case LIGHT_BRIDGE:
+        {
+			LightBridge* lb = LightBridge::createLightBridge(g->pWorld, objectData);
+			receiverToTransmitter(objectData, lb);
+		}
         break;
         default:
             break;

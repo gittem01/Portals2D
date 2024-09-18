@@ -7,7 +7,6 @@ layout (location = 0) in vec2 vertex;
 layout (location = 0) out vec2 localPos;
 layout (location = 1) flat out vec2 size;
 layout (location = 2) flat out vec4 outData;
-layout (location = 3) flat out vec4 portal;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -19,8 +18,7 @@ layout (set = 0, binding = 0) uniform SharedUboData
 struct storageData
 {
     vec4 pointts;
-    vec4 data; // thickness, startX, none, none
-    vec4 portal;
+    vec4 data; // thickness, totalSize, clrr, offset
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -47,7 +45,6 @@ void main()
     storageData data = ubo.sData[instanceIndex];
 
     outData = data.data;
-    portal = data.portal;
 
     vec2 diffVec = data.pointts.zw - data.pointts.xy;
     vec2 midPoint = (data.pointts.xy + data.pointts.zw) * 0.5f;
@@ -72,7 +69,7 @@ void main()
 
     size = vec2(dist * 0.5f, data.data.x * 0.5f);
 
-    localPos = vCopy;
+    localPos = vec2(vCopy.x + dist * 0.5, vCopy.y);
 
     vCopy = rotateAroundOrigin(vCopy, angle);
     vCopy += midPoint;
