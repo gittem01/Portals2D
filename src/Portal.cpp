@@ -147,6 +147,11 @@ Portal::~Portal()
     body->DestroyFixture(midFixture);
     body->DestroyFixture(yFix[0]);
     body->DestroyFixture(yFix[1]);
+
+    if (body->GetFixtureList() == nullptr)
+    {
+        pWorld->DestroyBody(body);
+    }
 }
 
 b2Fixture* Portal::getPreDestructionFixture()
@@ -636,7 +641,7 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
     if (fix2 == midFixture) return false;
 
     const float tHold = -0.001f;
-
+    
 	if (fix2->GetType() == b2Shape::Type::e_edge) {
 		b2WorldManifold wManifold;
 		contact->GetWorldManifold(&wManifold);
@@ -671,6 +676,11 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
 			}
 		}
 		else {
+            if (PortalWorld::intersectionCheck(points[0], points[1], p1, p2))
+            {
+				return true;
+			}
+
 			if ((d1 < 0.001f || d2 < 0.001f) && d1 + d2 > 0.1f) {
 				int p2Side = getPointSide(p2);
 				if (p2Side == coll1->side) {

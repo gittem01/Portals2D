@@ -6,10 +6,13 @@
 #define LIGHT_FILTER_MASK ~(uint32_t)(F_EDGE | F_GEDGE | F_PORTAL)
 
 std::vector<LightBridge> LightBridge::lightBridges;
+std::vector<LightBridge*> LightBridge::perTickChecks;
 int LightBridge::numLightBridges = 0;
 s_perTextureData* LightBridge::ptData;
 s_texture* LightBridge::tex;
 LightRay LightBridge::lightRay;
+
+const float lightThick = 0.3f;
 
 static b2Vec2 fwdDirs[4] = { { 0.0, 1.0 }, { -1.0, 0.0 }, { 0.0, -1.0 }, { 1.0, 0.0 } };
 
@@ -21,14 +24,15 @@ static b2Vec2 bodyOffsets[4] =
 	b2Vec2(0.1f, 0.5f),
 };
 
-static b2Vec2 vertices[4] = {
+static b2Vec2 vertices[3] = {
 	b2Vec2(+0.399f, -0.1f),
 	b2Vec2(0.25f, -0.05f),
-	b2Vec2(0.16f, 0.28f),
-	b2Vec2(0.16f, -0.04f),
+	b2Vec2(lightThick * 0.5f, 0.3f),
 };
 
 static int extraIndices[6];
+
+static bool requireDestroy = false;
 
 void LightBridge::ssignal()
 {
@@ -39,8 +43,6 @@ void LightBridge::usignal()
 {
 	signalCount--;
 }
-
-const float lightThick = 0.3f;
 
 LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
@@ -58,24 +60,39 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	bDef.position = lightPos;
 	bDef.angle = objData->rotation * 0.5f * b2_pi;
 
-	b2Body* body = portalWorld->CreateBody(&bDef);
+	bridgeBody = portalWorld->CreateBody(&bDef);
 
 	b2EdgeShape shape;
 	for (int i = 0; i < std::size(vertices) - 1; i++)
 	{
 		shape.SetTwoSided(vertices[i], vertices[i + 1]);
-		body->CreateFixture(&shape, 0.0f);
+		bridgeBody->CreateFixture(&shape, 0.0f);
 
 		b2Vec2 mirrV0 = b2Vec2(-vertices[i].x, vertices[i].y);
 		b2Vec2 mirrV1 = b2Vec2(-vertices[i + 1].x, vertices[i + 1].y);
 
 		shape.SetTwoSided(mirrV0, mirrV1);
-		body->CreateFixture(&shape, 0.0f);
+		bridgeBody->CreateFixture(&shape, 0.0f);
 	}
 
-	b2Vec2 mirrLast = b2Vec2(-vertices[std::size(vertices) - 1].x, vertices[std::size(vertices) - 1].y);
-	shape.SetTwoSided(vertices[std::size(vertices) - 1], mirrLast);
-	body->CreateFixture(&shape, 0.0f);
+	bDef.angle += -b2_pi * 0.5f;
+	bDef.type = b2_kinematicBody;
+	capBody = portalWorld->CreateBody(&bDef);
+
+	b2Vec2 p1 = b2Vec2(-0.3f, lightThick * 0.5f);
+	b2Vec2 p2 = b2Vec2(-0.01f, p1.y);
+
+	shape.SetTwoSided(p1, p2);
+	capBody->CreateFixture(&shape, 0.0f);
+
+	p1 = b2Vec2(p1.x, -p1.y);
+	p2 = b2Vec2(p2.x, -p2.y);
+	shape.SetTwoSided(p1, p2);
+	capBody->CreateFixture(&shape, 0.0f);
+
+	p1 = b2Vec2(p2.x, -p2.y);
+	shape.SetTwoSided(p2, p1);
+	capBody->CreateFixture(&shape, 0.0f);
 
 	s_bridgeUbo* bridgeUbo;
 	vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory,
@@ -108,6 +125,7 @@ LightBridge* LightBridge::createLightBridge(PortalWorld* portalWorld, s_objectDa
 void LightBridge::toDeath()
 {
 	for (int i = 0; i < 6; i++) extraIndices[i] = 0;
+	perTickChecks.clear();
 }
 
 
@@ -116,6 +134,12 @@ void LightBridge::toLeveler()
 	numLightBridges = 0;
 
 	for (int i = 0; i < 6; i++) extraIndices[i] = 0;
+	perTickChecks.clear();
+}
+
+void portalDestrCallback(Portal* portal)
+{
+	requireDestroy = true;
 }
 
 void LightBridge::staticInit()
@@ -127,6 +151,8 @@ void LightBridge::staticInit()
 
 	ThinDrawer::object->memMapFuncs.push_back({ memMap, nullptr });
 	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
+
+	Game::object->pWorld->portalDestroyCallbacks.push_back(portalDestrCallback);
 
 	for (int i = 0; i < 6; i++) extraIndices[i] = 0;
 }
@@ -263,6 +289,25 @@ Portal* sendRays(float maxLen, b2Vec2 p, b2Vec2 dir, int portalCounter, float* m
 
 void LightBridge::update()
 {
+	if (requireDestroy)
+	{
+		for (int i = 0; i < LightBridge::perTickChecks.size(); i++)
+		{
+			LightBridge* lb = LightBridge::perTickChecks[i];
+
+			for (int j = 1; j < lb->bodies.size(); j++)
+			{
+				Game::object->pWorld->DestroyBody(lb->bodies[j]);
+			}
+
+			lb->bodies.resize(std::min((int)lb->bodies.size(), 1));
+		}
+
+		requireDestroy = false;
+	}
+
+	perTickChecks.clear();
+
 	for (int i = 0; i < numLightBridges; i++)
 	{
 		LightBridge* lb = &lightBridges[i];
@@ -276,20 +321,87 @@ void LightBridge::update()
 		float minLen;
 		Portal* portal = sendRays(lb->maxSend, raySendPos, rayDir, 0, &minLen);
 
+		b2BodyType bType;
+		if (lightRay.closestFixture)
+		{
+			lb->endBody = lightRay.closestFixture->GetBody();
+			bType = lb->endBody->GetType();
+		}
+		else
+		{
+			lb->endBody = nullptr;
+			bType = b2_staticBody;
+		}
+		
+		bool isPortal = portal && portal->connections->size() > 0;
+
+		if (lb->bodies.size() == 0)
+		{
+			float extraLen = isPortal ? 0.15f : -0.15f;
+
+			b2Vec2 rightDir = b2Vec2(-rayDir.y, rayDir.x);
+			
+			b2Vec2 start1 = raySendPos + 0.5f * lightThick * rightDir;
+			b2Vec2 start2 = raySendPos - 0.5f * lightThick * rightDir;
+
+			b2Vec2 end1 = start1 + (minLen - 0.001f + extraLen) * rayDir;
+			b2Vec2 end2 = start2 + (minLen - 0.001f + extraLen) * rayDir;
+
+			b2BodyDef bDef;
+			bDef.type = b2_staticBody;
+			b2Body* body = Game::object->pWorld->CreateBody(&bDef);
+
+			b2EdgeShape shape;
+			shape.SetTwoSided(start1, end1);
+			body->CreateFixture(&shape, 0.0f);
+
+			shape.SetTwoSided(start2, end2);
+			body->CreateFixture(&shape, 0.0f);
+
+			lb->bodies.push_back(body);
+		}
+
 		lb->totalSize += minLen + 0.1f;
 
 		if (abs(lb->lastLen - minLen) > 0.001f)
 		{
 			lb->reqMapCount = ThinDrawer::object->swapChain->imageCount;
 			lb->lastLen = minLen;
+
+			b2EdgeShape* eShape = (b2EdgeShape*)lb->bodies[0]->GetFixtureList()->GetShape();
+			b2Vec2 p0 = eShape->m_vertex1;
+			b2Vec2 p1 = eShape->m_vertex2;
+			float len = (p1 - p0).Length();
+
+			float extraLen = isPortal ? 0.15f : -0.15f;
+
+			if (abs(len - extraLen - minLen) > 0.1f)
+			{
+				b2Body* body = lb->bodies[0];
+				body->DestroyFixture(body->GetFixtureList());
+				body->DestroyFixture(body->GetFixtureList());
+
+				b2Vec2 rightDir = b2Vec2(-rayDir.y, rayDir.x);
+
+				b2Vec2 start1 = raySendPos + 0.5f * lightThick * rightDir;
+				b2Vec2 start2 = raySendPos - 0.5f * lightThick * rightDir;
+
+				b2Vec2 end1 = start1 + (minLen - 0.001f + extraLen) * rayDir;
+				b2Vec2 end2 = start2 + (minLen - 0.001f + extraLen) * rayDir;
+
+				b2EdgeShape shape;
+				shape.SetTwoSided(start1, end1);
+				body->CreateFixture(&shape, 0.0f);
+
+				shape.SetTwoSided(start2, end2);
+				body->CreateFixture(&shape, 0.0f);
+			}
 		}
 
 		lb->lastLen = minLen;
 
 		lb->data.points.z = raySendPos.x + minLen * rayDir.x;
 		lb->data.points.w = raySendPos.y + minLen * rayDir.y;
-
-		bool isPortal = portal && portal->connections->size() > 0;
 
 		if (isPortal && lb->extraRenderIndex < 0)
 		{
@@ -308,14 +420,33 @@ void LightBridge::update()
 			lb->extraRenderIndex = -1;
 		}
 
+		portalConnection* conn;
+		Portal* otherPortal;
+
+		if (isPortal)
+		{
+			conn = portal->connections[0][0];
+			otherPortal = conn->portal2;
+
+			lb->outBody = otherPortal->body;
+
+			lb->frames.p1v1 = portal->dir;
+			lb->frames.p1v2 = conn->isReversed ? -portal->rotDir : portal->rotDir;
+			lb->frames.p2v1 = otherPortal->dir;
+			lb->frames.p2v2 = otherPortal->rotDir;
+
+			perTickChecks.push_back(lb);
+		}
+		else
+		{
+			lb->outBody = nullptr;
+		}
+
 		lb->renderLightPositions.clear();
 
 		for (; isPortal;)
 		{
 			b2Vec2 endPos = raySendPos + minLen * rayDir;
-
-			portalConnection* conn = portal->connections[0][0];
-			Portal* otherPortal = conn->portal2;
 
 			b2Vec2 midP = PortalWorld::getRelativePortalPosition_W(endPos, conn);
 
@@ -323,7 +454,7 @@ void LightBridge::update()
 			rayDir = otherPortal->dir;
 			portal = sendRays(400.0f, raySendPos, rayDir, 1, &minLen);
 
-			isPortal = portal && portal->connections->size() > 0;
+			isPortal = portal != nullptr;
 
 			lb->renderLightPositions.push_back({ midP, raySendPos + minLen * rayDir });
 
@@ -331,9 +462,129 @@ void LightBridge::update()
 			lb->totalSize += minLen - 0.2f;
 		}
 
+		if (lightRay.closestFixture)
+		{
+			b2Vec2 endPos = raySendPos + minLen * rayDir;
+			if ((lb->capBody->GetPosition() - endPos).LengthSquared() > 0.001f)
+			{
+				float angle = atan2(rayDir.y, rayDir.x);
+				lb->capBody->SetTransform(endPos, angle);
+			}
+
+			lb->capBody->SetLinearVelocity(lightRay.closestFixture->GetBody()->GetLinearVelocity());
+		}
+		else if ((lb->capBody->GetPosition() - lb->lightPos).LengthSquared() > 0.001f)
+		{
+			lb->capBody->SetTransform(lb->lightPos, -b2_pi * 0.5f);
+			lb->capBody->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+		}
+
 		if (lb->extraRenderIndex > -1)
 		{
 			extraIndices[lb->extraRenderIndex] = lb->renderLightPositions.size();
+		}
+	}
+}
+
+void LightBridge::perTickUpdate()
+{
+	for (int i = 0; i < perTickChecks.size(); i++)
+	{
+		LightBridge* lb = perTickChecks[i];
+
+		if (lb->renderLightPositions.size() >= lb->bodies.size())
+		{
+			for (int j = lb->bodies.size() - 1; j < lb->renderLightPositions.size(); j++)
+			{
+				float endAdd = j == lb->renderLightPositions.size() - 1 ? -0.15f : 0.15f;
+
+				s_lightRay lRay = lb->renderLightPositions[j];
+				b2Vec2 diff = lRay.p1 - lRay.p0;
+				float len = diff.Normalize();
+
+				b2BodyDef bDef;
+				if (lb->endBody && lb->outBody && (lb->endBody->GetType() == b2_kinematicBody || lb->outBody->GetType() == b2_kinematicBody))
+					bDef.type = b2_kinematicBody;
+				else bDef.type = b2_staticBody;
+				b2Body* body = Game::object->pWorld->CreateBody(&bDef);
+
+				lb->bodies.push_back(body);
+
+				b2EdgeShape shape;
+
+				b2Vec2 p1 = lRay.p0 + 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff;
+				b2Vec2 p2 = p1 + (len + 0.15f + endAdd) * diff;
+
+				shape.SetTwoSided(p1, p2);
+				body->CreateFixture(&shape, 0.0f);
+				
+				p1 = p1 - lightThick * lb->frames.p2v2;
+				p2 = p2 - lightThick * lb->frames.p2v2;
+
+				shape.SetTwoSided(p1, p2);
+				body->CreateFixture(&shape, 0.0f);
+			}
+		}
+		else if (lb->renderLightPositions.size() + 1 < lb->bodies.size())
+		{
+			for (int j = lb->renderLightPositions.size(); j < lb->bodies.size(); j++)
+			{
+				Game::object->pWorld->DestroyBody(lb->bodies[j]);
+			}
+
+			lb->bodies.resize(lb->renderLightPositions.size());
+		}
+
+		b2Vec2 s0 = lb->endBody->GetLinearVelocity();
+
+		float fwdSpeed = b2Dot(lb->frames.p1v1, s0);
+		float rightSpeed = b2Dot(lb->frames.p1v2, s0);
+
+		b2Vec2 speed = b2Vec2(0.0f, 0.0f);
+		b2Vec2 speedAddition = fwdSpeed * lb->frames.p2v1 + rightSpeed * lb->frames.p2v2 + lb->outBody->GetLinearVelocity();
+		for (int j = 1; j < lb->bodies.size(); j++)
+		{
+			b2Body* body = lb->bodies[j];
+
+			speed += speedAddition;
+			body->SetLinearVelocity(speed);
+
+			float endAdd = j == lb->bodies.size() - 1 ? -0.15f : 0.15f;
+
+			s_lightRay lRay = lb->renderLightPositions[j - 1];
+
+			b2EdgeShape* eShape = (b2EdgeShape*)body->GetFixtureList()->GetShape();
+			b2Vec2 p0 = body->GetWorldPoint(eShape->m_vertex1);
+			b2Vec2 p1 = body->GetWorldPoint(eShape->m_vertex2);
+
+			b2Vec2 pCheck0 = lRay.p0 - 0.15f * lb->frames.p2v1 - 0.5f * lightThick * lb->frames.p2v2;
+			b2Vec2 pCheck1 = lRay.p1 + endAdd * lb->frames.p2v1 - 0.5f * lightThick * lb->frames.p2v2;
+
+			float diff0 = (pCheck0 - p0).LengthSquared();
+			float diff1 = (pCheck1 - p1).LengthSquared();
+
+			if ((diff0 > 0.01f || diff1 > 0.01f))
+			{
+				body->DestroyFixture(body->GetFixtureList());
+				body->DestroyFixture(body->GetFixtureList());
+
+				b2Vec2 diff = lRay.p1 - lRay.p0;
+				float len = diff.Normalize();
+
+				b2EdgeShape shape;
+
+				b2Vec2 p1 = lRay.p0 + 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff - body->GetPosition();
+				b2Vec2 p2 = p1 + (len + 0.15f + endAdd) * diff;
+
+				shape.SetTwoSided(p1, p2);
+				body->CreateFixture(&shape, 0.0f);
+
+				p1 = p1 - lightThick * lb->frames.p2v2;
+				p2 = p2 - lightThick * lb->frames.p2v2;
+
+				shape.SetTwoSided(p1, p2);
+				body->CreateFixture(&shape, 0.0f);
+			}
 		}
 	}
 }
@@ -348,13 +599,13 @@ void LightRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, uint32_t
 
 	b2Vec2 endPos = rayStart + rayLength * dirVec;
 
-	ThinDrawer::object->registerDebugLine(glm::vec4(rayStart.x, rayStart.y, endPos.x, endPos.y), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 0.1f, 0.5f);
+	//ThinDrawer::object->registerDebugLine(glm::vec4(rayStart.x, rayStart.y, endPos.x, endPos.y), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 0.1f, 0.5f);
 
 	Game::object->pWorld->RayCast(this, rayStart, rayStart + rayLength * dirVec);
 
 	endPos = rayStart + rayLength * minFraction * dirVec;
 
-	ThinDrawer::object->registerDebugLine(glm::vec4(rayStart.x, rayStart.y, endPos.x, endPos.y), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.02f, 0.5f);
+	//ThinDrawer::object->registerDebugLine(glm::vec4(rayStart.x, rayStart.y, endPos.x, endPos.y), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.02f, 0.5f);
 }
 
 

@@ -4,6 +4,8 @@
 #include <PortalBody.h>
 #include "GameObjects/Receiver.h"
 
+#define FILTER ~(F_FORCE_FIELD | F_PORTAL | F_EDGE | F_GEDGE)
+
 class PortalGunRayCast : public b2RayCastCallback
 {
 public:
@@ -26,7 +28,7 @@ public:
             fixtureData* fixData = (fixtureData*)fixture->GetUserData().pointer;
             if (fixData)
             {
-                if (fixData->type & F_FEDGE)
+                if (fixData->type & FILTER)
                 {
 				    return -1.0f;
                 }
@@ -43,6 +45,10 @@ public:
 					return -1.0f;
 				}
 			}
+            else
+            {
+                return -1.0f;
+            }
 
             found = true;
             rayNormal = normal;

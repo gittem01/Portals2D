@@ -67,7 +67,7 @@ void main()
         angle = atan(diffVec.y, diffVec.x);
     }
 
-    size = vec2(dist * 0.5f, data.data.x * 0.5f);
+    size = vec2(dist * 0.5f, abs(data.data.x) * 0.5f);
 
     localPos = vec2(vCopy.x + dist * 0.5, vCopy.y);
 

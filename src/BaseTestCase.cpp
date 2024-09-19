@@ -10,6 +10,7 @@
 #include "GameObjects/CubeButton.h"
 #include "GameObjects/CircleButton.h"
 #include "GameObjects/Funnel.h"
+#include "GameObjects/LightBridge.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -178,6 +179,8 @@ void BaseTestCase::onUpdate()
             g->mjh->mouseHandler(g->frame, requiredIters);
 
             tp->update(dt, requiredIters);
+            
+            LightBridge::perTickUpdate();
 
             g->pWorld->PortalStep(dt, 8, 3);
 

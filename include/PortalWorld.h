@@ -217,6 +217,7 @@ private:
     static float calcAngle2(b2Vec2 vec);
     static void normalize(b2Vec2* vec);
     static b2Vec2 getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 p4);
+    static bool intersectionCheck(b2Vec2 p11, b2Vec2 p12, b2Vec2 p21, b2Vec2 p22);
 
     static glm::vec4 tangenter(point p1, point p2, float mult);
     static void calculateOuterEdges(std::vector<b2Shape*> shapes, std::vector<point>& outerVertices, std::vector<glm::vec4>& outerEdges, std::vector<float>& angles);

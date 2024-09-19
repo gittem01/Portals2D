@@ -15,21 +15,36 @@ typedef struct
 	b2Vec2 p1;
 } s_lightRay;
 
+typedef struct
+{
+	b2Vec2 p1v1;
+	b2Vec2 p1v2;
+	b2Vec2 p2v1;
+	b2Vec2 p2v2;
+} portalFrames;
+
 class LightBridge : public Receiver
 {
 public:
 	static std::vector<LightBridge> lightBridges;
+	static std::vector<LightBridge*> perTickChecks;
 	static int numLightBridges;
 	static s_perTextureData* ptData;
 	static s_texture* tex;
 	static LightRay lightRay;
 
 	s_bridgeUbo data;
+	std::vector<s_lightRay> renderLightPositions;
+	std::vector<b2Body*> bodies;
+	portalFrames frames;
+	b2Body* bridgeBody;
+	b2Body* capBody;
+	b2Body* endBody;
+	b2Body* outBody;
 	b2Vec2 lightDir;
 	b2Vec2 lightPos;
 	b2Vec2 lightLasers[2];
 	b2Vec2 endPos;
-	std::vector<s_lightRay> renderLightPositions;
 	float lastLen;
 	float maxSend;
 	float totalSize;
@@ -47,6 +62,7 @@ public:
 	static void toLeveler();
 	static LightBridge* createLightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void staticInit();
+	static void perTickUpdate();
 	static void update();
 	static void memMap(void* ptr);
 	static void render(VkCommandBuffer cmdBuff, void* ptr);

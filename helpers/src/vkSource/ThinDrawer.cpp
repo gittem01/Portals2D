@@ -423,16 +423,7 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
                 b2Vec2 v1 = body->GetWorldPoint(edgeShape->m_vertex1);
                 b2Vec2 v2 = body->GetWorldPoint(edgeShape->m_vertex2);
 
-                b2Vec2 dir = PortalWorld::rotateVec(v2 - v1, b2_pi * 0.25f);
-                dir.Normalize();
-                dir *= 0.1f;
-
                 addDebugLine(glm::vec4(v1.x, v1.y, v2.x, v2.y), gelColor, 0.03f, 0.5f);
-
-                addDebugLine(glm::vec4(v1.x, v1.y, v1.x + dir.x, v1.y + dir.y), colorToRender, 0.03f, 0.5f);
-
-                dir = PortalWorld::rotateVec(dir, b2_pi * 0.5f);
-                addDebugLine(glm::vec4(v2.x, v2.y, v2.x + dir.x, v2.y + dir.y), colorToRender, 0.03f, 0.5f);
             }
         }
     }
@@ -991,6 +982,7 @@ void ThinDrawer::addDebugLine(const glm::vec4 positions, const glm::vec4 color, 
     vkMapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory, debugLineShader->numLines * sizeof(s_debugLineUbo), sizeof(s_debugLineUbo), 0, (void**)&lineUbo);
     lineUbo->colour = color;
     lineUbo->positions = positions;
+    lineUbo->data.x = 10000.0f;
     lineUbo->data.y = thickness; lineUbo->data.z = smoothness;
     vkUnmapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory);
 
