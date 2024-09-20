@@ -935,6 +935,7 @@ void TestPlayer::endContact(b2Contact* contact, b2Fixture* otherFix)
 		contactFixture = nullptr;
 		contactBody = nullptr;
 		platformBody = nullptr;
+        l_platformBody = nullptr;
 		leftCollisionType = b2_staticBody;
 		rightCollisionType = b2_staticBody;
 		numNormals = 0;
