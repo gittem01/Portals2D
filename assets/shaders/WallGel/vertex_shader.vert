@@ -66,7 +66,7 @@ void main()
     vec2 p = vertexArray[gl_VertexIndex];
     p.x *= length(p0 - p1);
     localPosition = p;
-    p.y *= -0.4;
+    p.y *= 0.4 * (data.data.w == -1453 ? -1.0f : 1.0f);
     wp = rotateAroundOrigin(p, angle) + p0;
 
 	gl_Position = sharedUboData.orthoMatrix * vec4(wp, 0.0, 1.0);

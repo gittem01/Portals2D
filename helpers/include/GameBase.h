@@ -92,8 +92,6 @@ typedef struct EdgeGlobalData
     EdgeGlobalData* sideEdges[2];
     b2Vec2 dir;
     b2Vec2 perpDir;
-    float totalSize;
-    float perWallSize;
     int renderOfsset;
 
     EdgeGlobalData(b2Vec2 p0, b2Vec2 p1)
@@ -103,14 +101,14 @@ typedef struct EdgeGlobalData
         this->dir = p1 - p0;
         this->dir.Normalize();
         this->perpDir = b2Vec2(dir.y, -dir.x);
-        this->totalSize = (p1 - p0).Length();
+        float totalSize = (p1 - p0).Length();
 
-        this->unitWalls.resize(std::round(totalSize * unitWallPerMeter));
-        this->perWallSize = totalSize / unitWalls.size();
+        this->unitWalls.resize(std::round(totalSize * 10.0));
 
         this->sideEdges[0] = nullptr;
         this->sideEdges[1] = nullptr;
     }
+    EdgeGlobalData() {}
 } s_edgeGlobalData;
 
 typedef struct EdgeLocalData
@@ -129,6 +127,12 @@ typedef struct EdgeLocalData
         this->prevNextFixtures[0] = nullptr;
         this->prevNextFixtures[1] = nullptr;
     }
+    EdgeLocalData()
+    {
+        this->prevNextFixtures[0] = nullptr;
+        this->prevNextFixtures[1] = nullptr;
+    }
+
 } s_edgeLocalData;
 
 typedef struct

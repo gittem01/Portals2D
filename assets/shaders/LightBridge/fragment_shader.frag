@@ -16,7 +16,7 @@ layout (set = 0, binding = 0) uniform SharedUboData
 void main()
 {
     vec4 outerColour = vec4(1.0, 1.0, 1.0, 1.0) * outData.z;
-    vec4 innerColour = vec4(0.0, 0.4, 1.0, 0.65) * outData.z;
+    vec4 innerColour = vec4(0.0, 0.4, 1.0, 0.2) * outData.z;
     
     float iTime = sharedUboData.data.y;
     float absY = abs(localPos.y);

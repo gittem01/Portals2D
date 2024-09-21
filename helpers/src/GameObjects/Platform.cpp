@@ -27,7 +27,7 @@ void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeI
 	for (int i = 0; i < gData->unitWalls.size(); i++) gData->unitWalls[i].wallType = wType;
 	gData->renderOfsset = ThinDrawer::object->wallGel->numWallGels;
 	ThinDrawer::object->wallGel->numWallGels += gData->unitWalls.size();
-	LevelerTestCase::wallMemFill(edge->m_vertex2, edge->m_vertex1, edgeIndex, gData->renderOfsset, gData->unitWalls.size(), prevEdgeIndex);
+	LevelerTestCase::wallMemFill(edge->m_vertex1, edge->m_vertex2, edgeIndex, gData->renderOfsset, gData->unitWalls.size(), prevEdgeIndex);
 }
 
 Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
@@ -89,7 +89,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	{
 		fillWallGelData(body, wType, edgeRenderIndexStart + 3, edgeRenderIndexStart + 2);
 		
-		LevelerTestCase::wallMemFill(b2Vec2(), b2Vec2(), edgeRenderIndexStart, initialOffset, -1, edgeRenderIndexStart + 3, true);
+		LevelerTestCase::wallMemFill(b2Vec2(), b2Vec2(), edgeRenderIndexStart, initialOffset, size.x * 10, edgeRenderIndexStart + 3, true);
 
 		edgeRenderIndex = edgeRenderIndexStart;
 
@@ -260,7 +260,7 @@ void Platform::memMapFunc(void* ptr)
 			s_wallGelData* mapMem;
 			vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory,
 				sizeof(s_wallGelData) * (platform->edgeRenderIndex + i + MAX_PLATFORMS * td->lastSwapChainImageIndex), sizeof(s_wallGelData), 0, (void**)&mapMem);
-			mapMem->positions = glm::vec4(p0.x, p0.y, p1.x, p1.y);
+			mapMem->positions = glm::vec4(p1.x, p1.y, p0.x, p0.y);
 			vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory);
 		}
 

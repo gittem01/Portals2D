@@ -37,6 +37,7 @@ public:
 	std::vector<s_lightRay> renderLightPositions;
 	std::vector<b2Body*> bodies;
 	portalFrames frames;
+	s_edgeGlobalData eDatas[2];
 	b2Body* bridgeBody;
 	b2Body* capBody;
 	b2Body* endBody;
@@ -51,6 +52,9 @@ public:
 	int reqMapCount;
 	int renderOffset;
 	int extraRenderIndex;
+	int wallRenderIndex;
+	int wallGelStartOffset1;
+	int wallGelStartOffset2;
 
 	LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	LightBridge() {};

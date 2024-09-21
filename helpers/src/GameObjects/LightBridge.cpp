@@ -1,4 +1,5 @@
 #include "GameObjects/LightBridge.h"
+#include "GameObjects/Platform.h"
 #include "SwapChain.h"
 #include "ThinDrawer.h"
 #include "Overlayer.h"
@@ -32,7 +33,10 @@ static b2Vec2 vertices[3] = {
 
 static int extraIndices[6];
 
+constexpr int nextExtraGel = 2 * 6 * 4000;
 static bool requireDestroy = false;
+static int extraWallStartOffset;
+static int extraGelStartOffset;
 
 void LightBridge::ssignal()
 {
@@ -108,6 +112,25 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	lightLasers[0] = lightPos + 0.5f * lightThick * rightDir;
 	lightLasers[1] = lightPos - 0.5f * lightThick * rightDir;
 
+	int wallGelSize = (int)(maxSend * 10.0f);
+	
+	wallRenderIndex = ThinDrawer::object->wallGel->numWallLines + ((numLightBridges - 1) + MAX_PLATFORMS * 4) * ThinDrawer::object->swapChain->imageCount;
+	wallGelStartOffset1 = ThinDrawer::object->wallGel->numWallGels;
+	wallGelStartOffset2 = ThinDrawer::object->wallGel->numWallGels + wallGelSize;
+
+	ThinDrawer::object->wallGel->numWallGels += 2 * wallGelSize;
+
+	for (int i = 0; i < 2; i++)
+	{
+		eDatas[i].sideEdges[0] = nullptr; eDatas[i].sideEdges[1] = nullptr;
+		eDatas[i].dir = b2Vec2(1.0f, 0.0f);
+		eDatas[i].localPoints[0] = b2Vec2(-1.0f, 0.0f);
+		eDatas[i].localPoints[1] = b2Vec2(1.0f, 0.0f);
+		eDatas[i].perpDir = b2Vec2(0.0f, 1.0f);
+		eDatas[i].renderOfsset = wallGelStartOffset1 + i * wallGelSize;
+		eDatas[i].unitWalls.resize(wallGelSize);
+	}
+
 	//fixtureData* fData = new fixtureData();
 	//fData->type = F_LIGHT_BRIDGE;
 	//fData->data = (void*)this;
@@ -155,6 +178,8 @@ void LightBridge::staticInit()
 	Game::object->pWorld->portalDestroyCallbacks.push_back(portalDestrCallback);
 
 	for (int i = 0; i < 6; i++) extraIndices[i] = 0;
+
+	extraWallStartOffset = ThinDrawer::object->wallGel->numWallLines + (numLightBridges + MAX_PLATFORMS * 4) * ThinDrawer::object->swapChain->imageCount;
 }
 
 void LightBridge::memMap(void* ptr)
@@ -165,38 +190,71 @@ void LightBridge::memMap(void* ptr)
 	{
 		LightBridge* lb = &lightBridges[i];
 
-		if (lb->reqMapCount > 0)
+		if (lb->reqMapCount <= 0) continue;
+
+		s_bridgeUbo* bridgeUbo;
+		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory,
+			(lb->renderOffset + numLightBridges * swpNum) * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
+		lb->data.data.y = lb->totalSize;
+		memcpy(bridgeUbo, &lb->data, sizeof(s_bridgeUbo));
+		vkUnmapMemory(ThinDrawer::object->lightBridge->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory);
+		
+		// extraWallStartOffset + lb->extraRenderIndex * 10 + ThinDrawer::object->lastSwapChainImageIndex * 60:
+		
+		int wallOffset = (lb->wallRenderIndex + numLightBridges * 2 * (swpNum - 1));
+		s_wallGelData* wallGel;
+		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory,
+			wallOffset * sizeof(s_wallGelData), sizeof(s_wallGelData) * 2, 0, (void**)&wallGel);
+
+		b2Vec2 rightDir = b2Vec2(-lb->lightDir.y, lb->lightDir.x);
+		b2Vec2 p0 = lb->lightPos + 0.7f * lightThick * rightDir;
+		b2Vec2 endPos = p0 + lb->lastLen * lb->lightDir;
+
+		wallGel[0].positions = glm::vec4(p0.x, p0.y, endPos.x, endPos.y);
+		wallGel[0].data.x = lb->eDatas[0].unitWalls.size();
+		wallGel[0].data.y = lb->extraRenderIndex >= 0 ?
+			ThinDrawer::object->wallGel->numWallGels + lb->extraRenderIndex * nextExtraGel :
+			lb->wallGelStartOffset1;
+			
+		wallGel[0].data.z = -1071;
+		wallGel[0].data.w = -1453;
+
+		b2Vec2 p1 = lb->lightPos - 0.7f * lightThick * rightDir;
+		endPos = p1 + lb->lastLen * lb->lightDir;
+
+		wallGel[1].positions = glm::vec4(p1.x, p1.y, endPos.x, endPos.y);
+		wallGel[1].data.x = lb->eDatas[0].unitWalls.size();
+		wallGel[1].data.y = lb->extraRenderIndex >= 0 ?
+			ThinDrawer::object->wallGel->numWallGels + lb->extraRenderIndex * nextExtraGel + nextExtraGel / 2 :
+			lb->wallGelStartOffset2;
+			
+		wallGel[1].data.z = -1071;
+		wallGel[1].data.w = -1;
+
+		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory);
+
+		float offset = lb->lastLen + 0.1f;
+		for (int j = 0; j < lb->renderLightPositions.size(); j++)
 		{
-			s_bridgeUbo* bridgeUbo;
+			s_lightRay lRay = lb->renderLightPositions[j];
+			b2Vec2 diff = lRay.p1 - lRay.p0;
+			float len = diff.Normalize();
+
 			vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory,
-				(lb->renderOffset + numLightBridges * swpNum) * sizeof(s_bridgeUbo), sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
-			lb->data.data.y = lb->totalSize;
-			memcpy(bridgeUbo, &lb->data, sizeof(s_bridgeUbo));
+				(lb->extraRenderIndex * 5 + j + numLightBridges * 3 + 6 * ThinDrawer::object->lastSwapChainImageIndex) * sizeof(s_bridgeUbo),
+				sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
+				
+			bridgeUbo->data.x = lb->data.data.x; bridgeUbo->data.z = lb->data.data.z;
+			bridgeUbo->data.y = lb->totalSize;
+			bridgeUbo->data.w = offset;
+			bridgeUbo->points = glm::vec4(lRay.p0.x, lRay.p0.y, lRay.p1.x, lRay.p1.y);
+
 			vkUnmapMemory(ThinDrawer::object->lightBridge->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory);
 
-			float offset = lb->lastLen + 0.1f;
-			for (int j = 0; j < lb->renderLightPositions.size(); j++)
-			{
-				s_lightRay lRay = lb->renderLightPositions[j];
-				b2Vec2 diff = lRay.p1 - lRay.p0;
-				float len = diff.Normalize();
-
-				vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory,
-					(lb->extraRenderIndex * 5 + j + numLightBridges * 3 + 6 * ThinDrawer::object->lastSwapChainImageIndex) * sizeof(s_bridgeUbo),
-					sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
-				
-				bridgeUbo->data.x = lb->data.data.x; bridgeUbo->data.z = lb->data.data.z;
-				bridgeUbo->data.y = lb->totalSize;
-				bridgeUbo->data.w = offset;
-				bridgeUbo->points = glm::vec4(lRay.p0.x, lRay.p0.y, lRay.p1.x, lRay.p1.y);
-
-				vkUnmapMemory(ThinDrawer::object->lightBridge->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory);
-
-				offset += len;
-			}
-
-			lb->reqMapCount--;
+			offset += len;
 		}
+
+		lb->reqMapCount--;
 	}
 }
 
@@ -231,6 +289,19 @@ void LightBridge::render(VkCommandBuffer cmdBuff, void* ptr)
 		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, extraIndices[i], 0, numLightBridges * 3 + i * 5 + 6 * td->lastSwapChainImageIndex);
 	}
 
+	// gels
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ThinDrawer::object->wallGel->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		ThinDrawer::object->wallGel->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &ThinDrawer::object->camOffset);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		ThinDrawer::object->wallGel->pipelineLayout, 1, 1, &ThinDrawer::object->wallGel->descriptorSets[1], 0, nullptr);
+
+	vkCmdDraw(cmdBuff, 6, numLightBridges * 2, 0, ThinDrawer::object->wallGel->numWallLines +
+		MAX_PLATFORMS * 4 * td->swapChain->imageCount + td->lastSwapChainImageIndex * numLightBridges * 2);
+
+	// tex
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mt->pipeline);
 
 	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
@@ -337,6 +408,30 @@ void LightBridge::update()
 
 		if (lb->bodies.size() == 0)
 		{
+			fixtureData* fData = (fixtureData*)malloc(sizeof(fixtureData) * 2);
+			s_edgeLocalData* eData = (s_edgeLocalData*)malloc(sizeof(s_edgeLocalData) * 2);
+
+			fData[0].extraData = nullptr;
+			fData[1].extraData = nullptr;
+
+			eData[0].prevNextFixtures[0] = nullptr; eData[0].prevNextFixtures[1] = nullptr;
+			eData[1].prevNextFixtures[0] = nullptr; eData[1].prevNextFixtures[1] = nullptr;
+
+			fData[0].data = (void*)&eData[0];
+			fData[0].type = F_LIGHT_BRIDGE;
+
+			fData[1].data = (void*)&eData[1];
+			fData[1].type = F_LIGHT_BRIDGE;
+
+			eData[0].globalData = &lb->eDatas[0];
+			eData[1].globalData = &lb->eDatas[1];
+
+			eData[0].globalRange[0] = 0;
+			eData[0].globalRange[1] = std::ceil((minLen + 0.1f) * 10.0f);
+
+			eData[1].globalRange[0] = 0;
+			eData[1].globalRange[1] = eData[0].globalRange[1];
+
 			float extraLen = isPortal ? 0.15f : -0.15f;
 
 			b2Vec2 rightDir = b2Vec2(-rayDir.y, rayDir.x);
@@ -344,8 +439,8 @@ void LightBridge::update()
 			b2Vec2 start1 = raySendPos + 0.5f * lightThick * rightDir;
 			b2Vec2 start2 = raySendPos - 0.5f * lightThick * rightDir;
 
-			b2Vec2 end1 = start1 + (minLen - 0.001f + extraLen) * rayDir;
-			b2Vec2 end2 = start2 + (minLen - 0.001f + extraLen) * rayDir;
+			b2Vec2 end1 = start1 + (minLen + extraLen) * rayDir;
+			b2Vec2 end2 = start2 + (minLen + extraLen) * rayDir;
 
 			b2BodyDef bDef;
 			bDef.type = b2_staticBody;
@@ -353,10 +448,12 @@ void LightBridge::update()
 
 			b2EdgeShape shape;
 			shape.SetTwoSided(start1, end1);
-			body->CreateFixture(&shape, 0.0f);
+			b2Fixture* fix = body->CreateFixture(&shape, 0.0f);
+			fix->GetUserData().pointer = (uintptr_t)&fData[0];
 
 			shape.SetTwoSided(start2, end2);
-			body->CreateFixture(&shape, 0.0f);
+			fix = body->CreateFixture(&shape, 0.0f);
+			fix->GetUserData().pointer = (uintptr_t)&fData[1];
 
 			lb->bodies.push_back(body);
 		}
@@ -378,6 +475,13 @@ void LightBridge::update()
 			if (abs(len - extraLen - minLen) > 0.1f)
 			{
 				b2Body* body = lb->bodies[0];
+
+				fixtureData* fData = (fixtureData*)(body->GetFixtureList()->GetUserData().pointer - sizeof(fixtureData));
+				s_edgeLocalData* eData = (s_edgeLocalData*)fData->data;
+
+				eData[0].globalRange[1] = std::ceil((minLen + 0.1f) * 10.0f);
+				eData[1].globalRange[1] = eData[0].globalRange[1];
+
 				body->DestroyFixture(body->GetFixtureList());
 				body->DestroyFixture(body->GetFixtureList());
 
@@ -386,15 +490,17 @@ void LightBridge::update()
 				b2Vec2 start1 = raySendPos + 0.5f * lightThick * rightDir;
 				b2Vec2 start2 = raySendPos - 0.5f * lightThick * rightDir;
 
-				b2Vec2 end1 = start1 + (minLen - 0.001f + extraLen) * rayDir;
-				b2Vec2 end2 = start2 + (minLen - 0.001f + extraLen) * rayDir;
+				b2Vec2 end1 = start1 + (minLen + extraLen) * rayDir;
+				b2Vec2 end2 = start2 + (minLen + extraLen) * rayDir;
 
 				b2EdgeShape shape;
 				shape.SetTwoSided(start1, end1);
-				body->CreateFixture(&shape, 0.0f);
+				b2Fixture* fix = body->CreateFixture(&shape, 0.0f);
+				fix->GetUserData().pointer = (uintptr_t)&fData[0];
 
 				shape.SetTwoSided(start2, end2);
-				body->CreateFixture(&shape, 0.0f);
+				fix = body->CreateFixture(&shape, 0.0f);
+				fix->GetUserData().pointer = (uintptr_t)&fData[1];
 			}
 		}
 
@@ -405,7 +511,7 @@ void LightBridge::update()
 
 		if (isPortal && lb->extraRenderIndex < 0)
 		{
-			for (int i = 0; i < 8; i++)
+			for (int i = 0; i < 6; i++)
 			{
 				if (!extraIndices[i])
 				{
@@ -462,6 +568,17 @@ void LightBridge::update()
 			lb->totalSize += minLen - 0.2f;
 		}
 
+		int newSize = std::ceil(lb->totalSize * 10.0f);
+		if (newSize != lb->eDatas[0].unitWalls.size())
+		{
+			int oldSize = lb->eDatas[0].unitWalls.size();
+
+			lb->eDatas[0].unitWalls.resize(newSize);
+			lb->eDatas[1].unitWalls.resize(newSize);
+
+			int diff = newSize - oldSize;
+		}
+
 		if (lightRay.closestFixture)
 		{
 			b2Vec2 endPos = raySendPos + minLen * rayDir;
@@ -515,13 +632,13 @@ void LightBridge::perTickUpdate()
 				b2Vec2 p1 = lRay.p0 + 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff;
 				b2Vec2 p2 = p1 + (len + 0.15f + endAdd) * diff;
 
-				shape.SetTwoSided(p1, p2);
+				shape.SetTwoSided(p2, p1);
 				body->CreateFixture(&shape, 0.0f);
 				
 				p1 = p1 - lightThick * lb->frames.p2v2;
 				p2 = p2 - lightThick * lb->frames.p2v2;
 
-				shape.SetTwoSided(p1, p2);
+				shape.SetTwoSided(p2, p1);
 				body->CreateFixture(&shape, 0.0f);
 			}
 		}
@@ -576,13 +693,13 @@ void LightBridge::perTickUpdate()
 				b2Vec2 p1 = lRay.p0 + 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff - body->GetPosition();
 				b2Vec2 p2 = p1 + (len + 0.15f + endAdd) * diff;
 
-				shape.SetTwoSided(p1, p2);
+				shape.SetTwoSided(p2, p1);
 				body->CreateFixture(&shape, 0.0f);
 
 				p1 = p1 - lightThick * lb->frames.p2v2;
 				p2 = p2 - lightThick * lb->frames.p2v2;
 
-				shape.SetTwoSided(p1, p2);
+				shape.SetTwoSided(p2, p1);
 				body->CreateFixture(&shape, 0.0f);
 			}
 		}

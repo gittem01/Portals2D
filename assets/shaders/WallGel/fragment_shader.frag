@@ -142,12 +142,12 @@ void main()
 
     norm.xy = rotateAroundOrigin(norm.xy, -angle);
 
-    if (pos.x < 0.5 && inData.z >= 0)
+    if (pos.x > xSize - 0.5 && inData.z >= 0)
     {
         float tmp1 = pos.x;
         float tmp2 = pos.y;
-        pos.y = pos.x * 2.5;
-        pos.x = 1.0 - tmp2 * 0.4;
+        pos.y = (xSize - pos.x) * 2.5;
+        pos.x = tmp2 * 0.4;
 
         vec3 n;
         calculate(pos, lastVal, finalClr, inData.z, 10, n, lastVal, finalClr);
@@ -157,12 +157,12 @@ void main()
         pos.y = tmp2;
     }
 
-    if (pos.x > xSize - 0.5 && inData.w >= 0)
+    if (pos.x < 0.5 && inData.w >= 0)
     {
         float tmp1 = pos.x;
         float tmp2 = pos.y;
-        pos.y = (xSize - pos.x) * 2.5;
-        pos.x = tmp2 * 0.4;
+        pos.y = pos.x * 2.5;
+        pos.x = 1.0 - tmp2 * 0.4;
 
         vec3 n;
         calculate(pos, lastVal, finalClr, inData.w, 10, n, lastVal, finalClr);
@@ -211,11 +211,12 @@ void main()
         
         outClr = normalize(vec2(outClr * 0.2, 4.0)).x;
         
-        outFragColor = vec4(vec3(outClr) * gelClr * pow((1.0 - multy) * (1.0 - multx), 0.5), pow(1.0 - pos.y, 0.3) * sharedUboData.data.x * 5.0 * (0.5 - lastVal));
+        float power = inData.z == -1071 ? (1.0 - multy) : 1.0f;
+        outFragColor = vec4(vec3(outClr) * gelClr * pow((1.0 - multy) * (1.0 - multx), 0.5), power * pow(1.0 - pos.y, 0.3) * sharedUboData.data.x * 5.0 * (0.5 - lastVal));
         //outFragColor = vec4(viewDir, 1.0);
     }
     else
     {
-        outFragColor = vec4(0.0);
+        outFragColor = vec4(0.0f);
     }
 }

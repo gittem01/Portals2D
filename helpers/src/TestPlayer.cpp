@@ -555,7 +555,7 @@ void TestPlayer::portalEffect(Portal* portal)
     {
         b2Vec2 diff = portal->pos - portal->body->GetWorldPoint(eGlobal->localPoints[0]);
         int index = (int)(b2Dot(diff, eGlobal->dir) * 10.0);
-        int offset = eGlobal->renderOfsset + eGlobal->unitWalls.size() - portal->range[1] - 1;
+        int offset = eGlobal->renderOfsset + portal->range[0];
 
         int memMapSize = portal->range[1] - portal->range[0] + 1;
         s_wallPerGelData* mapMem2;
@@ -564,7 +564,7 @@ void TestPlayer::portalEffect(Portal* portal)
 
         for (int i = 0; i < memMapSize; i++)
         {
-            s_unitWallData uData = eGlobal->unitWalls.at(portal->range[1] - i);
+            s_unitWallData uData = eGlobal->unitWalls[portal->range[0] + i];
             if (uData.gelType & WHITE)
             {
                 float dist = (float)abs(index - portal->range[0] - i);
@@ -625,7 +625,7 @@ void TestPlayer::runEffect()
 			{
                 fastRun = true;
 
-                int renderOffset = eGlobal->renderOfsset + (eGlobal->unitWalls.size() - index - 1);
+                int renderOffset = eGlobal->renderOfsset + index;
 				b2Vec2 vel = wData->pbIndices[0]->body->GetLinearVelocity();
                 if (platformBody)
                 {
@@ -689,7 +689,7 @@ void TestPlayer::jumpEffect()
             b2Vec2 botPos = body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
             b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
 
-            index = eGlobal->unitWalls.size() - (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0) - 1;
+            index = (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0);
             index = std::max(std::min(index, (int)eGlobal->unitWalls.size() - 1), 0);
 
             extraJumpRange[0] = index;
@@ -701,7 +701,7 @@ void TestPlayer::jumpEffect()
 
                 if (index - i >= 0)
                 {
-                    int arrIndex = eGlobal->unitWalls.size() - index + i - 1;
+                    int arrIndex = index - i;
                     s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
                     if (uData.gelType & BLUE && uData.gelAmount > 0.25)
                     {
@@ -711,7 +711,7 @@ void TestPlayer::jumpEffect()
                 }
                 if (index + i < eGlobal->unitWalls.size())
                 {
-                    int arrIndex = eGlobal->unitWalls.size() - index - i - 1;
+                    int arrIndex = index + i;
                     s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
                     if (uData.gelType & BLUE && uData.gelAmount > 0.25)
                     {
@@ -748,7 +748,7 @@ void TestPlayer::jumpEffect()
         jumped = true;
         bool extraJump = (extraJumpRange[1] - extraJumpRange[0] > 4);
 
-        lv.y = (6.0f + 4.0f * extraJump) * (float)wData->pbIndices.size();
+        lv.y = (6.0f + 6.0f * extraJump) * (float)wData->pbIndices.size();
 
         jumpPressTime = 0.0;
 

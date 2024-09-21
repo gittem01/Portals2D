@@ -61,12 +61,12 @@ void Gel::staticInit()
     ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
 }
 
-float handleGelPut(s_unitWallData* wallData, int gelType, float amnt)
+float handleGelPut(s_unitWallData* wallData, int gelType, float amnt, float maxGel)
 {
     float val = std::max(pow(amnt, 0.5f) * 0.2f, 0.05f);
     if ((wallData->gelType & ((2 << gelType) | NONE | CLEAR) || wallData->gelAmount < 0.25) && gelType != 3)
     {
-        wallData->gelAmount = std::min(wallData->gelAmount + val, 0.8f);
+        wallData->gelAmount = std::min(wallData->gelAmount + val, maxGel);
         wallData->gelType = (GEL_TYPE)(2 << gelType);
     }
 	else
@@ -144,7 +144,7 @@ void Gel::getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGloba
     }
 
     fData = (fixtureData*)fix->GetUserData().pointer;
-    if (fData && fData->type & F_EDGE)
+    if (fData && fData->type & (F_EDGE | F_LIGHT_BRIDGE))
     {
         s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
         *data = eLocal->globalData;
@@ -169,32 +169,55 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
     getRangeData(contact->GetFixtureB()->GetBody()->GetPosition(), otherFix, range, &eGlobalData);
 
     if (eGlobalData)
-    {        
-        b2Vec2 distVec = contact->GetFixtureB()->GetBody()->GetPosition() - otherFix->GetBody()->GetWorldPoint(eGlobalData->localPoints[1]);
-        float dist = std::max(b2Dot(distVec, -eGlobalData->dir), 0.0f);
-        int off = std::min((int)std::round(dist * 10.0f), (int)eGlobalData->unitWalls.size() - 1);
+    {
+        b2Vec2 v1;
+        int extraOffset;
+        b2Vec2 dirVec;
+
+        fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
+        float maxGel;
+        if (fData && fData->type & F_LIGHT_BRIDGE)
+        {
+            b2EdgeShape* edge = (b2EdgeShape*)otherFix->GetShape();
+            dirVec = edge->m_vertex2 - edge->m_vertex1;
+            dirVec.Normalize();
+            v1 = edge->m_vertex1 + otherFix->GetBody()->GetPosition();
+            s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+            extraOffset = eLocal->globalRange[0];
+            maxGel = 0.6f;
+        }
+        else
+        {
+            v1 = eGlobalData->localPoints[0];
+            extraOffset = 0;
+            dirVec = eGlobalData->dir;
+            maxGel = 0.8f;
+        }
+
+        b2Vec2 distVec = contact->GetFixtureB()->GetBody()->GetPosition() - otherFix->GetBody()->GetWorldPoint(v1);
+        float dist = std::max(b2Dot(distVec, dirVec), 0.0f);
+        int startPos = std::min((int)std::round(dist * 10.0f) + extraOffset, (int)eGlobalData->unitWalls.size() - 1);
         
         float amnt = gelRadius * 5.0;
 
-        int startPos = eGlobalData->unitWalls.size() - off - 1;
         if (eGlobalData->unitWalls[startPos].wallType & (PORTALLABLE | NOT_PORTALLABLE))
-            amnt -= handleGelPut(&eGlobalData->unitWalls[startPos], gelType, amnt);
+            amnt -= handleGelPut(&eGlobalData->unitWalls[startPos], gelType, amnt, maxGel);
         else
             goto out;
 
         int rightPos = startPos;
         int leftPos = startPos;
-        for (int i = 1; ; i++)
+        for (int i = 1; i < 30; i++)
         {
             float decrease = 0.0f;
             if (rightPos >= range[0] && (eGlobalData->unitWalls[rightPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
             {
-                decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt);
+                decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt, maxGel);
                 rightPos = startPos - i;
             }
             if (leftPos <= range[1] && (eGlobalData->unitWalls[leftPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
-			{
-				decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt);
+            {
+                decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt, maxGel);
                 leftPos = startPos + i;
 			}
 
@@ -208,11 +231,11 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         int mapSize = leftPos - rightPos + 1;
         s_wallPerGelData* mapMem2;
         vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
-            (eGlobalData->renderOfsset + eGlobalData->unitWalls.size() - leftPos - 1) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * mapSize, 0, (void**)&mapMem2);
+            (eGlobalData->renderOfsset + rightPos) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * mapSize, 0, (void**)&mapMem2);
 
         for (int i = 0; i < mapSize; i++)
         {
-            s_unitWallData wData = eGlobalData->unitWalls[leftPos - i];
+            s_unitWallData wData = eGlobalData->unitWalls[i + rightPos];
             mapMem2[i].data.x = gelTypeToIndex(wData.gelType);
             mapMem2[i].data.y = wData.gelAmount;
         }

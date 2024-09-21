@@ -2,6 +2,8 @@
 
 #include <ShaderBase.h>
 
+#define MAX_BRIDGES 32
+
 typedef struct
 {
     glm::vec4 points;

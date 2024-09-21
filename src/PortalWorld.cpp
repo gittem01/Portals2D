@@ -801,12 +801,12 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     s_edgeGlobalData* eGlobalData = eLocalData->globalData;
 
     int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
-    int requiredRangeSize = std::round(size / eGlobalData->perWallSize);
+    int requiredRangeSize = std::round(size * 10.0f);
     requiredRangeSize += requiredRangeSize % 2 - 1;
 
     b2EdgeShape* eShape = (b2EdgeShape*)edgeFix->GetShape();
     pos = edgeFix->GetBody()->GetLocalPoint(pos);
-    float dist = (pos - eGlobalData->localPoints[0]).Length() / eGlobalData->perWallSize;
+    float dist = (pos - eGlobalData->localPoints[0]).Length() * 10.0f;
 
     int startIndex = std::min(std::max((int)std::floor(dist), eLocalData->globalRange[0]), eLocalData->globalRange[1]);
 
@@ -858,17 +858,17 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     {
         if (range[0] == eLocalData->globalRange[0])
         {
-            float oneDimensionLen = (range[0]) * eGlobalData->perWallSize + size * 0.5;
+            float oneDimensionLen = range[0] * 0.1f + size * 0.5;
             portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
         else if (range[1] == eLocalData->globalRange[1])
         {
-            float oneDimensionLen = (range[1] + 1.0f) * eGlobalData->perWallSize - size * 0.5;
+            float oneDimensionLen = (range[1] + 1.0f) * 0.1f - size * 0.5;
             portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
         else
         {
-            float oneDimensionLen = (range[0]) * eGlobalData->perWallSize + size * 0.5;
+            float oneDimensionLen = range[0] * 0.1f + size * 0.5;
             portalCreatePos = eGlobalData->localPoints[0] + oneDimensionLen * eGlobalData->dir;
         }
     }

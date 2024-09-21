@@ -15,7 +15,8 @@ void LightBridgeShader::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(sizeof(s_bridgeUbo) * 32 * 4 * ThinDrawer::object->swapChain->imageCount, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_bridgeUbo) * (MAX_BRIDGES * 2 + 5 * 6 * 2) *
+        ThinDrawer::object->swapChain->imageCount, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_bridgeUbo* bridgeUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);

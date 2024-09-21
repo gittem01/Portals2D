@@ -5,6 +5,7 @@
 #include <definitions.h>
 #include <vkInit.h>
 #include "ShaderHeaders/PlatformRectangle.h"
+#include "LightBridge.h"
 #include "SwapChain.h"
 
 void WallGel::prepareVertexData()
@@ -16,9 +17,10 @@ void WallGel::prepareUniforms()
 {
     uniformBuffers.resize(2);
 
-    thinDrawer->uniformHelper(sizeof(s_wallGelData) * 16000 + 4 * MAX_PLATFORMS * sizeof(s_wallGelData) * thinDrawer->swapChain->imageCount,
+    thinDrawer->uniformHelper(sizeof(s_wallGelData) * (16000 +
+        thinDrawer->swapChain->imageCount * (4 * MAX_PLATFORMS + MAX_BRIDGES * 2 + 60)),
         &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * 160000 + 200 * MAX_PLATFORMS * sizeof(s_wallPerGelData),
+    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * (160000 + 200 * MAX_PLATFORMS + 48000 * 6 + MAX_BRIDGES * 2 * 4000),
         &uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
