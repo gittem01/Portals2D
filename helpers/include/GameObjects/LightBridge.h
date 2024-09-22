@@ -55,6 +55,9 @@ public:
 	int wallRenderIndex;
 	int wallGelStartOffset1;
 	int wallGelStartOffset2;
+	int effectiveWallIndex;
+	int effectiveGelOffset1;
+	int effectiveGelOffset2;
 
 	LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	LightBridge() {};

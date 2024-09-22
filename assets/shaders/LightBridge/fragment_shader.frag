@@ -64,4 +64,5 @@ void main()
     }
 
     FragColour = (outerColour * outMult + innerColour * inMult) * endMult;
+    //FragColour = vec4(1.0, 0.0, 0.0, 1.0);
 }

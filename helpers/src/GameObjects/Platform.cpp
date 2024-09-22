@@ -25,9 +25,9 @@ void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeI
 	s_edgeLocalData*  eData = (s_edgeLocalData*)fData->data;
 	s_edgeGlobalData*  gData = eData->globalData;
 	for (int i = 0; i < gData->unitWalls.size(); i++) gData->unitWalls[i].wallType = wType;
-	gData->renderOfsset = ThinDrawer::object->wallGel->numWallGels;
+	gData->renderOffset = ThinDrawer::object->wallGel->numWallGels;
 	ThinDrawer::object->wallGel->numWallGels += gData->unitWalls.size();
-	LevelerTestCase::wallMemFill(edge->m_vertex1, edge->m_vertex2, edgeIndex, gData->renderOfsset, gData->unitWalls.size(), prevEdgeIndex);
+	LevelerTestCase::wallMemFill(edge->m_vertex1, edge->m_vertex2, edgeIndex, gData->renderOffset, gData->unitWalls.size(), prevEdgeIndex);
 }
 
 Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)

@@ -217,6 +217,6 @@ void main()
     }
     else
     {
-        outFragColor = vec4(0.0f);
+        outFragColor = vec4(0.3f);
     }
 }

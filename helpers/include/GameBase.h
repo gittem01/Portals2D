@@ -92,7 +92,7 @@ typedef struct EdgeGlobalData
     EdgeGlobalData* sideEdges[2];
     b2Vec2 dir;
     b2Vec2 perpDir;
-    int renderOfsset;
+    int renderOffset;
 
     EdgeGlobalData(b2Vec2 p0, b2Vec2 p1)
     {
@@ -145,3 +145,4 @@ b2Body* createEdge(b2Vec2 p0, b2Vec2 p1, PortalWorld* world);
 b2Body* createEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDataType type, PortalWorld* world, b2Body* body=nullptr);
 b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, FixtureDataType type, PortalWorld* world);
 b2Body* createBasicEdgeOneSided(b2Vec2 p0, b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, FixtureDataType type, PortalWorld* world);
+int gelTypeToIndex(GEL_TYPE gelType);

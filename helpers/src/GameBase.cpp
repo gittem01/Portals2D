@@ -106,3 +106,20 @@ b2Body* createBasicEdge(b2Vec2 p0, b2Vec2 p1, enum FixtureDataType type, PortalW
 
     return body;
 }
+
+int gelTypeToIndex(GEL_TYPE gelType)
+{
+    switch (gelType)
+    {
+    case BLUE:
+        return 0;
+    case ORANGE:
+        return 1;
+    case WHITE:
+        return 2;
+    case CLEAR:
+        return 3;
+    default:
+        return -1;
+    }
+}

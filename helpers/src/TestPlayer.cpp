@@ -555,7 +555,7 @@ void TestPlayer::portalEffect(Portal* portal)
     {
         b2Vec2 diff = portal->pos - portal->body->GetWorldPoint(eGlobal->localPoints[0]);
         int index = (int)(b2Dot(diff, eGlobal->dir) * 10.0);
-        int offset = eGlobal->renderOfsset + portal->range[0];
+        int offset = eGlobal->renderOffset + portal->range[0];
 
         int memMapSize = portal->range[1] - portal->range[0] + 1;
         s_wallPerGelData* mapMem2;
@@ -625,7 +625,7 @@ void TestPlayer::runEffect()
 			{
                 fastRun = true;
 
-                int renderOffset = eGlobal->renderOfsset + index;
+                int renderOffset = eGlobal->renderOffset + index;
 				b2Vec2 vel = wData->pbIndices[0]->body->GetLinearVelocity();
                 if (platformBody)
                 {
@@ -771,7 +771,7 @@ void TestPlayer::jumpEffect()
         int memMapSize = extraJumpRange[1] - extraJumpRange[0] + 1;
         s_wallPerGelData* mapMem2;
         vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
-            (eGlobal->renderOfsset + extraJumpRange[0]) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
+            (eGlobal->renderOffset + extraJumpRange[0]) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
 
         for (int i = 0; i < memMapSize; i++)
         {

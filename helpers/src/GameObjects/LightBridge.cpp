@@ -36,7 +36,6 @@ static int extraIndices[6];
 constexpr int nextExtraGel = 2 * 6 * 4000;
 static bool requireDestroy = false;
 static int extraWallStartOffset;
-static int extraGelStartOffset;
 
 void LightBridge::ssignal()
 {
@@ -114,9 +113,13 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	int wallGelSize = (int)(maxSend * 10.0f);
 	
-	wallRenderIndex = ThinDrawer::object->wallGel->numWallLines + ((numLightBridges - 1) + MAX_PLATFORMS * 4) * ThinDrawer::object->swapChain->imageCount;
+	wallRenderIndex = ThinDrawer::object->wallGel->numWallLines + ((numLightBridges - 1) * 2 + MAX_PLATFORMS * 4) * ThinDrawer::object->swapChain->imageCount;
 	wallGelStartOffset1 = ThinDrawer::object->wallGel->numWallGels;
 	wallGelStartOffset2 = ThinDrawer::object->wallGel->numWallGels + wallGelSize;
+
+	effectiveWallIndex = wallRenderIndex;
+	effectiveGelOffset1 = wallGelStartOffset1;
+	effectiveGelOffset2 = wallGelStartOffset2;
 
 	ThinDrawer::object->wallGel->numWallGels += 2 * wallGelSize;
 
@@ -127,7 +130,7 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		eDatas[i].localPoints[0] = b2Vec2(-1.0f, 0.0f);
 		eDatas[i].localPoints[1] = b2Vec2(1.0f, 0.0f);
 		eDatas[i].perpDir = b2Vec2(0.0f, 1.0f);
-		eDatas[i].renderOfsset = wallGelStartOffset1 + i * wallGelSize;
+		eDatas[i].renderOffset = wallGelStartOffset1 + i * wallGelSize;
 		eDatas[i].unitWalls.resize(wallGelSize);
 	}
 
@@ -179,7 +182,7 @@ void LightBridge::staticInit()
 
 	for (int i = 0; i < 6; i++) extraIndices[i] = 0;
 
-	extraWallStartOffset = ThinDrawer::object->wallGel->numWallLines + (numLightBridges + MAX_PLATFORMS * 4) * ThinDrawer::object->swapChain->imageCount;
+	extraWallStartOffset = ThinDrawer::object->wallGel->numWallLines + (numLightBridges * 2 + MAX_PLATFORMS * 4) * ThinDrawer::object->swapChain->imageCount;
 }
 
 void LightBridge::memMap(void* ptr)
@@ -198,9 +201,7 @@ void LightBridge::memMap(void* ptr)
 		lb->data.data.y = lb->totalSize;
 		memcpy(bridgeUbo, &lb->data, sizeof(s_bridgeUbo));
 		vkUnmapMemory(ThinDrawer::object->lightBridge->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory);
-		
-		// extraWallStartOffset + lb->extraRenderIndex * 10 + ThinDrawer::object->lastSwapChainImageIndex * 60:
-		
+				
 		int wallOffset = (lb->wallRenderIndex + numLightBridges * 2 * (swpNum - 1));
 		s_wallGelData* wallGel;
 		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory,
@@ -208,52 +209,82 @@ void LightBridge::memMap(void* ptr)
 
 		b2Vec2 rightDir = b2Vec2(-lb->lightDir.y, lb->lightDir.x);
 		b2Vec2 p0 = lb->lightPos + 0.7f * lightThick * rightDir;
-		b2Vec2 endPos = p0 + lb->lastLen * lb->lightDir;
+		b2Vec2 endPos = p0 + (lb->lastLen + 0.1f) * lb->lightDir;
 
 		wallGel[0].positions = glm::vec4(p0.x, p0.y, endPos.x, endPos.y);
 		wallGel[0].data.x = lb->eDatas[0].unitWalls.size();
-		wallGel[0].data.y = lb->extraRenderIndex >= 0 ?
-			ThinDrawer::object->wallGel->numWallGels + lb->extraRenderIndex * nextExtraGel :
-			lb->wallGelStartOffset1;
+		wallGel[0].data.y = lb->effectiveGelOffset1;
 			
 		wallGel[0].data.z = -1071;
 		wallGel[0].data.w = -1453;
 
 		b2Vec2 p1 = lb->lightPos - 0.7f * lightThick * rightDir;
-		endPos = p1 + lb->lastLen * lb->lightDir;
+		endPos = p1 + (lb->lastLen + 0.1f) * lb->lightDir;
 
 		wallGel[1].positions = glm::vec4(p1.x, p1.y, endPos.x, endPos.y);
 		wallGel[1].data.x = lb->eDatas[0].unitWalls.size();
-		wallGel[1].data.y = lb->extraRenderIndex >= 0 ?
-			ThinDrawer::object->wallGel->numWallGels + lb->extraRenderIndex * nextExtraGel + nextExtraGel / 2 :
-			lb->wallGelStartOffset2;
+		wallGel[1].data.y = lb->effectiveGelOffset2;
 			
 		wallGel[1].data.z = -1071;
 		wallGel[1].data.w = -1;
 
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory);
-
+		
 		float offset = lb->lastLen + 0.1f;
+
+		if (lb->renderLightPositions.size() == 0) goto end;
+
+		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory,
+			(lb->extraRenderIndex * 5 + numLightBridges * 3 + 5 * 6 * (swpNum - 1)) * sizeof(s_bridgeUbo),
+			sizeof(s_bridgeUbo) * lb->renderLightPositions.size(), 0, (void**)&bridgeUbo);
+
+		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory,
+			(lb->effectiveWallIndex + (swpNum - 1) * 60) * sizeof(s_wallGelData),
+			sizeof(s_wallGelData) * 2 * lb->renderLightPositions.size(), 0, (void**)&wallGel);
+
 		for (int j = 0; j < lb->renderLightPositions.size(); j++)
 		{
 			s_lightRay lRay = lb->renderLightPositions[j];
 			b2Vec2 diff = lRay.p1 - lRay.p0;
 			float len = diff.Normalize();
-
-			vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory,
-				(lb->extraRenderIndex * 5 + j + numLightBridges * 3 + 6 * ThinDrawer::object->lastSwapChainImageIndex) * sizeof(s_bridgeUbo),
-				sizeof(s_bridgeUbo), 0, (void**)&bridgeUbo);
 				
-			bridgeUbo->data.x = lb->data.data.x; bridgeUbo->data.z = lb->data.data.z;
-			bridgeUbo->data.y = lb->totalSize;
-			bridgeUbo->data.w = offset;
-			bridgeUbo->points = glm::vec4(lRay.p0.x, lRay.p0.y, lRay.p1.x, lRay.p1.y);
+			bridgeUbo[j].data.x = lb->data.data.x; bridgeUbo[j].data.z = lb->data.data.z;
+			bridgeUbo[j].data.y = lb->totalSize;
+			bridgeUbo[j].data.w = offset;
+			bridgeUbo[j].points = glm::vec4(lRay.p0.x, lRay.p0.y, lRay.p1.x, lRay.p1.y);
 
-			vkUnmapMemory(ThinDrawer::object->lightBridge->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory);
+			float fVal = (offset - 0.1f) * 10.0f;
+			int startOffset = std::floor(fVal);
+			float fract = fVal - startOffset;
+
+			b2Vec2 startPos = lRay.p0 - fract * diff - 0.7f * lightThick * lb->frames.p2v2;
+			b2Vec2 endPos = startPos + (len + 0.2f) * diff;
+
+			int ind1 = j * 2; int ind2 = ind1 + 1;
+
+			wallGel[ind1].data.x = lb->eDatas[0].unitWalls.size();
+			wallGel[ind1].data.y = lb->effectiveGelOffset1 + startOffset;
+			wallGel[ind1].data.z = -1071;
+			wallGel[ind1].data.w = -1;
+			wallGel[ind1].positions = glm::vec4(startPos.x, startPos.y, endPos.x, endPos.y);
+
+			startPos += 1.4f * lightThick * lb->frames.p2v2;
+			endPos += 1.4f * lightThick * lb->frames.p2v2;
+
+			wallGel[ind2].data.x = lb->eDatas[0].unitWalls.size();
+			wallGel[ind2].data.y = lb->effectiveGelOffset2 + startOffset;
+			wallGel[ind2].data.z = -1071;
+			wallGel[ind2].data.w = -1453;
+			wallGel[ind2].positions = glm::vec4(startPos.x, startPos.y, endPos.x, endPos.y);
 
 			offset += len;
 		}
 
+		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory);
+
+		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory);
+
+	end:
 		lb->reqMapCount--;
 	}
 }
@@ -286,7 +317,7 @@ void LightBridge::render(VkCommandBuffer cmdBuff, void* ptr)
 	{
 		if (extraIndices[i] <= 0) continue;
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, extraIndices[i], 0, numLightBridges * 3 + i * 5 + 6 * td->lastSwapChainImageIndex);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, extraIndices[i], 0, numLightBridges * 3 + i * 5 + 5 * 6 * td->lastSwapChainImageIndex);
 	}
 
 	// gels
@@ -300,6 +331,13 @@ void LightBridge::render(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdDraw(cmdBuff, 6, numLightBridges * 2, 0, ThinDrawer::object->wallGel->numWallLines +
 		MAX_PLATFORMS * 4 * td->swapChain->imageCount + td->lastSwapChainImageIndex * numLightBridges * 2);
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (extraIndices[i] <= 0) continue;
+
+		vkCmdDraw(cmdBuff, 6, extraIndices[i] * 2, 0, extraWallStartOffset + i * 10 + td->lastSwapChainImageIndex * 60);
+	}
 
 	// tex
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mt->pipeline);
@@ -516,6 +554,33 @@ void LightBridge::update()
 				if (!extraIndices[i])
 				{
 					lb->extraRenderIndex = i;
+
+					lb->effectiveWallIndex = extraWallStartOffset + i * 2 * 5;
+					lb->effectiveGelOffset1 = ThinDrawer::object->wallGel->numWallGels + i * nextExtraGel;
+					lb->effectiveGelOffset2 = lb->effectiveGelOffset1 + nextExtraGel / 2;
+
+					lb->eDatas[0].renderOffset = lb->effectiveGelOffset1;
+					lb->eDatas[1].renderOffset = lb->effectiveGelOffset2;
+
+					s_wallPerGelData* gelData;
+					vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+						lb->effectiveGelOffset1 * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * lb->eDatas[0].unitWalls.size(), 0, (void**)&gelData);
+					for (int i = 0; i < lb->eDatas[0].unitWalls.size(); i++)
+					{
+						gelData[i].data.x = gelTypeToIndex(lb->eDatas[0].unitWalls[i].gelType);
+						gelData[i].data.y = lb->eDatas[0].unitWalls[i].gelAmount;
+					}
+					vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+
+					vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+						lb->effectiveGelOffset2 * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData)* lb->eDatas[1].unitWalls.size(), 0, (void**)&gelData);
+					for (int i = 0; i < lb->eDatas[0].unitWalls.size(); i++)
+					{
+						gelData[i].data.x = gelTypeToIndex(lb->eDatas[1].unitWalls[i].gelType);
+						gelData[i].data.y = lb->eDatas[1].unitWalls[i].gelAmount;
+					}
+					vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+
 					break;
 				}
 			}
@@ -524,6 +589,13 @@ void LightBridge::update()
 		{
 			extraIndices[lb->extraRenderIndex] = 0;
 			lb->extraRenderIndex = -1;
+
+			lb->effectiveWallIndex = lb->wallRenderIndex;
+			lb->effectiveGelOffset1 = lb->wallGelStartOffset1;
+			lb->effectiveGelOffset2 = lb->wallGelStartOffset2;
+
+			lb->eDatas[0].renderOffset = lb->effectiveGelOffset1;
+			lb->eDatas[1].renderOffset = lb->effectiveGelOffset2;
 		}
 
 		portalConnection* conn;
@@ -577,6 +649,28 @@ void LightBridge::update()
 			lb->eDatas[1].unitWalls.resize(newSize);
 
 			int diff = newSize - oldSize;
+			if (diff > 0)
+			{
+				s_wallPerGelData* gelData;
+				vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+					(lb->effectiveGelOffset1 + oldSize) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * diff, 0, (void**)&gelData);
+
+				for (int i = 0; i < diff; i++)
+				{
+					gelData[i].data.y = 0.0f;
+				}
+				vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+
+				vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+					(lb->effectiveGelOffset1 + oldSize) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * diff, 0, (void**)&gelData);
+
+				for (int i = 0; i < diff; i++)
+				{
+					gelData[i].data.y = 0.0f;
+				}
+
+				vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+			}
 		}
 
 		if (lightRay.closestFixture)
@@ -611,8 +705,34 @@ void LightBridge::perTickUpdate()
 
 		if (lb->renderLightPositions.size() >= lb->bodies.size())
 		{
+			float offset = lb->lastLen;
+			for (int j = 1; j < lb->bodies.size(); j++)
+			{
+				float len = (lb->renderLightPositions[j - 1].p1 - lb->renderLightPositions[j - 1].p0).Length();
+				offset += len;
+			}
+
 			for (int j = lb->bodies.size() - 1; j < lb->renderLightPositions.size(); j++)
 			{
+				fixtureData* fData = (fixtureData*)malloc(sizeof(fixtureData) * 2);
+				s_edgeLocalData* eData = (s_edgeLocalData*)malloc(sizeof(s_edgeLocalData) * 2);
+
+				fData[0].extraData = nullptr; fData[1].extraData = nullptr;
+				eData[0].prevNextFixtures[0] = nullptr; eData[0].prevNextFixtures[1] = nullptr;
+				eData[1].prevNextFixtures[0] = nullptr; eData[1].prevNextFixtures[1] = nullptr;
+
+				fData[0].data = (void*)&eData[0]; fData[0].type = F_LIGHT_BRIDGE;
+				fData[1].data = (void*)&eData[1]; fData[1].type = F_LIGHT_BRIDGE;
+
+				eData[0].globalData = &lb->eDatas[0];
+				eData[1].globalData = &lb->eDatas[1];
+
+				eData[0].globalRange[0] = std::round(offset * 10.0f);
+				eData[0].globalRange[1] = lb->eDatas[0].unitWalls.size();
+
+				eData[1].globalRange[0] = eData[0].globalRange[0];
+				eData[1].globalRange[1] = eData[0].globalRange[1];
+
 				float endAdd = j == lb->renderLightPositions.size() - 1 ? -0.15f : 0.15f;
 
 				s_lightRay lRay = lb->renderLightPositions[j];
@@ -629,17 +749,21 @@ void LightBridge::perTickUpdate()
 
 				b2EdgeShape shape;
 
-				b2Vec2 p1 = lRay.p0 + 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff;
+				b2Vec2 p1 = lRay.p0 - 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff;
 				b2Vec2 p2 = p1 + (len + 0.15f + endAdd) * diff;
 
-				shape.SetTwoSided(p2, p1);
-				body->CreateFixture(&shape, 0.0f);
-				
-				p1 = p1 - lightThick * lb->frames.p2v2;
-				p2 = p2 - lightThick * lb->frames.p2v2;
+				shape.SetTwoSided(p1, p2);
+				b2Fixture* fix = body->CreateFixture(&shape, 0.0f);
+				fix->GetUserData().pointer = (uintptr_t)&fData[0];
 
-				shape.SetTwoSided(p2, p1);
-				body->CreateFixture(&shape, 0.0f);
+				p1 = p1 + lightThick * lb->frames.p2v2;
+				p2 = p2 + lightThick * lb->frames.p2v2;
+
+				shape.SetTwoSided(p1, p2);
+				fix = body->CreateFixture(&shape, 0.0f);
+				fix->GetUserData().pointer = (uintptr_t)&fData[1];
+
+				offset += len;
 			}
 		}
 		else if (lb->renderLightPositions.size() + 1 < lb->bodies.size())
@@ -659,6 +783,7 @@ void LightBridge::perTickUpdate()
 
 		b2Vec2 speed = b2Vec2(0.0f, 0.0f);
 		b2Vec2 speedAddition = fwdSpeed * lb->frames.p2v1 + rightSpeed * lb->frames.p2v2 + lb->outBody->GetLinearVelocity();
+		float offset = lb->lastLen;
 		for (int j = 1; j < lb->bodies.size(); j++)
 		{
 			b2Body* body = lb->bodies[j];
@@ -674,14 +799,22 @@ void LightBridge::perTickUpdate()
 			b2Vec2 p0 = body->GetWorldPoint(eShape->m_vertex1);
 			b2Vec2 p1 = body->GetWorldPoint(eShape->m_vertex2);
 
-			b2Vec2 pCheck0 = lRay.p0 - 0.15f * lb->frames.p2v1 - 0.5f * lightThick * lb->frames.p2v2;
-			b2Vec2 pCheck1 = lRay.p1 + endAdd * lb->frames.p2v1 - 0.5f * lightThick * lb->frames.p2v2;
+			b2Vec2 pCheck0 = lRay.p0 - 0.15f * lb->frames.p2v1 + 0.5f * lightThick * lb->frames.p2v2;
+			b2Vec2 pCheck1 = lRay.p1 + endAdd * lb->frames.p2v1 + 0.5f * lightThick * lb->frames.p2v2;
 
 			float diff0 = (pCheck0 - p0).LengthSquared();
 			float diff1 = (pCheck1 - p1).LengthSquared();
 
 			if ((diff0 > 0.01f || diff1 > 0.01f))
 			{
+				fixtureData* fData = (fixtureData*)(body->GetFixtureList()->GetUserData().pointer - sizeof(fixtureData));
+				s_edgeLocalData* eData = (s_edgeLocalData*)fData->data;
+
+				eData[0].globalRange[0] = std::round(offset * 10.0f);
+				eData[1].globalRange[0] = eData[0].globalRange[0];
+
+				eData[0].globalRange[1] = lb->eDatas[0].unitWalls.size(); eData[1].globalRange[1] = eData[0].globalRange[1];
+
 				body->DestroyFixture(body->GetFixtureList());
 				body->DestroyFixture(body->GetFixtureList());
 
@@ -690,18 +823,22 @@ void LightBridge::perTickUpdate()
 
 				b2EdgeShape shape;
 
-				b2Vec2 p1 = lRay.p0 + 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff - body->GetPosition();
+				b2Vec2 p1 = lRay.p0 - 0.5f * lightThick * lb->frames.p2v2 - 0.15f * diff - body->GetPosition();
 				b2Vec2 p2 = p1 + (len + 0.15f + endAdd) * diff;
 
-				shape.SetTwoSided(p2, p1);
-				body->CreateFixture(&shape, 0.0f);
+				shape.SetTwoSided(p1, p2);
+				b2Fixture* fix = body->CreateFixture(&shape, 0.0f);
+				fix->GetUserData().pointer = (uintptr_t)&fData[0];
 
-				p1 = p1 - lightThick * lb->frames.p2v2;
-				p2 = p2 - lightThick * lb->frames.p2v2;
+				p1 = p1 + lightThick * lb->frames.p2v2;
+				p2 = p2 + lightThick * lb->frames.p2v2;
 
-				shape.SetTwoSided(p2, p1);
-				body->CreateFixture(&shape, 0.0f);
+				shape.SetTwoSided(p1, p2);
+				fix = body->CreateFixture(&shape, 0.0f);
+				fix->GetUserData().pointer = (uintptr_t)&fData[1];
 			}
+
+			offset += (lRay.p1 - lRay.p0).Length();
 		}
 	}
 }

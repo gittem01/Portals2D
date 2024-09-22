@@ -77,23 +77,6 @@ float handleGelPut(s_unitWallData* wallData, int gelType, float amnt, float maxG
     return val;
 }
 
-int gelTypeToIndex(GEL_TYPE gelType)
-{
-    switch (gelType)
-    {
-    case BLUE:
-		return 0;
-    case ORANGE:
-        return 1;
-    case WHITE:
-        return 2;
-    case CLEAR:
-        return 3;
-    default:
-		return -1;
-    }
-}
-
 void Gel::getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGlobalData** data)
 {
     fixtureData* fData = (fixtureData*)fix->GetUserData().pointer;
@@ -231,7 +214,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         int mapSize = leftPos - rightPos + 1;
         s_wallPerGelData* mapMem2;
         vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
-            (eGlobalData->renderOfsset + rightPos) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * mapSize, 0, (void**)&mapMem2);
+            (eGlobalData->renderOffset + rightPos) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * mapSize, 0, (void**)&mapMem2);
 
         for (int i = 0; i < mapSize; i++)
         {

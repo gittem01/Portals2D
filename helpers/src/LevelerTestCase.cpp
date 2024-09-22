@@ -308,7 +308,7 @@ void LevelerTestCase::walkArndAndCreateEdge(short x, short y)
         s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
         s_edgeGlobalData* eGlobalData = (s_edgeGlobalData*)eLocalData->globalData;
 
-        eGlobalData->renderOfsset = ThinDrawer::object->wallGel->numWallGels;
+        eGlobalData->renderOffset = ThinDrawer::object->wallGel->numWallGels;
 
         int prevIndex = -1;
         if ((prevDir - startDir + 4) % 4 == 1 && initialIndex != ThinDrawer::object->wallGel->numWallLines)
