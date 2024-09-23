@@ -22,6 +22,7 @@ public:
 	bool startEnabled;
 
 	ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData);
+	~ForceField();
 
 	void ssignal();
 	void usignal();

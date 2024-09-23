@@ -98,6 +98,15 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 }
 
+ForceField::~ForceField()
+{
+	fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
+	body->GetFixtureList()->GetUserData().pointer = 0;
+	body->GetFixtureList()->GetUserData().pointer = 0;
+
+	delete fData;
+}
+
 void ForceField::ssignal()
 {
 	ThinDrawer* thinDrawer = ThinDrawer::object;
@@ -186,7 +195,12 @@ void ForceField::toLeveler()
 		blueUbo->data = glm::vec4(0.8f, Game::object->gameTime, 1.0f, -1.0f);
 		blueUbo->colour.w = ff->startEnabled ? 1.0f : 0.3f;
 		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
+
+		delete ff;
 	}
+
+	fields.clear();
+	destroyCList = std::queue<pbWorldData*>();
 }
 
 void ForceField::staticInit()
