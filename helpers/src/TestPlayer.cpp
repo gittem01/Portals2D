@@ -587,7 +587,7 @@ void TestPlayer::runEffect()
         fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
         if (fData)
         {
-            if (fData->type == F_EDGE)
+            if (fData->type & (F_EDGE | F_LIGHT_BRIDGE))
             {
                 s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
                 eGlobal = eLocal->globalData;
@@ -612,9 +612,29 @@ void TestPlayer::runEffect()
 
         if (eGlobal)
         {
+            b2Vec2 v1;
+            b2Vec2 dirVec;
+            int extraOffset;
+
+            if (fData && fData->type & F_LIGHT_BRIDGE)
+            {
+                b2EdgeShape* edge = (b2EdgeShape*)contactFixture->GetShape();
+                dirVec = edge->m_vertex2 - edge->m_vertex1;
+                dirVec.Normalize();
+                v1 = edge->m_vertex1;
+                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+                extraOffset = eLocal->globalRange[0];
+            }
+            else
+            {
+                v1 = eGlobal->localPoints[0];
+                extraOffset = 0;
+                dirVec = eGlobal->dir;
+            }
+
             b2Vec2 botPos = wData->pbIndices[0]->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
-            b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
-            int index = (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0);
+            b2Vec2 diff = botPos - contactBody->GetWorldPoint(v1);
+            int index = (int)std::round(b2Dot(diff, dirVec) * 10.0) + extraOffset;
             if (index < 0 || index >= eGlobal->unitWalls.size())
 			{
 				return;
@@ -661,7 +681,7 @@ void TestPlayer::jumpEffect()
         fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
         if (fData)
         {
-            if (fData->type == F_EDGE)
+            if (fData->type & (F_EDGE | F_LIGHT_BRIDGE))
             {
                 s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
                 eGlobal = eLocal->globalData;
@@ -686,10 +706,29 @@ void TestPlayer::jumpEffect()
 
         if (eGlobal)
         {
-            b2Vec2 botPos = body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
-            b2Vec2 diff = botPos - contactBody->GetWorldPoint(eGlobal->localPoints[0]);
+            b2Vec2 v1;
+            b2Vec2 dirVec;
+            int extraOffset;
 
-            index = (int)std::round(b2Dot(diff, eGlobal->dir) * 10.0);
+            if (fData && fData->type & F_LIGHT_BRIDGE)
+            {
+                b2EdgeShape* edge = (b2EdgeShape*)contactFixture->GetShape();
+                dirVec = edge->m_vertex2 - edge->m_vertex1;
+                dirVec.Normalize();
+                v1 = edge->m_vertex1;
+                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+                extraOffset = eLocal->globalRange[0];
+            }
+            else
+            {
+                v1 = eGlobal->localPoints[0];
+                extraOffset = 0;
+                dirVec = eGlobal->dir;
+            }
+
+            b2Vec2 botPos = wData->pbIndices[0]->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
+            b2Vec2 diff = botPos - contactBody->GetWorldPoint(v1);
+            index = (int)std::round(b2Dot(diff, dirVec) * 10.0) + extraOffset;
             index = std::max(std::min(index, (int)eGlobal->unitWalls.size() - 1), 0);
 
             extraJumpRange[0] = index;

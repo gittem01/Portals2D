@@ -17,10 +17,10 @@ void WallGel::prepareUniforms()
 {
     uniformBuffers.resize(2);
 
-    thinDrawer->uniformHelper(sizeof(s_wallGelData) * (16000 +
-        thinDrawer->swapChain->imageCount * (4 * MAX_PLATFORMS + MAX_BRIDGES * 2 + 60)),
+    thinDrawer->uniformHelper(sizeof(s_wallGelData) * (160000 +
+        thinDrawer->swapChain->imageCount * (4 * MAX_PLATFORMS + MAX_BRIDGES + 30 * ThinDrawer::object->swapChain->imageCount)),
         &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * (160000 + 200 * MAX_PLATFORMS + 48000 * 6 + MAX_BRIDGES * 2 * 4000),
+    thinDrawer->uniformHelper(sizeof(s_wallPerGelData) * (1600000 + 200 * MAX_PLATFORMS + 48000 * 6 + MAX_BRIDGES * 2 * 4000),
         &uniformBuffers[1], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 

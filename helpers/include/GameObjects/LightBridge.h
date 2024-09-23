@@ -58,6 +58,7 @@ public:
 	int effectiveWallIndex;
 	int effectiveGelOffset1;
 	int effectiveGelOffset2;
+	bool reversed;
 
 	LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	LightBridge() {};

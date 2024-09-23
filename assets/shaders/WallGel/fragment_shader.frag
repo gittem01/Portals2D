@@ -85,14 +85,14 @@ float opSmoothUnion(float d1, float d2, float k)
 
 float vecMax(vec3 v)
 {
-    return max(max(v.x, v.y), v.z);
+    return max(max(v.x, v.y), v.z) + 0.1;
 }
 
 const float perTileGel = 10.0;
 
 void calculate(vec2 pos, float lastVal, vec3 finalClr, int indOffset, int maxSize, out vec3 oNorm, out float oVal, out vec3 oColor)
 {
-    vec3 norm = vec3(0.0);
+    vec3 norm = vec3(0.0, 0.0, 0.0);
     for (int i = -1; i < 2; i++)
     {
         float checkX = int(pos.x * perTileGel) + i;
@@ -113,7 +113,7 @@ void calculate(vec2 pos, float lastVal, vec3 finalClr, int indOffset, int maxSiz
         vec2 diff = vec2(pos.x * perTileGel - 0.5, pos.y * 0.4 * perTileGel) - vec2(checkX, min(val, pos.y) * 0.4 * perTileGel);
         float revDiff = pow(max(1.0 - length(diff), 0.0), 2.0);
         norm += normalize(vec3(-diff, revDiff * 3.0)) * revDiff;
-        finalClr += clr * pow(revDiff, 0.5);
+        finalClr += clr * sqrt(revDiff);
         lastVal = opSmoothUnion(lastVal, pow(length(diff), 3.0), 1.0);
     }
 
@@ -138,9 +138,16 @@ void main()
     float lastVal = 1.0;
     vec3 finalClr = vec3(0.0, 0.0, 0.0);
     
-    calculate(pos, lastVal, finalClr, inData.y, inData.x, norm, lastVal, finalClr);
+    calculate(pos, lastVal, finalClr, abs(inData.y), inData.x, norm, lastVal, finalClr);
 
     norm.xy = rotateAroundOrigin(norm.xy, -angle);
+
+    const float vx = 0.1;
+    const float vy = vx * 2.5;
+    float multy = (max(vy - pos.y, 0.0)) / vy;
+
+    float xVal = (pos.x > 0.5) ? xSize - pos.x : pos.x;
+    float multx = (max(vx - xVal, 0.0)) / vx;
 
     if (pos.x > xSize - 0.5 && inData.z >= 0)
     {
@@ -157,10 +164,11 @@ void main()
         pos.y = tmp2;
     }
 
-    if (pos.x < 0.5 && inData.w >= 0)
+    if (pos.x < 0.5 && inData.w >= 0 && inData.z != -1071)
     {
         float tmp1 = pos.x;
         float tmp2 = pos.y;
+
         pos.y = pos.x * 2.5;
         pos.x = 1.0 - tmp2 * 0.4;
 
@@ -171,15 +179,22 @@ void main()
         pos.x = tmp1;
         pos.y = tmp2;
     }
+    else if (inData.z == -1071 && inData.w >= 0)
+    {
+        float tmp = pos.y;
+
+        pos.y = 1.0 - pos.y;
+
+        multy = max((max(vy - pos.y, 0.0)) / vy, multy);
+
+        vec3 n;
+        calculate(pos, lastVal, finalClr, inData.w, inData.x, n, lastVal, finalClr);
+        norm = norm + vec3(rotateAroundOrigin(n.xy, -angle + PI), n.z);
+
+        pos.y = tmp;
+    }
     
     vec3 gelClr = 2.5 * finalClr / vecMax(finalClr);
-
-    const float vx = 0.1;
-    const float vy = vx * 2.5;
-    float multy = (max(vy - pos.y, 0.0)) / vy;
-
-    float xVal = (pos.x > 0.5) ? xSize - pos.x : pos.x;
-    float multx = (max(vx - xVal, 0.0)) / vx;
 
     norm = normalize(norm);
 
@@ -212,11 +227,12 @@ void main()
         outClr = normalize(vec2(outClr * 0.2, 4.0)).x;
         
         float power = inData.z == -1071 ? (1.0 - multy) : 1.0f;
-        outFragColor = vec4(vec3(outClr) * gelClr * pow((1.0 - multy) * (1.0 - multx), 0.5), power * pow(1.0 - pos.y, 0.3) * sharedUboData.data.x * 5.0 * (0.5 - lastVal));
-        //outFragColor = vec4(viewDir, 1.0);
+        outFragColor = vec4(vec3(outClr) * gelClr * pow((1.0 - multy) * (1.0 - multx), 0.5), power * sharedUboData.data.x * 5.0 * (0.5 - lastVal));
+        
+        //outFragColor = vec4(norm, 1.0);
     }
     else
     {
-        outFragColor = vec4(0.3f);
+        outFragColor = vec4(0.0);
     }
 }

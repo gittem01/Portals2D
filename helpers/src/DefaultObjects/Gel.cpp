@@ -61,12 +61,12 @@ void Gel::staticInit()
     ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
 }
 
-float handleGelPut(s_unitWallData* wallData, int gelType, float amnt, float maxGel)
+float handleGelPut(s_unitWallData* wallData, int gelType, float amnt)
 {
     float val = std::max(pow(amnt, 0.5f) * 0.2f, 0.05f);
     if ((wallData->gelType & ((2 << gelType) | NONE | CLEAR) || wallData->gelAmount < 0.25) && gelType != 3)
     {
-        wallData->gelAmount = std::min(wallData->gelAmount + val, maxGel);
+        wallData->gelAmount = std::min(wallData->gelAmount + val, 0.8f);
         wallData->gelType = (GEL_TYPE)(2 << gelType);
     }
 	else
@@ -158,23 +158,20 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         b2Vec2 dirVec;
 
         fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
-        float maxGel;
         if (fData && fData->type & F_LIGHT_BRIDGE)
         {
             b2EdgeShape* edge = (b2EdgeShape*)otherFix->GetShape();
             dirVec = edge->m_vertex2 - edge->m_vertex1;
             dirVec.Normalize();
-            v1 = edge->m_vertex1 + otherFix->GetBody()->GetPosition();
+            v1 = edge->m_vertex1;
             s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
             extraOffset = eLocal->globalRange[0];
-            maxGel = 0.6f;
         }
         else
         {
             v1 = eGlobalData->localPoints[0];
             extraOffset = 0;
             dirVec = eGlobalData->dir;
-            maxGel = 0.8f;
         }
 
         b2Vec2 distVec = contact->GetFixtureB()->GetBody()->GetPosition() - otherFix->GetBody()->GetWorldPoint(v1);
@@ -184,7 +181,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         float amnt = gelRadius * 5.0;
 
         if (eGlobalData->unitWalls[startPos].wallType & (PORTALLABLE | NOT_PORTALLABLE))
-            amnt -= handleGelPut(&eGlobalData->unitWalls[startPos], gelType, amnt, maxGel);
+            amnt -= handleGelPut(&eGlobalData->unitWalls[startPos], gelType, amnt);
         else
             goto out;
 
@@ -195,12 +192,12 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
             float decrease = 0.0f;
             if (rightPos >= range[0] && (eGlobalData->unitWalls[rightPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
             {
-                decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt, maxGel);
+                decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt);
                 rightPos = startPos - i;
             }
             if (leftPos <= range[1] && (eGlobalData->unitWalls[leftPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
             {
-                decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt, maxGel);
+                decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt);
                 leftPos = startPos + i;
 			}
 
