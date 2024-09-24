@@ -15,6 +15,7 @@
 #include "GameObjects/LightBridge.h"
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
+#include "GameObjects/Catapult.h"
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
@@ -887,6 +888,11 @@ void LevelerTestCase::createDynamics()
 			LightBridge* lb = LightBridge::createLightBridge(g->pWorld, objectData);
 			receiverToTransmitter(objectData, lb);
 		}
+        break;
+        case CATAPULT:
+        {
+            Catapult* cp = new Catapult(g->pWorld, objectData);
+        }
         break;
         default:
             break;

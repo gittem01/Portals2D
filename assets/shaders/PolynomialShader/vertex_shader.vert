@@ -50,15 +50,17 @@ void main()
         y = getY(x);
         der = getDer(x);
         der = vec2(-der.y, der.x);
-        arcPos = (x - ubo.data.y) * sign(ubo.data.z);
+        float mult = max(7.0 - abs(ubo.data.z), 1.0) * 0.5;
+        arcPos = (x - ubo.data.y) * sign(ubo.data.z) * mult;
+        outData.z *= mult;
     }
     else
     {
         x = ubo.data.x;
         y = ubo.data.y + vertex.x * ubo.data.z;
         der = vec2(1.0, 0.0);
-        arcPos = (y - ubo.data.y) * 0.05 * sign(ubo.data.z);
-        outData.z *= 0.05;
+        arcPos = (y - ubo.data.y) * 0.25 * sign(ubo.data.z);
+        outData.z *= 0.25;
     }
 
     worldPos = vec2(x, y) + der * ubo.equation.w * vertex.y;

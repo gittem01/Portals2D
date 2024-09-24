@@ -119,7 +119,6 @@ void PolynomialShader::render(VkCommandBuffer cmdBuff, class Camera* cam)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-
     for (s_polynomRenderData& renderData : datas)
     {
         if (renderData.shouldRender)

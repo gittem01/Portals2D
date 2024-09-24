@@ -18,6 +18,7 @@
 #include "GameObjects/GndLaserReceiver.h"
 #include "GameObjects/Funnel.h"
 #include "GameObjects/LightBridge.h"
+#include "GameObjects/Catapult.h"
 
 Game* Game::object;
 
@@ -105,6 +106,7 @@ void Game::TestState()
     WallLaserReceiver::staticInit();
     GndLaserReceiver::staticInit();
     Funnel::staticInit();
+    Catapult::staticInit();
 
     if (!leveler)
     {

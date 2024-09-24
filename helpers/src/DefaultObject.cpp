@@ -1,6 +1,7 @@
 #include "DefaultObject.h"
 #include <Game.h>
 #include "GameObjects/ForceField.h"
+#include "GameObjects/Catapult.h"
 
 std::vector<DefaultObject*> DefaultObject::defaultObjects;
 
@@ -96,13 +97,28 @@ void DefaultObject::enterForceField(ForceField* forceField)
 void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 {
 	fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
-	if (fData && fData->type & F_FORCE_FIELD)
+	if (fData)
 	{
-		ForceField* forceField = (ForceField*)fData->data;
-		if (forceField->enabled)
+		switch (fData->type)
 		{
-			enterForceField((ForceField*)fData->data);
+		case FORCE_FIELD:
+		{
+			ForceField* forceField = (ForceField*)fData->data;
+			if (forceField->enabled)
+			{
+				enterForceField((ForceField*)fData->data);
+			}
 		}
+		case F_CATAPULT:
+		{
+			Catapult* catapult = (Catapult*)fData->data;
+			wData->pbIndices[0]->body->SetLinearVelocity(catapult->sendSpeed);
+		}
+		break;
+		default:
+			break;
+		}
+		
 	}
 }
 

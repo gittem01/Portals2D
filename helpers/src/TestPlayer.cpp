@@ -8,6 +8,7 @@
 #include "GameObjects/GndLaserReceiver.h"
 #include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/Funnel.h"
+#include "GameObjects/Catapult.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -961,6 +962,12 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
             health = -1000;
 			healthCheck();
 			break;
+        case F_CATAPULT:
+        {
+            Catapult* catapult = (Catapult*)fixData->data;
+            wData->pbIndices[0]->body->SetLinearVelocity(catapult->sendSpeed);
+            gun->at(0)->body->SetLinearVelocity(catapult->sendSpeed);
+        }
         default:
             break;
         }

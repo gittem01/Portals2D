@@ -947,9 +947,11 @@ glm::vec3 calculatePolynomWithChecks(glm::vec2 sp, glm::vec2 mp, glm::vec2 ep, i
 		polynom = glm::vec3(a, b, c);
 	}
 
-	if (polynom.x == NAN) polynom.x = 0.0;
-	if (polynom.y == NAN) polynom.y = 0.0;
-	if (polynom.z == NAN) polynom.z = 0.0;
+	if (polynom.x == NAN) polynom.x = 0.0f;
+	if (polynom.y == NAN) polynom.y = 0.0f;
+	if (polynom.z == NAN) polynom.z = 0.0f;
+	
+	assert(polynom.x != 0.0f || polynom.y != 0.0f || polynom.z != 0.0f);
 
 	return polynom;
 }
@@ -1560,7 +1562,6 @@ void Leveler::update()
 		}
 		else if (item->objectType & CATAPULT)
 		{
-		catapultLogic:
 			if (consqClickVec.size() < 2)
 			{
 				glm::ivec2 mp;

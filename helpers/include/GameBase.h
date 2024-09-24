@@ -57,6 +57,7 @@ enum FixtureDataType
     F_GND_RECEIVER  = 0x1 << 13,
     F_FUNNEL		= 0x1 << 14,
     F_LIGHT_BRIDGE  = 0x1 << 15,
+    F_CATAPULT      = 0x1 << 16,
 
     F_END           = 0x1 << 30,
 };
