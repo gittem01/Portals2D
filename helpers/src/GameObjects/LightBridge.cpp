@@ -39,7 +39,6 @@ static int extraWallStartOffset;
 
 LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	signalCount = (int)objData->startActive;
 	lightDir = fwdDirs[objData->rotation % 4];
 	extraRenderIndex = -1;
 
@@ -94,7 +93,7 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	vkUnmapMemory(ThinDrawer::object->lightBridge->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory);
 
 	data.data.z = 1.0f;
-	if (signalCount <= 0) data.data.x = 0.0f;
+	if (!objData->startActive) data.data.x = 0.0f;
 
 	renderOffset = numLightBridges - 1;
 	reqMapCount = ThinDrawer::object->swapChain->imageCount;
@@ -135,51 +134,41 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	//fix->GetUserData().pointer = (uintptr_t)fData;
 }
 
-void LightBridge::ssignal()
+void LightBridge::enable()
 {
-	signalCount++;
-
-	if (signalCount == 1)
-	{
-		data.data.x = 0.4f;
-		reqMapCount = ThinDrawer::object->swapChain->imageCount;
-	}
+	data.data.x = 0.4f;
+	reqMapCount = ThinDrawer::object->swapChain->imageCount;
 }
 
-void LightBridge::usignal()
+void LightBridge::disable()
 {
-	signalCount--;
+	data.data.x = 0.0f;
+	reqMapCount = ThinDrawer::object->swapChain->imageCount;
 
-	if (signalCount == 0)
+	if (extraRenderIndex >= 0)
 	{
-		data.data.x = 0.0f;
-		reqMapCount = ThinDrawer::object->swapChain->imageCount;
-
-		if (extraRenderIndex >= 0)
-		{
-			extraIndices[extraRenderIndex] = 0;
-			extraRenderIndex = -1;
-		}
-
-		lastLen = -0.1f;
-
-		capBody->SetTransform(lightPos, -b2_pi * 0.5f);
-
-		for (int i = 0; i < bodies.size(); i++)
-		{
-			b2Fixture* fix = bodies[i]->GetFixtureList();
-			fixtureData* fData = (fixtureData*)(fix->GetUserData().pointer - sizeof(fixtureData));
-			free(fData);
-			fix->GetUserData().pointer = 0; fix->GetNext()->GetUserData().pointer = 0;
-			Game::object->pWorld->DestroyBody(bodies[i]);
-		}
-		bodies.clear();
-
-		eDatas[0].unitWalls.clear();
-		eDatas[1].unitWalls.clear();
-
-		renderLightPositions.clear();
+		extraIndices[extraRenderIndex] = 0;
+		extraRenderIndex = -1;
 	}
+
+	lastLen = -0.1f;
+
+	capBody->SetTransform(lightPos, -b2_pi * 0.5f);
+
+	for (int i = 0; i < bodies.size(); i++)
+	{
+		b2Fixture* fix = bodies[i]->GetFixtureList();
+		fixtureData* fData = (fixtureData*)(fix->GetUserData().pointer - sizeof(fixtureData));
+		free(fData);
+		fix->GetUserData().pointer = 0; fix->GetNext()->GetUserData().pointer = 0;
+		Game::object->pWorld->DestroyBody(bodies[i]);
+	}
+	bodies.clear();
+
+	eDatas[0].unitWalls.clear();
+	eDatas[1].unitWalls.clear();
+
+	renderLightPositions.clear();
 }
 
 LightBridge* LightBridge::createLightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
@@ -446,7 +435,7 @@ void LightBridge::update()
 	{
 		LightBridge* lb = &lightBridges[i];
 
-		if (lb->signalCount <= 0) continue;
+		if (!lb->enabled) continue;
 
 		b2Vec2 raySendPos = lb->lightPos;
 		b2Vec2 rayDir = lb->lightDir;

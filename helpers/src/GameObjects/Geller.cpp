@@ -5,7 +5,7 @@
 #include "Gel.h"
 #include "Overlayer.h"
 
-Geller Geller::gellers[64];
+std::vector<Geller> Geller::gellers;
 int Geller::numGellers = 0;
 s_perTextureData* Geller::ptData[4];
 s_texture* Geller::tex[4];
@@ -30,21 +30,10 @@ int getGellerIndex(LevelObject obj)
 	}
 }
 
-void Geller::ssignal()
-{
-	signalCount++;
-}
-
-void Geller::usignal()
-{
-	signalCount--;
-}
-
 Geller::Geller(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
 	gellerIndex = getGellerIndex(objData->objectType);
 	lastGelCreationTime = -10.0;
-	signalCount = (int)objData->startActive;
 	gelCreationPos = glm::vec2(objData->pos.x + 1.0f, objData->pos.y + 1.0f);
 	gellerRotation = objData->rotation;
 
@@ -128,7 +117,7 @@ void Geller::update()
 	for (int i = 0; i < numGellers; i++)
 	{
 		Geller& g = gellers[i];
-		if (g.signalCount <= 0) continue;
+		if (!g.enabled) continue;
 
 		if (Game::object->gameTime - g.lastGelCreationTime > 0.075)
 		{

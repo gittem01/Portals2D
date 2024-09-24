@@ -63,8 +63,8 @@ public:
 	LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	LightBridge() {};
 
-	void ssignal();
-	void usignal();
+	void enable();
+	void disable();
 
 	static void toDeath();
 	static void toLeveler();

@@ -15,7 +15,6 @@ static b2Vec2 perpDirs[4] = { { 1.0, 0.0 }, { 0.0, 1.0 }, { 1.0, 0.0 }, { 0.0, 1
 
 ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	signalCount = (int)objData->startActive;
 	fieldRenderOffset = objData->extraOffsets[0];
 
 	b2Vec2 perpDir = perpDirs[objData->rotation % 4];
@@ -107,66 +106,56 @@ ForceField::~ForceField()
 	delete fData;
 }
 
-void ForceField::ssignal()
+void ForceField::enable()
 {
 	ThinDrawer* thinDrawer = ThinDrawer::object;
+	
+	fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
+	fData->type = F_FORCE_FIELD;
 
-	signalCount++;
-
-	if (signalCount == 1)
+	bool runPlayer = false;
+	for (b2ContactEdge* contactEdge = body->GetContactList(); contactEdge != nullptr; contactEdge = contactEdge->next)
 	{
-		fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
-		fData->type = F_FORCE_FIELD;
+		b2Fixture* otherFix = contactEdge->contact->GetFixtureA()->IsSensor() ?
+			contactEdge->contact->GetFixtureB() : contactEdge->contact->GetFixtureA();
 
-		bool runPlayer = false;
-		for (b2ContactEdge* contactEdge = body->GetContactList(); contactEdge != nullptr; contactEdge = contactEdge->next)
+		bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
+		if (bData && bData->extraData)
 		{
-			b2Fixture* otherFix = contactEdge->contact->GetFixtureA()->IsSensor() ?
-				contactEdge->contact->GetFixtureB() : contactEdge->contact->GetFixtureA();
-
-			bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
-			if (bData && bData->extraData)
+			g_PhysicsData* otherData = (g_PhysicsData*)bData->extraData;
+			if (otherData)
 			{
-				g_PhysicsData* otherData = (g_PhysicsData*)bData->extraData;
-				if (otherData)
+				if (otherData->type & PLAYER_O && !runPlayer)
 				{
-					if (otherData->type & PLAYER_O && !runPlayer)
-					{
-						runPlayer = true;
-						TestPlayer* tp = (TestPlayer*)otherData->data;
-						tp->enterForceField(this);
-					}
-					else if (otherData->type & DESTRUCTABLES)
-					{
-						DefaultObject* dObj = (DefaultObject*)otherData->data;
-						dObj->enterForceField(this);
-					}
+					runPlayer = true;
+					TestPlayer* tp = (TestPlayer*)otherData->data;
+					tp->enterForceField(this);
+				}
+				else if (otherData->type & DESTRUCTABLES)
+				{
+					DefaultObject* dObj = (DefaultObject*)otherData->data;
+					dObj->enterForceField(this);
 				}
 			}
 		}
-
-		s_blueFieldUbo* blueUbo;
-		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
-			fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
-		blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 1.0, Game::object->gameTime);
-		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 	}
+
+	s_blueFieldUbo* blueUbo;
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
+		fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
+	blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 1.0, Game::object->gameTime);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 }
 
-void ForceField::usignal()
+void ForceField::disable()
 {
 	ThinDrawer* thinDrawer = ThinDrawer::object;
 
-	signalCount--;
-
-	if (signalCount == 0)
-	{
-		s_blueFieldUbo* blueUbo;
-		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
-			fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
-		blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
-		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
-	}
+	s_blueFieldUbo* blueUbo;
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
+		fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
+	blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 }
 
 void ForceField::toDeath()

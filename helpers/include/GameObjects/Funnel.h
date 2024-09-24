@@ -39,13 +39,19 @@ public:
 	float turnAngle2;
 	int reqMapCount;
 	int signalCount2;
+	int reqSignalCount2;
+	bool disabler2;
+	bool enabled2;
 	int arrIndex;
 
 	Funnel(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	Funnel() {};
 	
-	void ssignal();
-	void usignal();
+	void enable();
+	void disable();
+
+	void enable2();
+	void disable2();
 
 	void ssignal2();
 	void usignal2();

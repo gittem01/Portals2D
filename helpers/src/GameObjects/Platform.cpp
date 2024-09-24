@@ -4,7 +4,9 @@
 #include "LevelerTestCase.h"
 
 int Platform::numPlatforms = 0;
-Platform* Platform::platforms[MAX_PLATFORMS] = { 0 };
+std::vector<Platform> Platform::platforms;
+std::vector<uint8_t> Platform::loopingPlatforms;
+std::vector<uint8_t> Platform::oneTimeMovePlatforms;
 
 glm::vec2 vertexMults[4][2] =
 {
@@ -14,7 +16,7 @@ glm::vec2 vertexMults[4][2] =
 	{ glm::vec2(-0.5, -0.5), glm::vec2(-0.5, +0.5) },
 };
 
-static b2Vec2 fwdDirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
+static b2Vec2 fwdDirs[4] = { { 0, -1.0f }, { +1.0f, 0 }, { 0, +1.0f }, { -1.0f, 0 } };
 
 void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeIndex)
 {
@@ -32,9 +34,8 @@ void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeI
 
 Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	startEnabled = objData->startActive;
-	signalCount = (int)startEnabled;
-
+	looping = objData->loop;
+	platformIndex = numPlatforms - 1;
 	setMovementData(objData);
 
 	glm::vec2 halfSize = glm::vec2(size) / 2.0f;
@@ -55,7 +56,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	WALL_TYPE wType = (WALL_TYPE)(1 << objData->platformType);
 
 	int initialOffset = -1;
-	int edgeRenderIndexStart = ThinDrawer::object->wallGel->numWallLines + numPlatforms * 4;
+	int edgeRenderIndexStart = ThinDrawer::object->wallGel->numWallLines + (numPlatforms - 1) * 4;
 
 	createEdgeOneSided(b2Vec2(+halfSize.x, -halfSize.y), b2Vec2(+halfSize.x, +halfSize.y),
 		b2Vec2(-halfSize.x, +halfSize.y), b2Vec2(-halfSize.x, -halfSize.y),
@@ -117,12 +118,10 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	}
 
 	b2PolygonShape box;
-	box.SetAsBox(halfSize.x - 0.01, halfSize.y - 0.01);
+	box.SetAsBox(halfSize.x - 0.03, halfSize.y - 0.03);
 	b2Fixture* fix = body->CreateFixture(&box, 0.0f);
 
 	fix->GetUserData().pointer = fix->GetNext()->GetUserData().pointer;
-
-	body->SetLinearVelocity(platformSpeed * fwdDir);
 
 	s_platformRectUbo platformData;
 	s_platformRectUbo* platformUbo;
@@ -143,17 +142,19 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
 	}
 
-	platforms[numPlatforms++] = this;
-}
+	if (objData->startActive)
+	{
+		body->SetLinearVelocity(platformSpeed * fwdDir);
 
-void Platform::ssignal()
-{
-	signalCount++;
-}
-
-void Platform::usignal()
-{
-	signalCount--;
+		if (looping)
+		{
+			loopingPlatforms.push_back(platformIndex);
+		}
+		else
+		{
+			oneTimeMovePlatforms.push_back(platformIndex);
+		}
+	}
 }
 
 void Platform::setMovementData(s_objectDataGrid* objData)
@@ -178,21 +179,67 @@ void Platform::setMovementData(s_objectDataGrid* objData)
 	dirMult = platformSpeed;
 }
 
+void Platform::enable()
+{
+	if (looping)
+	{
+		loopingPlatforms.push_back(platformIndex);
+	}
+	else
+	{
+		body->SetLinearVelocity(platformSpeed * fwdDir);
+		oneTimeMovePlatforms.push_back(platformIndex);
+	}
+}
+
+void Platform::disable()
+{
+	for (uint8_t thisIndex = 0; thisIndex < loopingPlatforms.size(); thisIndex++)
+	{
+		if (loopingPlatforms[thisIndex] == platformIndex)
+		{
+			loopingPlatforms[thisIndex] = loopingPlatforms[loopingPlatforms.size() - 1];
+			loopingPlatforms.pop_back();
+
+			break;
+		}
+	}
+
+	if (looping)
+	{
+		body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+	}
+	else
+	{
+		body->SetLinearVelocity(-platformSpeed * fwdDir);
+		oneTimeMovePlatforms.push_back(platformIndex);
+	}
+}
+
+Platform* Platform::createPlatform(PortalWorld* portalWorld, s_objectDataGrid* objData)
+{
+	Platform* platform = &platforms[numPlatforms++];
+	return new (platform) Platform(portalWorld, objData);
+}
+
 void Platform::toDeath()
 {
-	for (int i = 0; i < numPlatforms; i++)
+	for (int i = 0; i < platforms.size(); i++)
 	{
-		Platform* platform = platforms[i];
+		Platform* platform = &platforms[i];
 
 		platform->body->SetTransform(platform->basePos, 0.0f);
 	}
+
+	loopingPlatforms = std::vector<uint8_t>();
+	oneTimeMovePlatforms = std::vector<uint8_t>();
 }
 
 void Platform::toLeveler()
 {
-	for (int i = 0; i < numPlatforms; i++)
+	for (int i = 0; i < platforms.size(); i++)
 	{
-		Platform* platform = platforms[i];
+		Platform* platform = &platforms[i];
 
 		s_platformRectUbo* platformUbo;
 		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory,
@@ -201,6 +248,11 @@ void Platform::toLeveler()
 		platformUbo->posSize.y = platform->basePos.y;
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
 	}
+
+	numPlatforms = 0;
+	platforms = std::vector<Platform>();
+	loopingPlatforms = std::vector<uint8_t>();
+	oneTimeMovePlatforms = std::vector<uint8_t>();
 }
 
 void Platform::staticInit()
@@ -235,7 +287,7 @@ void Platform::render(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		ThinDrawer::object->wallGel->pipelineLayout, 1, 1, &ThinDrawer::object->wallGel->descriptorSets[1], 0, nullptr);
 
-	vkCmdDraw(cmdBuff, 6, numPlatforms * 4, 0, ThinDrawer::object->wallGel->numWallLines +
+	vkCmdDraw(cmdBuff, 6, platforms.size() * 4, 0, ThinDrawer::object->wallGel->numWallLines +
 		MAX_PLATFORMS * ThinDrawer::object->lastSwapChainImageIndex);
 }
 
@@ -243,9 +295,9 @@ void Platform::memMapFunc(void* ptr)
 {
 	ThinDrawer* td = ThinDrawer::object;
 
-	for (int i = 0; i < numPlatforms; i++)
+	for (int i = 0; i < platforms.size(); i++)
 	{
-		Platform* platform = platforms[i];
+		Platform* platform = &platforms[i];
 
 		b2Body* body = platform->body;
 
@@ -276,34 +328,60 @@ void Platform::memMapFunc(void* ptr)
 	}
 }
 
-void Platform::update()
+void Platform::perTickUpdate(float dt)
 {
-	for (int i = 0; i < numPlatforms; i++)
+	for (int i = 0; i < loopingPlatforms.size(); i++)
 	{
-		Platform* platform = platforms[i];
+		Platform* platform = &platforms[loopingPlatforms[i]];
 
 		b2Body* body = platform->body;
 
-		if (platform->signalCount > 0)
+		b2Vec2 velocity = platform->dirMult * platform->fwdDir;
+
+		float posDiff = b2Dot(body->GetPosition() - platform->basePos, platform->fwdDir);
+
+		float speed = b2Dot(velocity, platform->fwdDir);
+		float moveAmnt = abs(speed) * dt + 0.001f;
+
+		if (speed > 0.0f && posDiff + moveAmnt >= platform->limitDist)
 		{
-			b2Vec2 speed = platform->dirMult * platform->fwdDir;
-
-			b2Vec2 posDiff = body->GetPosition() - platform->basePos;
-
-			if (b2Dot(speed, platform->fwdDir) > 0.0f && b2Dot(posDiff, platform->fwdDir) > platform->limitDist)
-			{
-				platform->dirMult = -platformSpeed;
-			}
-			else if (b2Dot(speed, platform->fwdDir) < 0.0f && b2Dot(posDiff, platform->fwdDir) < 0.0f)
-			{
-				platform->dirMult = platformSpeed;
-			}
-
-			body->SetLinearVelocity(platform->dirMult * platform->fwdDir);
+			platform->dirMult = -platformSpeed;
 		}
-		else
+		else if (speed < 0.0f && posDiff <= moveAmnt)
+		{
+			platform->dirMult = platformSpeed;
+		}
+
+		body->SetLinearVelocity(platform->dirMult * platform->fwdDir);
+	}
+
+	for (int i = 0; i < oneTimeMovePlatforms.size(); i++)
+	{
+		Platform* platform = &platforms[oneTimeMovePlatforms[i]];
+
+		b2Body* body = platform->body;
+
+		b2Vec2 velocity = platform->body->GetLinearVelocity();
+		float speed = b2Dot(velocity, platform->fwdDir);
+		float moveAmnt = speed * dt + 0.001f * (speed > 0.0 ? 1.0f : -1.0f);
+		float posDiff = b2Dot(body->GetPosition() - platform->basePos, platform->fwdDir) + moveAmnt;
+
+		if (platform->enabled && posDiff >= platform->limitDist)
 		{
 			body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+			b2Vec2 setPos = platform->basePos + platform->limitDist * platform->fwdDir;
+			body->SetTransform(setPos, 0.0f);
+			oneTimeMovePlatforms[i] = oneTimeMovePlatforms[oneTimeMovePlatforms.size() - 1];
+			oneTimeMovePlatforms.pop_back();
+			i--;
+		}
+		else if (!platform->enabled && posDiff <= 0.0f)
+		{
+			body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+			body->SetTransform(platform->basePos, 0.0f);
+			oneTimeMovePlatforms[i] = oneTimeMovePlatforms[oneTimeMovePlatforms.size() - 1];
+			oneTimeMovePlatforms.pop_back();
+			i--;
 		}
 	}
 }

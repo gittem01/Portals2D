@@ -24,8 +24,8 @@ public:
 	ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	~ForceField();
 
-	void ssignal();
-	void usignal();
+	void enable();
+	void disable();
 
 	static void toDeath();
 	static void toLeveler();

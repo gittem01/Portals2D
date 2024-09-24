@@ -9,7 +9,7 @@
 class Geller : public Receiver
 {
 public:
-	static Geller gellers[64];
+	static std::vector<Geller> gellers;
 	static int numGellers;
 	static s_perTextureData* ptData[4];
 	static s_texture* tex[4];

@@ -51,7 +51,7 @@ void DefaultObject::recreate()
 
 void DefaultObject::enterForceField(ForceField* forceField)
 {
-	if (forceField->signalCount <= 0) return;
+	if (!forceField->enabled) return;
 
 	auto npBody = wData->pbIndices;
 
@@ -96,10 +96,10 @@ void DefaultObject::enterForceField(ForceField* forceField)
 void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix)
 {
 	fixtureData* fData = (fixtureData*)otherFix->GetUserData().pointer;
-	if (fData && fData->type == F_FORCE_FIELD)
+	if (fData && fData->type & F_FORCE_FIELD)
 	{
 		ForceField* forceField = (ForceField*)fData->data;
-		if (forceField->signalCount > 0)
+		if (forceField->enabled)
 		{
 			enterForceField((ForceField*)fData->data);
 		}

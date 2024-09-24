@@ -13,7 +13,9 @@ class Platform : public Receiver
 {
 public:
 	static int numPlatforms;
-	static Platform* platforms[MAX_PLATFORMS];
+	static std::vector<Platform> platforms;
+	static std::vector<uint8_t> loopingPlatforms;
+	static std::vector<uint8_t> oneTimeMovePlatforms;
 
 	b2Body* body;
 	glm::ivec2 size;
@@ -24,18 +26,22 @@ public:
 
 	int platformRenderOffset;
 	int edgeRenderIndex;
-	bool startEnabled;
+	uint8_t platformIndex;
+	bool looping;
 
 	Platform(PortalWorld* portalWorld, s_objectDataGrid* objData);
+	Platform() {}
+
 	void setMovementData(s_objectDataGrid* objData);
 
-	void ssignal();
-	void usignal();
+	void enable();
+	void disable();
 
+	static Platform* createPlatform(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void toDeath();
 	static void toLeveler();
 	static void staticInit();
-	static void update();
+	static void perTickUpdate(float dt);
 	static void memMapFunc(void* ptr);
 	static void render(VkCommandBuffer cmdBuff, void* ptr);
 };

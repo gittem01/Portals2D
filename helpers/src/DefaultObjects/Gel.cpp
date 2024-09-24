@@ -131,8 +131,8 @@ void Gel::getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGloba
     {
         s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
         *data = eLocal->globalData;
-        range[0] = eLocal->globalRange[0];
-        range[1] = eLocal->globalRange[1];
+        range[0] = std::min(eLocal->globalRange[0], (int)eLocal->globalData->unitWalls.size() - 1);
+        range[1] = std::min(eLocal->globalRange[1], (int)eLocal->globalData->unitWalls.size() - 1);
     }
     else
     {

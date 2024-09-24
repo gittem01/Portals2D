@@ -178,6 +178,8 @@ void BaseTestCase::onUpdate()
         {
             g->mjh->mouseHandler(g->frame, requiredIters);
 
+            Platform::perTickUpdate(dt);
+
             tp->update(dt, requiredIters);
             
             LightBridge::perTickUpdate();

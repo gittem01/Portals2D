@@ -11,8 +11,6 @@ s_texture* HazardField::tex;
 
 HazardField::HazardField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	signalCount = (int)objData->startActive;
-
 	fieldRenderOffset = objData->extraOffsets[0];
 
 	b2Vec2 midPos = 0.5f * (b2Vec2(objData->pos.x, objData->pos.y) + b2Vec2(objData->extraPos.x, objData->extraPos.y)) + b2Vec2(0.5f, 0.5f);
@@ -115,60 +113,50 @@ void HazardField::toLeveler()
 	}
 }
 
-void HazardField::ssignal()
+void HazardField::enable()
 {
 	ThinDrawer* thinDrawer = ThinDrawer::object;
 
-	signalCount++;
+	fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
+	fData->type = F_HAZARD_FIELD;
 
-	if (signalCount == 1)
+	for (b2ContactEdge* contactEdge = body->GetContactList(); contactEdge != nullptr; contactEdge = contactEdge->next)
 	{
-		fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
-		fData->type = F_HAZARD_FIELD;
+		b2Fixture* otherFix = contactEdge->contact->GetFixtureA()->IsSensor() ?
+			contactEdge->contact->GetFixtureB() : contactEdge->contact->GetFixtureA();
 
-		for (b2ContactEdge* contactEdge = body->GetContactList(); contactEdge != nullptr; contactEdge = contactEdge->next)
+		bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
+		if (bData && bData->extraData)
 		{
-			b2Fixture* otherFix = contactEdge->contact->GetFixtureA()->IsSensor() ?
-				contactEdge->contact->GetFixtureB() : contactEdge->contact->GetFixtureA();
-
-			bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
-			if (bData && bData->extraData)
+			g_PhysicsData* otherData = (g_PhysicsData*)bData->extraData;
+			if (otherData && otherData->type & PLAYER_O)
 			{
-				g_PhysicsData* otherData = (g_PhysicsData*)bData->extraData;
-				if (otherData && otherData->type & PLAYER_O)
-				{
-					TestPlayer* tp = (TestPlayer*)otherData->data;
-					tp->health = -1000;
-					tp->healthCheck();
-				}
+				TestPlayer* tp = (TestPlayer*)otherData->data;
+				tp->health = -1000;
+				tp->healthCheck();
 			}
 		}
-
-		s_hazardUbo* hazardUbo;
-		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory,
-			fieldRenderOffset * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
-		hazardUbo->data = glm::vec4(0.8, Game::object->gameTime, 1.0, Game::object->gameTime);
-		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 	}
+
+	s_hazardUbo* hazardUbo;
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory,
+		fieldRenderOffset * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
+	hazardUbo->data = glm::vec4(0.8, Game::object->gameTime, 1.0, Game::object->gameTime);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 }
 
-void HazardField::usignal()
+void HazardField::disable()
 {
 	ThinDrawer* thinDrawer = ThinDrawer::object;
 
-	signalCount--;
+	fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
+	fData->type = F_OTHER;
 
-	if (signalCount == 0)
-	{
-		fixtureData* fData = (fixtureData*)body->GetFixtureList()->GetUserData().pointer;
-		fData->type = F_OTHER;
-
-		s_hazardUbo* hazardUbo;
-		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory,
-			fieldRenderOffset * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
-		hazardUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
-		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
-	}
+	s_hazardUbo* hazardUbo;
+	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory,
+		fieldRenderOffset * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
+	hazardUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
+	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 }
 
 void HazardField::staticInit()

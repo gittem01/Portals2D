@@ -773,7 +773,7 @@ void TestPlayer::jumpEffect()
 
     b2Vec2 lv = body->GetLinearVelocity();
 
-    grounded = ((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) || (lv.y < 0.0f && onAirFor < 0.2f && onAirFor != 0.0f);
+    grounded = ((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) || (lv.y < 0.0f && onAirFor < 0.05f && onAirFor != 0.0f);
 
     if (wh->keyData[GLFW_KEY_W] == 2)
     {
@@ -2353,11 +2353,21 @@ void TestPlayer::update(float dt, int totalIter)
 
     if (effectiveFunnel)
     {
-        lv.y += wh->keyData[GLFW_KEY_W] ? 0.01f : 0.0f;
-        lv.x += wh->keyData[GLFW_KEY_A] ? -0.03f : 0.0f;
-        lv.y += wh->keyData[GLFW_KEY_S] ? -0.03f : 0.0f;
-        lv.x += wh->keyData[GLFW_KEY_D] ? 0.03f : 0.0f;
+        b2Vec2 rightDir;
+        if (inPortalFunel) rightDir = effectiveFunnel->funnelDir2;
+        else rightDir = effectiveFunnel->funnelDir;
+        rightDir = b2Vec2(abs(rightDir.y), abs(rightDir.x));
 
+        b2Vec2 speedAdd = b2Vec2(0.0f, 0.0f);
+
+        speedAdd.y += wh->keyData[GLFW_KEY_W] ? 0.01f : 0.0f;
+        speedAdd.x += wh->keyData[GLFW_KEY_A] ? -0.03f : 0.0f;
+        speedAdd.y += wh->keyData[GLFW_KEY_S] ? -0.03f : 0.0f;
+        speedAdd.x += wh->keyData[GLFW_KEY_D] ? 0.03f : 0.0f;
+
+        speedAdd = b2Vec2(rightDir.x * speedAdd.x, rightDir.y * speedAdd.y);
+
+        lv += speedAdd;
         pb->body->SetLinearVelocity(lv);
     }
     else

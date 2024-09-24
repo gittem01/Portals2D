@@ -724,6 +724,30 @@ void LevelerTestCase::receiverToTransmitter(s_objectDataGrid* objectData, Receiv
 {
     connMap.insert({ objectData, (void*)receiver });
 
+    if (objectData->objectType & FUNNEL)
+    {
+        Funnel* funnel = (Funnel*)receiver;
+        int count = 0;
+        for (auto conn : objectData->connections)
+        {
+            if (!conn->changePolarization) count++;
+        }
+        receiver->reqSignalCount = count;
+
+        funnel->signalCount2 = 0;
+        funnel->enabled2 = objectData->startPolarized;
+        funnel->disabler2 = objectData->startPolarized;
+        funnel->reqSignalCount2 = objectData->connections.size() - count;
+    }
+    else
+    {
+        receiver->reqSignalCount = objectData->connections.size();
+    }
+    
+    receiver->disabler = objectData->startActive;
+    receiver->signalCount = 0;
+    receiver->enabled = objectData->startActive;
+
     for (auto conn : objectData->connections)
     {
         auto iter = connMap.find(conn->transmitter);
@@ -754,6 +778,8 @@ void LevelerTestCase::createDynamics()
 {
     Funnel::funnels.resize(ThinDrawer::object->funnelShader->numFunnels);
     LightBridge::lightBridges.resize(ThinDrawer::object->lightBridge->numbridges);
+    Platform::platforms.resize(ThinDrawer::object->platformRectangle->numPlatforms);
+    Geller::gellers.resize(64);
 
     for (s_objectDataGrid* objectData : g->leveler->levelObjects)
     {
@@ -783,7 +809,7 @@ void LevelerTestCase::createDynamics()
         break;
         case PLATFORM:
 		{
-			Platform* pl = new Platform(g->pWorld, objectData);
+			Platform* pl = Platform::createPlatform(g->pWorld, objectData);
             receiverToTransmitter(objectData, pl);
         }
         break;

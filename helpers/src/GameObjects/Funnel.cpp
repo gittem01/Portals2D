@@ -94,14 +94,6 @@ Funnel::Funnel(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	data.colour2 = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	data2 = data;
 
-	signalCount = 0;
-	if (objData->startActive) ssignal();
-	else { signalCount = 1; usignal(); }
-
-	signalCount2 = 0;
-	if (objData->startPolarized) ssignal2();
-	else { signalCount2 = 1; usignal2(); }
-
 	rayLen = glm::length(glm::vec2(data.pointts.x, data.pointts.y) - glm::vec2(data.pointts.z, data.pointts.w)) - 0.2;
 	
 	int totalFunnels = ThinDrawer::object->funnelShader->numFunnels;
@@ -113,99 +105,127 @@ Funnel::Funnel(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	for (int i = 0; i < numSwapchainImages; i++)
 	{
 		vkMapMemory(ThinDrawer::object->funnelShader->logicalDevice, ThinDrawer::object->funnelShader->uniformBuffers[0].memory,
-			(totalFunnels + funnelRenderOffset + i * totalFunnels) * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
+			(totalFunnels + funnelRenderOffset + i * (totalFunnels + 2)) * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 		memcpy(funnelUbo, &data, sizeof(s_funnelUbo));
 		vkUnmapMemory(ThinDrawer::object->funnelShader->logicalDevice, ThinDrawer::object->funnelShader->uniformBuffers[0].memory);
 	}
 }
 
-void Funnel::ssignal()
+void Funnel::enable()
 {
-	signalCount++;
-
-	if (signalCount == 1)
+	if (!enabled2)
 	{
-		if (signalCount2 == 0)
-		{
-			data.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
-			data2.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
+		data.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
+		data2.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
 
-			data.colour2 = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-			data2.colour2 = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		}
-		else
-		{
-			data.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-			data2.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		data.colour2 = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		data2.colour2 = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+	else
+	{
+		data.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		data2.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-			data.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, 1.0f);
-			data2.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, 1.0f);
-		}
+		data.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, 1.0f);
+		data2.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, 1.0f);
+	}
 
-		data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
-		data.data2.w = Game::object->gameTime;
+	data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
+	data.data2.w = Game::object->gameTime;
+
+	data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
+	data2.data2.w = Game::object->gameTime;
+
+	reqMapCount = ThinDrawer::object->swapChain->imageCount;
+}
+
+void Funnel::disable()
+{
+	data.colour.w = 0.0f;
+	data2.colour.w = 0.0f;
+
+	data.colour2.w = 0.0f;
+	data2.colour2.w = 0.0f;
+
+	reqMapCount = ThinDrawer::object->swapChain->imageCount;
+}
+
+void Funnel::enable2()
+{
+	turnAngle = PortalWorld::normalizeAngle(baseAngle + b2_pi);
+
+	data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
+	data.data2.w = Game::object->gameTime;
+	data.data2.x = data.data2.z + 5.0f;
+
+	if (extraRenderIndex > -1)
+	{
+		data.data2.x += data2.data2.z;
 
 		data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
 		data2.data2.w = Game::object->gameTime;
-
-		reqMapCount = ThinDrawer::object->swapChain->imageCount;
+		data2.data2.x = data2.data2.z + 5.0f;
 	}
+
+	data.data.w = 3.0f;
+	data2.data.w = 3.0f;
+	data.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, enabled ? 1.0f : 0.0f);
+	data2.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, enabled ? 1.0f : 0.0f);
+
+	if (enabled)
+	{
+		data.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
+		data2.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
+	}
+	else
+	{
+		data.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		data2.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+
+	reqMapCount = ThinDrawer::object->swapChain->imageCount;
 }
 
-void Funnel::usignal()
+void Funnel::disable2()
 {
-	signalCount--;
-	
-	if (signalCount == 0)
+	turnAngle = PortalWorld::normalizeAngle(baseAngle);
+
+	data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
+	data.data2.w = Game::object->gameTime;
+	data.data2.x = 0.0f;
+
+	data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
+	data2.data2.w = Game::object->gameTime;
+	data2.data2.x = -data.data2.z;
+
+	data.data.w = -3.0f;
+	data2.data.w = -3.0f;
+
+	if (enabled)
 	{
-		data.colour.w = 0.0f;
-		data2.colour.w = 0.0f;
-
-		data.colour2.w = 0.0f;
-		data2.colour2.w = 0.0f;
-
-		reqMapCount = ThinDrawer::object->swapChain->imageCount;
+		data.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
+		data2.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
 	}
+
+	reqMapCount = ThinDrawer::object->swapChain->imageCount;
 }
 
 void Funnel::ssignal2()
 {
 	signalCount2++;
 
-	if (signalCount2 == 1)
+	if (signalCount2 == reqSignalCount2)
 	{
-		turnAngle = PortalWorld::normalizeAngle(baseAngle + b2_pi);
-
-		data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
-		data.data2.w = Game::object->gameTime;
-		data.data2.x = data.data2.z + 5.0f;
-
-		if (extraRenderIndex > -1)
+		if (disabler2)
 		{
-			data.data2.x += data2.data2.z;
-
-			data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
-			data2.data2.w = Game::object->gameTime;
-			data2.data2.x = data2.data2.z + 5.0f;
-		}
-		
-		data.data.w = 3.0f;
-		data2.data.w = 3.0f;
-		data.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, signalCount ? 1.0f : 0.0f);
-		data2.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, signalCount ? 1.0f : 0.0f);
-
-		if (signalCount > 0)
-		{
-			data.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
-			data2.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
+			enabled2 = false;
+			disable2();
 		}
 		else
 		{
-			data.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-			data2.colour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			enabled2 = true;
+			enable2();
 		}
-
-		reqMapCount = ThinDrawer::object->swapChain->imageCount;
 	}
 }
 
@@ -213,28 +233,18 @@ void Funnel::usignal2()
 {
 	signalCount2--;
 
-	if (signalCount2 == 0)
+	if (signalCount2 < reqSignalCount2)
 	{
-		turnAngle = PortalWorld::normalizeAngle(baseAngle);
-
-		data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
-		data.data2.w = Game::object->gameTime;
-		data.data2.x = 0.0f;
-
-		data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
-		data2.data2.w = Game::object->gameTime;
-		data2.data2.x = -data.data2.z;
-
-		data.data.w = -3.0f;
-		data2.data.w = -3.0f;
-
-		if (signalCount > 0)
+		if (disabler2)
 		{
-			data.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
-			data2.colour = glm::vec4(0.0f, 0.3f, 1.0f, 1.0f);
+			enabled2 = true;
+			enable2();
 		}
-
-		reqMapCount = ThinDrawer::object->swapChain->imageCount;
+		else
+		{
+			enabled2 = false;
+			disable2();
+		}
 	}
 }
 
@@ -272,6 +282,17 @@ void Funnel::staticInit()
 
 	ThinDrawer::object->memMapFuncs.push_back({ memMap, nullptr });
 	ThinDrawer::object->lateDrawFuncs.push_back({ render, nullptr });
+
+	for (int i = 0; i < numFunnels; i++)
+	{
+		Funnel* f = &funnels[i];
+
+		if (f->enabled) f->enable();
+		else f->disable();
+
+		if (f->enabled2) f->enable2();
+		else f->disable2();
+	}
 }
 
 void memWrite(Funnel* funnel)
@@ -433,7 +454,7 @@ void Funnel::update()
 	{
 		Funnel* funnel = &funnels[i];
 
-		if (funnel->signalCount <= 0)
+		if (!funnel->enabled)
 		{
 			continue;
 		}
@@ -550,7 +571,7 @@ void Funnel::update()
 				{
 					funnel->extraRenderIndex = extraRenderChecker[0];
 					extraRenderChecker[funnel->extraRenderIndex] = true;
-					if (funnel->signalCount2)
+					if (funnel->enabled2)
 					{
 						funnel->data2.data2.x = minLen2;
 					}
@@ -588,7 +609,7 @@ void Funnel::update()
 
 			if (funnel->lastLen < minLen)
 			{
-				if (funnel->signalCount2)
+				if (funnel->enabled2)
 				{
 					funnel->data.data2.x = minLen + 3.0f + (minLen2 < 1000.0f ? minLen2 : 0.0f);
 				}
@@ -657,7 +678,7 @@ void Funnel::perTickUpdate()
 				continue;
 			}
 
-			float reqSpeed = f->signalCount2 > 0 ? -1.5f : 1.5f;
+			float reqSpeed = f->enabled2 ? -1.5f : 1.5f;
 			if (dobj->inPortalFunel)
 			{
 				float dist = PortalWorld::getRealDist(f->lastStartPos2,

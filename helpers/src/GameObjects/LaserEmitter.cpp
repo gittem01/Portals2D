@@ -24,19 +24,8 @@ static b2Vec2 vertices[2] = { b2Vec2(+0.299f, -0.1f), b2Vec2(0.0f, 0.35f)};
 
 static splashData sData;
 
-void LaserEmitter::ssignal()
-{
-	signalCount++;
-}
-
-void LaserEmitter::usignal()
-{
-	signalCount--;
-}
-
 LaserEmitter::LaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	signalCount = (int)objData->startActive;
 	laserDir = fwdDirs[objData->rotation % 4];
 	lastLaserCube = false;
 	lastWallReceiver = nullptr;
@@ -220,7 +209,7 @@ void LaserEmitter::update()
 		
 		lsr.laserRays.clear();
 		
-		if (lsr.signalCount == 0)
+		if (!lsr.enabled)
 		{
 			if (lsr.lastWallReceiver)
 			{
