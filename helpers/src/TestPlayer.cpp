@@ -670,102 +670,12 @@ void TestPlayer::runEffect()
 
 void TestPlayer::jumpEffect()
 {
-    int index = 0;
-    extraJumpRange[0] = 0;
-    extraJumpRange[1] = 0;
-
     b2Body* body = wData->pbIndices[0]->body;
-    s_edgeGlobalData* eGlobal = nullptr;
 
-    if (contactFixture && !effectiveFunnel)
+    if (!contactFixture || effectiveFunnel)
     {
-        fixtureData* fData = (fixtureData*)contactFixture->GetUserData().pointer;
-        if (fData)
-        {
-            if (fData->type & (F_EDGE | F_LIGHT_BRIDGE))
-            {
-                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
-                eGlobal = eLocal->globalData;
-            }
-            else if (fData->type == F_PORTAL)
-            {
-                Portal* portal = (Portal*)fData->data;
-                if (portal->sideFixtures[0])
-                {
-                    fData = (fixtureData*)portal->sideFixtures[0]->GetUserData().pointer;
-                    if (fData && fData->type & F_EDGE)
-                        eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
-                }
-                else if (portal->sideFixtures[1])
-                {
-                    fData = (fixtureData*)portal->sideFixtures[1]->GetUserData().pointer;
-                    if (fData && fData->type & F_EDGE)
-                        eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
-                }
-            }
-        }
-
-        if (eGlobal)
-        {
-            b2Vec2 v1;
-            b2Vec2 dirVec;
-            int extraOffset;
-
-            if (fData && fData->type & F_LIGHT_BRIDGE)
-            {
-                b2EdgeShape* edge = (b2EdgeShape*)contactFixture->GetShape();
-                dirVec = edge->m_vertex2 - edge->m_vertex1;
-                dirVec.Normalize();
-                v1 = edge->m_vertex1;
-                s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
-                extraOffset = eLocal->globalRange[0];
-            }
-            else
-            {
-                v1 = eGlobal->localPoints[0];
-                extraOffset = 0;
-                dirVec = eGlobal->dir;
-            }
-
-            b2Vec2 botPos = wData->pbIndices[0]->body->GetWorldPoint(b2Vec2(0.0, -bodySize.y * 0.5));
-            b2Vec2 diff = botPos - contactBody->GetWorldPoint(v1);
-            index = (int)std::round(b2Dot(diff, dirVec) * 10.0) + extraOffset;
-            index = std::max(std::min(index, (int)eGlobal->unitWalls.size() - 1), 0);
-
-            extraJumpRange[0] = index;
-            extraJumpRange[1] = index;
-
-            for (int i = 1; i < 11; i++)
-            {
-                bool found = false;
-
-                if (index - i >= 0)
-                {
-                    int arrIndex = index - i;
-                    s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
-                    if (uData.gelType & BLUE && uData.gelAmount > 0.25)
-                    {
-                        extraJumpRange[0] = index - i;
-                        found = true;
-                    }
-                }
-                if (index + i < eGlobal->unitWalls.size())
-                {
-                    int arrIndex = index + i;
-                    s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
-                    if (uData.gelType & BLUE && uData.gelAmount > 0.25)
-                    {
-                        extraJumpRange[1] = index + i;
-                        found = true;
-                    }
-                }
-
-                if (!found)
-                {
-                    break;
-                }
-            }
-        }
+        grounded = false;
+        return;
     }
 
     bool jumped = false;
@@ -776,17 +686,27 @@ void TestPlayer::jumpEffect()
 
     grounded = ((contactBody || abs(avgNormalX) < normXToWalk) && lv.y <= 5.0f) || (lv.y < 0.0f && onAirFor < 0.05f && onAirFor != 0.0f);
 
+    float checkXSpeed = lv.x -= contactBody ? contactBody->GetLinearVelocity().x : 0.0f;
+    
+    bool noKeyJump = false;
     if (wh->keyData[GLFW_KEY_W] == 2)
     {
         jumpPressTime = gameTime;
     }
+    else if (abs(checkXSpeed) > 6.0f && !wh->keyData[GLFW_KEY_LEFT_CONTROL] && !wh->keyData[GLFW_KEY_RIGHT_CONTROL])
+    {
+        noKeyJump = Gel::bounceAt(wData->pbIndices[0]->body, contactFixture, contactPoint);
+    }
 
-    float checkXSpeed = lv.x -= contactBody ? contactBody->GetLinearVelocity().x : 0.0f;
-
-    if (grounded && (gameTime < jumpPressTime + 0.04 || abs(checkXSpeed) > 6.0f && (extraJumpRange[1] - extraJumpRange[0] > 4)))
+    if (grounded && gameTime < jumpPressTime + 0.04 || noKeyJump)
     {
         jumped = true;
-        bool extraJump = (extraJumpRange[1] - extraJumpRange[0] > 4);
+        bool extraJump = noKeyJump;
+
+        if (!noKeyJump && !wh->keyData[GLFW_KEY_LEFT_CONTROL] && !wh->keyData[GLFW_KEY_RIGHT_CONTROL])
+        {
+            extraJump = Gel::bounceAt(wData->pbIndices[0]->body, contactFixture, contactPoint);
+        }
 
         lv.y = (6.0f + 6.0f * extraJump) * (float)wData->pbIndices.size();
 
@@ -804,24 +724,6 @@ void TestPlayer::jumpEffect()
     lv.y = std::fmax(lv.y, -15.0);
 
     body->SetLinearVelocity(lv);
-
-    int memMapSize = extraJumpRange[1] - extraJumpRange[0] + 1;
-    if (jumped && eGlobal && memMapSize > 5)
-    {
-        int memMapSize = extraJumpRange[1] - extraJumpRange[0] + 1;
-        s_wallPerGelData* mapMem2;
-        vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
-            (eGlobal->renderOffset + extraJumpRange[0]) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
-
-        for (int i = 0; i < memMapSize; i++)
-        {
-            float dist = (float)abs(index - extraJumpRange[0] - i) * 0.1;
-            mapMem2[i].data.z = gameTime + dist * 0.2 - 0.05;
-            mapMem2[i].data.w = (1.0 - dist) * 0.4;
-        }
-
-        vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
-    }
 }
 
 void TestPlayer::renderInit()
@@ -942,7 +844,7 @@ void TestPlayer::enterForceField(ForceField* forceField)
     );
 }
 
-void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
+void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix)
 {
     fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
     if (fixData)
@@ -968,6 +870,23 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix)
             wData->pbIndices[0]->body->SetLinearVelocity(catapult->sendSpeed);
             gun->at(0)->body->SetLinearVelocity(catapult->sendSpeed);
         }
+        break;
+        case F_LIGHT_BRIDGE:
+        case F_EDGE:
+        {
+            if (grounded || wh->keyData[GLFW_KEY_LEFT_CONTROL] || wh->keyData[GLFW_KEY_RIGHT_CONTROL])
+			{
+                break;
+			}
+
+            b2Vec2 res = tryBounce(contact, thisFix, otherFix);
+            if (res.x > -900.0f)
+            {
+                ALuint source = Sounder::object->playSound(blueJumpBuffer, 1.0);;
+                Sounder::object->setSoundPosition(source, glm::vec3(contactPoint.x, contactPoint.y, 0.0));
+            }
+        }
+        break;
         default:
             break;
         }
@@ -1071,6 +990,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
             contactType = fix2->GetBody()->GetType();
             contactBody = fix2->GetBody();
             contactFixture = fix2;
+            contactPoint = cPos;
             if (contactType == b2_dynamicBody || contactType == b2_kinematicBody)
             {
                 if (fix2->GetDensity() == 0.0f &&
@@ -1323,6 +1243,8 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
     }
 
     int checkRange[2] = { eLocalData->globalRange[0], eLocalData->globalRange[1] };
+
+    if (eGlobalData->unitWalls.size() < requiredRangeSize) return nullptr;
 
     for (int i = 0; i < 2; i++)
     {
@@ -2214,10 +2136,10 @@ void TestPlayer::update(float dt, int totalIter)
             else if (rightCollisionType == b2_dynamicBody)
             {
                 addition = airMult * dt * wData->pbIndices.size() * mult;
-                if (lv.x < -maxSpeed * 2.0)
+                /*if (lv.x < -maxSpeed * 2.0)
                 {
                     addition = 0.0;
-                }
+                }*/
             }
             else
             {
@@ -2280,10 +2202,10 @@ void TestPlayer::update(float dt, int totalIter)
             else if (leftCollisionType == b2_dynamicBody)
             {
                 subtraction = airMult * dt * wData->pbIndices.size() * mult;
-                if (lv.x > maxSpeed * 2.0)
+                /*if (lv.x > maxSpeed * 2.0)
                 {
                     subtraction = 0.0;
-                }
+                }*/
             }
             else
             {

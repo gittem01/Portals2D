@@ -19,8 +19,7 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     bodyDef.type = b2_dynamicBody;
     bodyDef.position = pos;
     bodyDef.fixedRotation = false;
-    bodyDef.linearDamping = 0.0f;
-    bodyDef.bullet = true;
+    bodyDef.bullet = false;
     bodyDef.allowSleep = false;
 
     b2Body* gBody = pWorld->CreateBody(&bodyDef);
@@ -41,7 +40,7 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     ThinDrawer::object->debug_addPortalBody(pb);
 }
 
-void Gun::beginContact(b2Contact* contact, b2Fixture* otherFix)
+void Gun::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix)
 {
 	
 }

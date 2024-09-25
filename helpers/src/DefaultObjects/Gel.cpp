@@ -178,7 +178,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         float dist = std::max(b2Dot(distVec, dirVec), 0.0f);
         int startPos = std::min((int)std::round(dist * 10.0f) + extraOffset, (int)eGlobalData->unitWalls.size() - 1);
         
-        float amnt = gelRadius * 5.0;
+        float amnt = gelRadius * 10.0;
 
         if (eGlobalData->unitWalls[startPos].wallType & (PORTALLABLE | NOT_PORTALLABLE))
             amnt -= handleGelPut(&eGlobalData->unitWalls[startPos], gelType, amnt);
@@ -189,16 +189,17 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         int leftPos = startPos;
         for (int i = 1; i < 30; i++)
         {
+            rightPos = startPos - i;
+            leftPos = startPos + i;
+
             float decrease = 0.0f;
             if (rightPos >= range[0] && (eGlobalData->unitWalls[rightPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
             {
                 decrease += handleGelPut(&eGlobalData->unitWalls[rightPos], gelType, amnt);
-                rightPos = startPos - i;
             }
             if (leftPos <= range[1] && (eGlobalData->unitWalls[leftPos].wallType & (PORTALLABLE | NOT_PORTALLABLE)))
             {
                 decrease += handleGelPut(&eGlobalData->unitWalls[leftPos], gelType, amnt);
-                leftPos = startPos + i;
 			}
 
             amnt -= decrease;
@@ -308,11 +309,12 @@ void Gel::toDeath()
     Gel::gelCount = 0;
     Gel::splashCount = 0;
 
+    int clearSize = thinDrawer->wallGel->numWallGels + 48000 * 6;
     s_wallPerGelData* perGelData;
     vkMapMemory(thinDrawer->logicalDevice, thinDrawer->wallGel->uniformBuffers[1].memory,
-        0, sizeof(s_wallPerGelData) * thinDrawer->wallGel->numWallGels, 0, (void**)&perGelData);
+        0, sizeof(s_wallPerGelData) * clearSize, 0, (void**)&perGelData);
 
-    for (int i = 0; i < thinDrawer->wallGel->numWallGels; i++)
+    for (int i = 0; i < clearSize; i++)
     {
         perGelData[i].data = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     }
@@ -344,9 +346,141 @@ void Gel::toDeath()
     }
 }
 
+bool Gel::bounceAt(b2Body* body, b2Fixture* edgeFix, b2Vec2 pos)
+{
+    int index = 0;
+    int extraJumpRange[2] = { 0, 0 };
+
+    s_edgeGlobalData* eGlobal = nullptr;
+
+    fixtureData* fData = (fixtureData*)edgeFix->GetUserData().pointer;
+    if (fData)
+    {
+        if (fData->type & (F_EDGE | F_LIGHT_BRIDGE))
+        {
+            s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+            eGlobal = eLocal->globalData;
+        }
+        else if (fData->type == F_PORTAL)
+        {
+            Portal* portal = (Portal*)fData->data;
+            if (portal->sideFixtures[0])
+            {
+                fData = (fixtureData*)portal->sideFixtures[0]->GetUserData().pointer;
+                if (fData && fData->type & F_EDGE)
+                    eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+            }
+            else if (portal->sideFixtures[1])
+            {
+                fData = (fixtureData*)portal->sideFixtures[1]->GetUserData().pointer;
+                if (fData && fData->type & F_EDGE)
+                    eGlobal = ((s_edgeLocalData*)fData->data)->globalData;
+            }
+        }
+    }
+
+    if (eGlobal)
+    {
+        b2Vec2 v1;
+        b2Vec2 dirVec;
+        int extraOffset;
+
+        if (fData && fData->type & F_LIGHT_BRIDGE)
+        {
+            b2EdgeShape* edge = (b2EdgeShape*)edgeFix->GetShape();
+            dirVec = edge->m_vertex2 - edge->m_vertex1;
+            dirVec.Normalize();
+            v1 = edge->m_vertex1;
+            s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+            extraOffset = eLocal->globalRange[0];
+        }
+        else
+        {
+            v1 = eGlobal->localPoints[0];
+            extraOffset = 0;
+            dirVec = eGlobal->dir;
+        }
+
+        b2Vec2 diff = pos - edgeFix->GetBody()->GetWorldPoint(v1);
+        index = (int)std::round(b2Dot(diff, dirVec) * 10.0) + extraOffset;
+        index = std::max(std::min(index, (int)eGlobal->unitWalls.size() - 1), 0);
+
+        extraJumpRange[0] = index;
+        extraJumpRange[1] = index;
+
+        for (int i = 1; i < 11; i++)
+        {
+            bool found = false;
+
+            if (index - i >= 0)
+            {
+                int arrIndex = index - i;
+                s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
+                if (uData.gelType & BLUE && uData.gelAmount > 0.25)
+                {
+                    extraJumpRange[0] = index - i;
+                    found = true;
+                }
+            }
+            if (index + i < eGlobal->unitWalls.size())
+            {
+                int arrIndex = index + i;
+                s_unitWallData uData = eGlobal->unitWalls.at(arrIndex);
+                if (uData.gelType & BLUE && uData.gelAmount > 0.25)
+                {
+                    extraJumpRange[1] = index + i;
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                break;
+            }
+        }
+
+        int memMapSize = extraJumpRange[1] - extraJumpRange[0] + 1;
+        if (eGlobal && memMapSize > 5)
+        {
+            int memMapSize = extraJumpRange[1] - extraJumpRange[0] + 1;
+            s_wallPerGelData* mapMem2;
+            vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
+                (eGlobal->renderOffset + extraJumpRange[0]) * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * memMapSize, 0, (void**)&mapMem2);
+
+            for (int i = 0; i < memMapSize; i++)
+            {
+                float dist = (float)abs(index - extraJumpRange[0] - i) * 0.1;
+                mapMem2[i].data.z = Game::object->gameTime + dist * 0.2 - 0.05;
+                mapMem2[i].data.w = (1.0 - dist) * 0.4;
+            }
+
+            vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Gel::toLeveler()
 {
+    ThinDrawer* thinDrawer = ThinDrawer::object;
 
+    Gel::gelCount = 0;
+    Gel::splashCount = 0;
+
+    int clearSize = thinDrawer->wallGel->numWallGels + 48000 * 6;
+    s_wallPerGelData* perGelData;
+    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->wallGel->uniformBuffers[1].memory,
+        0, sizeof(s_wallPerGelData) * clearSize, 0, (void**)&perGelData);
+
+    for (int i = 0; i < clearSize; i++)
+    {
+        perGelData[i].data = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->wallGel->uniformBuffers[1].memory);
 }
 
 void Gel::perFrameUpdate()
@@ -389,7 +523,7 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
             {
                 float dist = PortalWorld::getRealDist(bm->connection->portal1->points[0], bm->connection->portal1->points[1], pos);
                 float remVal = std::max((gel->gelRadius + dist) - 0.5f, 0.0f);
-                opRadius = std::min(gel->gelRadius * 2.0f - remVal, opRadius);
+                opRadius = std::min(gel->gelRadius * 2.0f - remVal * 2.0f, opRadius);
             }
 
             ThinDrawer::object->gelShader->putGel(gel->gelType, glm::vec2(pos.x, pos.y), opRadius);
@@ -446,7 +580,7 @@ void Gel::endContact(b2Contact* contact, b2Fixture* otherFix)
 	}
 }
 
-void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix)
+void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix)
 {
     if (!contact->IsEnabled()) return;
 

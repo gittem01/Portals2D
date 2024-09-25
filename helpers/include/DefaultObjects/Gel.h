@@ -34,10 +34,11 @@ public:
 	static void toDeath();
 	static void toLeveler();
 	static void staticInit();
+	static bool bounceAt(b2Body* body, b2Fixture* edgeFix, b2Vec2 pos);
 	static void generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex);
 	static void update();
 	static void perFrameUpdate();
 	static void render(VkCommandBuffer cmdBuff, void* ptr);
 	void endContact(b2Contact* contact, b2Fixture* otherFix);
-	void beginContact(b2Contact* contact, b2Fixture* otherFix);
+	void beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix);
 };

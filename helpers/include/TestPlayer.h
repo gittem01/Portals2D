@@ -41,7 +41,6 @@ public:
     float angVal;
     bool shouldRelease;
     bool holdColliding;
-    int extraJumpRange[2];
     bool fastRun;
     int health;
     double deathTimer;
@@ -59,6 +58,7 @@ public:
     bool grounded;
     b2Fixture* tireFixture;
     b2Fixture* contactFixture;
+    b2Vec2 contactPoint;
     b2Body* contactBody;
     b2Body* platformBody;
     b2Body* l_contactBody;
@@ -122,7 +122,7 @@ public:
     void createBody(b2Vec2 pos);
 
     void enterForceField(ForceField* forceField);
-    void beginContact(b2Contact* contact, b2Fixture* otherFix);
+    void beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix);
     void endContact(b2Contact* contact, b2Fixture* otherFix);
     void preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2);
     void reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2);

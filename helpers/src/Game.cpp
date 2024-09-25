@@ -189,6 +189,7 @@ void Game::TestState()
             CircleButton::toLeveler();
             Funnel::toLeveler();
             LightBridge::toLeveler();
+            Gel::toLeveler();
         }
 
         testCase->shouldQuit = false;

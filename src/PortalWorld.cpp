@@ -801,8 +801,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     s_edgeGlobalData* eGlobalData = eLocalData->globalData;
 
     int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
-    int requiredRangeSize = std::round(size * 10.0f);
-    requiredRangeSize += requiredRangeSize % 2 - 1;
+    int requiredRangeSize = std::ceil(size * 10.0f);;
 
     b2EdgeShape* eShape = (b2EdgeShape*)edgeFix->GetShape();
     pos = edgeFix->GetBody()->GetLocalPoint(pos);
@@ -813,7 +812,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     int leftCount = 0;
     int rightCount = 0;
 
-    while (true)
+    for (int i = 0; i < 30; i++)
     {
         if (startIndex + leftCount + 1 <= eLocalData->globalRange[1])
         {

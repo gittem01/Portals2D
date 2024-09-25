@@ -123,6 +123,7 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		eDatas[i].localPoints[1] = b2Vec2(1.0f, 0.0f);
 		eDatas[i].perpDir = b2Vec2(0.0f, 1.0f);
 		eDatas[i].renderOffset = wallGelStartOffset1 + i * wallGelSize;
+		eDatas[i].unitWalls.clear();
 		eDatas[i].unitWalls.resize(wallGelSize);
 	}
 

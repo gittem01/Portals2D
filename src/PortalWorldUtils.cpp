@@ -454,7 +454,7 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
         }
         else if ((uint32_t)fData->type & filterMask)
         {
-            if (fData->type & filterMask && (filterMask == LSR_FILTER_MASK))
+            if (fData->type & F_GND_RECEIVER && (filterMask == LSR_FILTER_MASK))
             {
                 GndLaserReceiver* receiver = (GndLaserReceiver*)fData->data;
                 groundReceivers.push_back({ receiver->arrIndex, fraction });

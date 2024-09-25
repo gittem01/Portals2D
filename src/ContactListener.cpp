@@ -89,7 +89,7 @@ void ContactListener::BeginContact(b2Contact* contact)
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataA->extraData;
         if (physicsData->type & DEFAULT_OBJECT_O)
         {
-            ((DefaultObject*)physicsData->data)->beginContact(contact, contact->GetFixtureB());
+            ((DefaultObject*)physicsData->data)->beginContact(contact, contact->GetFixtureB(), contact->GetFixtureA());
         }
     }
     if (bDataB && bDataB->extraData)
@@ -97,7 +97,7 @@ void ContactListener::BeginContact(b2Contact* contact)
         g_PhysicsData* physicsData = (g_PhysicsData*)bDataB->extraData;
         if (physicsData->type & DEFAULT_OBJECT_O)
         {
-            ((DefaultObject*)physicsData->data)->beginContact(contact, contact->GetFixtureA());
+            ((DefaultObject*)physicsData->data)->beginContact(contact, contact->GetFixtureA(), contact->GetFixtureB());
         }
     }
 }
