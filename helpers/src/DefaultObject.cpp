@@ -97,7 +97,7 @@ void DefaultObject::enterForceField(ForceField* forceField)
 
 b2Vec2 DefaultObject::tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixture* otherFix)
 {
-	fixtureData* fixData = (fixtureData*)thisFix->GetUserData().pointer;
+	fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
 	b2EdgeShape* edge = (b2EdgeShape*)otherFix->GetShape();
 	b2Vec2 edgeNormal;
 	if (fixData->type == F_LIGHT_BRIDGE)
