@@ -11,6 +11,7 @@
 #include "GameObjects/CircleButton.h"
 #include "GameObjects/Funnel.h"
 #include "GameObjects/LightBridge.h"
+#include "GameObjects/Catapult.h"
 
 BaseTestCase* BaseTestCase::testCase = nullptr;
 
@@ -191,6 +192,7 @@ void BaseTestCase::onUpdate()
             CubeButton::update();
             CircleButton::update(dt);
             Funnel::perTickUpdate();
+            Catapult::update();
         }
     }
    

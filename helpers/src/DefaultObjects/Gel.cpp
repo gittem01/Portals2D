@@ -12,7 +12,7 @@ int Gel::splashCount = 0;
 Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radius, int gelType) : DefaultObject(portalWorld)
 {
     this->pWorld = portalWorld;
-    ALuint onHitSoundBuffer = Sounder::object->loadSound("redo.wav");
+    ALuint onHitSoundBuffer = Sounder::object->loadSound("pop.wav");
     onHitSoundBuffers.push_back(onHitSoundBuffer);
     
     b2BodyDef bDef;
@@ -144,7 +144,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 {
     if (gelIndex == -1) return;
 
-    ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], 0.5);
+    ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], gelRadius);
     Sounder::object->setSoundPosition(source, glm::vec3(wData->pbIndices[0]->body->GetPosition().x, wData->pbIndices[0]->body->GetPosition().y, 0.0));
 
     int range[2];

@@ -34,6 +34,7 @@ friend class PositionJoint;
 friend class RotationJoint;
 friend class TestPlayer;
 friend class Gel;
+friend class Platform;
 
 public:
 

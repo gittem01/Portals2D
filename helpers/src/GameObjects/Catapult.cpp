@@ -1,13 +1,16 @@
 #include "GameObjects/Catapult.h"
 #include "Overlayer.h"
 #include "PolynomialShader.h"
+#include "DefaultObjects/Turret.h"
+#include "DefaultObject.h"
 
 #define JUMPERS (TURRET_O | PLAYER_O | SPHERE_CUBE_O | LASER_CUBE_O | DEFAULT_CUBE_O)
 
-std::vector<Catapult*> Catapult::movingCatapults;
+std::vector<Catapult*> Catapult::catapults;
+std::set<DefaultObject*> Catapult::hitObjects;
 s_texture* Catapult::headTex;
 s_texture* Catapult::bodyTex;
-s_perTextureData* Catapult::ptData;
+ALuint Catapult::buffer;
 
 static b2Vec2 bodyOffsets[4] =
 {
@@ -23,6 +26,12 @@ static b2Vec2 fwdDirs[4] =
 	b2Vec2(-1.0f, 0.0f),
 	b2Vec2(0.0f, -1.0f),
 	b2Vec2(+1.0f, 0.0f)
+};
+
+static b2Vec2 rotationOrigins[4] =
+{
+	b2Vec2(0.45f, 0.0f),
+	b2Vec2(0.45f, 0.0f),
 };
 
 Catapult::Catapult(PortalWorld* portalWorld, s_objectDataGrid* objData)
@@ -70,7 +79,7 @@ Catapult::Catapult(PortalWorld* portalWorld, s_objectDataGrid* objData)
 			xSpeed = (upX - p0.x) / (ySpeed / gravity);
 		}
 
-		sendSpeed = b2Vec2(xSpeed, ySpeed);
+		sendVelocity = b2Vec2(xSpeed, ySpeed);
 	}
 	else
 	{
@@ -87,22 +96,24 @@ Catapult::Catapult(PortalWorld* portalWorld, s_objectDataGrid* objData)
 			ySpeed = sqrtf(2.0f * gravity * yLen);
 		}
 
-		sendSpeed = b2Vec2(0.0f, ySpeed);
+		sendVelocity = b2Vec2(0.0f, ySpeed);
 	}
 	
+	sendSpeed = sendVelocity.Length();
+
 	b2BodyDef bDef;
 	bDef.type = b2_kinematicBody;
 	bDef.position = b2Vec2(objData->pos.x, objData->pos.y) + bodyOffsets[objData->rotation % 4];
 	bDef.angle = objData->rotation * 0.5f * b2_pi;
 
 	body = portalWorld->CreateBody(&bDef);
-	contactReportTime = -10.0;
+	lastHitTime = -10.0;
 
-	b2Vec2 scale = b2Vec2(0.5f, 0.1f);
-	b2PolygonShape shape;
-	shape.SetAsBox(scale.x, scale.y);
+	b2EdgeShape shape;
+	shape.SetTwoSided(b2Vec2(-0.45f, 0.2f), b2Vec2(0.45f, 0.2f));
 
 	b2Fixture* fix = body->CreateFixture(&shape, 0.0f);
+	fix->SetSensor(true);
 
 	fixtureData* fData = new fixtureData();
 	fData->type = F_CATAPULT;
@@ -110,16 +121,64 @@ Catapult::Catapult(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	fData->extraData = nullptr;
 
 	fix->GetUserData().pointer = (uintptr_t)fData;
+	
+	moveDir = fwdDirs[objData->rotation % 4];
+	rotationDir = objData->mirrored ? -1.0f : 1.0f;
+
+	rotationOrigin = rotationOrigins[objData->rotation % 2];
+	if (!objData->mirrored)
+	{
+		rotationOrigin = -rotationOrigins[objData->rotation % 2];
+		basePos = bDef.position + 0.45f * fwdDirs[(objData->rotation + 3) % 4];
+	}
+	else
+	{
+		rotationOrigin = rotationOrigins[objData->rotation % 2];
+		basePos = bDef.position - 0.45f * fwdDirs[(objData->rotation + 3) % 4];
+	}
+
+	baseRotation = bDef.angle;
+
+	catapultRenderData.movScale.z = 1.0f;
+	catapultRenderData.movScale.w = b2_pi * 0.1f;
+	catapultRenderData.posRot.w = objData->mirrored ? -1.0f : 1.0f;
+
+	catapultRenderData.movScale.x = rotationOrigin.x;
+	catapultRenderData.movScale.y = rotationOrigin.y;
+
+	catapultRenderData.data.x = 0.0f;
+	catapultRenderData.data.y = -20.0f;
+
+	catapults.push_back(this);
+}
+
+void Catapult::sendIt(DefaultObject* dObj, b2Body* body, float mult)
+{
+	lastHitTime = Game::object->gameTime;
+
+	for (PortalBody* pb : dObj->wData->pbIndices)
+	{
+		pb->body->SetLinearDamping(0.0f);
+	}
+
+	body->SetLinearVelocity(mult * sendVelocity);
+
+	float soundAmount = std::max(std::min(sendSpeed * 0.1f, 5.0f), 0.5f);
+	ALuint source = Sounder::object->playSound(Catapult::buffer, soundAmount);
+	Sounder::object->setSoundPosition(source, glm::vec3(body->GetPosition().x, body->GetPosition().y, 0.0));
+
+	hitObjects.insert(dObj);
 }
 
 void Catapult::toDeath()
 {
-	
+	hitObjects.clear();
 }
 
 void Catapult::toLeveler()
 {
-	movingCatapults.clear();
+	catapults.clear();
+	hitObjects.clear();
 }
 
 void Catapult::staticInit()
@@ -129,15 +188,66 @@ void Catapult::staticInit()
 
 	constexpr int index = getLevelObjectIndex(CATAPULT) - 4;
 
-	ptData = &Leveler::object->perTextureData[index];
 	bodyTex = Leveler::object->ol->items[index + 4].tex;
 
 	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
+
+	buffer = Sounder::object->loadSound("hop.wav");
 }
 
 void Catapult::update()
 {
-	
+	for (auto iter = hitObjects.begin(); iter != hitObjects.end();)
+	{
+		DefaultObject* dObj = *iter;
+		pbWorldData* wData = dObj->wData;
+
+		if (TestPlayer::object->holdBody && TestPlayer::object->holdBody->worldIndex == wData || dObj->effectiveFunnel)
+		{
+			for (PortalBody* pb : wData->pbIndices)
+			{
+				pb->body->SetLinearDamping(wData->baseLinearDamping);
+			}
+
+			hitObjects.erase(iter++);
+			continue;
+		}
+
+		bool erased = false;
+		for (PortalBody* pb : wData->pbIndices)
+		{
+			b2Body* body = pb->body;
+
+			for (b2ContactEdge* ce = body->GetContactList(); ce; ce = ce->next)
+			{
+				b2Contact* contact = ce->contact;
+
+				if (!contact->IsTouching()) continue;
+
+				b2Fixture* fixA = contact->GetFixtureA();
+				b2Fixture* fixB = contact->GetFixtureB();
+
+				if (!fixA->IsSensor() && !fixB->IsSensor())
+				{
+					for (PortalBody* pb2 : wData->pbIndices)
+					{
+						pb2->body->SetLinearDamping(wData->baseLinearDamping);
+					}
+
+					hitObjects.erase(iter++);
+					erased = true;
+					break;
+				}
+			}
+
+			if (erased)
+			{
+				break;
+			}
+		}
+
+		if (!erased) ++iter;
+	}
 }
 
 void Catapult::render(VkCommandBuffer cmdBuff, void* ptr)
@@ -147,23 +257,40 @@ void Catapult::render(VkCommandBuffer cmdBuff, void* ptr)
 
 	const VkDeviceSize offsets = 0;
 
-	if (ptData->currentOffset - ptData->offsetStart == 0)
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->bodyShader->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		td->bodyShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &td->camOffset);
+
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &Turret::coverVertexBuffer->buffer, &offsets);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		td->bodyShader->pipelineLayout, 1, 1, &bodyTex->set, 0, VK_NULL_HANDLE);
+
+	for (Catapult* catapult : catapults)
 	{
-		return;
+		catapult->catapultRenderData.posRot.x = catapult->basePos.x + catapult->moveDir.x * b2_pi * 0.05f;
+		catapult->catapultRenderData.posRot.y = catapult->basePos.y + catapult->moveDir.y * b2_pi * 0.05f;
+
+		if (catapult->lastHitTime + 0.1 > Game::object->gameTime)
+		{
+			float diff = (float)(catapult->lastHitTime - Game::object->gameTime);
+			catapult->catapultRenderData.posRot.z = catapult->baseRotation + diff * 12.0f * catapult->rotationDir;
+		}
+		else if (catapult->lastHitTime + 0.7 > Game::object->gameTime)
+		{
+			float diff = (float)(Game::object->gameTime - catapult->lastHitTime); // 0.1 to 0.7
+			diff = (diff - 0.1f) / 0.6f; // 0.0 to 1.0
+			catapult->catapultRenderData.posRot.z = catapult->baseRotation + (sqrt(diff) * 1.2f - 1.2f) * catapult->rotationDir;
+		}
+		else
+		{
+			catapult->catapultRenderData.posRot.z = catapult->baseRotation;
+		}
+
+		vkCmdPushConstants(cmdBuff, td->bodyShader->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &catapult->catapultRenderData);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 	}
-
-	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mt->pipeline);
-
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->wallLight->buffers[0].buffer, &offsets);
-
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		mt->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &td->camOffset);
-
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		mt->pipelineLayout, 1, 1, &mt->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		mt->pipelineLayout, 2, 1, &bodyTex->set, 0, VK_NULL_HANDLE);
-
-	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, ptData->currentOffset - ptData->offsetStart, 0, ptData->offsetStart);
 }

@@ -67,14 +67,29 @@ Portal::~Portal()
             }
 
             float d = PortalWorld::getDistanceFromPortal(outPortal, leftOutBody);
+            float d2 = -1.0f;
+            b2Vec2 dir2;
+            if (outPortal->connections[i].size() > 0)
+			{
+				Portal* p2 = outPortal->connections[i].at(0)->portal2;
+                d2 = PortalWorld::getDistanceFromPortal(p2, leftOutBody);
+                dir2 = p2->dir;
+			}
+
             if (leftOutBody->body->GetFixtureList()->IsSensor())
             {
                 d += 0.2f;
+                d2 += 0.2f;
             }
 
             if (d > 0.0)
             {
-                leftOutBody->body->SetTransform(leftOutBody->body->GetPosition() + d * posChangeDir, leftOutBody->body->GetAngle());
+                b2Vec2 newPos = leftOutBody->body->GetPosition() + d * posChangeDir;
+                if (d2 > 0.0)
+				{
+					newPos += d2 * dir2;
+				}
+                leftOutBody->body->SetTransform(newPos, leftOutBody->body->GetAngle());
             }
         }
 
@@ -637,25 +652,50 @@ int Portal::getFixtureSide(b2Fixture* fix){
     return side;
 }
 
-bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2){
+bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, portalCollision* coll1, portalCollision* coll2)
+{
     if (fix2 == midFixture) return false;
 
     const float tHold = -0.001f;
     
-	if (fix2->GetType() == b2Shape::Type::e_edge) {
+	if (fix2->GetType() == b2Shape::Type::e_edge)
+    {
 		b2WorldManifold wManifold;
 		contact->GetWorldManifold(&wManifold);
 
 		b2Vec2 p1 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex1);
 		b2Vec2 p2 = fix2->GetBody()->GetWorldPoint(((b2EdgeShape*)fix2->GetShape())->m_vertex2);
 
-		float d1 = abs(points[0].x - p1.x) + abs(points[0].y - p1.y);
-		float d2 = abs(points[1].x - p1.x) + abs(points[1].y - p1.y);
+		if (isParallel(p1, p2))
+        {
+            const float d0 = b2Dot(points[0] - p1, rotDir);
+            const float d1 = b2Dot(points[0] - p2, rotDir);
+            
+            float minVal;
+            float maxVal;
+            if (d0 < d1)
+			{
+				minVal = d0;
+				maxVal = d1;
+			}
+			else
+			{
+				minVal = d1;
+				maxVal = d0;
+			}
 
-		float d3 = abs(points[0].x - p2.x) + abs(points[0].y - p2.y);
-		float d4 = abs(points[1].x - p2.x) + abs(points[1].y - p2.y);
+            minVal = std::max(minVal, 0.0f);
+            maxVal = std::min(maxVal, size * 2);
 
-		if (isParallel(p1, p2)) {
+            if (maxVal - minVal > 0.01f)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
 			const float angleThold = 0.0001f;
 			float angle = pWorld->vecAngle(wManifold.normal, dir);
 			if (coll1->side == 0) {
@@ -680,6 +720,12 @@ bool Portal::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2,
             {
 				return true;
 			}
+
+            float d1 = abs(points[0].x - p1.x) + abs(points[0].y - p1.y);
+            float d2 = abs(points[1].x - p1.x) + abs(points[1].y - p1.y);
+
+            float d3 = abs(points[0].x - p2.x) + abs(points[0].y - p2.y);
+            float d4 = abs(points[1].x - p2.x) + abs(points[1].y - p2.y);
 
 			if ((d1 < 0.001f || d2 < 0.001f) && d1 + d2 > 0.1f) {
 				int p2Side = getPointSide(p2);

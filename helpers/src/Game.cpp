@@ -91,26 +91,28 @@ void Game::LevelerState()
 void Game::TestState()
 {
     dtMult = 1.0;
-    LightBridge::staticInit();
-    Turret::staticInit();
-    Gel::staticInit();
-    Platform::staticInit();
-    ForceField::staticInit();
-    HazardField::staticInit();
-    Geller::staticInit();
-    UseButton::staticInit();
-    DownButton::staticInit();
-    CubeButton::staticInit();
-    CircleButton::staticInit();
-    LaserEmitter::staticInit();
-    WallLaserReceiver::staticInit();
-    GndLaserReceiver::staticInit();
-    Funnel::staticInit();
-    Catapult::staticInit();
-
-    if (!leveler)
+    if (leveler)
     {
-        testCase = newTest(this, 8);
+        LightBridge::staticInit();
+        Turret::staticInit();
+        Gel::staticInit();
+        Platform::staticInit();
+        ForceField::staticInit();
+        HazardField::staticInit();
+        Geller::staticInit();
+        UseButton::staticInit();
+        DownButton::staticInit();
+        CubeButton::staticInit();
+        CircleButton::staticInit();
+        LaserEmitter::staticInit();
+        WallLaserReceiver::staticInit();
+        GndLaserReceiver::staticInit();
+        Funnel::staticInit();
+        Catapult::staticInit();
+    }
+    else
+    {
+        testCase = newTest(this, 3);
 
         thinDrawer->whiteWallShader->testFill();
         thinDrawer->blackWallShader->testFill();
@@ -168,8 +170,10 @@ void Game::TestState()
                 delete testCase;
                 testCase = newTest(this, nextTestCase);
             }
-        
-            testCase->perFrameUpdate();
+            else
+            {
+                testCase->perFrameUpdate();
+            }
         }
 
         thinDrawer->gameTime = gameTime;
@@ -190,6 +194,7 @@ void Game::TestState()
             Funnel::toLeveler();
             LightBridge::toLeveler();
             Gel::toLeveler();
+            Catapult::toLeveler();
         }
 
         testCase->shouldQuit = false;

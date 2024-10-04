@@ -440,46 +440,46 @@ void LevelerTestCase::walkArndAndCreateEdgeGF(short x, short y, LevelObject wall
 
         if (emptyFound)
         {
-            glm::i16vec2 fwdDir = dirs[startDir].asGlm();
-            glm::i16vec2 upDir = dirs[(startDir + 1) % 4].asGlm();
+            /*glm::i16vec2 fwdDir = dirs[startDir].asGlm();
+            glm::i16vec2 upDir = dirs[(startDir + 1) % 4].asGlm();*/
 
-            bool isUpFree = !g->leveler->isInBounds(pos.x + upDir.x, pos.y + upDir.y) ||
-                !(g->leveler->getSquare(pos.x + upDir.x, pos.y + upDir.y).objectType & (WHITE_WALL | BLACK_WALL | GLASS_WALL));
+           /* bool isUpFree = !g->leveler->isInBounds(pos.x + upDir.x, pos.y + upDir.y) ||
+                !(g->leveler->getSquare(pos.x + upDir.x, pos.y + upDir.y).objectType & (WHITE_WALL | BLACK_WALL | GLASS_WALL));*/
             glm::i16vec2 lastChangePos = pos;
-            for (glm::i16vec2 p = pos; ; p += fwdDir)
-            {
-                bool thisUpFree = !g->leveler->isInBounds(p.x + upDir.x, p.y + upDir.y) ||
-                    !(g->leveler->getSquare(p.x + upDir.x, p.y + upDir.y).objectType & (WHITE_WALL | BLACK_WALL | GLASS_WALL));
+            //for (glm::i16vec2 p = pos; ; p += fwdDir)
+            //{
+            //    bool thisUpFree = !g->leveler->isInBounds(p.x + upDir.x, p.y + upDir.y) ||
+            //        !(g->leveler->getSquare(p.x + upDir.x, p.y + upDir.y).objectType & (WHITE_WALL | BLACK_WALL | GLASS_WALL));
 
-                if (isUpFree != thisUpFree)
-                {
-                    b2Vec2 p0 = b2Vec2(lastChangePos.x, lastChangePos.y) + dirAdditionsStart[startDir];
-                    b2Vec2 p1 = b2Vec2(p.x, p.y) + dirAdditionsStart[startDir];
-                    if (!isUpFree)
-                    {
-                        p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
-                    }
+            //    if (isUpFree != thisUpFree)
+            //    {
+            //        b2Vec2 p0 = b2Vec2(lastChangePos.x, lastChangePos.y) + dirAdditionsStart[startDir];
+            //        b2Vec2 p1 = b2Vec2(p.x, p.y) + dirAdditionsStart[startDir];
+            //        if (!isUpFree)
+            //        {
+            //            p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
+            //        }
 
-                    short cDirs = getDirs(p, lastChangePos, startDir);
-                    b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
-                    b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
-                    b2Body* body = createEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+            //        short cDirs = getDirs(p, lastChangePos, startDir);
+            //        b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };
+            //        b2Vec2 p11 = { p1.x + dirs[cDirs >> 8].x, p1.y + dirs[cDirs >> 8].y };
+            //        b2Body* body = createEdgeOneSided(p11, p1, p0, p00, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
 
-                    //createBasicEdge(p0, p1, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
+            //        //createBasicEdge(p0, p1, wallType == GLASS_WALL ? F_GEDGE : F_FEDGE, g->pWorld);
 
-                    isUpFree = thisUpFree;
-                    lastChangePos = p;
-                }
+            //        isUpFree = thisUpFree;
+            //        lastChangePos = p;
+            //    }
 
-                if (p == endPos) break;
-            }
+            //    if (p == endPos) break;
+            //}
 
             b2Vec2 p0 = b2Vec2(lastChangePos.x, lastChangePos.y) + dirAdditionsStart[startDir];
             b2Vec2 p1 = b2Vec2(endPos.x, endPos.y) + dirAdditionsEnd[startDir];
-            if (!isUpFree)
+            /*if (!isUpFree)
             {
                 p0 -= exUp * b2Vec2(upDir.x, upDir.y); p1 -= exUp * b2Vec2(upDir.x, upDir.y);
-            }
+            }*/
 
             short cDirs = getDirs(lastChangePos, endPos, startDir);
             b2Vec2 p00 = { p0.x + dirs[cDirs & 0xFF].x, p0.y + dirs[cDirs & 0xFF].y };

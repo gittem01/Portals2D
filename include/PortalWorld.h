@@ -70,6 +70,11 @@ typedef struct PbWorldData
     std::vector<PortalBody*> pbIndices;
     
     std::vector<float> baseDensities;
+    std::vector<float> baseRestitutions;
+    std::vector<float> baseFrictions;
+
+    float baseLinearDamping;
+    float baseAngularDamping;
     float gravityScale;
 
     std::vector<b2Shape*> shapes;
@@ -172,6 +177,7 @@ friend class Leveler;
 friend class Gel;
 friend class ForceField;
 friend class Funnel;
+friend class Platform;
 
 public:
     std::vector<pbWorldData*> bodyIndices;

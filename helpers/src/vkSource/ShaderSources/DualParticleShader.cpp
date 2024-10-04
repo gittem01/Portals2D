@@ -32,12 +32,6 @@ void DualParticleShader::prepareUniforms()
 {
     alignedSize = thinDrawer->pad_uniform_buffer_size(sizeof(s_dualParticleUbo));
 
-    lastAllocationPos = 0;
-    for (int i = 0; i < UNIFORM_ALLOC_COUNT; i++)
-    {
-        availableOffsets[i] = i * alignedSize;
-    }
-
     uniformBuffers.resize(1);
     thinDrawer->uniformHelper(alignedSize * UNIFORM_ALLOC_COUNT, &uniformBuffers[0], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UNIFORM_ALLOC_COUNT);
 

@@ -78,7 +78,7 @@ namespace vkinit
         renderPassBeginInfo.renderArea.extent.width = width;
         renderPassBeginInfo.renderArea.extent.height = height;
 
-        renderPassBeginInfo.clearValueCount = 0;
+        renderPassBeginInfo.clearValueCount = 1;
         renderPassBeginInfo.pClearValues = clearValue;
 
         return renderPassBeginInfo;

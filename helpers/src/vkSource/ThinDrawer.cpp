@@ -270,7 +270,10 @@ void ThinDrawer::renderCommandBeginner(VkCommandBuffer& cmdBuff)
 {
     VkCommandBufferBeginInfo cmdBufInfo = vkinit::commandBufferBeginInfo();
 
-    VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, nullptr);
+    VkClearValue clrVal = {};
+    clrVal.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+    VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, &clrVal);
 
     renderPassBeginInfo.framebuffer = swapChain->frameBuffers[lastSwapChainImageIndex];
 

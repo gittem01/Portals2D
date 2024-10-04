@@ -35,7 +35,7 @@ public:
                 else if (fixData->type & F_FORCE_FIELD)
                 {
                     Receiver* receiver = (Receiver*)fixData->data;
-                    if (receiver->signalCount <= 0)
+                    if (!receiver->enabled)
 					{
 						return -1.0f;
 					}

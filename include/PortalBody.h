@@ -143,6 +143,7 @@ private:
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     void releaseOut2(b2Fixture* fix, Portal* portal);
 
+    void chainedDestroy(PortalBody* noDestr);
     void postHandle();
     void applyPartialGravity(b2Fixture* fixture);
 

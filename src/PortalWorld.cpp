@@ -86,7 +86,9 @@ PortalBody* PortalWorld::createCloneBody0(pbWorldData* wData, b2Vec2 pos, float 
     bDef.type = b2_dynamicBody;
     bDef.position = pos;
     bDef.angle = angle;
-    
+    bDef.linearDamping = wData->baseLinearDamping;
+    bDef.angularDamping = wData->baseAngularDamping;
+
     b2Body* body = CreateBody(&bDef);
 
     std::vector<b2Shape*> shapes = isMirrored ? wData->mirroredShapes : wData->shapes;
@@ -95,6 +97,8 @@ PortalBody* PortalWorld::createCloneBody0(pbWorldData* wData, b2Vec2 pos, float 
     {
         b2FixtureDef fDef;
         fDef.density = wData->baseDensities[i];
+        fDef.restitution = wData->baseRestitutions[i];
+        fDef.friction = wData->baseFrictions[i];
         fDef.shape = shapes[i];
         body->CreateFixture(&fDef, false);
     }
@@ -136,11 +140,15 @@ void PortalWorld::createNewPortalBody_i(PortalBody* pBody)
     pbData->massCenter = mData.center;
     pbData->mirroredMassCenter = b2Vec2(-mData.center.x, mData.center.y);
 
+    pbData->baseLinearDamping = pBody->body->GetLinearDamping();
+    pbData->baseAngularDamping = pBody->body->GetAngularDamping();
     pbData->gravityScale = 1.0f;
 
     for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext())
     {
         pbData->baseDensities.push_back(fix->GetDensity());
+        pbData->baseFrictions.push_back(fix->GetFriction());
+        pbData->baseRestitutions.push_back(fix->GetRestitution());
 
         if (fix->GetType() == b2Shape::e_polygon)
         {

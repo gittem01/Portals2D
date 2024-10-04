@@ -53,7 +53,7 @@ void DefaultObject::recreate()
 
 void DefaultObject::enterForceField(ForceField* forceField)
 {
-	if (!forceField->enabled) return;
+	if (forceField && !forceField->enabled) return;
 
 	auto npBody = wData->pbIndices;
 
@@ -168,7 +168,7 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixt
 	{
 		switch (fData->type)
 		{
-		case FORCE_FIELD:
+		case F_FORCE_FIELD:
 		{
 			ForceField* forceField = (ForceField*)fData->data;
 			if (forceField->enabled)
@@ -179,8 +179,11 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixt
 		break;
 		case F_CATAPULT:
 		{
-			Catapult* catapult = (Catapult*)fData->data;
-			wData->pbIndices[0]->body->SetLinearVelocity(catapult->sendSpeed);
+			if (!TestPlayer::object->holdBody || TestPlayer::object->holdBody->worldIndex != wData)
+			{
+				Catapult* catapult = (Catapult*)fData->data;
+				catapult->sendIt(this, wData->pbIndices[0]->body, wData->pbIndices.size());
+			}
 		}
 		break;
 		case F_EDGE:

@@ -69,46 +69,48 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		fillWallGelData(body, wType, edgeRenderIndexStart, -1);
 	}
 
-	b2Fixture* lastFix = body->GetFixtureList();
-	b2EdgeShape* eShape = (b2EdgeShape*)lastFix->GetShape();
-	b2EdgeShape edge;
-	edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(-1.0f, -1.0f),
-		eShape->m_vertex2 + inLen * b2Vec2(1.0f, -1.0f), eShape->m_vertex3);
+	//b2Fixture* lastFix = body->GetFixtureList();
+	//b2EdgeShape* eShape = (b2EdgeShape*)lastFix->GetShape();
+	//b2EdgeShape edge;
+	//edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(-1.0f, -1.0f),
+	//	eShape->m_vertex2 + inLen * b2Vec2(1.0f, -1.0f), eShape->m_vertex3);
 
-	b2Fixture* fix = body->CreateFixture(&edge, 0.0f);
-	fix->GetUserData().pointer = lastFix->GetUserData().pointer;
+	//b2Fixture* fix = body->CreateFixture(&edge, 0.0f);
+	//fix->GetUserData().pointer = lastFix->GetUserData().pointer;
 
 	createEdgeOneSided(b2Vec2(-halfSize.x, -halfSize.y), b2Vec2(+halfSize.x, -halfSize.y),
 		b2Vec2(+halfSize.x, +halfSize.y), b2Vec2(-halfSize.x, +halfSize.y),
 		pType, portalWorld, body);
+	
 	if (pType == F_EDGE)
 	{
 		fillWallGelData(body, wType, edgeRenderIndexStart + 1, edgeRenderIndexStart);
 	}
 
-	lastFix = body->GetFixtureList();
-	eShape = (b2EdgeShape*)lastFix->GetShape();
-	edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(-1.0f, 1.0f),
-		eShape->m_vertex2 + inLen * b2Vec2(-1.0f, -1.0f), eShape->m_vertex3);
+	//lastFix = body->GetFixtureList();
+	//eShape = (b2EdgeShape*)lastFix->GetShape();
+	//edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(-1.0f, 1.0f),
+	//	eShape->m_vertex2 + inLen * b2Vec2(-1.0f, -1.0f), eShape->m_vertex3);
 
-	fix = body->CreateFixture(&edge, 0.0f);
-	fix->GetUserData().pointer = lastFix->GetUserData().pointer;
+	//fix = body->CreateFixture(&edge, 0.0f);
+	//fix->GetUserData().pointer = lastFix->GetUserData().pointer;
 
 	createEdgeOneSided(	b2Vec2(-halfSize.x, +halfSize.y), b2Vec2(-halfSize.x, -halfSize.y),
 						b2Vec2(+halfSize.x, -halfSize.y), b2Vec2(+halfSize.x, +halfSize.y),
 						pType, portalWorld, body);
+
 	if (pType == F_EDGE)
 	{
 		fillWallGelData(body, wType, edgeRenderIndexStart + 2, edgeRenderIndexStart + 1);
 	}
 
-	lastFix = body->GetFixtureList();
-	eShape = (b2EdgeShape*)lastFix->GetShape();
-	edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(1.0f, 1.0f),
-		eShape->m_vertex2 + inLen * b2Vec2(-1.0f, 1.0f), eShape->m_vertex3);
+	//lastFix = body->GetFixtureList();
+	//eShape = (b2EdgeShape*)lastFix->GetShape();
+	//edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(1.0f, 1.0f),
+	//	eShape->m_vertex2 + inLen * b2Vec2(-1.0f, 1.0f), eShape->m_vertex3);
 
-	fix = body->CreateFixture(&edge, 0.0f);
-	fix->GetUserData().pointer = lastFix->GetUserData().pointer;
+	//fix = body->CreateFixture(&edge, 0.0f);
+	//fix->GetUserData().pointer = lastFix->GetUserData().pointer;
 
 	createEdgeOneSided(	b2Vec2(+halfSize.x, +halfSize.y), b2Vec2(-halfSize.x, +halfSize.y),
 						b2Vec2(-halfSize.x, -halfSize.y), b2Vec2(+halfSize.x, -halfSize.y),
@@ -145,13 +147,13 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		edgeRenderIndex = -1;
 	}
 
-	lastFix = body->GetFixtureList();
-	eShape = (b2EdgeShape*)lastFix->GetShape();
-	edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(1.0f, -1.0f),
-		eShape->m_vertex2 + inLen * b2Vec2(1.0f, 1.0f), eShape->m_vertex3);
+	//lastFix = body->GetFixtureList();
+	//eShape = (b2EdgeShape*)lastFix->GetShape();
+	//edge.SetOneSided(eShape->m_vertex0, eShape->m_vertex1 + inLen * b2Vec2(1.0f, -1.0f),
+	//	eShape->m_vertex2 + inLen * b2Vec2(1.0f, 1.0f), eShape->m_vertex3);
 
-	fix = body->CreateFixture(&edge, 0.0f);
-	fix->GetUserData().pointer = lastFix->GetUserData().pointer;
+	//fix = body->CreateFixture(&edge, 0.0f);
+	//fix->GetUserData().pointer = lastFix->GetUserData().pointer;
 
 	s_platformRectUbo platformData;
 	s_platformRectUbo* platformUbo;

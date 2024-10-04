@@ -498,10 +498,13 @@ void Turret::perFrameUpdate()
 			tPb = trt->wData->pbIndices[0];
 			b2Vec2 eyePos = b2Vec2(tEyePos.x * (tPb->isMirrored ? -1.0f : 1.0f), tEyePos.y);
 			eyePos = tPb->body->GetWorldPoint(eyePos);
-			portalConnection* pc = tPb->bodyMaps[0]->connection;
-			if (pc->portal1->getPointSide(eyePos) != pc->side1)
+			if (tPb->bodyMaps.size() > 0)
 			{
-				tPb = trt->wData->pbIndices[1];
+				portalConnection* pc = tPb->bodyMaps[0]->connection;
+				if (pc->portal1->getPointSide(eyePos) != pc->side1)
+				{
+					tPb = trt->wData->pbIndices[1];
+				}
 			}
 		}
 

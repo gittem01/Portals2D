@@ -143,6 +143,8 @@ void PortalBody::preCollision(b2Contact* contact, b2Fixture* fix1, b2Fixture* fi
     }
 }
 
+#include "ThinDrawer.h"
+
 bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, fixtureData* fData)
 {
     fixtureData* fixData1 = (fixtureData*)fix1->GetUserData().pointer;
@@ -162,7 +164,67 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         Portal* portal = (Portal*)fData->data;
         if (fix2 != portal->yFix[0] && fix2 != portal->yFix[1])
         {
-            for (bodyCollisionStatus* stat : bodyMaps){
+            //if (portal->connections->size() > 0)
+            //{
+            //    portalConnection* conn = portal->connections->at(0);
+            //    if (portal->isParallel(conn->portal2->points[1], conn->portal2->points[0]))
+            //    {
+            //        const float d0 = b2Dot(portal->points[0] - conn->portal2->points[1], portal->rotDir);
+            //        const float d1 = b2Dot(portal->points[0] - conn->portal2->points[0], portal->rotDir);
+
+            //        float minVal;
+            //        float maxVal;
+            //        if (d0 < d1)
+            //        {
+            //            minVal = d0;
+            //            maxVal = d1;
+            //        }
+            //        else
+            //        {
+            //            minVal = d1;
+            //            maxVal = d0;
+            //        }
+
+            //        minVal = std::max(minVal, 0.0f);
+            //        maxVal = std::min(maxVal, portal->size * 2);
+
+            //        if (maxVal - minVal > 0.01f)
+            //        {
+            //            return true;
+            //        }
+            //        else
+            //        {
+            //            return false;
+            //        }
+            //    }
+            //}
+
+            b2WorldManifold wManifold;
+            contact->GetWorldManifold(&wManifold);
+            b2Vec2 point;
+            if (contact->GetManifold()->pointCount == 1)
+            {
+                point = wManifold.points[0];
+            }
+            else
+            {
+                point = 0.5f * (wManifold.points[0] + wManifold.points[1]);
+            }
+
+            b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(
+                point - wManifold.normal, point + wManifold.normal,
+                portal->points[0], portal->points[1]);
+
+            ThinDrawer::object->addDebugLine(glm::vec4(intersectionPoint.x, intersectionPoint.y, intersectionPoint.x, intersectionPoint.y),
+                glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.1f, 0.5f);
+
+            for (bodyCollisionStatus* stat : bodyMaps)
+            {
+                if (stat->connection->portal1 != portal && stat->connection->portal1->getPointSide(intersectionPoint) != stat->connection->side1)
+                {
+                    return false;
+                }
+
                 if (stat->body->bodyMaps.size() < 2)
                 {
                     continue;
@@ -180,24 +242,8 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
                         }
                         else if (pc->status == 1)
                         {
-                            b2WorldManifold wManifold;
-                            contact->GetWorldManifold(&wManifold);
-                            b2Vec2 point;
-                            if (contact->GetManifold()->pointCount == 1)
-                            {
-                                point = wManifold.points[0];
-                            }
-                            else
-                            {
-                                point = 0.5f * (wManifold.points[0] + wManifold.points[1]);
-                            }
-                            
-                            b2Vec2 intersectionPoint = PortalWorld::getLineIntersection(
-                                point - wManifold.normal, point + wManifold.normal,
-                                portal->points[0], portal->points[1]);
-
-                            intersectionPoint = PortalWorld::getRelativePortalPosition_W(intersectionPoint, stat->connection);
-                            int intersectSide = pc->portal->getPointSide(intersectionPoint);
+                            b2Vec2 intrsct = PortalWorld::getRelativePortalPosition_W(intersectionPoint, stat->connection);
+                            int intersectSide = pc->portal->getPointSide(intrsct);
                             if (intersectSide != pc->side)
                             {
                                 return false;
@@ -430,6 +476,18 @@ void PortalBody::outHelper(b2Fixture* fix, Portal* portal, int status, PortalCol
     }
 }
 
+void PortalBody::chainedDestroy(PortalBody* noDestr)
+{
+    for (bodyCollisionStatus* s : bodyMaps)
+    {
+        if (s->body != noDestr)
+        {
+            pWorld->destroyBodies.insert(s->body);
+            s->body->chainedDestroy(this);
+        }
+    }
+}
+
 void PortalBody::postHandle()
 {
     std::vector<Portal*> destroyRequests;
@@ -458,6 +516,7 @@ void PortalBody::postHandle()
                     if (s->connection->portal1 == iter.first && s->connection->side1 == side)
                     {
                         pWorld->destroyBodies.insert(s->body);
+                        s->body->chainedDestroy(this);
                     }
                 }
             }

@@ -16,8 +16,6 @@ class DualParticleShader : public ShaderBase
 {
 public:
     int alignedSize;
-    int lastAllocationPos;
-    uint32_t availableOffsets[UNIFORM_ALLOC_COUNT];
 
     DualParticleShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 

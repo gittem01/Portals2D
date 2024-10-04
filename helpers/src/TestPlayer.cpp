@@ -145,6 +145,7 @@ void write0(TestPlayer* tp)
             ru2->portals[j] = glm::vec4(pc->portal->points[1 ^ pc->side].x, pc->portal->points[1 ^ pc->side].y,
                 pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
             j += 1;
+            if (j == 4) break;
         }
         ru2->numPortals = j;
 
@@ -854,7 +855,7 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture
         case F_FORCE_FIELD:
         {
             ForceField* forceField = (ForceField*)fixData->data;
-            if (forceField->signalCount > 0)
+            if (forceField->enabled)
             {
                 enterForceField((ForceField*)fixData->data);
             }
@@ -867,8 +868,9 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture
         case F_CATAPULT:
         {
             Catapult* catapult = (Catapult*)fixData->data;
-            wData->pbIndices[0]->body->SetLinearVelocity(catapult->sendSpeed);
-            gun->at(0)->body->SetLinearVelocity(catapult->sendSpeed);
+            catapult->sendIt(this, wData->pbIndices[0]->body, (float)wData->pbIndices.size());
+
+            gun->at(0)->body->SetLinearVelocity((float)gun->size() * wData->pbIndices[0]->body->GetLinearVelocity());
         }
         break;
         case F_LIGHT_BRIDGE:
@@ -1260,7 +1262,7 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
         }
     }
 
-    if (checkRange[1] - checkRange[0] + 1 < requiredRangeSize) return nullptr;
+    if (checkRange[1] - checkRange[0] + 1 < requiredRangeSize || startIndex < 0 || startIndex > eLocalData->globalRange[1]) return nullptr;
 
     int leftCount = 0;
     int rightCount = 0;
@@ -1387,6 +1389,21 @@ void TestPlayer::setXColor(bool canBlue, bool canRed)
     default:
         break;
     }
+}
+
+void TestPlayer::portalClosingRitual()
+{
+    if (Game::object->pWorld->portals.size() < 2) return;
+
+    getBodyOut();
+
+    Portal* lastPortal = Game::object->pWorld->portals[Game::object->pWorld->portals.size() - 1];
+
+    lastPortal->getPreDestructionFixture();
+    Game::object->pWorld->destroyPortal(lastPortal);
+
+    if (portalA == lastPortal) portalA = nullptr;
+    else portalB = nullptr;
 }
 
 void TestPlayer::handlePortalCD(float dt)
@@ -1595,6 +1612,53 @@ void TestPlayer::handlePortalCD(float dt)
         gData.positions.x = -1881.0f;
         gData.positions.z = -1938.0f;
     }
+
+    if (Game::object->pWorld->portals.size() < 2)
+    {
+        return;
+    }
+
+    Portal* portal1 = Game::object->pWorld->portals[0];
+    Portal* portal2 = Game::object->pWorld->portals[1];
+
+    float lenVH = abs(portal1->pos.x - portal2->pos.x) + abs(portal1->pos.y - portal2->pos.y);
+    if (lenVH < 2.599f && portal1->isParallel(portal2->points[0], portal2->points[1]))
+    {
+        portalClosingRitual();
+    }
+    else if ((portal1->body->GetType() != b2_staticBody || portal2->body->GetType() != b2_staticBody) &&
+            abs(b2Dot(portal1->dir, portal2->dir)) < 0.1f)
+    {
+        Portal* hPortal, *vPortal;
+        if (abs(portal1->points[0].x - portal1->points[1].x) > 0.1f)
+        {
+            hPortal = portal1;
+            vPortal = portal2;
+        }
+        else
+        {
+            hPortal = portal2;
+            vPortal = portal1;
+        }
+        
+        float minX = std::min(hPortal->points[0].x, hPortal->points[1].x);
+        float maxX = std::max(hPortal->points[0].x, hPortal->points[1].x);
+
+        float minY = std::min(vPortal->points[0].y, vPortal->points[1].y);
+        float maxY = std::max(vPortal->points[0].y, vPortal->points[1].y);
+
+        float xDiff = vPortal->points[0].x - minX;
+        float yDiff = hPortal->points[0].y - minY;
+
+        if ((xDiff > 0.01f && xDiff < 2.599f) && (yDiff > -0.01f && yDiff < 2.601f))
+		{
+            portalClosingRitual();
+		}
+        else if ((yDiff > 0.01f && yDiff < 2.599f) && (xDiff > -0.01f && xDiff < 2.601f))
+        {
+            portalClosingRitual();
+        }
+    }
 }
 
 void TestPlayer::gunDestrCallback(PortalBody* gb, void* ptr)
@@ -1666,15 +1730,6 @@ void TestPlayer::holdB(PortalBody* pb, PortalBody* gunBody)
 
     shouldRelease = false;
 
-    int i = 0;
-    holdRestitutions.resize(pb->numFixtures);
-    holdFrictions.resize(pb->numFixtures);
-    for (b2Fixture* fix : pb->fixtures)
-    {
-        holdRestitutions[i] = fix->GetRestitution();
-        holdFrictions[i++] = fix->GetFriction();
-    }
-
     for (PortalBody* pbA : pb->worldIndex->pbIndices)
     {
         for (b2ContactEdge* edge = pbA->body->GetContactList(); edge; edge = edge->next)
@@ -1735,20 +1790,40 @@ void TestPlayer::releaseB()
     {
         for (b2ContactEdge* edge = pbA->body->GetContactList(); edge; edge = edge->next)
         {
-            edge->contact->SetRestitution(holdRestitutions[0]);
-            edge->contact->SetFriction(holdFrictions[0]);
+            edge->contact->SetRestitution(holdBody->worldIndex->baseRestitutions[0]);
+            edge->contact->SetFriction(holdBody->worldIndex->baseFrictions[0]);
+
+            b2Contact* contact = edge->contact;
+            if (contact->IsEnabled() && contact->IsTouching())
+            {
+                b2Fixture* fixA = contact->GetFixtureA();
+                b2Fixture* fixB = contact->GetFixtureB();
+
+                if (!fixA->IsSensor() && !fixB->IsSensor()) continue;
+
+                fixtureData* fData = (fixtureData*)fixA->GetUserData().pointer;
+                if (fData && fData->type == F_CATAPULT)
+                {
+                    Catapult* cat = (Catapult*)fData->data;
+                    cat->sendIt(obj, pbA->body, holdBody->worldIndex->pbIndices.size());
+                }
+
+                fData = (fixtureData*)fixB->GetUserData().pointer;
+                if (fData && fData->type == F_CATAPULT)
+                {
+                    Catapult* cat = (Catapult*)fData->data;
+                    cat->sendIt(obj, pbA->body, holdBody->worldIndex->pbIndices.size());
+                }
+            }
         }
 
         int i = 0;
         for (b2Fixture* fix : pbA->fixtures)
         {
-            fix->SetRestitution(holdRestitutions[i]);
-            fix->SetFriction(holdFrictions[i++]);
+            fix->SetRestitution(holdBody->worldIndex->baseRestitutions[i]);
+            fix->SetFriction(holdBody->worldIndex->baseFrictions[i++]);
         }
     }
-
-    holdRestitutions.clear();
-    holdFrictions.clear();
 
     holdBody = nullptr;
     holdGun = nullptr;

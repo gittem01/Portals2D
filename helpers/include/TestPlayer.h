@@ -32,8 +32,6 @@ public:
     Portal* destrPortal;
     b2Vec2 lastHoldPos;
     portalConnection* holdConnection;
-    std::vector<float> holdRestitutions;
-    std::vector<float> holdFrictions;
     float lastBodyHoldTime;
     float releaseRequestTime;
     float holdERequestTime;
@@ -134,8 +132,8 @@ public:
 
     b2Fixture* canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size, Portal* oldPortal);
 
+    void portalClosingRitual();
     void getBodyOut();
-
     PortalBody* getOuterGun();
 
     void setXColor(bool canBlue, bool canRed);
