@@ -1597,7 +1597,7 @@ void Leveler::update()
 		}
 	}
 
-	if (wh->keyData[wh->pIndLeftCommand] && wh->keyData[GLFW_KEY_Z] == 2)
+	if (wh->keyData[wh->pIndLeftCommand] && wh->keyData[GLFW_KEY_Z] == 2 && consqClickVec.size() == 0)
 	{
 		double st = glfwGetTime();
 

@@ -2065,7 +2065,7 @@ void TestPlayer::update(float dt, int totalIter)
     
     runEffect();
 
-    const float maxSpeed = lastMaxSpeed + (4.0f + fastRun * 4.0f - lastMaxSpeed) * dt * (1.0f + lastMaxSpeed * 0.25);
+    const float maxSpeed = lastMaxSpeed + (4.0f + fastRun * 6.0f - lastMaxSpeed) * dt * (1.0f + lastMaxSpeed * 0.25);
     lastMaxSpeed = maxSpeed;
 
     float speedOffset = 0.0f;
