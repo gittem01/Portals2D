@@ -2012,8 +2012,12 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
 
             holdBody->body->SetLinearVelocity(newVel);
 
-            float rotRatio = 1.0f - dt * 0.8f;
-            holdBody->body->SetAngularVelocity(fmin(holdBody->body->GetAngularVelocity() * rotRatio, b2_pi));
+            float angAdd = 0.0f;
+            if (wh->mouseData[2]) angAdd = dt * 15.0f;
+            else if (wh->mouseData[3]) angAdd = -dt * 15.0f;
+
+            float rotRatio = 1.0f - dt * 15.0f;
+            holdBody->body->SetAngularVelocity(std::max(std::min(holdBody->body->GetAngularVelocity() * rotRatio + angAdd, 2.0f), -2.0f));
         }
 
         lastHoldPos = holdBody->body->GetPosition();
