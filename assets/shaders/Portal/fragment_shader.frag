@@ -23,7 +23,7 @@ layout (push_constant) uniform PC
 
 float editorFunc(float val)
 {
-    return max(min(pow(val, 15.0) * 1.5, 1.0), 0.0);
+    return clamp(pow(val, 15.0) * 1.5, 0.0, 1.0);
 }
 
 void main()
@@ -83,9 +83,11 @@ void main()
     }
     else
     {
-        FragColour = vec4(0.0, 0.0, 0.0, 0.0);
+        FragColour = vec4(1.0, 0.0, 0.0, 1.0);
         return;
     }
     
+    multVal = max(multVal - 0.2, 0.0);
+
     FragColour = vec4(color * multVal, multVal);
 }
