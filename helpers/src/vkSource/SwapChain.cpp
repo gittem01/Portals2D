@@ -34,8 +34,9 @@ void SwapChain::creationLoop()
 {
     for (;;)
     {
-        glfwWaitEvents();
-        //glfwPollEvents();
+        SDL_Event e;
+        SDL_WaitEvent(&e);
+
         querySwapChainSupport();
         extent = chooseSwapExtent();
         if (extent.width > 0 && extent.height > 0)
@@ -54,7 +55,7 @@ VkExtent2D SwapChain::chooseSwapExtent() {
     else
     {
         int width, height;
-        glfwGetFramebufferSize(thinDrawer->wh->window, &width, &height);
+        SDL_GetWindowSizeInPixels(thinDrawer->wh->window, &width, &height);
 
         VkExtent2D actualExtent =
         {

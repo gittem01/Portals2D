@@ -937,7 +937,7 @@ void LevelerTestCase::onCreate()
 
 void LevelerTestCase::perFrameUpdate()
 {
-    if (g->thinDrawer->wh->keyData[GLFW_KEY_ESCAPE] == 2)
+    if (g->thinDrawer->wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
     {
         shouldQuit = true;
     }
@@ -947,11 +947,11 @@ void LevelerTestCase::onUpdate()
 {
     BaseTestCase::onUpdate();
 
-    /*if (td->wh->keyData[GLFW_KEY_RIGHT])
+    /*if (td->wh->keyData[SDL_SCANCODE_RIGHT])
     {
         eBodyy->SetAngularVelocity(2.0f);
     }
-    else if (td->wh->keyData[GLFW_KEY_LEFT])
+    else if (td->wh->keyData[SDL_SCANCODE_LEFT])
 	{
 		eBodyy->SetAngularVelocity(-1.0f);
 	}
@@ -960,11 +960,11 @@ void LevelerTestCase::onUpdate()
 		eBodyy->SetAngularVelocity(0.0f);
 	}
 
-    if (td->wh->keyData[GLFW_KEY_DOWN])
+    if (td->wh->keyData[SDL_SCANCODE_DOWN])
     {
         eBodyy->SetLinearVelocity(b2Vec2(0.0f, -1.0f));
     }
-    else if (td->wh->keyData[GLFW_KEY_UP])
+    else if (td->wh->keyData[SDL_SCANCODE_UP])
     {
         eBodyy->SetLinearVelocity(b2Vec2(0.0f, +1.0f));
     }

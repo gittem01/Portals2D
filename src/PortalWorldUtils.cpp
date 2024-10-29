@@ -416,7 +416,7 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
 float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction)
 {
-    if (fixture->IsSensor()) return minFraction;
+    if (fixture->IsSensor() || (fixture->GetType() == b2Shape::e_polygon && fixture->GetDensity() < 0.3f)) return minFraction;
 
     bool isPortal = false;
     fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;

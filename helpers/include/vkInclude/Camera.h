@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -26,7 +26,7 @@ public:
 
 	glm::mat4 camMatrix;
 
-	GLFWwindow* window;
+	SDL_Window* window;
 	float zoom = 0.5;
 	float zoomInc = 0.15;
 	float dragSmth = 0.2f;

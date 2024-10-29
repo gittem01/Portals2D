@@ -178,6 +178,7 @@ friend class Gel;
 friend class ForceField;
 friend class Funnel;
 friend class Platform;
+friend class Turret;
 
 public:
     std::vector<pbWorldData*> bodyIndices;

@@ -1445,14 +1445,14 @@ void Leveler::update()
 
 	s_gridItemData* item = ol->selectedItemIndex >= 0 ? &ol->items[ol->selectedItemIndex] : nullptr;
 
-	if (wh->mouseData[3] == 2 || wh->keyData[GLFW_KEY_ESCAPE] == 2)
+	if (wh->mouseData[4] == 2 || wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
 	{
 		if (consqClickVec.size() > 0)
 		{
 			const s_levelGridData& lgd = getSquare(consqClickVec[0].x, consqClickVec[0].y);
 			if (lgd.objectType & CATAPULT)
 			{
-				takeBack(wh->keyData[GLFW_KEY_LEFT_SHIFT] != 0);
+				takeBack(wh->keyData[SDL_SCANCODE_LSHIFT] != 0);
 
 				if (currentOperation->next && currentOperation->next->objectOperation &&
 					currentOperation->next->objectOperation->objData->objectType == CATAPULT && currentOperation->next->objectOperation->operationType == ADD)
@@ -1471,7 +1471,7 @@ void Leveler::update()
 	{
 		if (clickStart[0] > -100000 && item)
 		{
-			double st = glfwGetTime();
+			double st = SDL_GetTicksNS() / 1000000000.0;
 
 			glm::ivec2 mp = getMouseGrid();
 
@@ -1485,7 +1485,7 @@ void Leveler::update()
 
 			fillGrid(minX, minY, maxX, maxY, fillType);
 
-			printf("Fill Time: %f\n", glfwGetTime() - st);
+			printf("Fill Time: %f\n", SDL_GetTicksNS() / 1000000000.0 - st);
 		}
 
 		clickStart.x = -100000;
@@ -1597,11 +1597,11 @@ void Leveler::update()
 		}
 	}
 
-	if (wh->keyData[wh->pIndLeftCommand] && wh->keyData[GLFW_KEY_Z] == 2 && consqClickVec.size() == 0)
+	if (wh->keyData[wh->pIndLeftCommand] && wh->keyData[SDL_SCANCODE_Z] == 2 && consqClickVec.size() == 0)
 	{
-		double st = glfwGetTime();
+		double st = SDL_GetTicksNS() / 1000000000.0;
 
-		takeBack(wh->keyData[GLFW_KEY_LEFT_SHIFT] != 0);
+		takeBack(wh->keyData[SDL_SCANCODE_LSHIFT] != 0);
 
 		if (currentOperation->next && !currentOperation->next->connection && currentOperation->next->objectOperation &&
 			currentOperation->next->objectOperation->objData->objectType == CATAPULT && currentOperation->next->objectOperation->operationType == ADD &&
@@ -1611,10 +1611,10 @@ void Leveler::update()
 			consqClickVec.clear();
 		}
 
-		printf("Rev Time: %f\n", glfwGetTime() - st);
+		printf("Rev Time: %f\n", SDL_GetTicksNS() / 1000000000.0 - st);
 	}
 
-	if (wh->keyData[GLFW_KEY_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS && consqClickVec.size() == 0)
+	if (wh->keyData[SDL_SCANCODE_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS && consqClickVec.size() == 0)
 	{
 		selectedObjectRotation = (selectedObjectRotation + 1) % 4;
 		
@@ -1624,7 +1624,7 @@ void Leveler::update()
 		}
 	}
 
-	if (wh->keyData[GLFW_KEY_E] == 2 && item && item->canMirror)
+	if (wh->keyData[SDL_SCANCODE_E] == 2 && item && item->canMirror)
 	{
 		selectedObjectMirror ^= 1;
 	}

@@ -86,7 +86,7 @@ public:
     void onCreate()
     {
         srand(2);
-        srand(glfwGetTime() * 1000);
+        srand(SDL_GetTicksSec() * 1000);
         g->pWorld->SetGravity(b2Vec2(0.0f, 0.0f));
         g->pWorld->SetGravity(b2Vec2(0.0f, -12.5f));
 
@@ -234,26 +234,26 @@ public:
         b2Vec2 setSpeed = b2Vec2(0.0f, 0.0f);
         float setAngle = 0.0f;
 
-        if (td->wh->keyData[GLFW_KEY_LEFT])
+        if (td->wh->keyData[SDL_SCANCODE_LEFT])
         {
             setAngle += angSpeedAddition;
             //setSpeed += speedAddition * portal2->rotDir;
         }
-        if (td->wh->keyData[GLFW_KEY_RIGHT])
+        if (td->wh->keyData[SDL_SCANCODE_RIGHT])
         {
             setAngle -= angSpeedAddition;
             //setSpeed -= speedAddition * portal2->rotDir;
         }
-        if (td->wh->keyData[GLFW_KEY_DOWN])
+        if (td->wh->keyData[SDL_SCANCODE_DOWN])
         {
             setSpeed -= speedAddition * portal2->dir;
         }
-        if (td->wh->keyData[GLFW_KEY_UP])
+        if (td->wh->keyData[SDL_SCANCODE_UP])
         {
             setSpeed += speedAddition * portal2->dir;
         }
 
-        if (td->wh->keyData[GLFW_KEY_K] == 2)
+        if (td->wh->keyData[SDL_SCANCODE_K] == 2)
         {
             glm::vec2 mp = td->wh->cam->getMouseCoords();
             b2Body* lastBody = createCircle(b2Vec2(mp.x, mp.y), 0.5f, g->pWorld, b2_dynamicBody, 1.0, true);
@@ -267,11 +267,11 @@ public:
         bodyToMove->SetLinearVelocity(setSpeed);
         bodyToMove->SetAngularVelocity(setAngle);
 
-        if (td->wh->keyData[GLFW_KEY_Z] == 2)
+        if (td->wh->keyData[SDL_SCANCODE_Z] == 2)
         {
             platform->at(0)->body->SetLinearVelocity(b2Vec2(-2.0, 0.0));
         }
-        if (td->wh->keyData[GLFW_KEY_X] == 2)
+        if (td->wh->keyData[SDL_SCANCODE_X] == 2)
         {
             platform->at(0)->body->SetLinearVelocity(b2Vec2(+2.0, 0.0));
         }

@@ -223,8 +223,24 @@ void Turret::shoot()
 
 		bPos = wData->pbIndices[0]->body->GetWorldPoint(bPos);
 		fwdMov = wData->pbIndices[0]->body->GetWorldPoint(fwdMov);
+		b2Vec2 dir = fwdMov - bPos;
 
-		pWorld->rayHandler->sendRay(bPos, fwdMov - bPos, 120.0f);
+		if (wData->pbIndices[0]->bodyMaps.size() > 0)
+		{
+			for (int i = 0; i < wData->pbIndices[0]->bodyMaps.size(); i++)
+			{
+				bodyCollisionStatus* bcs = wData->pbIndices[0]->bodyMaps[i];
+				Portal* portal = bcs->connection->portal1;
+				if (PortalWorld::getRealDist(portal->points[0], portal->points[1], bPos) > -0.01f)
+				{
+					bPos = PortalWorld::getRelativePortalPosition_W(bPos, bcs->connection);
+					dir = -PortalWorld::getRelativePortalPosition_L(dir, bcs->connection);
+					break;
+				}
+			}
+		}
+
+		pWorld->rayHandler->sendRay(bPos, dir, 120.0f, wData);
 
 		for (rayData& rd : pWorld->rayHandler->rayResult)
 		{
@@ -235,6 +251,23 @@ void Turret::shoot()
 
 			renderLaserDatas[lastLaserIndex % numLasers] = { laserData, shootGundex };
 			lastLaserIndex++;
+		}
+
+		if (pWorld->rayHandler->closestFixture)
+		{
+			bodyData* bData = (bodyData*)pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
+			if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & PLAYER_O)
+			{
+				TestPlayer::object->health -= 10;
+				b2Vec2 vel = TestPlayer::object->wData->pbIndices[0]->body->GetLinearVelocity();
+				TestPlayer::object->wData->pbIndices[0]->body->SetLinearVelocity(0.75f * vel);
+			}
+			
+			rayData lastRay = pWorld->rayHandler->rayResult[pWorld->rayHandler->rayResult.size() - 1];
+			b2Vec2 rayEnd = lastRay.endPos;
+			b2Vec2 lastDir = lastRay.endPos - lastRay.startPos; lastDir.Normalize();
+
+			pWorld->rayHandler->closestFixture->GetBody()->ApplyForce(400.0f * lastDir, rayEnd, true);
 		}
 
 		shootGundex = (shootGundex + 1) % 2;
@@ -453,30 +486,6 @@ void Turret::perFrameUpdate()
 	{
 		if (trt->wData->destrTime > 0.0f) continue;
 
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_UP] == 2)
-		{
-			trt->status = true;
-		}
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_DOWN] == 2)
-		{
-			trt->status = false;
-		}
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_LEFT])
-		{
-			trt->rotation -= Game::object->deltaTime;
-			trt->rotation = std::max(trt->rotation, -rotationLimit);
-		}
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_RIGHT])
-		{
-			trt->rotation += Game::object->deltaTime;
-			trt->rotation = std::min(trt->rotation, rotationLimit);
-		}
-		if (ThinDrawer::object->wh->keyData[GLFW_KEY_SPACE])
-		{
-			trt->shoot();
-		}
-
-		//
 		if (trt->status)
 		{
 			trt->openAmount += 0.01f;
@@ -511,21 +520,27 @@ void Turret::perFrameUpdate()
 		trt->eyeBody = tPb;
 
 		const float turretBodyAngle = tPb->body->GetAngle();
-		trt->eyePos = b2Vec2(tEyePos.x * (tPb->isMirrored ? -1.0f : 1.0f), tEyePos.y);
-		trt->eyePos = tPb->body->GetWorldPoint(trt->eyePos);
 		trt->fwd = (tPb->isMirrored ? 1.0f : -1.0f) * b2Vec2(cos(turretBodyAngle), sin(turretBodyAngle));
-		
+
+		ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, trt->eyePos.x, trt->eyePos.y),
+			glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.1f, 0.5f);
+
 		if (trt->lastTrackTime + 0.25 > Game::object->gameTime)
 		{
 			b2Vec2 v = trt->trackPoint - trt->eyePos;
+
+			ThinDrawer::object->registerDebugLine(glm::vec4(trt->trackPoint.x, trt->trackPoint.y, trt->trackPoint.x, trt->trackPoint.y),
+				glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f, 0.5f);
+
 			v.Normalize();
-			trt->laserDir = 0.9f * trt->laserDir + 0.1f * v;
+
+			trt->laserDir = 0.95f * trt->laserDir + 0.05f * v;
 			trt->status = true;
 			trt->shoot();
 		}
 		else
 		{
-			trt->laserDir = trt->laserDir = 0.9f * trt->laserDir + 0.1f * trt->fwd;
+			trt->laserDir = trt->laserDir = 0.95f * trt->laserDir + 0.05f * trt->fwd;
 			trt->status = false;
 		}
 		
@@ -540,11 +555,14 @@ void Turret::perFrameUpdate()
 		}
 
 		trt->laserPoints.clear();
-		trt->pWorld->rayHandler->sendRay(trt->eyePos, trt->laserDir, 600.0f);
+		trt->pWorld->rayHandler->sendRay(trt->eyePos, trt->laserDir, 400.0f);
 		for (rayData& rd : trt->pWorld->rayHandler->rayResult)
 		{
 			trt->laserPoints.push_back({ rd.startPos, rd.endPos });
 		}
+
+		trt->eyePos = b2Vec2(tEyePos.x * (tPb->isMirrored ? -1.0f : 1.0f), tEyePos.y);
+		trt->eyePos = tPb->body->GetWorldPoint(trt->eyePos);
 	}
 
 	size_t numTurretUpdates = std::min((size_t)(Game::object->deltaTime * 1000.0f), turrets.size());
@@ -636,11 +654,11 @@ void Turret::perFrameUpdate()
 						bodyData* bData = (bodyData*)trt->pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
 						if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & PLAYER_O)
 						{
-							trt->shoot();
 							trt->trackPoint = pos2Res;
 							trt->lastTrackPtr = p;
 							trt->lastTrackTime = Game::object->gameTime;
 							ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, pos2.x, pos2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
+							break;
 						}
 					}
 				}

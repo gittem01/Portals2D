@@ -13,7 +13,7 @@ include_directories(${CMAKE_SOURCE_DIR}/helpers/include/vkInclude/ShaderHeaders)
 include_directories(${CMAKE_SOURCE_DIR}/helpers/TestCases)
 include_directories(${CMAKE_SOURCE_DIR}/external/glm/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/box2d/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/glfw/include)
+include_directories(${CMAKE_SOURCE_DIR}/external/SDL3/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/tiny_gltf)
 include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
 include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
@@ -24,7 +24,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/SPIRV-Reflect)
 
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_SOURCE_DIR}/build/glfw)
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/SDL3)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/imgui)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/OpenALSoft)
 
@@ -42,10 +42,9 @@ set(
     IMGUI_BACKENDS  
     ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp
     ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.h
-    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
-    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.h)
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl3.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl3.h)
 
-link_directories(${CMAKE_SOURCE_DIR}/build/glfw)
 # put this before add_executable else get linker error
 link_directories(${CMAKE_SOURCE_DIR}/external/vulkan/lib)
 
@@ -74,7 +73,7 @@ add_library(spirv-reflect ${CMAKE_SOURCE_DIR}/external/SPIRV-Reflect/spirv_refle
 
 target_link_libraries(${APP_NAME} PORTAL2D)
 target_link_libraries(${APP_NAME} box2d)
-target_link_libraries(${APP_NAME} glfw)
+target_link_libraries(${APP_NAME} SDL3::SDL3)
 target_link_libraries(${APP_NAME} imgui)
 target_link_libraries(${APP_NAME} OpenAL)
 target_link_libraries(${APP_NAME} spirv-reflect)

@@ -215,15 +215,15 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
                 point - wManifold.normal, point + wManifold.normal,
                 portal->points[0], portal->points[1]);
 
-            ThinDrawer::object->addDebugLine(glm::vec4(intersectionPoint.x, intersectionPoint.y, intersectionPoint.x, intersectionPoint.y),
-                glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.1f, 0.5f);
+           /* ThinDrawer::object->addDebugLine(glm::vec4(intersectionPoint.x, intersectionPoint.y, intersectionPoint.x, intersectionPoint.y),
+                glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.1f, 0.5f);*/
 
             for (bodyCollisionStatus* stat : bodyMaps)
             {
-                if (stat->connection->portal1 != portal && stat->connection->portal1->getPointSide(intersectionPoint) != stat->connection->side1)
+                /*if (stat->connection->portal1 != portal && stat->connection->portal1->getPointSide(intersectionPoint) != stat->connection->side1)
                 {
                     return false;
-                }
+                }*/
 
                 if (stat->body->bodyMaps.size() < 2)
                 {
@@ -991,7 +991,11 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
 
                 b2Vec2 force = loopArea * fixture->GetDensity() * pWorld->GetGravity();
                 if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-                    body->ApplyForce(worldIndex->gravityScale * ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
+                    b2Vec2 appliedForce = worldIndex->gravityScale * ((float)bodyMaps.size() + 1) * force;
+                    body->ApplyForce(appliedForce, loopCenterOfMass, false);
+
+                    b2Vec2 p2 = loopCenterOfMass + 0.5f * appliedForce;
+                    ThinDrawer::object->registerDebugLine(glm::vec4(loopCenterOfMass.x, loopCenterOfMass.y, p2.x, p2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.04f, 0.5f);
                 }
             }
         }

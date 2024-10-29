@@ -5,7 +5,7 @@
 #include <OptionShader.h>
 
 // funnel thingy
-//if (wh->keyData[GLFW_KEY_SPACE] == 2)
+//if (wh->keyData[SDL_SCANCODE_SPACE] == 2)
 //{
 //    s_funnelUbo* funnelUbo;
 //    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory, 0, sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
@@ -25,7 +25,7 @@
 //}
 
 // hazard thingy -same for blue thingy-
-//if (wh->keyData[GLFW_KEY_SPACE] == 2)
+//if (wh->keyData[SDL_SCANCODE_SPACE] == 2)
 //{
 //    s_hazardUbo* hazardUbo;
 //    vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory, 0, sizeof(s_funnelUbo), 0, (void**)&hazardUbo);
@@ -427,7 +427,7 @@ void Overlayer::popUpdate()
 
     glm::vec2 cp = cam.getMouseCoords();
 
-    if (thinDrawer->wh->mouseData[3] == 2 && !itemDir && selectedItemIndex == -1)
+    if (thinDrawer->wh->mouseData[4] == 2 && !itemDir && selectedItemIndex == -1)
     {
         levelerRCPos = game->leveler->getMouseGrid();
         const s_levelGridData& lgd = game->leveler->getSquare(levelerRCPos.x, levelerRCPos.y);
@@ -625,14 +625,14 @@ void Overlayer::update()
 
     popUpdate();
 
-    if (thinDrawer->wh->mouseData[3] == 2 || thinDrawer->wh->keyData[GLFW_KEY_ESCAPE] == 2)
+    if (thinDrawer->wh->mouseData[4] == 2 || thinDrawer->wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
     {
         selectedItemIndex = -1;
     }
 
     const float mult = 6.0;
 
-    if ((leftX + itemRatio * xSize + 1.5 < p.x && !wh->keyData[GLFW_KEY_TAB]) || game->leveler->clickStart[0] != -100000 ||
+    if ((leftX + itemRatio * xSize + 1.5 < p.x && !wh->keyData[SDL_SCANCODE_TAB]) || game->leveler->clickStart[0] != -100000 ||
         game->leveler->consqClickVec.size() > 0 || popShowName != "")
     {
         if (itemDir == 1)

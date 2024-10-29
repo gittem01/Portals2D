@@ -2,6 +2,7 @@
 #include <SwapChain.h>
 #include <IOHelper.h>
 #include <Camera.h>
+#include "SDL3/SDL_vulkan.h"
 
 #define PREFER_DISCRETE 1
 
@@ -24,7 +25,10 @@ void ThinDrawer::initBase()
 
     createInstance();
 
-    CHECK_RESULT_VK(glfwCreateWindowSurface(instance, wh->window, NULL, &swapChain->surface));
+    if (!SDL_Vulkan_CreateSurface(wh->window, instance, nullptr, &swapChain->surface))
+    {
+		assert(0);
+    }
 
     selectPhysicalDevice();
 
@@ -58,23 +62,23 @@ void ThinDrawer::createInstance()
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.pApplicationInfo = &appInfo;
 
-    uint32_t glfwExtensionCount;
+    uint32_t sdlExtensionCount;
     uint32_t extensionCount;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    const char* const* sdlExtensions;
+    sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
 
 #ifdef __APPLE__
     instanceInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-    extensionCount = glfwExtensionCount + 2;
+    extensionCount = sdlExtensionCount + 2;
     const char** requiredExtensions = (const char**)malloc(sizeof(const char*) * extensionCount);
-    requiredExtensions[glfwExtensionCount] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
-    requiredExtensions[glfwExtensionCount + 1] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
+    requiredExtensions[sdlExtensionCount] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
+    requiredExtensions[sdlExtensionCount + 1] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
 #else
-    extensionCount = glfwExtensionCount;
+    extensionCount = sdlExtensionCount;
     const char** requiredExtensions = (const char**)malloc(sizeof(char*) * extensionCount);
 #endif
 
-    memcpy(requiredExtensions, glfwExtensions, sizeof(const char*) * glfwExtensionCount);
+    memcpy(requiredExtensions, sdlExtensions, sizeof(const char*) * sdlExtensionCount);
 
     instanceInfo.enabledExtensionCount = extensionCount;
     instanceInfo.ppEnabledExtensionNames = requiredExtensions;
@@ -372,7 +376,7 @@ void ThinDrawer::initImgui()
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForVulkan(wh->window, true);
+    ImGui_ImplSDL3_InitForVulkan(wh->window);
     ImGui_ImplVulkan_InitInfo initInfo = {};
     initInfo.Instance = instance;
     initInfo.PhysicalDevice = physicalDevice;
@@ -383,13 +387,10 @@ void ThinDrawer::initImgui()
     initInfo.MinImageCount = swapChain->imageCount;
     initInfo.ImageCount = swapChain->imageCount;
     initInfo.MSAASamples = samples;
-    ImGui_ImplVulkan_Init(&initInfo, renderPass);
+	initInfo.RenderPass = renderPass;
+    ImGui_ImplVulkan_Init(&initInfo);
 
-    VkCommandBuffer commandBuffer = getCommandBuffer(true);
-    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-    flushCommandBuffer(commandBuffer);
-
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
+    ImGui_ImplVulkan_CreateFontsTexture();
 
     ImGuiStyle* style = &ImGui::GetStyle();
     style->Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, 0.95);

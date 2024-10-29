@@ -39,14 +39,14 @@ void DualParticleShader::prepareUniforms()
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, alignedSize, 0, (void**)&pUbo);
     pUbo->color0 = glm::vec4(1.0f, 0.5f, 0.0f, 0.0f);
     pUbo->color1 = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
-    pUbo->data0 = glm::vec4(0.6f, 0.5f, glfwGetTime(), 0.2f);
+    pUbo->data0 = glm::vec4(0.6f, 0.5f, SDL_GetTicksSec(), 0.2f);
     pUbo->data1 = glm::vec4(2.0f, 0.3f, 0.0f, 0.0f);
     vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, alignedSize, alignedSize, 0, (void**)&pUbo);
     pUbo->color0 = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
     pUbo->color1 = glm::vec4(0.0f, 1.0f, 1.0f, 0.0f);
-    pUbo->data0 = glm::vec4(0.6f, 0.5f, glfwGetTime(), 0.2f);
+    pUbo->data0 = glm::vec4(0.6f, 0.5f, SDL_GetTicksSec(), 0.2f);
     pUbo->data1 = glm::vec4(2.0f, 0.3f, 1.0f, 0.0f);
     vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
 }

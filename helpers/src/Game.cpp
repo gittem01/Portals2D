@@ -47,7 +47,7 @@ Game::Game()
 
     gameStater = &Game::LevelerState;
 
-    glfwShowWindow(thinDrawer->wh->window);
+	SDL_ShowWindow(thinDrawer->wh->window);
 }
 
 void Game::LevelerState()
@@ -57,17 +57,18 @@ void Game::LevelerState()
         leveler = new Leveler(this);
     }
 
-    lastTime = glfwGetTime();
-    while (!glfwWindowShouldClose(thinDrawer->wh->window) && !leveler->shouldQuit)
+    bool shouldQuit = false;
+    lastTime = SDL_GetTicksSec();
+    while (!shouldQuit && !leveler->shouldQuit)
     {
-        thinDrawer->wh->looper();
+        shouldQuit = thinDrawer->wh->looper();
         thinDrawer->wh->cam->update();
 
         frame++;
 
-        deltaTime = glfwGetTime() - lastTime;
+        deltaTime = SDL_GetTicksSec() - lastTime;
         gameTime += deltaTime;
-        lastTime = glfwGetTime();
+        lastTime = SDL_GetTicksSec();
 
         leveler->update();
         sounder->update();
@@ -109,6 +110,7 @@ void Game::TestState()
         GndLaserReceiver::staticInit();
         Funnel::staticInit();
         Catapult::staticInit();
+        TestPlayer::object->renderInit();
     }
     else
     {
@@ -120,15 +122,16 @@ void Game::TestState()
         thinDrawer->diagonalLiner->testFill();
     }
 
-    lastTime = glfwGetTime();
-    while (!glfwWindowShouldClose(thinDrawer->wh->window) && (testCase && !testCase->shouldQuit || !testCase))
+    bool shouldQuit = false;
+    lastTime = SDL_GetTicksSec();
+    while (!shouldQuit && (testCase && !testCase->shouldQuit || !testCase))
     {
-        thinDrawer->wh->looper();
+        shouldQuit = thinDrawer->wh->looper();
         thinDrawer->wh->cam->update();
 
         frame++;
 
-        double timeNow = glfwGetTime();
+        double timeNow = SDL_GetTicksSec();
         deltaTime = std::min((timeNow - lastTime) * dtMult, 0.1);
         lastTime = timeNow;
         if ((!isPaused || tick) && testCase)
@@ -219,6 +222,12 @@ void Game::TestState()
 
         delete testCase;
     }
+
+    if (shouldQuit)
+    {
+		gameStater = nullptr;
+        return;
+	}
 
     if (leveler)
     {

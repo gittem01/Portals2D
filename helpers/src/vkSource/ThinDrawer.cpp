@@ -143,7 +143,6 @@ void ThinDrawer::renderLoop()
 
     vkResetCommandBuffer(frames[lastSwapChainImageIndex].commandBuffer, 0);
 
-
     buildCommandBuffers();
 
     VkSubmitInfo submit = { };
@@ -706,7 +705,7 @@ void ThinDrawer::renderPortals3D(VkCommandBuffer& cmdBuff)
 
         pUbo->data1.w = pair.second.noiseScale;
 
-        pUbo->data2.z = glfwGetTime();
+        pUbo->data2.z = SDL_GetTicksSec();
 
         pUbo->data3.z = pair.second.noiseMult;
 

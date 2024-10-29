@@ -36,8 +36,6 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
     fizzleBuffer = Sounder::object->bufferMap["portalFizzle.wav"];
 
     pWorld->portalDestroyCallbacks.push_back(portalDestrCallBack);
-
-    renderInit();
 }
 
 void TestPlayer::init()
@@ -690,11 +688,11 @@ void TestPlayer::jumpEffect()
     float checkXSpeed = lv.x -= contactBody ? contactBody->GetLinearVelocity().x : 0.0f;
     
     bool noKeyJump = false;
-    if (wh->keyData[GLFW_KEY_W] == 2)
+    if (wh->keyData[SDL_SCANCODE_W] == 2)
     {
         jumpPressTime = gameTime;
     }
-    else if (abs(checkXSpeed) > 6.0f && !wh->keyData[GLFW_KEY_LEFT_CONTROL] && !wh->keyData[GLFW_KEY_RIGHT_CONTROL])
+    else if (abs(checkXSpeed) > 6.0f && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL])
     {
         noKeyJump = Gel::bounceAt(wData->pbIndices[0]->body, contactFixture, contactPoint);
     }
@@ -704,7 +702,7 @@ void TestPlayer::jumpEffect()
         jumped = true;
         bool extraJump = noKeyJump;
 
-        if (!noKeyJump && !wh->keyData[GLFW_KEY_LEFT_CONTROL] && !wh->keyData[GLFW_KEY_RIGHT_CONTROL])
+        if (!noKeyJump && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL])
         {
             extraJump = Gel::bounceAt(wData->pbIndices[0]->body, contactFixture, contactPoint);
         }
@@ -862,7 +860,7 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture
         }
         break;
         case F_HAZARD_FIELD:
-            health = -1000;
+            health -= 1000;
 			healthCheck();
 			break;
         case F_CATAPULT:
@@ -876,7 +874,7 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture
         case F_LIGHT_BRIDGE:
         case F_EDGE:
         {
-            if (grounded || wh->keyData[GLFW_KEY_LEFT_CONTROL] || wh->keyData[GLFW_KEY_RIGHT_CONTROL])
+            if (grounded || wh->keyData[SDL_SCANCODE_LCTRL] || wh->keyData[SDL_SCANCODE_RCTRL])
 			{
                 break;
 			}
@@ -1433,11 +1431,11 @@ void TestPlayer::handlePortalCD(float dt)
     b2Vec2 rayPoint1 = p0;
     b2Vec2 rayPoint2 = p0 + vec;
 
-    thinDrawer->registerDebugLine(glm::vec4(rayPoint1.x, rayPoint1.y, rayPoint2.x, rayPoint2.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.03, 0.5);
+    //thinDrawer->registerDebugLine(glm::vec4(rayPoint1.x, rayPoint1.y, rayPoint2.x, rayPoint2.y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.03, 0.5);
 
     rayCaster.cast(rayPoint1, rayPoint2);
 
-    if (rayCaster.found && !wh->keyData[GLFW_KEY_LEFT_CONTROL])
+    if (rayCaster.found && !wh->keyData[SDL_SCANCODE_LCTRL])
     {
         b2Fixture* canCreateBlue = canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalA);
         b2Fixture* canCreateRed = canCreatePortal(rayCaster.edgeFix, rayCaster.rayPoint, portalSize, portalB);
@@ -1532,7 +1530,7 @@ void TestPlayer::handlePortalCD(float dt)
 
             lastPortalCreationTime = gameTime;
         }
-        else if (wh->mouseData[3] > 0 && gameTime - lastPortalCreationTime > 0.4f)
+        else if (wh->mouseData[4] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
             fixtureData* fData = (fixtureData*)rayCaster.edgeFix->GetUserData().pointer;
             if (fData && fData->type == F_FORCE_FIELD)
@@ -1836,7 +1834,7 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
 {
     object->destrPortal = nullptr;
 
-    if (holdERequestTime < 0.0f && wh->keyData[GLFW_KEY_E] == 2 && gameTime - lastBodyHoldTime > 0.3)
+    if (holdERequestTime < 0.0f && wh->keyData[SDL_SCANCODE_E] == 2 && gameTime - lastBodyHoldTime > 0.3)
     {
         holdERequestTime = gameTime;
         lastBodyHoldTime = gameTime;
@@ -2014,7 +2012,7 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
 
             float angAdd = 0.0f;
             if (wh->mouseData[2]) angAdd = dt * 15.0f;
-            else if (wh->mouseData[3]) angAdd = -dt * 15.0f;
+            else if (wh->mouseData[4]) angAdd = -dt * 15.0f;
 
             float rotRatio = 1.0f - dt * 15.0f;
             holdBody->body->SetAngularVelocity(std::max(std::min(holdBody->body->GetAngularVelocity() * rotRatio + angAdd, 2.0f), -2.0f));
@@ -2028,7 +2026,7 @@ void TestPlayer::healthCheck()
 {
     ThinDrawer* thinDrawer = ThinDrawer::object;
 
-    if (health < -999)
+    if (health < 1)
     {
         for (auto iter = thinDrawer->memMapFuncs.begin(); iter != thinDrawer->memMapFuncs.end(); iter++)
 		{
@@ -2101,26 +2099,26 @@ void TestPlayer::update(float dt, int totalIter)
         speedOffset = platformBody->GetLinearVelocity().x;
     }
 
-    if (wh->keyData[GLFW_KEY_D] && wh->keyData[GLFW_KEY_A])
+    if (wh->keyData[SDL_SCANCODE_D] && wh->keyData[SDL_SCANCODE_A])
     {
         if (lastDoubleKey == -1)
         {
             right = true;
         }
-        else if (lastDoubleKey == GLFW_KEY_A)
+        else if (lastDoubleKey == SDL_SCANCODE_A)
 {
             right = true;
         }
-        else if (lastDoubleKey == GLFW_KEY_D)
+        else if (lastDoubleKey == SDL_SCANCODE_D)
 {
             left = true;
         }
     }
-    else if (wh->keyData[GLFW_KEY_D])
+    else if (wh->keyData[SDL_SCANCODE_D])
 {
         right = true;
     }
-    else if (wh->keyData[GLFW_KEY_A])
+    else if (wh->keyData[SDL_SCANCODE_A])
 {
         left = true;
     }
@@ -2144,15 +2142,15 @@ void TestPlayer::update(float dt, int totalIter)
         }
     }
 
-    if (!(wh->keyData[GLFW_KEY_A] && wh->keyData[GLFW_KEY_D]))
+    if (!(wh->keyData[SDL_SCANCODE_A] && wh->keyData[SDL_SCANCODE_D]))
     {
-        if (wh->keyData[GLFW_KEY_A])
+        if (wh->keyData[SDL_SCANCODE_A])
         {
-            lastDoubleKey = GLFW_KEY_A;
+            lastDoubleKey = SDL_SCANCODE_A;
         }
-        else if (wh->keyData[GLFW_KEY_D])
+        else if (wh->keyData[SDL_SCANCODE_D])
         {
-            lastDoubleKey = GLFW_KEY_D;
+            lastDoubleKey = SDL_SCANCODE_D;
         }
         else
         {
@@ -2165,7 +2163,7 @@ void TestPlayer::update(float dt, int totalIter)
     {
         if (right)
         {
-            if (keyBeforeSwitch == GLFW_KEY_D)
+            if (keyBeforeSwitch == SDL_SCANCODE_D)
             {
                 mult = -1.0f;
             }
@@ -2176,7 +2174,7 @@ void TestPlayer::update(float dt, int totalIter)
         }
         else if (left)
         {
-            if (keyBeforeSwitch == GLFW_KEY_A)
+            if (keyBeforeSwitch == SDL_SCANCODE_A)
             {
                 mult = -1.0f;
             }
@@ -2269,7 +2267,7 @@ void TestPlayer::update(float dt, int totalIter)
                 }
             }
 
-            lastKey = GLFW_KEY_D;
+            lastKey = SDL_SCANCODE_D;
         }
         if (left)
         {
@@ -2336,7 +2334,7 @@ void TestPlayer::update(float dt, int totalIter)
                 }
             }
 
-            lastKey = GLFW_KEY_A;
+            lastKey = SDL_SCANCODE_A;
         }
     }
     else if (!contactBody)
@@ -2368,10 +2366,10 @@ void TestPlayer::update(float dt, int totalIter)
 
         b2Vec2 speedAdd = b2Vec2(0.0f, 0.0f);
 
-        speedAdd.y += wh->keyData[GLFW_KEY_W] ? 0.01f : 0.0f;
-        speedAdd.x += wh->keyData[GLFW_KEY_A] ? -0.03f : 0.0f;
-        speedAdd.y += wh->keyData[GLFW_KEY_S] ? -0.03f : 0.0f;
-        speedAdd.x += wh->keyData[GLFW_KEY_D] ? 0.03f : 0.0f;
+        speedAdd.y += wh->keyData[SDL_SCANCODE_W] ? 0.01f : 0.0f;
+        speedAdd.x += wh->keyData[SDL_SCANCODE_A] ? -0.03f : 0.0f;
+        speedAdd.y += wh->keyData[SDL_SCANCODE_S] ? -0.03f : 0.0f;
+        speedAdd.x += wh->keyData[SDL_SCANCODE_D] ? 0.03f : 0.0f;
 
         speedAdd = b2Vec2(rightDir.x * speedAdd.x, rightDir.y * speedAdd.y);
 

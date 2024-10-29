@@ -5,19 +5,18 @@
 #include <iostream>
 #include <vector>
 #include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
-
+#include <SDL3/SDL.h>
 class Camera;
 
 class WindowHandler
 {
 public:
 #ifdef __APPLE__
-	static const int pIndLeftCommand = GLFW_KEY_LEFT_SUPER;
-	static const int pIndRightCommand = GLFW_KEY_RIGHT_SUPER;
+	static const int pIndLeftCommand = SDL_SCANCODE_LGUI;
+	static const int pIndRightCommand = SDL_SCANCODE_RGUI;
 #else
-	static const int pIndLeftCommand = GLFW_KEY_LEFT_CONTROL;
-	static const int pIndRightCommand = GLFW_KEY_RIGHT_CONTROL;
+	static const int pIndLeftCommand = SDL_SCANCODE_LCTRL;
+	static const int pIndRightCommand = SDL_SCANCODE_RCTRL;
 #endif // APPLE
 
 
@@ -27,9 +26,8 @@ public:
 	double* trackpadData = (double*)calloc(2, sizeof(int));
 	int* lastMousePos = (int*)calloc(2, sizeof(int));
 	glm::vec2 windowSizes = glm::vec2(1280, 720);
-	bool releaseQueue[3] = { false, false, false };
 	std::vector<int> newPressIndices;
-	GLFWwindow* window;
+	SDL_Window* window;
 	Camera* cam;
 
 	uint32_t dpiScaling = 1;
@@ -37,14 +35,8 @@ public:
 	WindowHandler(Camera* cam);
 
 	void massInit();
+	bool handleEvents();
 	bool looper();
 	void handleMouseData();
 	void handleKeyData();
-
-	static void mouseEventCallback(GLFWwindow*, double, double);
-	static void buttonEventCallback(GLFWwindow*, int, int, int);
-	static void scrollEventCallback(GLFWwindow*, double, double);
-	static void glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	static void windowSizeEventCallback(GLFWwindow*, int, int);
-	static void glfwWindowFocusCallback(GLFWwindow*, int);
 };

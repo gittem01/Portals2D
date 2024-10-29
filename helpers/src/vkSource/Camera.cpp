@@ -45,7 +45,7 @@ void Camera::updateOrtho()
 	camMatrix = glm::ortho(xSides.x, xSides.y, ySides.x, ySides.y, -100.0f, +100.0f);
 	camMatrix[1][1] *= -1;
 
-	//glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), (float)sin(glfwGetTime()) * 10.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+	//glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), (float)sin(SDL_GetTicksSec()) * 10.0f, glm::vec3(0.0f, 0.0f, 1.0f));
 
 	//camMatrix *= rotator;
 }
@@ -94,9 +94,9 @@ void Camera::update()
 	this->dragFunc(windowHandler->windowSizes.x, windowHandler->windowSizes.y);
 
 	if (windowHandler->mouseData[5] != 0 &&
-		!windowHandler->keyData[GLFW_KEY_LEFT_CONTROL] &&
-		!windowHandler->keyData[GLFW_KEY_RIGHT_CONTROL] &&
-		!windowHandler->keyData[GLFW_KEY_LEFT_SHIFT])
+		!windowHandler->keyData[SDL_SCANCODE_LCTRL] &&
+		!windowHandler->keyData[SDL_SCANCODE_RCTRL] &&
+		!windowHandler->keyData[SDL_SCANCODE_LSHIFT])
 	{
 		this->neededZoom += zoom * windowHandler->mouseData[5] / 10.0f;
 		this->zoomPoint.x = windowHandler->mouseData[0]; this->zoomPoint.y = windowHandler->mouseData[1];
@@ -129,14 +129,14 @@ void Camera::dragFunc(int width, int height)
 		lastPos.y += diffVec.y * dragSmth;
 	}
 
-	if (windowHandler->keyData[GLFW_KEY_LEFT_SHIFT]) 
+	if (windowHandler->keyData[SDL_SCANCODE_LSHIFT]) 
 	{
 		pos.x -= windowHandler->trackpadData[0] * (sideDiffs.x / width) * dragSmth / (zoom * zoom) * 5.0f;
 		pos.y -= windowHandler->trackpadData[1] * (sideDiffs.y / height) * dragSmth / (zoom * zoom) * 5.0f;
 	}
 	else 
 	{
-		if (windowHandler->mouseData[4] == 2) 
+		if (windowHandler->mouseData[3] == 2) 
 		{
 			lastPos.x = windowHandler->mouseData[0];
 			lastPos.y = windowHandler->mouseData[1];
@@ -144,7 +144,7 @@ void Camera::dragFunc(int width, int height)
 			dragTo.x = windowHandler->mouseData[0];
 			dragTo.y = windowHandler->mouseData[1];
 		}
-		else if (windowHandler->mouseData[4] == 1) 
+		else if (windowHandler->mouseData[3] == 1) 
 		{
 			dragTo.x = windowHandler->mouseData[0];
 			dragTo.y = windowHandler->mouseData[1];
@@ -155,7 +155,7 @@ void Camera::dragFunc(int width, int height)
 glm::vec2 Camera::getMouseCoords()
 {
 	int width, height;
-	glfwGetWindowSize(this->window, &width, &height);
+	SDL_GetWindowSize(this->window, &width, &height);
 	float xPerct = windowHandler->mouseData[0] / (float)width;
 	float yPerct = 1 - windowHandler->mouseData[1] / (float)height;
 
@@ -174,7 +174,7 @@ glm::vec2 Camera::getMouseCoords()
 glm::vec2 Camera::getCameraCoords(glm::vec2 p)
 {
 	int width, height;
-	glfwGetWindowSize(this->window, &width, &height);
+	SDL_GetWindowSize(this->window, &width, &height);
 	float xPerct = p.x / width;
 	float yPerct = p.y / height;
 

@@ -42,7 +42,7 @@ void BaseTestCase::imguiRender()
     const ImGuiIO io = ImGui::GetIO();
 
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
     ImGui::Begin("Debug Window", NULL, ImGuiWindowFlags_AlwaysAutoResize);
@@ -204,16 +204,16 @@ void BaseTestCase::keyHandler(WindowHandler* wh)
     extern BaseTestCase* testCase;
 
     g->tick = false;
-    if (wh->keyData[GLFW_KEY_P] == 2)
+    if (wh->keyData[SDL_SCANCODE_P] == 2)
     {
         g->isPaused = !g->isPaused;
     }
-    else if (wh->keyData[GLFW_KEY_O] == 2)
+    else if (wh->keyData[SDL_SCANCODE_O] == 2)
     {
         g->isPaused = true;
         g->tick = true;
     }
-    if (wh->keyData[GLFW_KEY_S] == 2)
+    if (wh->keyData[SDL_SCANCODE_S] == 2)
     {
         td->drawReleases ^= 1;
     }

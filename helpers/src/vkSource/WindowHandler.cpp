@@ -18,11 +18,6 @@ void WindowHandler::handleMouseData()
         {
             this->mouseData[i] = 1;
         }
-        if (releaseQueue[i - 2])
-        {
-            mouseData[i] = 0;
-            releaseQueue[i - 2] = false;
-        }
     }
     if (lastMousePos[0] == mouseData[0] && lastMousePos[1] == mouseData[1])
     {
@@ -43,125 +38,102 @@ void WindowHandler::handleKeyData()
     newPressIndices.clear();
 }
 
+bool WindowHandler::handleEvents()
+{
+    SDL_Event evnt;
+    while (SDL_PollEvent(&evnt))
+    {
+        switch (evnt.type)
+        {
+        case (SDL_EVENT_MOUSE_MOTION):
+            mouseData[0] = (int)evnt.motion.x;
+            mouseData[1] = (int)evnt.motion.y;
+            break;
+		case (SDL_EVENT_MOUSE_BUTTON_DOWN):
+			mouseData[evnt.button.button + 1] = 2;
+			break;
+		case (SDL_EVENT_MOUSE_BUTTON_UP):
+			mouseData[evnt.button.button + 1] = 0;
+			break;
+		case (SDL_EVENT_MOUSE_WHEEL):
+			mouseData[5] = evnt.wheel.y;
+
+			trackpadData[0] = evnt.wheel.x;
+			trackpadData[1] = evnt.wheel.y;
+			break;
+		case (SDL_EVENT_KEY_DOWN):
+			keyData[evnt.key.scancode] = 2;
+			newPressIndices.push_back(evnt.key.scancode);
+			break;
+		case (SDL_EVENT_KEY_UP):
+			keyData[evnt.key.scancode] = 0;
+			break;
+		case (SDL_EVENT_WINDOW_FOCUS_LOST):
+			handleMouseData();
+            break;
+		case (SDL_EVENT_WINDOW_RESIZED):
+        {
+            windowSizes.x = evnt.window.data1;
+			windowSizes.y = evnt.window.data2;
+
+            for (Camera* cam : Camera::cameras)
+            {
+                float ratio = (float)evnt.window.data2 / evnt.window.data1;
+
+                cam->defaultYSides = glm::vec2(-cam->baseX * ratio * 0.5f, cam->baseX * ratio * 0.5f);
+
+                cam->xSides = cam->defaultXSides / (cam->zoom * cam->zoom) + cam->pos.x;
+                cam->ySides = cam->defaultYSides / (cam->zoom * cam->zoom) + cam->pos.y;
+                cam->updateOrtho();
+            }
+        }
+			break;
+		case (SDL_EVENT_QUIT):
+			return true;
+        default:
+            break;
+        }
+    }
+
+	return false;
+}
+
 bool WindowHandler::looper()
 {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-
     handleMouseData();
     handleKeyData();
 
-    glfwPollEvents();
+    double t0 = SDL_GetTicksSec();
 
-    bool done = glfwWindowShouldClose(window);
+    bool done = handleEvents();
+
+	//printf("Time passed: %f\n", (SDL_GetTicksSec() - t0) * 1000.0);
 
     return done;
 }
 
 void WindowHandler::massInit()
 {
-    if (!glfwInit())
+    if (!SDL_Init(SDL_INIT_VIDEO))
     {
-        printf("!glfwInit()\n");
+        printf("!SDL_Init()\n");
         exit(1);
     }
 
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(windowSizes.x, windowSizes.y, "Portal2D", NULL, NULL);
+    window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y, SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE);
     if (!window)
     {
         printf("Could not create window\n");
-        glfwTerminate();
+        SDL_Quit();
         exit(1);
     }
 
     int x1, y1, x2, y2;
-    glfwGetWindowSize(window, &x1, &y1);
-    glfwGetFramebufferSize(window, &x2, &y2);
+    SDL_GetWindowSize(window, &x1, &y1);
+    SDL_GetWindowSizeInPixels(window, &x2, &y2);
 
     dpiScaling = std::round(x2 / x1);
-
-    glfwSetWindowUserPointer(window, this);
-    glfwSetCursorPosCallback(window, WindowHandler::mouseEventCallback);
-    glfwSetMouseButtonCallback(window, WindowHandler::buttonEventCallback);
-    glfwSetScrollCallback(window, WindowHandler::scrollEventCallback);
-    glfwSetWindowFocusCallback(window, WindowHandler::glfwWindowFocusCallback);
-    glfwSetKeyCallback(window, WindowHandler::glfwKeyEventCallback);
-    glfwSetWindowSizeCallback(window, WindowHandler::windowSizeEventCallback);
     
     mouseData[0] = windowSizes.x / 2.0f;
     mouseData[1] = windowSizes.y / 2.0f;
-}
-
-void WindowHandler::mouseEventCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    WindowHandler* thisClass = (WindowHandler*)glfwGetWindowUserPointer(window);
-
-    thisClass->mouseData[0] = (int)xpos;
-    thisClass->mouseData[1] = (int)ypos;
-}
-
-void WindowHandler::buttonEventCallback(GLFWwindow* window, int button, int action, int mods)
-{
-    WindowHandler* thisClass = (WindowHandler*)glfwGetWindowUserPointer(window);
-    if (action)
-    {
-        thisClass->mouseData[button + 2] = 2;
-    }
-    else
-    {
-        thisClass->releaseQueue[button] = true;
-    }
-}
-
-void WindowHandler::scrollEventCallback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    WindowHandler* thisClass = (WindowHandler*)glfwGetWindowUserPointer(window);
-    thisClass->mouseData[5] = yoffset;
-
-    thisClass->trackpadData[0] = xoffset;
-    thisClass->trackpadData[1] = yoffset;
-}
-
-void WindowHandler::glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    WindowHandler* thisClass = (WindowHandler*)glfwGetWindowUserPointer(window);
-    if (action == 1)
-    {
-        thisClass->keyData[key] = 2;
-        thisClass->newPressIndices.push_back(key);
-    }
-    else if (!action)
-    {
-        thisClass->keyData[key] = 0;
-    }
-}
-
-void WindowHandler::glfwWindowFocusCallback(GLFWwindow* window, int isFocused)
-{
-    WindowHandler* thisClass = (WindowHandler*)glfwGetWindowUserPointer(window);
-    if (!isFocused)
-    {
-        thisClass->handleMouseData();
-    }
-}
-
-void WindowHandler::windowSizeEventCallback(GLFWwindow* window, int width, int height)
-{
-    WindowHandler* thisClass = (WindowHandler*)glfwGetWindowUserPointer(window);
-
-    thisClass->windowSizes.x = width;
-    thisClass->windowSizes.y = height;
-
-    for (Camera* cam : Camera::cameras)
-    {
-        float ratio = (float)height / width;
-
-        cam->defaultYSides = glm::vec2(-cam->baseX * ratio * 0.5f, cam->baseX * ratio * 0.5f);
-
-        cam->xSides = cam->defaultXSides / (cam->zoom * cam->zoom) + cam->pos.x;
-        cam->ySides = cam->defaultYSides / (cam->zoom * cam->zoom) + cam->pos.y;
-        cam->updateOrtho();
-    }
 }

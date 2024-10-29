@@ -36,9 +36,9 @@
 #include <WindowHandler.h>
 #include <definitions.h>
 #include <RenderExtra.h>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <vulkan/vulkan.h>
 

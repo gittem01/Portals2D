@@ -6,7 +6,7 @@
 #include <vector>
 #include <set>
 #include <map>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <GameBase.h>
 
 struct bodyData;

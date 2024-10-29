@@ -154,7 +154,7 @@ public:
             }
         }
 
-        if (!snakeJoint && td->wh->keyData[GLFW_KEY_SPACE] == 2)
+        if (!snakeJoint && td->wh->keyData[SDL_SCANCODE_SPACE] == 2)
         {
             b2RevoluteJointDef revDef;
             revDef.bodyA = snakeHead->at(0)->body;
