@@ -1,5 +1,6 @@
 #include <WindowHandler.h>
 #include <Camera.h>
+#include <backends/imgui_impl_sdl3.h>
 
 WindowHandler::WindowHandler(Camera* cam)
 {
@@ -43,6 +44,7 @@ bool WindowHandler::handleEvents()
     SDL_Event evnt;
     while (SDL_PollEvent(&evnt))
     {
+		ImGui_ImplSDL3_ProcessEvent(&evnt);
         switch (evnt.type)
         {
         case (SDL_EVENT_MOUSE_MOTION):
