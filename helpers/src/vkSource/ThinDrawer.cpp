@@ -82,6 +82,7 @@ void ThinDrawer::initExtra()
     gelShader = new GelShader(this); shaders.push_back(gelShader);
     wallGel = new WallGel(this); shaders.push_back(wallGel);
     splash = new SplashShader(this); shaders.push_back(splash);
+	pushLine = new PushLine(this); shaders.push_back(pushLine);
 
     setupDescriptorPool();
 
@@ -386,7 +387,7 @@ void ThinDrawer::debug_renderPortals(VkCommandBuffer& cmdBuff)
 {
     for (Portal* p : pWorld->portals)
     {
-        addDebugLine(glm::vec4(p->points[0].x, p->points[0].y, p->points[1].x, p->points[1].y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.04f, 0.5f);
+        oneTimeRenderLine(glm::vec4(p->points[0].x, p->points[0].y, p->points[1].x, p->points[1].y), glm::vec4(1.0, 1.0, 1.0, 1.0), 0.04f, 0.5f);
     }
 }
 
@@ -425,34 +426,27 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
                 b2Vec2 v1 = body->GetWorldPoint(edgeShape->m_vertex1);
                 b2Vec2 v2 = body->GetWorldPoint(edgeShape->m_vertex2);
 
-                addDebugLine(glm::vec4(v1.x, v1.y, v2.x, v2.y), gelColor, 0.03f, 0.5f);
+                oneTimeRenderLine(glm::vec4(v1.x, v1.y, v2.x, v2.y), gelColor, 0.03f, 0.5f);
             }
         }
     }
 
-    if (debugLineRegistry.size() > 0)
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pushLine->pipeline);
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pushLine->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+	for (s_debugLineUbo& line : debugLineRegistry)
+	{
+        vkCmdPushConstants(cmdBuff, pushLine->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_debugLineUbo), &line);
+        vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+	}
+
+    for (s_debugLineUbo& line : oneTimeRenderLines)
     {
-        s_debugLineUbo* lineUbo;
-        vkMapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory, debugLineShader->numLines * sizeof(s_debugLineUbo),
-            sizeof(s_debugLineUbo) * debugLineRegistry.size(), 0, (void**)&lineUbo);
-        memcpy(lineUbo, debugLineRegistry.data(), sizeof(s_debugLineUbo) * debugLineRegistry.size());
-        vkUnmapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory);
+        vkCmdPushConstants(cmdBuff, pushLine->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_debugLineUbo), &line);
+        vkCmdDraw(cmdBuff, 6, 1, 0, 0);
     }
-    
-    const VkDeviceSize offsets = 0;
 
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugLineShader->pipeline);
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0].buffer, &offsets);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        debugLineShader->pipelineLayout, 1, 1, &debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-    vkCmdDraw(cmdBuff, debugCircleShader->buffers[0].count, debugLineShader->numLines + debugLineRegistry.size(), 0, 0);
-
-    debugLineShader->numLines = 0;
+    oneTimeRenderLines.clear();
 }
 
 void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
@@ -465,25 +459,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     whiteWallShader->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     diagonalLiner->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
-
-    /*gelShader->preCalculate();
-
-    int gelType = 1;
-
-    for (int i = 0; i < 600; i++)
-    {
-        glm::vec2 p = glm::vec2(gelShader->basePositions[i].posR.x + sin(gameTime + i) * 0.7f,
-            gelShader->basePositions[i].posR.y + cos(gameTime + i) * 0.7f);
-        gelType = i % 4;
-        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }
-
-    for (int i = 600; i < 1024; i++)
-    {
-        glm::vec2 p = glm::vec2((i - 1000) * 0.3 + gameTime, sin(i * 0.3 + gameTime) * 2.0);
-        gelType = i % 4;
-        gelShader->putGel(gelType, p, gelShader->basePositions[i].posR.z);
-    }*/
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, hazardShader->pipeline);
 
@@ -544,6 +519,18 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         wallGel->pipelineLayout, 1, 1, &wallGel->descriptorSets[1], 0, nullptr);
 
     vkCmdDraw(cmdBuff, 6, wallGel->numWallLines, 0, 0);
+
+
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugLineShader->pipeline);
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &debugCircleShader->buffers[0].buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        debugLineShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        debugLineShader->pipelineLayout, 1, 1, &debugLineShader->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, debugCircleShader->buffers[0].count, debugLineShader->numLines, 0, 0);
 }
 
 void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
@@ -978,22 +965,14 @@ void ThinDrawer::portalDestroyCallback_3d(Portal* portal)
     thinDrawer->portalsToRender3D.erase(portal);
 }
 
-void ThinDrawer::addDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
-{
-    s_debugLineUbo* lineUbo;
-    vkMapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory, debugLineShader->numLines * sizeof(s_debugLineUbo), sizeof(s_debugLineUbo), 0, (void**)&lineUbo);
-    lineUbo->colour = color;
-    lineUbo->positions = positions;
-    lineUbo->data.x = 10000.0f;
-    lineUbo->data.y = thickness; lineUbo->data.z = smoothness;
-    vkUnmapMemory(logicalDevice, debugLineShader->uniformBuffers[0].memory);
-
-    debugLineShader->numLines++;
-}
-
 void ThinDrawer::registerDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
 {
-    debugLineRegistry.push_back({positions, color, { 0.0, thickness, smoothness, 0.0 }});
+    debugLineRegistry.push_back({ positions, color, { 0.0, thickness, smoothness, 0.0 } });
+}
+
+void ThinDrawer::oneTimeRenderLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
+{
+    oneTimeRenderLines.push_back({ positions, color, { 0.0, thickness, smoothness, 0.0 } });
 }
 
 void ThinDrawer::addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames)

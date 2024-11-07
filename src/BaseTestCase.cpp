@@ -193,6 +193,7 @@ void BaseTestCase::onUpdate()
             CircleButton::update(dt);
             Funnel::perTickUpdate();
             Catapult::update();
+            Turret::perTickUpdate(dt);
         }
     }
    

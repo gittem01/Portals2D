@@ -20,6 +20,15 @@ static b2Vec2 bodyOffsets[4] =
 						b2Vec2(0.1f, 0.5f),
 };
 
+static b2Vec2 boxSize = b2Vec2(0.4f, 0.1f);
+static b2Vec2 points[4] =
+{
+	b2Vec2(+boxSize.x, -boxSize.y),
+	b2Vec2(+boxSize.x, +boxSize.y),
+	b2Vec2(-boxSize.x, +boxSize.y),
+	b2Vec2(-boxSize.x, -boxSize.y),
+};
+
 WallLaserReceiver::WallLaserReceiver(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
 	disableTime = -10.0;
@@ -35,19 +44,22 @@ WallLaserReceiver::WallLaserReceiver(PortalWorld* portalWorld, s_objectDataGrid*
 
 	body = portalWorld->CreateBody(&bDef);
 
-	b2PolygonShape pShape;
-	pShape.SetAsBox(0.4f, 0.08f);
-
-	b2FixtureDef fDef;
-	fDef.shape = &pShape;
-
-	b2Fixture* fix = body->CreateFixture(&fDef);
-
 	fixtureData* fData = new fixtureData();
 	fData->type = F_WALL_RECEIVER;
 	fData->data = (void*)this;
 
-	fix->GetUserData().pointer = (uintptr_t)fData;
+	for (int i = 0; i < 3; i++)
+	{
+		b2EdgeShape eShape;
+		eShape.SetTwoSided(points[i], points[i + 1]);
+
+		b2FixtureDef fDef;
+		fDef.shape = &eShape;
+
+		b2Fixture* fix = body->CreateFixture(&fDef);
+
+		fix->GetUserData().pointer = (uintptr_t)fData;
+	}
 }
 
 void WallLaserReceiver::enable(LaserEmitter* le)

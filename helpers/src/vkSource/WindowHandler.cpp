@@ -41,15 +41,21 @@ void WindowHandler::handleKeyData()
 
 bool WindowHandler::handleEvents()
 {
+    SDL_StartTextInput(window); // to enable SDL_EVENT_TEXT_INPUT events
+    
     SDL_Event evnt;
     while (SDL_PollEvent(&evnt))
     {
 		ImGui_ImplSDL3_ProcessEvent(&evnt);
+
         switch (evnt.type)
         {
         case (SDL_EVENT_MOUSE_MOTION):
             mouseData[0] = (int)evnt.motion.x;
             mouseData[1] = (int)evnt.motion.y;
+            break;
+        case (SDL_EVENT_TEXT_INPUT):
+			SDL_TextInputEvent textEvent = evnt.text;
             break;
 		case (SDL_EVENT_MOUSE_BUTTON_DOWN):
 			mouseData[evnt.button.button + 1] = 2;
@@ -64,6 +70,8 @@ bool WindowHandler::handleEvents()
 			trackpadData[1] = evnt.wheel.y;
 			break;
 		case (SDL_EVENT_KEY_DOWN):
+            if (evnt.key.repeat) break;
+            
 			keyData[evnt.key.scancode] = 2;
 			newPressIndices.push_back(evnt.key.scancode);
 			break;

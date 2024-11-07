@@ -32,6 +32,7 @@
 #include <ShaderHeaders/Gel.h>
 #include <ShaderHeaders/WallGel.h>
 #include <ShaderHeaders/SplashShader.h>
+#include <ShaderHeaders/PushLine.h>
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -162,6 +163,7 @@ public:
     std::map<Portal*, s_portalRender3D> portalsToRender3D;
 
     std::vector<s_debugLineUbo> debugLineRegistry;
+    std::vector<s_debugLineUbo> oneTimeRenderLines;
 
     AnimGroup* animations = nullptr;
     double gameTime = 0.0;
@@ -201,6 +203,7 @@ public:
     GelShader* gelShader;
     WallGel* wallGel;
     SplashShader* splash;
+	PushLine* pushLine;
 
     std::vector<ShaderBase*> shaders;
 
@@ -265,7 +268,7 @@ public:
                      VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth=1, uint32_t arrayLayers=1);
 
     void registerDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness);
-    void addDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness);
+    void oneTimeRenderLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness);
 
     // mesh names are hold per fixture
     void addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames);

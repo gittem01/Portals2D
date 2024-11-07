@@ -43,19 +43,22 @@ GndLaserReceiver::GndLaserReceiver(PortalWorld* portalWorld, s_objectDataGrid* o
 
 	body = portalWorld->CreateBody(&bDef);
 
-	b2PolygonShape pShape;
-	pShape.Set(polyPoints, 4);
-
-	b2FixtureDef fDef;
-	fDef.shape = &pShape;
-
-	b2Fixture* fix = body->CreateFixture(&fDef);
-
 	fixtureData* fData = new fixtureData();
 	fData->type = F_GND_RECEIVER;
 	fData->data = (void*)this;
 
-	fix->GetUserData().pointer = (uintptr_t)fData;
+	for (int i = 0; i < 3; i++)
+	{
+		b2EdgeShape eShape;
+		eShape.SetTwoSided(polyPoints[i], polyPoints[i + 1]);
+
+		b2FixtureDef fDef;
+		fDef.shape = &eShape;
+
+		b2Fixture* fix = body->CreateFixture(&fDef);
+		
+		fix->GetUserData().pointer = (uintptr_t)fData;
+	}
 
 	arrIndex = numGndLaserReceivers++;
 }

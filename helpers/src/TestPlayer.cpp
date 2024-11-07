@@ -1016,7 +1016,7 @@ void TestPlayer::camHandle()
     WindowHandler* wh = game->thinDrawer->wh;
 
     glm::vec2 mp = wh->cam->getMouseCoords();
-    glm::vec2 camDiff = glm::f64vec2(wh->mouseData[0] - wh->windowSizes.x * 0.5, wh->mouseData[1] - wh->windowSizes.y * 0.5);
+    glm::vec2 camDiff = glm::vec2(wh->mouseData[0] - wh->windowSizes.x * 0.5, wh->windowSizes.y * 0.5 - wh->mouseData[1]);
 
     b2Vec2 bp = wData->pbIndices[0]->body->GetPosition();
     glm::vec2 diff1 = (glm::vec2(bp.x, bp.y) - glm::vec2(wh->cam->pos.x, -wh->cam->pos.y)) * (float)game->deltaTime * 4.0f;
@@ -1025,7 +1025,7 @@ void TestPlayer::camHandle()
     diff1.y += diff2.y;
     wh->cam->pos += glm::vec2(diff1.x, -diff1.y);
 
-    wh->cam->pos = glm::vec2(bp.x, -bp.y);
+    //wh->cam->pos = glm::vec2(bp.x, -bp.y);
     wh->cam->updateOrtho();
 }
 

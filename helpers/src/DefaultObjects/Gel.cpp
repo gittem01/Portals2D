@@ -19,7 +19,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     bDef.type = b2_dynamicBody;
     //bDef.type = b2_kinematicBody;
     bDef.position.Set(pos.x, pos.y);
-    bDef.linearDamping = 0.0;
+    bDef.linearDamping = 0.5;
 
     b2CircleShape cShape;
     cShape.m_radius = radius;
@@ -493,10 +493,7 @@ void Gel::perFrameUpdate()
         {
             b2Vec2 vel = tpb->body->GetLinearVelocity();
 
-            if (vel.Length() > 5.0)
-            {
-                vel.Normalize(); vel *= 5.0;
-            }
+            vel.y = std::clamp(vel.y, -5.0f, 5.0f);
 
             float randValx = (float)rand() / RAND_MAX;
             float randValy = (float)rand() / RAND_MAX;

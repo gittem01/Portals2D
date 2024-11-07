@@ -143,7 +143,7 @@ void Turret::createBody(b2Vec2 pos)
 	ThinDrawer::object->debug_addPortalBody(eyeBody);
 }
 
-void Turret::recreate()
+void Turret::recreate(bool unused_mirrored)
 {
 	if (wData->pbIndices.size() == 0)
 	{
@@ -157,7 +157,7 @@ void Turret::recreate()
 	}
 	else
 	{
-		DefaultObject::recreate();
+		DefaultObject::recreate(mirrored);
 	}
 
 	eyeBody = wData->pbIndices[0];
@@ -258,7 +258,7 @@ void Turret::shoot()
 			bodyData* bData = (bodyData*)pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
 			if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & PLAYER_O)
 			{
-				TestPlayer::object->health -= 10;
+				TestPlayer::object->health -= 0;
 				b2Vec2 vel = TestPlayer::object->wData->pbIndices[0]->body->GetLinearVelocity();
 				TestPlayer::object->wData->pbIndices[0]->body->SetLinearVelocity(0.75f * vel);
 			}
@@ -280,11 +280,13 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 	VkDeviceSize offsets = 0;
 
+	double timeNow = SDL_GetTicksSec();
+
 	for (auto trt : turrets)
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			double td = ThinDrawer::object->gameTime - trt->shootTimes[i];
+			double td = timeNow - trt->shootTimes[i];
 			if (td < fullBackInTime)
 			{
 				trt->gunBacks[i] = sqrt((0.5 - 1.0 / (exp(td * 30.0) + 1.0)) * 2.0);
@@ -384,7 +386,8 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 				vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-				float timeMult = sin(drawer->gameTime * 3.0f) * 0.1f + 0.1f + 1.0f;
+				float timeMult = sin(timeNow * 3.0f) * 0.1f + 0.1f + 1.0f;
+				timeMult *= trt->fallTime > -5.0 ? std::max(0.9 - (timeNow - trt->fallTime), 0.0) : 1.0;
 				pshData.posRot.z = pBody->body->GetAngle();
 				pshData.movScale = glm::vec4(-0.23f * mirrMult, 0.11f, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult);
 
@@ -428,22 +431,25 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		laserData.colour = glm::vec4(1.0f, 0.0f, 0.0f, destrDiff);
 		laserData.data = glm::vec4(0.2f, 1.5f, 0.5f, 0.0f);
 
-		for (centerLaser clData : trt->laserPoints)
+		if (trt->laserPoints.size() > 0)
 		{
-			memcpy(&laserData.points, &clData, sizeof(centerLaser));
+			for (centerLaser clData : trt->laserPoints)
+			{
+				memcpy(&laserData.points, &clData, sizeof(centerLaser));
+				vkCmdPushConstants(cmdBuff, drawer->laserPshShader->pipelineLayout,
+					VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
+
+				vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+			}
+
+			memcpy(&laserData.points, &trt->laserPoints.front().to, sizeof(b2Vec2));
+			memcpy(&(laserData.points.z), &trt->laserPoints.front().to, sizeof(b2Vec2));
+			laserData.data.x = 1.0f;
 			vkCmdPushConstants(cmdBuff, drawer->laserPshShader->pipelineLayout,
 				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
 
 			vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 		}
-
-		memcpy(&laserData.points, &trt->laserPoints.front().to, sizeof(b2Vec2));
-		memcpy(&(laserData.points.z), &trt->laserPoints.front().to, sizeof(b2Vec2));
-		laserData.data.x = 1.0f;
-		vkCmdPushConstants(cmdBuff, drawer->laserPshShader->pipelineLayout,
-			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
-
-		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
 		uint32_t i = trt->firstLaserIndex;
 		for (; i < trt->lastLaserIndex; i++)
@@ -480,11 +486,20 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 	}
 }
 
-void Turret::perFrameUpdate()
+void Turret::perTickUpdate(float dt)
 {
+	double timeNow = SDL_GetTicksSec();
 	for (auto trt : turrets)
 	{
-		if (trt->wData->destrTime > 0.0f) continue;
+		if (trt->wData->destrTime > 0.0f || trt->deactivated) continue;
+
+		if (trt->fallTime > -5.0 && timeNow - trt->fallTime > 1.0)
+		{
+			trt->deactivated = true;
+			trt->laserPoints.clear();
+			trt->status = false;
+			continue;
+		}
 
 		if (trt->status)
 		{
@@ -517,6 +532,18 @@ void Turret::perFrameUpdate()
 			}
 		}
 
+		if (abs(tPb->body->GetAngle()) > b2_pi * 0.4f)
+		{
+			if (trt->fallTime < -5.0)
+			{
+				trt->fallTime = timeNow;
+			}
+		}
+		else
+		{
+			trt->fallTime = -10.0;
+		}
+
 		trt->eyeBody = tPb;
 
 		const float turretBodyAngle = tPb->body->GetAngle();
@@ -525,7 +552,7 @@ void Turret::perFrameUpdate()
 		ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, trt->eyePos.x, trt->eyePos.y),
 			glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.1f, 0.5f);
 
-		if (trt->lastTrackTime + 0.25 > Game::object->gameTime)
+		if (trt->lastTrackTime + 0.25 > timeNow)
 		{
 			b2Vec2 v = trt->trackPoint - trt->eyePos;
 
@@ -534,13 +561,22 @@ void Turret::perFrameUpdate()
 
 			v.Normalize();
 
-			trt->laserDir = 0.95f * trt->laserDir + 0.05f * v;
+			float vAngle = PortalWorld::calcAngle2(trt->fwd) - PortalWorld::calcAngle2(v);
+			vAngle = std::clamp(vAngle, -1.1f, 1.1f);
+			v = PortalWorld::rotateVec(trt->fwd, -vAngle);
+			
+			trt->laserDir = 0.99f * trt->laserDir + 0.01f * v;
+			trt->status = true;
+			trt->shoot();
+		}
+		else if (trt->fallTime > -5.0 && timeNow - trt->fallTime > 0.1)
+		{
 			trt->status = true;
 			trt->shoot();
 		}
 		else
 		{
-			trt->laserDir = trt->laserDir = 0.95f * trt->laserDir + 0.05f * trt->fwd;
+			trt->laserDir = trt->laserDir = 0.99f * trt->laserDir + 0.01f * trt->fwd;
 			trt->status = false;
 		}
 		
@@ -565,7 +601,7 @@ void Turret::perFrameUpdate()
 		trt->eyePos = tPb->body->GetWorldPoint(trt->eyePos);
 	}
 
-	size_t numTurretUpdates = std::min((size_t)(Game::object->deltaTime * 1000.0f), turrets.size());
+	size_t numTurretUpdates = std::min((size_t)(dt * 2000.0f), turrets.size());
 
 	PortalBody* pb;
 	float mirrMult;
@@ -585,13 +621,13 @@ void Turret::perFrameUpdate()
 		{
 			Turret* trt = turrets.at(i % turrets.size());
 
-			if (trt->lastTrackPtr != pb && trt->lastTrackTime + 0.15 > Game::object->gameTime || trt->wData->destrTime > 0.0f) continue;
+			if (trt->lastTrackPtr != pb && trt->lastTrackTime + 0.15 > timeNow || trt->wData->destrTime > 0.0f) continue;
 			
 			PortalBody* tPb = trt->eyeBody;
 
 			b2Vec2 upVec = pos - tPb->body->GetPosition();
 			upVec = b2Vec2(-upVec.y, upVec.x); upVec.Normalize();
-			b2Vec2 lookPos = pos + sin(Game::object->gameTime * 50.0f) * upVec;
+			b2Vec2 lookPos = pos + sin(timeNow * 50.0f) * upVec;
 
 			b2Vec2 diff = lookPos - trt->eyePos;
 			float cosX = b2Dot(diff, trt->fwd) / diff.Length();
@@ -607,7 +643,7 @@ void Turret::perFrameUpdate()
 					{
 						trt->trackPoint = pos;
 						trt->lastTrackPtr = pb;
-						trt->lastTrackTime = Game::object->gameTime;
+						trt->lastTrackTime = timeNow;
 						ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, lookPos.x, lookPos.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
 					}
 				}
@@ -626,7 +662,7 @@ void Turret::perFrameUpdate()
 		for (Portal* p : Game::object->pWorld->portals)
 		{
 			if (p->connections->size() == 0 || p->getPointSide(trt->eyePos) != p->connections->at(0)->side1 ||
-				trt->lastTrackPtr != p && trt->lastTrackTime + 0.15 > Game::object->gameTime)
+				trt->lastTrackPtr != p && trt->lastTrackTime + 0.15 > timeNow)
 			{
 				continue;
 			}
@@ -635,7 +671,7 @@ void Turret::perFrameUpdate()
 			b2Vec2 pos2Res = pos2;
 			b2Vec2 upVec = pos2 - tPb->body->GetPosition();
 			upVec = b2Vec2(-upVec.y, upVec.x); upVec.Normalize();
-			pos2 = pos2 + sin(Game::object->gameTime * 50.0f) * upVec;
+			pos2 = pos2 + sin(timeNow * 50.0f) * upVec;
 
 			float cross1 = b2Cross(p->points[0] - trt->eyePos, pos2 - trt->eyePos);
 			float cross2 = b2Cross(pos2 - trt->eyePos, p->points[1] - trt->eyePos);
@@ -656,7 +692,7 @@ void Turret::perFrameUpdate()
 						{
 							trt->trackPoint = pos2Res;
 							trt->lastTrackPtr = p;
-							trt->lastTrackTime = Game::object->gameTime;
+							trt->lastTrackTime = timeNow;
 							ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, pos2.x, pos2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.03f, 0.5f);
 							break;
 						}

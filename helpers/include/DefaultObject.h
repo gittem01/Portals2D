@@ -30,7 +30,7 @@ public:
 
 	b2Vec2 tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixture* otherFix);
 	virtual void enterForceField(ForceField* forceField);
-	virtual void recreate();
+	virtual void recreate(bool mirrored=false);
 	virtual void beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix);
 	virtual void endContact(b2Contact* contact, b2Fixture* otherFix);
 	virtual void preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2);

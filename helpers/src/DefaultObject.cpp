@@ -27,7 +27,7 @@ DefaultObject::DefaultObject(PortalWorld* portalWorld, PortalBody* pb)
 	defaultObjects.push_back(this);
 }
 
-void DefaultObject::recreate()
+void DefaultObject::recreate(bool mirrored)
 {
 	int i = wData->pbIndices.size() - 1;
 	for (; i >= 0; i--)
@@ -42,7 +42,7 @@ void DefaultObject::recreate()
 		delete portalBody;
 	}
 
-	PortalBody* portalBody = pWorld->createCloneBody0(wData, initialPos, 0.0f, false);
+	PortalBody* portalBody = pWorld->createCloneBody0(wData, initialPos, 0.0f, mirrored);
 
 	portalBody->worldIndex->gravityScale = 1.0f;
 	portalBody->worldIndex->destrTime = -20.0f;

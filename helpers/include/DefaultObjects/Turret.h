@@ -42,8 +42,10 @@ public:
 	uint32_t shootGundex = 0;
 	double lastShootTime = -10.0;
 	double shootTimes[2] = { -10.0, -10.0 };
+	double fallTime = -10.0;
 	float gunBacks[2] = { 0.0f, 0.0f };
 	bool status = false; // true for deploying, false for retracting
+	bool deactivated = false;
 	float openAmount = 0.0f;
 	float rotation = 0.0f;
 
@@ -65,9 +67,9 @@ public:
 	void retract();
 	void sayGoodbye();
 
-	void recreate();
+	void recreate(bool unused_mirrored=false) override;
 
 	static void staticInit();
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
-	static void perFrameUpdate();
+	static void perTickUpdate(float dt);
 };

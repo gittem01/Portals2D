@@ -62,6 +62,8 @@ void UseButton::toLeveler()
 {
 	ThinDrawer* thinDrawer = Leveler::object->thinDrawer;
 
+	if (thinDrawer->lineZ->numZs <= 0) return;
+
 	s_lineZUbo* lineZUbo;
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory, 0,
 		thinDrawer->lineZ->numZs * sizeof(s_lineZUbo), 0, (void**)&lineZUbo);

@@ -20,11 +20,10 @@ public:
 #endif // APPLE
 
 
-
-	int* keyData = (int*)calloc(512, sizeof(int));
-	double* mouseData = (double*)calloc(7, sizeof(double));
-	double* trackpadData = (double*)calloc(2, sizeof(int));
-	int* lastMousePos = (int*)calloc(2, sizeof(int));
+	int keyData[SDL_SCANCODE_COUNT] = {0};
+	double mouseData[7] = {0};
+	double trackpadData[2] = {0};
+	int lastMousePos[2] = {0};
 	glm::vec2 windowSizes = glm::vec2(1280, 720);
 	std::vector<int> newPressIndices;
 	SDL_Window* window;

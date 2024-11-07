@@ -140,7 +140,6 @@ void Game::TestState()
             
             testCase->onUpdate();
 
-            Turret::perFrameUpdate();
             ForceField::update();
             Geller::update();
             Gel::perFrameUpdate();
