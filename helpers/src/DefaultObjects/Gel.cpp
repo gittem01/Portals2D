@@ -4,6 +4,8 @@
 #include <Game.h>
 #include <Portal.h>
 
+#define GELLABLE (DEFAULT_CUBE_O | LASER_CUBE_O | SPHERE_CUBE_O | TURRET_O | GUN_O)
+
 std::vector<Gel*> Gel::gels(MAX_GEL_COUNT);
 std::vector<splashData> Gel::splashEffects(4096);
 int Gel::gelCount = 0;
@@ -140,6 +142,41 @@ void Gel::getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGloba
     }
 }
 
+void setFrictions(PbWorldData* wData, float friction)
+{
+	for (PortalBody* pb : wData->pbIndices)
+	{
+		for (int i = 0; i < pb->fixtures.size(); i++)
+		{
+			b2Fixture* fix = pb->fixtures[i];
+            if (friction >= 0.0)
+            {
+			    fix->SetFriction(friction);
+            }
+            else
+            {
+                fix->SetFriction(wData->baseFrictions[i]);
+            }
+		}
+
+		for (b2ContactEdge* ce = pb->body->GetContactList(); ce; ce = ce->next)
+		{
+			b2Contact* contact = ce->contact;
+			if (contact->IsTouching())
+			{
+                if (friction >= 0.0)
+                {
+                    contact->SetFriction(friction);
+                }
+                else
+                {
+                    contact->SetFriction(wData->baseFrictions[0]);
+                }
+			}
+		}
+	}
+}
+
 void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 {
     if (gelIndex == -1) return;
@@ -222,6 +259,29 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         }
 
         vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
+    }
+    else
+    {
+		bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
+        if (bData && bData->extraData && bData->type == B_PORTAL_BODY)
+        {
+			g_PhysicsData* pData = (g_PhysicsData*)bData->extraData;
+            if (pData->type & GELLABLE)
+            {
+                DefaultObject* defObj = (DefaultObject*)pData->data;
+                int prevGel = defObj->renderGroup->gelIndex;
+                defObj->renderGroup->gelIndex = gelType;
+
+                if (prevGel == 1 && gelType != 1)
+                {
+					setFrictions(defObj->wData, -1.0f);
+                }
+                else if (gelType == 1)
+                {
+                    setFrictions(defObj->wData, 0.1f);
+                }
+            }
+        }
     }
 
 out:

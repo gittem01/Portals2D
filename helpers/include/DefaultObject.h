@@ -15,7 +15,7 @@ public:
 	PbWorldData* wData;
 	g_PhysicsData pData;
 	PortalWorld* pWorld;
-	s_renderGroup* renderGroup;
+	s_renderGroup* renderGroup = nullptr;
 	std::vector<ALuint> onHitSoundBuffers;
 	b2Vec2 initialPos;
 	std::bitset<MAX_FUNNELS * 2> funnelMasks;
@@ -28,6 +28,7 @@ public:
 	DefaultObject(PortalWorld* portalWorld);
 	DefaultObject(PortalWorld* portalWorld, PortalBody* pb);
 
+	void paintedBounce(b2WorldManifold& wManifold, b2Body* body);
 	b2Vec2 tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixture* otherFix);
 	virtual void enterForceField(ForceField* forceField);
 	virtual void recreate(bool mirrored=false);

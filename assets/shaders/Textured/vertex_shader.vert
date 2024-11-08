@@ -5,6 +5,7 @@ layout (location = 1) in vec2 i_texCoord;
 
 layout (location = 0) out vec2 o_texCoord;
 layout (location = 1) out vec2 worldPosition;
+layout (location = 2) out vec2 localPosition;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -18,14 +19,13 @@ layout (push_constant) uniform PC
     vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
 	vec4 movScale; // xMov, yMov, xScale, yScale (movement and scaling before rotation)
 	vec4 portals[4];
-	vec4 data; // numPortals, destroyTime, unused, unused
+	vec4 data; // numPortals, destroyTime, gelColorType (<-5 for no gel), unused
 } pc;
 
 void main() 
 {
 	o_texCoord = i_texCoord;
 	
-	// construct 2x2 rotation matrix
 	mat2 rotMat =	mat2(
 							+cos(pc.posRot.z),	sin(pc.posRot.z),
 							-sin(pc.posRot.z),	cos(pc.posRot.z)
@@ -36,7 +36,9 @@ void main()
 		pos.x *= -1.0;
 	}
 
-	pos = rotMat * (pos * pc.movScale.zw + pc.movScale.xy);
+	localPosition = pos * pc.movScale.zw;
+
+	pos = rotMat * (localPosition + pc.movScale.xy);
 
 	vec4 wp = vec4(pos + pc.posRot.xy, 0.0, 1.0);
 	worldPosition = wp.xy;

@@ -68,6 +68,7 @@ CircleButton::CircleButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	bodyRenderData.posRot = glm::vec4(bDef.position.x, bDef.position.y, bDef.angle, 1.0f);
 	bodyRenderData.movScale = glm::vec4(0.0f, 0.0f, 1.6f, 0.2f);
 	bodyRenderData.data.x = 0.0f; bodyRenderData.data.y = -20.0f;
+	bodyRenderData.data.z = -10.0;
 
 	lastEnabledSphere = nullptr;
 

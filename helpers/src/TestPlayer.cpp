@@ -761,7 +761,7 @@ void TestPlayer::createBody(b2Vec2 pos)
     bodyDef.type = b2_dynamicBody;
     bodyDef.position = pos;
     bodyDef.fixedRotation = true;
-    bodyDef.linearDamping = 0.0f;
+    bodyDef.linearDamping = 0.01f;
     bodyDef.bullet = true;
     bodyDef.allowSleep = false;
 

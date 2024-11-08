@@ -119,6 +119,7 @@ typedef struct s_renderGroup
     std::set<s_renderBody*> renderBodies;
 
     uint32_t currentImgIndex = 0;
+    uint32_t gelIndex = -10;
 } s_renderGroup;
 
 typedef struct PortalRender

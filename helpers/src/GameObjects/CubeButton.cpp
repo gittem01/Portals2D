@@ -86,6 +86,7 @@ CubeButton::CubeButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	buttonRenderData.posRot = glm::vec4(bDef.position.x, bDef.position.y, bDef.angle, 1.0f);
 	buttonRenderData.movScale = glm::vec4(0.0f, 0.0f, scale.x * 2.0f, scale.y * 2.0f);
 	buttonRenderData.data.x = 0.0f; buttonRenderData.data.y = -20.0f;
+	buttonRenderData.data.z = -10.0;
 
 	bDef.type = b2_staticBody;
 	bDef.position = b2Vec2(objData->pos.x, objData->pos.y) + bodyOffsets[objData->rotation % 4];
@@ -108,6 +109,7 @@ CubeButton::CubeButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	bodyRenderData.posRot = glm::vec4(bDef.position.x, bDef.position.y, bDef.angle, 1.0f);
 	bodyRenderData.movScale = glm::vec4(0.0f, 0.0f, 1.6f, 0.2f);
 	bodyRenderData.data.x = 0.0f; bodyRenderData.data.y = -20.0f;
+	bodyRenderData.data.z = -10.0;
 
 	cubeButtons.push_back(this);
 }

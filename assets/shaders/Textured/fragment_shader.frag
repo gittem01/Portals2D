@@ -4,6 +4,7 @@ layout (location = 0) out vec4 outFragColor;
 
 layout (location = 0) in vec2 texCoord;
 layout (location = 1) in vec2 worldPosition;
+layout (location = 2) in vec2 localPosition;
 
 layout(set = 1, binding = 0) uniform sampler2D tex;
 
@@ -19,7 +20,7 @@ layout (push_constant) uniform PC
     vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
 	vec4 movScale; // xMov, yMov, xScale, yScale (movement and scaling before rotation)
 	vec4 portals[4];
-	vec4 data; // numPortals, destroyTime, unused, unused
+	vec4 data; // numPortals, destroyTime, gelColorType (<-5 for no gel), unused
 } pc;
 
 float hash(vec2 p)
@@ -46,6 +47,13 @@ float lineRel(vec2 a, vec2 b, vec2 c)
      return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
+vec3 gelColors[3] =
+{
+    vec3(0.0, 0.5, 1.0),
+    vec3(1.0, 0.5, 0.0),
+    vec3(1.0, 1.0, 1.0),
+};
+
 void main()
 {
 	for (int i = 0; i < int(round(pc.data.x)); i++)
@@ -59,6 +67,7 @@ void main()
 	
 	float f = 1.0f;
     float blackAmount = 0.0;
+    float yellowAmount = 0.0;
 	if (pc.data.y > -10.0f)
 	{
         float iTime = (sharedUboData.data.y - pc.data.y) * 0.4;
@@ -73,19 +82,37 @@ void main()
         f += 1.0;
         f -= iTime * 2;
         f *= 4.0;
-        f = min(f, 1.0);
+        f = clamp(f, 0.0, 1.0);
 
-        blackAmount = pow(iTime, 0.5);
+        if (f > 0.01 && f < 0.99)
+	    {
+		    yellowAmount = clamp(pow(1.0 - abs(0.5 - f) * 2.0, 2.0), 0.0, 1.0);
+	    }
+
+        blackAmount = clamp(pow(iTime, 0.5), 0.0, 1.0);
 	}
     
     vec4 clr = texture(tex, texCoord);
     clr.rgb *= 1.0 - blackAmount;
 
-    float yellowAmount = 0.0;
-    if (f > 0.01 && f < 0.99)
-	{
-		yellowAmount = pow(1.0 - abs(0.5 - f) * 2.0, 2.0);
-	}
+    int paintIndex = int(pc.data.z);
+    
+    if (paintIndex >= 0 && paintIndex < 3)
+    {
+        vec3 paintColour = gelColors[paintIndex];
+        float newNoise = noise(localPosition * 10.0);
+        newNoise = clamp(pow(newNoise + 0.2, 4.0), 0.0, 1.0);
+
+        float newNoise2 = noise(localPosition * 5.0);
+        newNoise2 = clamp(pow(newNoise2 + 0.1, 2.0), 0.0, 1.0);
+
+        float newNoise3 = noise(localPosition * 15.0);
+        newNoise3 = clamp(pow(newNoise3 + 0.3, 3.0), 0.0, 1.0);
+
+        clr.rgb = mix(clr.rgb, paintColour, newNoise);
+        clr.rgb = mix(clr.rgb, paintColour, newNoise2);
+        clr.rgb = mix(clr.rgb, paintColour, newNoise3);
+    }
 
 	outFragColor = clr * f * (1.0 - yellowAmount) + vec4(yellowAmount, yellowAmount, 0.0, yellowAmount * clr.w);
 }

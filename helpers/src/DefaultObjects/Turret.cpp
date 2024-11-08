@@ -316,6 +316,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		{
 			s_renderBodyPsh pshData;
 			pshData.data.y = pBody->worldIndex->destrTime;
+			pshData.data.z = trt->renderGroup->gelIndex + 0.5f;
 
 			float mirrMult = pBody->isMirrored ? -1.0f : 1.0f;
 			float effectiveRotation = trt->rotation * mirrMult;
@@ -386,18 +387,22 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 				vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-				float timeMult = sin(timeNow * 3.0f) * 0.1f + 0.1f + 1.0f;
-				timeMult *= trt->fallTime > -5.0 ? std::max(0.9 - (timeNow - trt->fallTime), 0.0) : 1.0;
-				pshData.posRot.z = pBody->body->GetAngle();
-				pshData.movScale = glm::vec4(-0.23f * mirrMult, 0.11f, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult);
+				if (!trt->deactivated)
+				{
+					float timeMult = sin(timeNow * 3.0f) * 0.1f + 0.1f + 1.0f;
+					timeMult *= trt->fallTime > -5.0 ? std::max(2.4 - (timeNow - trt->fallTime), 0.0) / 2.4f : 1.0;
+					pshData.posRot.z = pBody->body->GetAngle();
+					pshData.movScale = glm::vec4(-0.23f * mirrMult, 0.11f, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult, (0.3f * (1.0f + trt->openAmount * 0.3)) * timeMult);
 
-				vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-					drawer->bodyShader->pipelineLayout, 1, 1, &trt->glowTex->set, 0, VK_NULL_HANDLE);
+					vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+						drawer->bodyShader->pipelineLayout, 1, 1, &trt->glowTex->set, 0, VK_NULL_HANDLE);
 
-				vkCmdPushConstants(cmdBuff, drawer->bodyShader->pipelineLayout,
-					VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &pshData);
+					pshData.data.z = -10.0;
+					vkCmdPushConstants(cmdBuff, drawer->bodyShader->pipelineLayout,
+						VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &pshData);
 
-				vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+					vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+				}
 			}
 		}
 
@@ -491,9 +496,15 @@ void Turret::perTickUpdate(float dt)
 	double timeNow = SDL_GetTicksSec();
 	for (auto trt : turrets)
 	{
-		if (trt->wData->destrTime > 0.0f || trt->deactivated) continue;
+		if (trt->wData->destrTime > 0.0f) continue;
 
-		if (trt->fallTime > -5.0 && timeNow - trt->fallTime > 1.0)
+		if (trt->deactivated)
+		{
+			trt->eyeBody = trt->wData->pbIndices[0];
+			continue;
+		}
+
+		if (trt->fallTime > -5.0 && timeNow - trt->fallTime > 2.5)
 		{
 			trt->deactivated = true;
 			trt->laserPoints.clear();
@@ -572,6 +583,8 @@ void Turret::perTickUpdate(float dt)
 		else if (trt->fallTime > -5.0 && timeNow - trt->fallTime > 0.1)
 		{
 			trt->status = true;
+			b2Vec2 randomDir = trt->fwd; randomDir = PortalWorld::rotateVec(randomDir, (rand() / (float)RAND_MAX) * 2.2f - 1.1f);
+			trt->laserDir = trt->laserDir = 0.99f * trt->laserDir + 0.01f * randomDir;
 			trt->shoot();
 		}
 		else
@@ -621,7 +634,7 @@ void Turret::perTickUpdate(float dt)
 		{
 			Turret* trt = turrets.at(i % turrets.size());
 
-			if (trt->lastTrackPtr != pb && trt->lastTrackTime + 0.15 > timeNow || trt->wData->destrTime > 0.0f) continue;
+			if (trt->lastTrackPtr != pb && trt->lastTrackTime + 0.15 > timeNow || trt->wData->destrTime > 0.0f || trt->deactivated) continue;
 			
 			PortalBody* tPb = trt->eyeBody;
 
@@ -655,7 +668,7 @@ void Turret::perTickUpdate(float dt)
 	{
 		Turret* trt = turrets.at(i % turrets.size());
 
-		if (trt->wData->destrTime > 0.0f) continue;
+		if (trt->wData->destrTime > 0.0f || trt->deactivated) continue;
 
 		PortalBody* tPb = trt->eyeBody;
 

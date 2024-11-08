@@ -95,6 +95,27 @@ void DefaultObject::enterForceField(ForceField* forceField)
 	});
 }
 
+void DefaultObject::paintedBounce(b2WorldManifold& wManifold, b2Body* body)
+{
+	if (renderGroup && renderGroup->gelIndex == 0)
+	{
+		b2Vec2 normal = wManifold.normal;
+
+		// randomizeNormal
+		normal.x += (rand() % 1000 - 500) * 0.001f;
+		normal.y += (rand() % 1000 - 500) * 0.001f;
+
+		b2Vec2 perpLinearVel = body->GetLinearVelocity();
+		perpLinearVel += b2Dot(perpLinearVel, -normal) * normal;
+
+		float randomSpeed = 8.0f + (rand() % 3000) * 0.001f;
+		float randomAngularSpeed = body->GetAngularVelocity() + 0.5f + (rand() % 1000) * 0.001f;
+		randomAngularSpeed = std::clamp(randomAngularSpeed, -2.0f, 2.0f);
+		body->SetLinearVelocity(wData->pbIndices.size() * randomSpeed * b2Vec2(normal.x, normal.y) + perpLinearVel);
+		body->SetAngularVelocity(randomAngularSpeed);
+	}
+}
+
 b2Vec2 DefaultObject::tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixture* otherFix)
 {
 	fixtureData* fixData = (fixtureData*)otherFix->GetUserData().pointer;
@@ -118,13 +139,15 @@ b2Vec2 DefaultObject::tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixtur
 	b2Vec2 vel = thisFix->GetBody()->GetLinearVelocity();
 	float dotRes = b2Dot(-vel, edgeNormal);
 
+	b2WorldManifold wManifold;
+	contact->GetWorldManifold(&wManifold);
+
 	if (dotRes > 3.0f)
 	{
-		b2WorldManifold wManifold;
-		contact->GetWorldManifold(&wManifold);
-
 		if (abs(b2Dot(wManifold.normal, edgeNormal)) < 0.1f)
 		{
+			paintedBounce(wManifold, thisFix->GetBody());
+
 			return b2Vec2(-1000.0f, -1000.0f);
 		}
 
@@ -134,6 +157,7 @@ b2Vec2 DefaultObject::tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixtur
 			contactPoint += wManifold.points[1];
 			contactPoint *= 0.5f;
 		}
+
 		bool bounce = Gel::bounceAt(wData->pbIndices[0]->body, otherFix, contactPoint);
 
 		if (bounce)
@@ -156,6 +180,14 @@ b2Vec2 DefaultObject::tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixtur
 
 			return contactPoint;
 		}
+		else
+		{
+			paintedBounce(wManifold, thisFix->GetBody());
+		}
+	}
+	else
+	{
+		paintedBounce(wManifold, thisFix->GetBody());
 	}
 
 	return b2Vec2(-1000.0f, -1000.0f);
@@ -188,12 +220,14 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixt
 		break;
 		case F_EDGE:
 		case F_LIGHT_BRIDGE:
-			tryBounce(contact, thisFix, otherFix);
+			if (!TestPlayer::object->holdBody || TestPlayer::object->holdBody->worldIndex != wData)
+			{
+				tryBounce(contact, thisFix, otherFix);
+			}
 			break;
 		default:
 			break;
 		}
-		
 	}
 }
 

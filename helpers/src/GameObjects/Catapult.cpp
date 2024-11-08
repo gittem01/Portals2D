@@ -148,6 +148,7 @@ Catapult::Catapult(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	catapultRenderData.data.x = 0.0f;
 	catapultRenderData.data.y = -20.0f;
+	catapultRenderData.data.z = -10.0;
 
 	catapults.push_back(this);
 }

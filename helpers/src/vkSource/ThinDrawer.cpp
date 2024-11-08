@@ -554,8 +554,8 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
             pshConst.posRot = glm::vec4(renderBody->portalBody->body->GetPosition().x, renderBody->portalBody->body->GetPosition().y,
                 renderBody->portalBody->body->GetAngle(), renderBody->portalBody->isMirrored * -1);
             pshConst.movScale = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-            pshConst.data.y = gameTime - adjustableValues.x;
             pshConst.data.y = renderBody->portalBody->worldIndex->destrTime;
+            pshConst.data.z = (float)renderGroup->gelIndex + 0.5;
 
             for (PBFixtureData* pFixData : renderBody->renderFixtures)
             {

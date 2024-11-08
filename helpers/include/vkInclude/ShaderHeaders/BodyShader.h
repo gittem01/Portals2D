@@ -10,7 +10,7 @@ typedef struct RenderBodyPush
     glm::vec4 posRot; // posx, posy, rot, mirrorStatus(<0 for mirrored)
     glm::vec4 movScale; // xMov, yMov, xScale, yScale (movement and scaling before rotation)
     glm::vec4 portals[4];
-    glm::vec4 data; // numPortals, destroyTime, unused, unused
+    glm::vec4 data; // numPortals, destroyTime, gelColorType (<-5 for no gel), unused
 } s_renderBodyPsh;
 
 class BodyShader : public ShaderBase
