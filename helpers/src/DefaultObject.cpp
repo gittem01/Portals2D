@@ -238,7 +238,47 @@ void DefaultObject::endContact(b2Contact* contact, b2Fixture* otherFix)
 
 void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
+	fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
+	if (fData && fData->type & (F_EDGE | F_LIGHT_BRIDGE))
+	{
+		b2Vec2 pos = thisBody->GetPosition();
+		s_edgeGlobalData* eGlobal = Gel::getEdgeData(fData);
 
+		b2Vec2 v1;
+		b2Vec2 dirVec;
+		int extraOffset;
+
+		if (fData && fData->type & F_LIGHT_BRIDGE)
+		{
+			b2EdgeShape* edge = (b2EdgeShape*)fix2->GetShape();
+			dirVec = edge->m_vertex2 - edge->m_vertex1;
+			dirVec.Normalize();
+			v1 = edge->m_vertex1;
+			s_edgeLocalData* eLocal = (s_edgeLocalData*)fData->data;
+			extraOffset = eLocal->globalRange[0];
+		}
+		else
+		{
+			v1 = eGlobal->localPoints[0];
+			extraOffset = 0;
+			dirVec = eGlobal->dir;
+		}
+
+		b2Vec2 diff = pos - fix2->GetBody()->GetWorldPoint(v1);
+		int index = (int)std::round(b2Dot(diff, dirVec) * 10.0) + extraOffset;
+		index = std::max(std::min(index, (int)eGlobal->unitWalls.size() - 1), 0);
+
+		if (eGlobal->unitWalls[index].gelType == ORANGE && eGlobal->unitWalls[index].gelAmount > 0.5f)
+		{
+			contact->SetFriction(0.1f);
+		}
+		else if (!TestPlayer::object->holdBody || TestPlayer::object->holdBody->worldIndex != wData)
+		{
+			// set friction to fixture defaults
+			float friction = b2MixFriction(contact->GetFixtureA()->GetFriction(), contact->GetFixtureB()->GetFriction());
+			contact->SetFriction(friction);
+		}
+	}
 }
 
 void DefaultObject::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)

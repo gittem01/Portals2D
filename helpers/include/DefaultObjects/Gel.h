@@ -22,10 +22,13 @@ private:
 
 public:
 	static std::vector<Gel*> gels;
+	static std::vector<Gel> gelPool;
+	static std::vector<Gel*> freeGels;
 	static int gelCount;
 	static int splashCount;
 
 	Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radius, int gelType);
+	Gel() {}
 
 	static void getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGlobalData** data);
 	void splash(b2Contact* contact, b2Fixture* otherFix);
@@ -34,6 +37,7 @@ public:
 	static void toDeath();
 	static void toLeveler();
 	static void staticInit();
+	static s_edgeGlobalData* getEdgeData(fixtureData* fData);
 	static bool bounceAt(b2Body* body, b2Fixture* edgeFix, b2Vec2 pos);
 	static void generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex);
 	static void update();

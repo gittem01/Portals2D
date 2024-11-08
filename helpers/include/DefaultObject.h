@@ -25,6 +25,7 @@ public:
 
 	static std::vector<DefaultObject*> defaultObjects;
 
+	DefaultObject() {}
 	DefaultObject(PortalWorld* portalWorld);
 	DefaultObject(PortalWorld* portalWorld, PortalBody* pb);
 

@@ -194,7 +194,7 @@ public:
     void destroyPortal(Portal* portal);
 
     PortalBody* createPortalBody(b2Body* body);
-    PortalBody* createCloneBody0(pbWorldData* wData, b2Vec2 pos, float angle, bool isMirrored);
+    PortalBody* createCloneBody0(pbWorldData* wData, b2Vec2 pos, float angle, bool isMirrored, bool sensor=false);
 
     std::vector<void (*) (Portal*)> portalCreateCallbacks;
     std::vector<void (*) (Portal*)> portalDestroyCallbacks;

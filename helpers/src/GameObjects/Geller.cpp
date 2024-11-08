@@ -112,7 +112,7 @@ void Geller::render(VkCommandBuffer cmdBuff, void* ptr)
 
 void Geller::update()
 {
-	if (Gel::gelCount >= MAX_GEL_COUNT) return;
+	if (Gel::freeGels.size() == 0) return;
 
 	for (int i = 0; i < numGellers; i++)
 	{

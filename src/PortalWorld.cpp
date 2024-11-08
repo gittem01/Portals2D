@@ -80,7 +80,7 @@ void PortalWorld::destroyPortal(Portal* portal)
     }
 }
 
-PortalBody* PortalWorld::createCloneBody0(pbWorldData* wData, b2Vec2 pos, float angle, bool isMirrored)
+PortalBody* PortalWorld::createCloneBody0(pbWorldData* wData, b2Vec2 pos, float angle, bool isMirrored, bool sensor)
 {
     b2BodyDef bDef;
     bDef.type = b2_dynamicBody;
@@ -100,6 +100,7 @@ PortalBody* PortalWorld::createCloneBody0(pbWorldData* wData, b2Vec2 pos, float 
         fDef.restitution = wData->baseRestitutions[i];
         fDef.friction = wData->baseFrictions[i];
         fDef.shape = shapes[i];
+		fDef.isSensor = sensor;
         body->CreateFixture(&fDef, false);
     }
 

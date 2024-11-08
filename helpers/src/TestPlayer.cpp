@@ -641,7 +641,7 @@ void TestPlayer::runEffect()
 			}
 
             s_unitWallData uData = eGlobal->unitWalls.at(index);
-			if (uData.gelType & ORANGE && uData.gelAmount > 0.25)
+			if (uData.gelType & ORANGE && uData.gelAmount > 0.5)
 			{
                 fastRun = true;
 
@@ -1789,7 +1789,14 @@ void TestPlayer::releaseB()
         for (b2ContactEdge* edge = pbA->body->GetContactList(); edge; edge = edge->next)
         {
             edge->contact->SetRestitution(holdBody->worldIndex->baseRestitutions[0]);
-            edge->contact->SetFriction(holdBody->worldIndex->baseFrictions[0]);
+            if (obj->renderGroup->gelIndex == 1)
+            {
+                edge->contact->SetFriction(0.1f);
+            }
+            else
+            {
+				edge->contact->SetFriction(holdBody->worldIndex->baseFrictions[0]);
+            }
 
             b2Contact* contact = edge->contact;
             if (contact->IsEnabled() && contact->IsTouching())
@@ -1819,7 +1826,15 @@ void TestPlayer::releaseB()
         for (b2Fixture* fix : pbA->fixtures)
         {
             fix->SetRestitution(holdBody->worldIndex->baseRestitutions[i]);
-            fix->SetFriction(holdBody->worldIndex->baseFrictions[i++]);
+
+            if (obj->renderGroup->gelIndex == 1)
+            {
+                fix->SetFriction(0.1f);
+            }
+            else
+            {
+                fix->SetFriction(holdBody->worldIndex->baseFrictions[i++]);
+            }
         }
     }
 

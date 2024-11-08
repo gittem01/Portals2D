@@ -7,6 +7,8 @@
 #define GELLABLE (DEFAULT_CUBE_O | LASER_CUBE_O | SPHERE_CUBE_O | TURRET_O | GUN_O)
 
 std::vector<Gel*> Gel::gels(MAX_GEL_COUNT);
+std::vector<Gel> Gel::gelPool(MAX_GEL_COUNT);
+std::vector<Gel*> Gel::freeGels(MAX_GEL_COUNT);
 std::vector<splashData> Gel::splashEffects(4096);
 int Gel::gelCount = 0;
 int Gel::splashCount = 0;
@@ -25,6 +27,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
 
     b2CircleShape cShape;
     cShape.m_radius = radius;
+    this->gelRadius = radius;
 
     b2Body* body = pWorld->CreateBody(&bDef);
     body->SetLinearVelocity(b2Vec2(velocity.x, velocity.y));
@@ -45,6 +48,26 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     // ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
+void Gel::generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex)
+{
+    int randomIndex = rand() % freeGels.size();
+	Gel* gel = freeGels[randomIndex];
+	freeGels[randomIndex] = freeGels.back();
+    freeGels.pop_back();
+
+    PortalBody* pb = Game::object->pWorld->createCloneBody0(gel->wData, b2Vec2(pos.x, pos.y), 0.0f, false, true);
+	pb->body->SetLinearVelocity(b2Vec2(velocity.x, velocity.y));
+
+    bodyData* bData = (bodyData*)pb->body->GetUserData().pointer;
+    bData->extraData = &gel->pData;
+
+    gel->gelColor = ThinDrawer::object->gelShader->gelColors[colorIndex];
+    gel->gelIndex = gelCount;
+    gel->gelType = colorIndex;
+
+    gels[gelCount++] = gel;
+}
+
 void Gel::recreate()
 {
     for (int j = wData->pbIndices.size() - 1; j >= 0; j--)
@@ -53,12 +76,31 @@ void Gel::recreate()
 
         delete portalBody;
     }
+
+    for (int i = 0; i < MAX_GEL_COUNT; i++)
+    {
+        freeGels[i] = &gelPool[i];
+    }
 }
 
 void Gel::staticInit()
 {
     gelCount = 0;
     splashCount = 0;
+
+    freeGels.resize(MAX_GEL_COUNT);
+	for (int i = 0; i < MAX_GEL_COUNT; i++)
+	{
+		freeGels[i] = &gelPool[i];
+        Gel* gel = &gelPool[i];
+
+		float randVal = (float)rand() / RAND_MAX;
+        randVal = 0.35 + randVal * 0.4;
+		new (gel) Gel(Game::object->pWorld, glm::vec2(-1000.0f - i * 2.0f, 0.0f), glm::vec2(0.0f, 0.0f), randVal, 0);
+        //DefaultObject::recreate
+        PortalBody* pb = gel->wData->pbIndices[0];
+        delete pb;
+	}
 
     ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
 }
@@ -321,17 +363,8 @@ out:
     {
         pWorld->destroyBodies.insert(pb);
     }
-}
 
-void Gel::generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex)
-{
-    Gel* gel = new Gel(Game::object->pWorld, pos, velocity, radius, colorIndex);
-    gel->gelColor = ThinDrawer::object->gelShader->gelColors[colorIndex];
-    gel->gelRadius = radius;
-    gel->gelIndex = gelCount;
-    gel->gelType = colorIndex;
-
-    gels[gelCount++] = gel;
+	freeGels.push_back(this);
 }
 
 void Gel::update()
@@ -406,14 +439,9 @@ void Gel::toDeath()
     }
 }
 
-bool Gel::bounceAt(b2Body* body, b2Fixture* edgeFix, b2Vec2 pos)
+s_edgeGlobalData* Gel::getEdgeData(fixtureData* fData)
 {
-    int index = 0;
-    int extraJumpRange[2] = { 0, 0 };
-
-    s_edgeGlobalData* eGlobal = nullptr;
-
-    fixtureData* fData = (fixtureData*)edgeFix->GetUserData().pointer;
+	s_edgeGlobalData* eGlobal = nullptr;
     if (fData)
     {
         if (fData->type & (F_EDGE | F_LIGHT_BRIDGE))
@@ -438,6 +466,19 @@ bool Gel::bounceAt(b2Body* body, b2Fixture* edgeFix, b2Vec2 pos)
             }
         }
     }
+
+	return eGlobal;
+}
+
+bool Gel::bounceAt(b2Body* body, b2Fixture* edgeFix, b2Vec2 pos)
+{
+    int index = 0;
+    int extraJumpRange[2] = { 0, 0 };
+
+    s_edgeGlobalData* eGlobal = nullptr;
+
+    fixtureData* fData = (fixtureData*)edgeFix->GetUserData().pointer;
+	eGlobal = getEdgeData(fData);
 
     if (eGlobal)
     {
