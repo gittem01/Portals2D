@@ -96,6 +96,7 @@ Menu::Menu()
 	Button* optionsButton = &buttons[2];
 
 	std::vector<std::string> optionsButtons = { "GENERAL SOUND", "MUSIC", "SOUND EFFECTS" };
+	std::vector<float> soundValues = { Game::object->sounder->generalVolume, Game::object->sounder->musicVolume, Game::object->sounder->effectVolume };
 
 	soundButton = &buttons[buttons.size() - 1] + 3;
 	for (int i = 0; i < optionsButtons.size(); i++)
@@ -105,12 +106,17 @@ Menu::Menu()
 		b->alphaMult = 0.0;
 		optionsButton->dependentButtons.push_back(b);
 
-		b = addButton(glm::vec2(10.0f, -i * 6 - 2.0f), glm::vec2(25.0f, 0.0f), "", glm::vec4(0.0f), glm::vec2(1.25f));
+		b = addButton(glm::vec2(10.0f, -i * 6 - 2.0f), glm::vec2(25.0f, 0.0f), "", glm::vec4(0.0f), glm::vec2(3.0f));
 		b->bools.set(INTERACTABLE);
 		b->alphaMult = 0.0; b->baseAlpha = 1.0f;
 		optionsButton->dependentButtons.push_back(b);
 
-		b = addButton(glm::vec2(17.5f, -i * 6 - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(1.0f), glm::vec2(3.0f));
+		float minX = b->data.posSize.x - b->data.posSize.z * 0.5f;
+		float maxX = b->data.posSize.x + b->data.posSize.z * 0.5f;
+
+		float bx = minX + (maxX - minX) * soundValues[i];
+
+		b = addButton(glm::vec2(bx, -i * 6 - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(1.0f), glm::vec2(3.0f));
 		b->bools.set(INTERACTABLE); b->type = BUTTON_CIRCLE;
 		b->alphaMult = 0.0; b->baseAlpha = 0.3f;
 		optionsButton->dependentButtons.push_back(b);
@@ -120,7 +126,7 @@ Menu::Menu()
 		glm::vec4(0.0f, 0.5f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.5f, 1.0f, 1.0f),
 		glm::vec4(0.0f, 0.5f, 1.0f, 1.0f), glm::vec4(0.0f, 0.5f, 1.0f, 1.0f) };
 
-	SDL_Scancode scanCodes[6] = { SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_E, SDL_SCANCODE_A, SDL_SCANCODE_S, SDL_SCANCODE_D };
+	SDL_Scancode scanCodes[6] = { Game::rotateKey, Game::jumpKey, Game::holdKey, Game::leftKey, Game::downKey, Game::rightKey };
 
 	qButton = &buttons[buttons.size() - 1] + 3;
 	float bSize = 46.0f / 3;
@@ -387,8 +393,6 @@ void Menu::update()
 				case 2: Game::object->sounder->effectVolume = ratio; break;
 				default: break;
 				}
-
-				Game::object->saveGameData();
 			}
 		}
 	}
@@ -421,13 +425,17 @@ void Menu::update()
 				default: break;
 				}
 
-				Game::object->saveGameData();
-
 				keyAssignmentButton = nullptr;
 
 				break;
 			}
 		}
+	}
+
+	if (timeNow - lastDataSaveTime > 0.25f)
+	{
+		Game::object->saveGameData();
+		lastDataSaveTime = timeNow;
 	}
 
 	lastMousePos = mousePos;

@@ -61,6 +61,7 @@ public:
 	double lastMouseTime = -100.0;
 	double activationTime = 0.0;
 	double upCamTime = 0.0;
+	double lastDataSaveTime = 0.0;
 	float upMargin = 20.0f;
 	glm::vec2 lastMousePos = glm::vec2(-10000.0f, -10000.0f);
 

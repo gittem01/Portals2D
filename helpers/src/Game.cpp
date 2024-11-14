@@ -20,6 +20,7 @@
 #include "GameObjects/Funnel.h"
 #include "GameObjects/LightBridge.h"
 #include "GameObjects/Catapult.h"
+#include <mutex>
 
 Game* Game::object;
 
@@ -61,12 +62,82 @@ Game::Game()
 
 void Game::loadGameData()
 {
+	std::string fileName = "gameData.bin";
+	std::ifstream file(fileName, std::ios::binary);
 
+    const uint32_t expectedFileSize = 16;
+
+    // get file size
+    file.seekg(0, file.end);
+    int length = file.tellg();
+    file.seekg(0, file.beg);
+
+	if (file.is_open() && length >= expectedFileSize)
+	{
+        uint16_t arr[expectedFileSize];
+
+		file.read((char*)arr, sizeof(arr));
+		file.close();
+
+		jumpKey = (SDL_Scancode)arr[0];
+		leftKey = (SDL_Scancode)arr[1];
+		rightKey = (SDL_Scancode)arr[2];
+		downKey = (SDL_Scancode)arr[3];
+		rotateKey = (SDL_Scancode)arr[4];
+		holdKey = (SDL_Scancode)arr[5];
+
+		sounder->generalVolume = arr[6] / 1024.0;
+		sounder->musicVolume = arr[7] / 1024.0;
+		sounder->effectVolume = arr[8] / 1024.0;
+	}
+	else
+	{
+		saveGameData();
+	}
 }
 
 void Game::saveGameData()
 {
+    static std::mutex saveMutex;
 
+	std::thread saveThread([this]()
+	{
+        if (!saveMutex.try_lock())
+        {
+			return;
+        }
+
+		std::string fileName = "gameData.bin";
+		std::ofstream file(fileName, std::ios::binary);
+
+		if (file.is_open())
+		{
+			uint16_t arr[16];
+
+			arr[0] = jumpKey;
+			arr[1] = leftKey;
+			arr[2] = rightKey;
+			arr[3] = downKey;
+			arr[4] = rotateKey;
+			arr[5] = holdKey;
+
+			arr[6] = (uint16_t)std::round(sounder->generalVolume * 1024);
+			arr[7] = (uint16_t)std::round(sounder->musicVolume * 1024);
+			arr[8] = (uint16_t)std::round(sounder->effectVolume * 1024);
+
+			file.write((char*)arr, sizeof(arr));
+			file.close();
+		}
+		else
+		{
+            // call on main thread
+			//SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error creating save file", thinDrawer->wh->window);
+		}
+
+		saveMutex.unlock();
+	});
+    
+	saveThread.detach();
 }
 
 void Game::LevelerState()
