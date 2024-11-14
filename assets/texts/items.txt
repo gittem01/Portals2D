@@ -1,126 +1,84 @@
 <0>
 Zamanlı Düğme
 Timed Button
-定时按钮
-時限ボタン
 <0>
 <1>
 Zemin Düğmesi
 Ground Button
-接地按钮
-グラウンドボタン
 <1>
 <2>
 Küp Butonu
 Cube Button
-立方体按钮
-キューブボタン
 <2>
 <3>
 Küre Butonu
 Sphere Button
-球体按钮
-球ボタン
 <3>
 <4>
 Standart Küp
 Standard Cube
-标准立方体
-スタンダードキューブ
 <4>
 <5>
 Lazer Küpü
 Laser Cube
-激光立方体
-レーザーキューブ
 <5>
 <6>
 Küre Top
 Sphere Ball
-球体球
-スフィアボール
 <6>
 <7>
 Taret
 Turret
-炮塔
-タレット
 <7>
 <8>
 Laser Yayıcı
 Laser Emitter
-激光发射器
-レーザーエミッター
 <8>
 <9>
 Lazer Alıcı Duvar
 Laser Receiver Wall
-激光接收墙
-レーザー受信機の壁
 <9>
 <10>
 Lazer Alıcı Yer
 Laser Receiver Ground
-激光接收器接地
-レーザー受信機のアース
 <10>
 <11>
 Güven Plakası
 Aerial Faith Plate
-空中信仰板
-空中信仰プレート
 <11>
 <12>
 Gezinim Borusu
 Excursion Funnel
-游览漏斗
-エクスカーションファネル
 <12>
 <13>
 Işık Köprüsü
 Light Bridge
-光桥
-光の橋
 <13>
 <14>
 Cesaret Kırıcı Işın
 Thermal Discouragement Beam
-散热梁
-熱抑制ビーム
 <14>
 <15>
 Elektrik Alanı
 Electricity Field
-电场
-電気分野
 <15>
 <16>
 Mavi Jel
 Blue Gel
-蓝色凝胶
-ブルージェル
 <16>
 <17>
 Turuncu Jel
 Orange Gel
-橙色凝胶
-オレンジジェル
 <17>
 <18>
 Beyaz Jel
 White Gel
-白色凝胶
-ホワイトジェル
 <18>
 <19>
 Su Jel
 Water Gel
-水凝胶
-ウォータージェル
 <19>
 <20>
 Platform
 Platform
-平台
-プラットホーム
 <20>

@@ -4,12 +4,6 @@ Eşyayı Sil
 <1>
 Remove Item
 <1>
-<2>
-除去项目
-<2>
-<3>
-アイテムの削除
-<3>
 <linked_options>
 -
 <linked_options>

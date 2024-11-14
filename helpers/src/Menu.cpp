@@ -3,8 +3,6 @@
 #include "Leveler.h"
 #include "Overlayer.h"
 
-static std::vector<std::string> keys = { "ROTATE", "JUMP", "HOLD", "LEFT", "DOWN", "RIGHT" };
-
 Button::Button()
 {
 	bools.reset();
@@ -15,6 +13,13 @@ Menu::Menu()
 	td = ThinDrawer::object;
 	ol = Leveler::object->ol;
 
+	auto lines = IOHelper::loadLines("menu.txt");
+	auto res = IOHelper::mapVector(lines);
+
+	std::string tex = "<" + std::to_string(ol->cd->selectedLanguageIndex) + ">";
+	std::vector<std::string> allTexts = res[tex];
+	int lastTextIndex = 0;
+
 	td->lateDrawFuncs.push_back({ draw, this });
 	td->lateDrawFuncs.push_back({ CharDrawer::draw, ol->cd });
 
@@ -22,18 +27,19 @@ Menu::Menu()
 
 	float camUp = ol->cam.defaultYSides.y;
 
-	std::vector<std::string> baseButtons = { "PLAY", "LEVEL EDITOR", "OPTIONS", "CREDITS", "EXIT" };
 	std::vector<glm::vec4> colors = {	glm::vec4(1.0, 1.0, 1.0, 0.2), glm::vec4(1.0, 1.0, 1.0, 0.2),
 										glm::vec4(1.0, 1.0, 1.0, 0.2), glm::vec4(0.0, 1.0, 0.0, 0.2), glm::vec4(1.0, 0.0, 0.0, 0.2) };
 	std::vector<float> yMults = { 40.0f, 0.0f, 50.0f, 10.0f, 0.0f };
 
 	buttons.reserve(200);
-	for (int i = 0; i < baseButtons.size(); i++)
+	for (int i = 0; i < colors.size(); i++)
 	{
-		Button* b = addButton(glm::vec2(0.0f, i * 8.0f), glm::vec2(50.0f, 6.0f), baseButtons[i], colors[i]);
+		Button* b = addButton(glm::vec2(0.0f, i * 8.0f), glm::vec2(50.0f, 6.0f), allTexts[lastTextIndex++], colors[i]);
 		b->bools.set(INTERACTABLE); b->bools.set(RENDER_ENABLED); b->bools.set(MOVE_NEXT);
 		b->openYMult = yMults[i];
 	}
+
+	exitButton = &buttons[4];
 
 	float levelButtonSize = 6.9f;
 	float lastX = 50.0f - levelButtonSize;
@@ -56,15 +62,7 @@ Menu::Menu()
 				break;
 			}
 
-			char c[3] = {};
-			c[1] = '0' + level % 10;
-			c[0] = '0' + level / 10;
-
-			if (c[0] == '0')
-			{
-				c[0] = c[1];
-				c[1] = '\0';
-			}
+			std::string c = std::to_string(level);
 
 			float blueAmount = (x + 1.0f) / numX;
 			float redAmount = (y + 1.0f) / 6.0f;
@@ -79,12 +77,11 @@ Menu::Menu()
 	playButton->openYMult = yMult * y;
 	playButton->openYAdder = 0.05f;
 
-	std::vector<std::string> editorButtons = { "NEW", "LOAD", "COMMUNITY" };
-
 	Button* editorButton = &buttons[1];
-	for (int i = 0; i < editorButtons.size(); i++)
+	newEditorButton = &buttons[buttons.size() - 1] + 1;
+	for (int i = 0; i < 3; i++)
 	{
-		Button* b = addButton(glm::vec2(0.0f, -i * 8.0f), glm::vec2(50.0f, 6.0f), editorButtons[i], glm::vec4(0.0, 0.5, 1.0, 0.2));
+		Button* b = addButton(glm::vec2(0.0f, -i * 8.0f), glm::vec2(50.0f, 6.0f), allTexts[lastTextIndex++], glm::vec4(0.0, 0.5, 1.0, 0.2));
 		b->bools.set(INTERACTABLE);
 		b->alphaMult = 0.0;
 		editorButton->dependentButtons.push_back(b);
@@ -95,13 +92,12 @@ Menu::Menu()
 
 	Button* optionsButton = &buttons[2];
 
-	std::vector<std::string> optionsButtons = { "GENERAL SOUND", "MUSIC", "SOUND EFFECTS" };
 	std::vector<float> soundValues = { Game::object->sounder->generalVolume, Game::object->sounder->musicVolume, Game::object->sounder->effectVolume };
 
 	soundButton = &buttons[buttons.size() - 1] + 3;
-	for (int i = 0; i < optionsButtons.size(); i++)
+	for (int i = 0; i < soundValues.size(); i++)
 	{
-		Button* b = addButton(glm::vec2(0.0f, -i * 6), glm::vec2(50.0f, 4.0f), optionsButtons[i], glm::vec4(0.6, 0.6, 1.0, 1.0f));
+		Button* b = addButton(glm::vec2(0.0f, -i * 6), glm::vec2(50.0f, 4.0f), allTexts[lastTextIndex++], glm::vec4(0.6, 0.6, 1.0, 1.0f));
 		b->bools.set(TEXT_LEFT);
 		b->alphaMult = 0.0;
 		optionsButton->dependentButtons.push_back(b);
@@ -140,7 +136,7 @@ Menu::Menu()
 			optionsButton->dependentButtons.push_back(b);
 
 			glm::vec2 pos = glm::vec2(b->data.posSize.x, b->data.posSize.y + 0.75f);
-			b = addButton(pos, glm::vec2(0.0f, 5.0f), keys[y * 3 + x], glm::vec4(0.0f));
+			b = addButton(pos, glm::vec2(0.0f, 5.0f), allTexts[lastTextIndex++], glm::vec4(0.0f));
 			b->alphaMult = 0.0; b->baseAlpha = 0.0f;
 			optionsButton->dependentButtons.push_back(b);
 
@@ -148,7 +144,7 @@ Menu::Menu()
 
 			pos.y -= 5.5f;
 			b = addButton(pos, glm::vec2(bSize * 0.8f, 5.75f), text, glm::vec4(1.0f), glm::vec2(1.5f));
-			b->alphaMult = 0.0; b->baseAlpha = 0.0f;
+			b->alphaMult = 0.0; b->baseAlpha = 0.1f;
 			b->bools.set(INTERACTABLE);
 			optionsButton->dependentButtons.push_back(b);
 		}
@@ -485,11 +481,11 @@ void Menu::buttonPressed(Button* button)
 		}
 	}
 
-	if (button->strText == "EXIT")
+	if (button == exitButton)
 	{
 		Game::object->shouldQuit = true;
 	}
-	else if (button->strText == "NEW")
+	else if (button == newEditorButton)
 	{
 		Game::object->gameStater = &Game::LevelerState;
 	}

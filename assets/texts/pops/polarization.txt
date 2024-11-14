@@ -6,14 +6,6 @@ Kutuplaştırmayı Değiştir
 Enable/Disable
 Change Polarization
 <1>
-<2>
-启用/禁用
-改变极化
-<2>
-<3>
-有効化/無効化
-偏光を変更する
-<3>
 <linked_options>
 -
 -

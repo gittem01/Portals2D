@@ -12,20 +12,6 @@ Remove Connections
 Start Active
 Start Polarized
 <1>
-<2>
-删除项目
-连接到...
-删除连接
-开始活动
-开始偏光
-<2>
-<3>
-項目の削除
-に接続します...
-接続の削除
-アクティブに開始
-スタート偏光
-<3>
 <linked_options>
 -
 -

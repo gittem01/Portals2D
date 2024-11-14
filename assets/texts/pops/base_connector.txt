@@ -8,16 +8,6 @@ Delete Item
 Connect to...
 Remove Connections
 <1>
-<2>
-删除项目
-连接到...
-删除连接
-<2>
-<3>
-項目の削除
-に接続します...
-接続の削除
-<3>
 <linked_options>
 -
 -

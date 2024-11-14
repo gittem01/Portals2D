@@ -70,6 +70,8 @@ public:
 	Button* activeButton = nullptr;
 	Button* qButton;
 	Button* soundButton;
+	Button* newEditorButton;
+	Button* exitButton;
 	Button* keyAssignmentButton = nullptr;
 
 	Menu();
