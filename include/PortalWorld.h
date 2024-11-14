@@ -179,6 +179,7 @@ friend class ForceField;
 friend class Funnel;
 friend class Platform;
 friend class Turret;
+friend class Button;
 
 public:
     std::vector<pbWorldData*> bodyIndices;

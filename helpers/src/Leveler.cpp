@@ -33,21 +33,12 @@ Leveler::Leveler(Game* game)
 
 	currentOperation = new s_gridOperationList();
 
-	thinDrawer->whiteWallShader->recreateUniforms(numWhiteWall * 2);
-	thinDrawer->blackWallShader->recreateUniforms(numBlackWall * 2);
-	thinDrawer->wallLight->recreateUniforms(numWhiteWall * 2);
-	thinDrawer->diagonalLiner->recreateUniforms(numWhiteWall * 2);
-
 	pushRenderFunctions();
 
 	ol = new Overlayer(game);
 
 	float x;
 	ol->cd->getRenderData("(),0123456789", 50, x);
-
-	thinDrawer->diagonalLiner->testFill();
-
-	initOffsets();
 }
 
 Leveler::~Leveler()
@@ -91,6 +82,18 @@ void rupFiller(std::vector<std::vector<std::vector<s_shaderGridData>>>& renderGr
 			}
 		}
 	}
+}
+
+void Leveler::renderInit()
+{
+	thinDrawer->whiteWallShader->recreateUniforms(numWhiteWall * 2);
+	thinDrawer->blackWallShader->recreateUniforms(numBlackWall * 2);
+	thinDrawer->wallLight->recreateUniforms(numWhiteWall * 2);
+	thinDrawer->diagonalLiner->recreateUniforms(numWhiteWall * 2);
+
+	thinDrawer->diagonalLiner->testFill();
+
+	initOffsets();
 }
 
 void Leveler::initOffsets()
@@ -238,8 +241,7 @@ void Leveler::initOffsets()
 
 void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
 {
-	Leveler* leveler = (Leveler*)ptr;
-	ThinDrawer* td = leveler->thinDrawer;
+	ThinDrawer* td = ThinDrawer::object;
 
 	VkDeviceSize offsets = 0;
 	uint32 dynamicOffsets = 0;
@@ -247,21 +249,19 @@ void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->dualParticleShader->pipeline);
 
-	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->dualParticleShader->buffers[0].buffer, &offsets);
-
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->dualParticleShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		td->dualParticleShader->pipelineLayout, 1, 1, &td->dualParticleShader->descriptorSets[1], 1, &dynamicOffsets);
+	s_dualParticleUbo pData;
+	pData.color0 = glm::vec4(1.0f, 0.5f, 0.0f, 0.0f);
+	pData.color1 = glm::vec4(0.0f, 0.5f, 1.0f, 0.0f);
+	pData.data0 = glm::vec4(0.6f, 0.05f, 0.0f, 0.5f);
+	pData.data1 = glm::vec4(7.0f, 1.0f, 0.0f, 0.0f);
 
-	vkCmdDraw(cmdBuff, td->dualParticleShader->buffers[0].count, 300, 0, 0);
+	vkCmdPushConstants(cmdBuff, td->dualParticleShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+		0, sizeof(s_dualParticleUbo), &pData);
 
-	dynamicOffsets = td->dualParticleShader->alignedSize;
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		td->dualParticleShader->pipelineLayout, 1, 1, &td->dualParticleShader->descriptorSets[1], 1, &dynamicOffsets);
-
-	vkCmdDraw(cmdBuff, td->dualParticleShader->buffers[0].count, 300, 0, 0);
+	vkCmdDraw(cmdBuff, 6, 400, 0, 0);
 }
 
 void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
@@ -1614,7 +1614,7 @@ void Leveler::update()
 		printf("Rev Time: %f\n", SDL_GetTicksNS() / 1000000000.0 - st);
 	}
 
-	if (wh->keyData[SDL_SCANCODE_Q] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS && consqClickVec.size() == 0)
+	if (wh->keyData[Game::rotateKey] == 2 && item && item->canRotate && item->objectType & SINGLE_DRAWS && consqClickVec.size() == 0)
 	{
 		selectedObjectRotation = (selectedObjectRotation + 1) % 4;
 		
@@ -1624,7 +1624,7 @@ void Leveler::update()
 		}
 	}
 
-	if (wh->keyData[SDL_SCANCODE_E] == 2 && item && item->canMirror)
+	if (wh->keyData[Game::holdKey] == 2 && item && item->canMirror)
 	{
 		selectedObjectMirror ^= 1;
 	}

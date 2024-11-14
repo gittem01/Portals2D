@@ -688,7 +688,7 @@ void TestPlayer::jumpEffect()
     float checkXSpeed = lv.x -= contactBody ? contactBody->GetLinearVelocity().x : 0.0f;
     
     bool noKeyJump = false;
-    if (wh->keyData[SDL_SCANCODE_W] == 2)
+    if (wh->keyData[Game::jumpKey] == 2)
     {
         jumpPressTime = gameTime;
     }
@@ -1849,7 +1849,7 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
 {
     object->destrPortal = nullptr;
 
-    if (holdERequestTime < 0.0f && wh->keyData[SDL_SCANCODE_E] == 2 && gameTime - lastBodyHoldTime > 0.3)
+    if (holdERequestTime < 0.0f && wh->keyData[Game::holdKey] == 2 && gameTime - lastBodyHoldTime > 0.3)
     {
         holdERequestTime = gameTime;
         lastBodyHoldTime = gameTime;
@@ -2114,26 +2114,26 @@ void TestPlayer::update(float dt, int totalIter)
         speedOffset = platformBody->GetLinearVelocity().x;
     }
 
-    if (wh->keyData[SDL_SCANCODE_D] && wh->keyData[SDL_SCANCODE_A])
+    if (wh->keyData[Game::rightKey] && wh->keyData[Game::leftKey])
     {
         if (lastDoubleKey == -1)
         {
             right = true;
         }
-        else if (lastDoubleKey == SDL_SCANCODE_A)
+        else if (lastDoubleKey == Game::leftKey)
 {
             right = true;
         }
-        else if (lastDoubleKey == SDL_SCANCODE_D)
+        else if (lastDoubleKey == Game::rightKey)
 {
             left = true;
         }
     }
-    else if (wh->keyData[SDL_SCANCODE_D])
+    else if (wh->keyData[Game::rightKey])
 {
         right = true;
     }
-    else if (wh->keyData[SDL_SCANCODE_A])
+    else if (wh->keyData[Game::leftKey])
 {
         left = true;
     }
@@ -2157,15 +2157,15 @@ void TestPlayer::update(float dt, int totalIter)
         }
     }
 
-    if (!(wh->keyData[SDL_SCANCODE_A] && wh->keyData[SDL_SCANCODE_D]))
+    if (!(wh->keyData[Game::leftKey] && wh->keyData[Game::rightKey]))
     {
-        if (wh->keyData[SDL_SCANCODE_A])
+        if (wh->keyData[Game::leftKey])
         {
-            lastDoubleKey = SDL_SCANCODE_A;
+            lastDoubleKey = Game::leftKey;
         }
-        else if (wh->keyData[SDL_SCANCODE_D])
+        else if (wh->keyData[Game::rightKey])
         {
-            lastDoubleKey = SDL_SCANCODE_D;
+            lastDoubleKey = Game::rightKey;
         }
         else
         {
@@ -2178,7 +2178,7 @@ void TestPlayer::update(float dt, int totalIter)
     {
         if (right)
         {
-            if (keyBeforeSwitch == SDL_SCANCODE_D)
+            if (keyBeforeSwitch == Game::rightKey)
             {
                 mult = -1.0f;
             }
@@ -2189,7 +2189,7 @@ void TestPlayer::update(float dt, int totalIter)
         }
         else if (left)
         {
-            if (keyBeforeSwitch == SDL_SCANCODE_A)
+            if (keyBeforeSwitch == Game::leftKey)
             {
                 mult = -1.0f;
             }
@@ -2282,7 +2282,7 @@ void TestPlayer::update(float dt, int totalIter)
                 }
             }
 
-            lastKey = SDL_SCANCODE_D;
+            lastKey = Game::rightKey;
         }
         if (left)
         {
@@ -2349,7 +2349,7 @@ void TestPlayer::update(float dt, int totalIter)
                 }
             }
 
-            lastKey = SDL_SCANCODE_A;
+            lastKey = Game::leftKey;
         }
     }
     else if (!contactBody)
@@ -2381,10 +2381,10 @@ void TestPlayer::update(float dt, int totalIter)
 
         b2Vec2 speedAdd = b2Vec2(0.0f, 0.0f);
 
-        speedAdd.y += wh->keyData[SDL_SCANCODE_W] ? 0.01f : 0.0f;
-        speedAdd.x += wh->keyData[SDL_SCANCODE_A] ? -0.03f : 0.0f;
-        speedAdd.y += wh->keyData[SDL_SCANCODE_S] ? -0.03f : 0.0f;
-        speedAdd.x += wh->keyData[SDL_SCANCODE_D] ? 0.03f : 0.0f;
+        speedAdd.y += wh->keyData[Game::jumpKey] ? 0.01f : 0.0f;
+        speedAdd.x += wh->keyData[Game::leftKey] ? -0.03f : 0.0f;
+        speedAdd.y += wh->keyData[Game::downKey] ? -0.03f : 0.0f;
+        speedAdd.x += wh->keyData[Game::rightKey] ? 0.03f : 0.0f;
 
         speedAdd = b2Vec2(rightDir.x * speedAdd.x, rightDir.y * speedAdd.y);
 

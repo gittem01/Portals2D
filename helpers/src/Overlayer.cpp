@@ -139,8 +139,8 @@ void Overlayer::eraseRenderFunctions()
 
 void Overlayer::maper(void* ptr)
 {
-    Overlayer* ol = (Overlayer*)ptr;
-    ThinDrawer* td = ol->thinDrawer;
+    Overlayer* ol = Leveler::object->ol;
+    ThinDrawer* td = ThinDrawer::object;
     WindowHandler* wh = ol->wh;
 
     s_sharedUniformData* sharedData;

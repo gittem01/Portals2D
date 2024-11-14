@@ -1,10 +1,11 @@
-#include <Game.h>
-#include <TestCaseIncludes.h>
-#include <Sounder.h>
-#include <Leveler.h>
-#include <Overlayer.h>
-#include <DefaultObjects/Turret.h>
-#include <DefaultObjects/Gel.h>
+#include "Game.h"
+#include "TestCaseIncludes.h"
+#include "Sounder.h"
+#include "Leveler.h"
+#include "Menu.h"
+#include "Overlayer.h"
+#include "DefaultObjects/Turret.h"
+#include "DefaultObjects/Gel.h"
 #include "GameObjects/Platform.h"
 #include "GameObjects/ForceField.h"
 #include "GameObjects/HazardField.h"
@@ -22,12 +23,20 @@
 
 Game* Game::object;
 
+SDL_Scancode Game::jumpKey = SDL_SCANCODE_W;
+SDL_Scancode Game::leftKey = SDL_SCANCODE_A;
+SDL_Scancode Game::rightKey = SDL_SCANCODE_D;
+SDL_Scancode Game::downKey = SDL_SCANCODE_S;
+SDL_Scancode Game::rotateKey = SDL_SCANCODE_Q;
+SDL_Scancode Game::holdKey = SDL_SCANCODE_E;
+
 Game::Game()
 {
     Game::object = this;
 
 	isPaused = false;
 	tick = false;
+    shouldQuit = false;
 	frame = 0;
     deltaTime = 0.0;
     lastTime = 0.0;
@@ -45,9 +54,19 @@ Game::Game()
 
 	sounder = new Sounder();
 
-    gameStater = &Game::LevelerState;
+    loadGameData();
 
-	SDL_ShowWindow(thinDrawer->wh->window);
+    gameStater = &Game::MenuState;
+}
+
+void Game::loadGameData()
+{
+
+}
+
+void Game::saveGameData()
+{
+
 }
 
 void Game::LevelerState()
@@ -55,9 +74,19 @@ void Game::LevelerState()
     if (!leveler)
     {
         leveler = new Leveler(this);
+        leveler->renderInit();
+    }
+    else if (lastState == &Game::MenuState)
+    {
+        thinDrawer->releaseRenderResources();
+
+        leveler->pushRenderFunctions();
+		leveler->ol->pushRenderFunctions();
+        leveler->renderInit();
     }
 
-    bool shouldQuit = false;
+    SDL_ShowWindow(thinDrawer->wh->window);
+
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && !leveler->shouldQuit)
     {
@@ -80,13 +109,15 @@ void Game::LevelerState()
     if (leveler->shouldQuit)
     {
         leveler->shouldQuit = false;
-
+        shouldQuit = false;
         gameStater = &Game::TestState;
     }
     else
     {
         gameStater = nullptr;
     }
+
+	lastState = &Game::LevelerState;
 }
 
 void Game::TestState()
@@ -97,6 +128,7 @@ void Game::TestState()
         LightBridge::staticInit();
         Turret::staticInit();
         Gel::staticInit();
+        LaserEmitter::staticInit();
         Platform::staticInit();
         ForceField::staticInit();
         HazardField::staticInit();
@@ -105,7 +137,6 @@ void Game::TestState()
         DownButton::staticInit();
         CubeButton::staticInit();
         CircleButton::staticInit();
-        LaserEmitter::staticInit();
         WallLaserReceiver::staticInit();
         GndLaserReceiver::staticInit();
         Funnel::staticInit();
@@ -122,7 +153,8 @@ void Game::TestState()
         thinDrawer->diagonalLiner->testFill();
     }
 
-    bool shouldQuit = false;
+    SDL_ShowWindow(thinDrawer->wh->window);
+
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && (testCase && !testCase->shouldQuit || !testCase))
     {
@@ -231,10 +263,55 @@ void Game::TestState()
     if (leveler)
     {
         gameStater = &Game::LevelerState;
-
+        shouldQuit = false;
         leveler->pushRenderFunctions();
         leveler->ol->pushRenderFunctions();
     }
+
+	lastState = &Game::TestState;
+}
+
+void Game::MenuState()
+{
+    if (!leveler)
+    {
+        leveler = new Leveler(this);
+        thinDrawer->releaseRenderResources();
+    }
+
+	menu = new Menu();
+
+    SDL_ShowWindow(thinDrawer->wh->window);
+
+    lastTime = SDL_GetTicksSec();
+    while (!shouldQuit && gameStater == &Game::MenuState)
+    {
+        shouldQuit = thinDrawer->wh->looper();
+
+        frame++;
+
+        deltaTime = SDL_GetTicksSec() - lastTime;
+        gameTime += deltaTime;
+        lastTime = SDL_GetTicksSec();
+
+        sounder->update();
+
+        menu->update();
+
+        thinDrawer->gameTime = gameTime;
+        thinDrawer->renderLoop();
+    }
+
+    if (gameStater == &Game::MenuState)
+    {
+        gameStater = nullptr;
+    }
+    else
+    {
+        shouldQuit = false;
+    }
+
+	lastState = &Game::MenuState;
 }
 
 void Game::loop()

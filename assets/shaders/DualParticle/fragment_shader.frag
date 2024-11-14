@@ -1,7 +1,6 @@
 #version 460 core
 
 #define PI 3.14159265359
-#define SPEED 0.03
 
 layout (location = 0) out vec4 FragColour;
 

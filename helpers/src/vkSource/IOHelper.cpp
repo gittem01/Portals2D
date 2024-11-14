@@ -224,7 +224,7 @@ void IOHelper::loadGlTF(std::string fileName)
     }
 }
 
-s_texture* IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMode, VkFilter filter)
+s_texture* IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addressMode)
 {
     if (textureMap.find(fileName) != textureMap.end())
     {
@@ -232,7 +232,7 @@ s_texture* IOHelper::loadTexture(std::string fileName, VkSamplerAddressMode addr
 	}
 
     s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
-    thinDrawer->loadTexture(("textures/" + fileName).data(), tex, false, addressMode, filter);
+    thinDrawer->loadTexture(("textures/" + fileName).data(), tex, false, addressMode);
 
     updateTextureSet(tex);
 

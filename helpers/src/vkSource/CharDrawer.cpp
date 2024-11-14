@@ -143,7 +143,7 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 	cd->renderDatas.clear();
 }
 
-std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, float targetHeight, float& x)
+std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, int targetHeight, float& x)
 {
 	// Convert the UTF-8 encoded bytes to Unicode code points
 	std::vector<uint32_t> codePoints = utf8ToUnicode(text);
@@ -203,25 +203,32 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 			}
 		}
 
-		int width, height, xOffset, yOffset;
-		unsigned char* bitmap = stbtt_GetGlyphBitmap(&fontInfo, scale, scale, glyph, &width, &height, &xOffset, &yOffset);
+		stbtt_vertex* rdShape;
+		int numVert = stbtt_GetGlyphShape(&fontInfo, glyph, &rdShape);
 
-		float toMid = 0.5 - ((float)y / targetHeight + ((float)height * 0.5f / targetHeight));
+		stbtt__bitmap rdBitmap;
+		rdBitmap.w = x1 - x0;
+		rdBitmap.h = y1 - y0;
+		rdBitmap.stride = rdBitmap.w;
+		rdBitmap.pixels = new uint8_t[rdBitmap.w * rdBitmap.h];
+		stbtt_Rasterize(&rdBitmap, 0.35f, rdShape, numVert, scale, scale, 0.0f, 0.0f, x0, y0, 1, nullptr);
+
+		float toMid = 0.5 - ((float)y / targetHeight + ((float)rdBitmap.h * 0.5f / targetHeight));
 		float left = lsb * scale / targetHeight;
 
 		s_textureData texData;
-		texData.data = bitmap;
-		texData.width = width;
-		texData.height = height;
+		texData.data = rdBitmap.pixels;
+		texData.width = rdBitmap.w;
+		texData.height = rdBitmap.h;
 		texData.numChannels = 1;
 		s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
 
-		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_LINEAR, 2);
+		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 2);
 
 		IOHelper::updateTextureSet(tex);
 
 		s_charRenderData rData;
-		rData.size_leftBotMargin = glm::vec4((float)width / targetHeight, (float)height / targetHeight, left, toMid);
+		rData.size_leftBotMargin = glm::vec4((float)rdBitmap.w / targetHeight, (float)rdBitmap.h / targetHeight, left, toMid);
 		rData.tex = tex;
 
 		x += rData.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? rData.size_leftBotMargin.z : 0.0);
@@ -231,10 +238,12 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 
 		rd.push_back(rData);
 
-		stbtt_FreeBitmap(bitmap, nullptr);
+		delete rdBitmap.pixels;
+
+		stbtt_FreeShape(&fontInfo, rdShape);
 	}
 
-	x += prevX;
+	x += prevX * 0.5;
 
 	return rd;
 }

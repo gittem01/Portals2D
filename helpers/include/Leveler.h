@@ -333,7 +333,8 @@ public:
 
 	Leveler(Game* game);
 	~Leveler();
-
+	
+	void renderInit();
 	void initOffsets();
 
 	void setSquare(short x, short y, s_levelGridData data);

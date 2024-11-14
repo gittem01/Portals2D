@@ -586,6 +586,8 @@ b2Vec2 PortalWorld::getLineIntersection(b2Vec2 p1, b2Vec2 p2, b2Vec2 p3, b2Vec2 
     float up1 = (p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x);
     float up2 = (p1.x * p2.y - p1.y * p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x * p4.y - p3.y * p4.x);
 
+    if (abs(d) < 0.0001f) d = 0.0001f;
+
     return b2Vec2(up1 / d, up2 / d);
 }
 
@@ -593,11 +595,19 @@ bool PortalWorld::intersectionCheck(b2Vec2 p11, b2Vec2 p12, b2Vec2 p21, b2Vec2 p
 {
     b2Vec2 intersectPoint = getLineIntersection(p11, p12, p21, p22);
 
-    float len1 = (p12 - p11).LengthSquared();
+    /*float len1 = (p12 - p11).LengthSquared();
     float len2 = (p22 - p21).LengthSquared();
 
     float len3 = (intersectPoint - p11).LengthSquared();
     float len4 = (intersectPoint - p21).LengthSquared();
 
-    return len3 < len1 && len3 > 0.0f && len4 < len2 - 0.004f && len4 > 0.004f;
+    return len3 < len1 && len3 > 0.0f && len4 < len2 - 0.004f && len4 > 0.004f;*/
+
+    float len1 = b2Dot(p12 - p11, intersectPoint - p11);
+    float len2 = b2Dot(p22 - p21, intersectPoint - p21);
+
+    float len3 = (p12 - p11).LengthSquared();
+    float len4 = (p22 - p21).LengthSquared();
+
+    return len3 > len1 && len1 > 0.0f && len4 > len2 && len2 > 0.0f;
 }

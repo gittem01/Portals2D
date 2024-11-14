@@ -46,6 +46,10 @@ public:
 
 	glm::vec3 listenerPos = glm::vec3(0.0, 0.0, 0.0);
 
+	float generalVolume = 1.0f;
+	float musicVolume = 1.0f;
+	float effectVolume = 1.0f;
+
 	Sounder();
 	~Sounder();
 

@@ -33,6 +33,7 @@
 #include <ShaderHeaders/WallGel.h>
 #include <ShaderHeaders/SplashShader.h>
 #include <ShaderHeaders/PushLine.h>
+#include <ShaderHeaders/MenuButton.h>
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -204,6 +205,7 @@ public:
     WallGel* wallGel;
     SplashShader* splash;
 	PushLine* pushLine;
+    MenuButton* menuButton;
 
     std::vector<ShaderBase*> shaders;
 
@@ -259,9 +261,9 @@ public:
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin);
     void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
     void loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy = true,
-        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filter = VK_FILTER_LINEAR, float lodBias=0.0);
+        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, float lodBias=0.0);
     void loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy = true,
-        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filter = VK_FILTER_LINEAR, int numMipLevels=0);
+        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, int numMipLevels=0);
     void updateImageDescriptors(s_texture* tex, VkDescriptorSetLayout& setLayout);
     void createImage(uint32_t width, uint32_t p_height, uint32_t mipLevels,
                      VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,

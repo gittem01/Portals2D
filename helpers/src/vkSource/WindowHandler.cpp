@@ -1,6 +1,7 @@
 #include <WindowHandler.h>
 #include <Camera.h>
 #include <backends/imgui_impl_sdl3.h>
+#include "ThinDrawer.h"
 
 WindowHandler::WindowHandler(Camera* cam)
 {
@@ -53,9 +54,12 @@ bool WindowHandler::handleEvents()
         case (SDL_EVENT_MOUSE_MOTION):
             mouseData[0] = (int)evnt.motion.x;
             mouseData[1] = (int)evnt.motion.y;
+			lastMouseMovementTime = ThinDrawer::object->gameTime;
             break;
         case (SDL_EVENT_TEXT_INPUT):
-			SDL_TextInputEvent textEvent = evnt.text;
+            {
+                SDL_TextInputEvent textEvent = evnt.text;
+            }
             break;
 		case (SDL_EVENT_MOUSE_BUTTON_DOWN):
 			mouseData[evnt.button.button + 1] = 2;
@@ -130,7 +134,7 @@ void WindowHandler::massInit()
         exit(1);
     }
 
-    window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y, SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y, SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
     if (!window)
     {
         printf("Could not create window\n");

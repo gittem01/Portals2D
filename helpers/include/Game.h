@@ -2,14 +2,25 @@
 
 #include <vector>
 #include <functional>
+#include "SDL3/SDL.h"
 
 class Game
 {
 public:
+
+	static SDL_Scancode jumpKey;
+	static SDL_Scancode leftKey;
+	static SDL_Scancode rightKey;
+	static SDL_Scancode downKey;
+	static SDL_Scancode rotateKey;
+	static SDL_Scancode holdKey;
+
 	static Game* object;
+
 	bool isPaused;
 	bool tick;
 	int frame;
+	bool shouldQuit;
 
 	double gameTime;
 	double deltaTime;
@@ -27,13 +38,19 @@ public:
 	class Sounder* sounder;
 
 	class Leveler* leveler;
+	class Menu* menu;
 
-	void(Game::*gameStater)(void);
+	void(Game::* gameStater)(void);
+	void(Game::* lastState)(void) = nullptr;
 
 	Game();
 	
+	void loadGameData();
+	void saveGameData();
+
 	void loop();
 
 	void LevelerState();
 	void TestState();
+	void MenuState();
 };

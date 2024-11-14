@@ -272,7 +272,7 @@ void WhiteWall::preparePipeline()
 void WhiteWall::setupDescriptorSet()
 {
     s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
-    thinDrawer->loadTexture((char*)"textures/dots.png", tex, false, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 0.0f);
+    thinDrawer->loadTexture((char*)"textures/dots.png", tex, false, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f);
     textureData.push_back(tex);
 
     s_texture* tex2 = (s_texture*)malloc(sizeof(s_texture));

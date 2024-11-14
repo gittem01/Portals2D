@@ -15,8 +15,6 @@ typedef struct s_dualParticleUbo
 class DualParticleShader : public ShaderBase
 {
 public:
-    int alignedSize;
-
     DualParticleShader(ThinDrawer* thinDrawer) : ShaderBase(thinDrawer) { }
 
     void prepareUniforms();

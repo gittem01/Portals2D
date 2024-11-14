@@ -285,7 +285,7 @@ void ThinDrawer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t te
     flushCommandBuffer(commandBuffer);
 }
 
-void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter, float lodBias)
+void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, float lodBias)
 {
     std::string finalPath = IOHelper::assetsFolder + fileName;
 
@@ -303,13 +303,23 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     tData.width = width;
     tData.height = height;
     tData.numChannels = nChannels;
-    loadTextureFromMemory(&tData, texture, enableAnisotropy, addressMode, filter, lodBias);
+    loadTextureFromMemory(&tData, texture, enableAnisotropy, addressMode, lodBias);
 
     stbi_image_free(pixels);
 }
 
-void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, VkFilter filter, int numMipLevels)
+void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, int numMipLevels)
 {
+	VkFilter filter;
+	if (texData->width > 32 && texData->height > 32)
+	{
+		filter = VK_FILTER_LINEAR;
+	}
+	else
+	{
+		filter = VK_FILTER_NEAREST;
+	}
+
     VkFormat format;
     if (texData->numChannels == 4)
     {

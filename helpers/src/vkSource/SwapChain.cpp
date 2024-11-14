@@ -35,7 +35,7 @@ void SwapChain::creationLoop()
     for (;;)
     {
         SDL_Event e;
-        SDL_WaitEvent(&e);
+        SDL_WaitEventTimeout(&e, 50);
 
         querySwapChainSupport();
         extent = chooseSwapExtent();

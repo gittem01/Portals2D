@@ -36,7 +36,7 @@ Sounder::Sounder()
 
     Sounder::object = this;
 
-    alListenerf(AL_GAIN, 20.0);
+    alListenerf(AL_GAIN, 1.0);
 
     // load default
     ALuint src = loadSound("portalRadio.wav");
@@ -167,12 +167,15 @@ ALuint Sounder::playSound(ALuint buffer, float volume)
         return 0;
     }
 
+	float setVolume = volume * generalVolume * effectVolume;
+	if (setVolume <= 0.0f) return 0;
+
     ALuint source = onetimeSources[lastAvailableOnetimeSource];
     s_sourceInUse* newSource = availableSourcesInUse[lastAvailableOnetimeSource];
     lastAvailableOnetimeSource++;
 
     alSourcei(source, AL_BUFFER, buffer);
-    alSourcef(source, AL_GAIN, volume);
+    alSourcef(source, AL_GAIN, setVolume);
     alSourcePlay(source);
 
     newSource->source = source;
@@ -188,7 +191,7 @@ ALuint Sounder::playSound(ALuint buffer, float volume)
 
 void Sounder::setSoundVolume(ALuint source, float volume)
 {
-    alSourcef(source, AL_GAIN, volume);
+    alSourcef(source, AL_GAIN, volume * generalVolume * effectVolume);
 }
 
 void Sounder::setSoundPosition(ALuint source, glm::vec3 pos)

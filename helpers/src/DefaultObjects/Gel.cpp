@@ -68,18 +68,13 @@ void Gel::generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int color
     gels[gelCount++] = gel;
 }
 
-void Gel::recreate()
+void Gel::recreate(bool mirrored)
 {
     for (int j = wData->pbIndices.size() - 1; j >= 0; j--)
     {
         PortalBody* portalBody = wData->pbIndices[j];
 
         delete portalBody;
-    }
-
-    for (int i = 0; i < MAX_GEL_COUNT; i++)
-    {
-        freeGels[i] = &gelPool[i];
     }
 }
 
@@ -436,6 +431,12 @@ void Gel::toDeath()
                 }
             }
         }
+    }
+
+    freeGels.resize(MAX_GEL_COUNT);
+    for (int i = 0; i < MAX_GEL_COUNT; i++)
+    {
+        freeGels[i] = &gelPool[i];
     }
 }
 

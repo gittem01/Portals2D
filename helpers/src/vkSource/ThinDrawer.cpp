@@ -83,6 +83,7 @@ void ThinDrawer::initExtra()
     wallGel = new WallGel(this); shaders.push_back(wallGel);
     splash = new SplashShader(this); shaders.push_back(splash);
 	pushLine = new PushLine(this); shaders.push_back(pushLine);
+	menuButton = new MenuButton(this); shaders.push_back(menuButton);
 
     setupDescriptorPool();
 
@@ -1687,6 +1688,8 @@ void ThinDrawer::eraseFromRenderFunctions(std::vector<std::pair<void (*) (VkComm
 
 void ThinDrawer::releaseRenderResources()
 {
+	wh->cam->pos = glm::vec2(0.0f, 0.0f);
+
     memMapFuncs.clear();
 
     earlyDrawFuncs.clear();

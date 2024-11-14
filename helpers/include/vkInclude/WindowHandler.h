@@ -28,6 +28,7 @@ public:
 	std::vector<int> newPressIndices;
 	SDL_Window* window;
 	Camera* cam;
+	double lastMouseMovementTime = 0.0;
 
 	uint32_t dpiScaling = 1;
 

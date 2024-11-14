@@ -32,7 +32,7 @@ public:
 
 	static void getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGlobalData** data);
 	void splash(b2Contact* contact, b2Fixture* otherFix);
-	void recreate();
+	void recreate(bool mirrored=false) override;
 
 	static void toDeath();
 	static void toLeveler();
