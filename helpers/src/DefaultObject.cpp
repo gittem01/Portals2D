@@ -128,6 +128,26 @@ b2Vec2 DefaultObject::tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixtur
 
 		edgeNormal = edge->m_vertex1 - edgeShape2->m_vertex1;
 	}
+	else if (fixData->type == F_PORTAL)
+	{
+		Portal* portal = (Portal*)fixData->data;
+		if (portal->connections->size() > 0) return b2Vec2(-1000.0f, -1000.0f);
+
+		if (portal->sideFixtures[0])
+		{
+			otherFix = portal->sideFixtures[0];
+		}
+		else if (portal->sideFixtures[1])
+		{
+			otherFix = portal->sideFixtures[1];
+		}
+		else
+		{
+			return b2Vec2(-1000.0f, -1000.0f);
+		}
+
+		edgeNormal = portal->dir;
+	}
 	else
 	{
 		b2Vec2 edgeVec = edge->m_vertex2 - edge->m_vertex1;
@@ -220,6 +240,7 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixt
 		break;
 		case F_EDGE:
 		case F_LIGHT_BRIDGE:
+		case F_PORTAL:
 			if (!TestPlayer::object->holdBody || TestPlayer::object->holdBody->worldIndex != wData)
 			{
 				tryBounce(contact, thisFix, otherFix);
@@ -239,16 +260,17 @@ void DefaultObject::endContact(b2Contact* contact, b2Fixture* otherFix)
 void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
 	fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
-	if (fData && fData->type & (F_EDGE | F_LIGHT_BRIDGE))
+	if (fData && fData->type & (F_EDGE | F_LIGHT_BRIDGE | F_PORTAL))
 	{
 		b2Vec2 pos = thisBody->GetPosition();
+
 		s_edgeGlobalData* eGlobal = Gel::getEdgeData(fData);
 
 		b2Vec2 v1;
 		b2Vec2 dirVec;
 		int extraOffset;
 
-		if (fData && fData->type & F_LIGHT_BRIDGE)
+		if (fData->type & F_LIGHT_BRIDGE)
 		{
 			b2EdgeShape* edge = (b2EdgeShape*)fix2->GetShape();
 			dirVec = edge->m_vertex2 - edge->m_vertex1;

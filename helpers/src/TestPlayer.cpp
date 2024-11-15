@@ -873,6 +873,7 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture
         break;
         case F_LIGHT_BRIDGE:
         case F_EDGE:
+        case F_PORTAL:
         {
             if (grounded || wh->keyData[SDL_SCANCODE_LCTRL] || wh->keyData[SDL_SCANCODE_RCTRL])
 			{
