@@ -289,7 +289,7 @@ void Platform::toLeveler()
 
 void Platform::staticInit()
 {
-	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
+	ThinDrawer::object->drawFuncs.push_back({ render, nullptr });
 	ThinDrawer::object->memMapFuncs.push_back({ memMapFunc, nullptr });
 }
 
