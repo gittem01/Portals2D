@@ -5,6 +5,15 @@
 #include <Leveler.h>
 #include <CharDrawer.h>
 
+typedef enum
+{
+	LEVELER = 0,
+	LEVELER_MENU = 1,
+	TESTER_MENU = 2,
+	LOAD_LEVEL = 3,
+	SAVE_LEVEL = 4
+} overlayType;
+
 typedef struct Pop
 {
 	std::vector<std::vector<s_charRenderData>> texts;
@@ -50,6 +59,7 @@ public:
 	bool clickStartOnPlay = false;
 	bool hoveringPlay = false;
 	bool clickedPlay = false;
+	overlayType overlayOverlay = LEVELER;
 
 	float itemRatio = 0.0;
 	bool itemDir = 0;
@@ -60,7 +70,8 @@ public:
 	glm::ivec2 levelerRCPos;
 	s_gridData rightClickItem;
 	int startAlloc;
-	
+	s_menuButton topLeftButtons[2];
+
 	unsigned int switchSound;
 	unsigned int clickSound;
 	unsigned int bopSound;
@@ -77,10 +88,12 @@ public:
 		float gridRenderScale=1.0, bool canRotate=false, int requiredSideFill=-1, bool canMirror=false, float extraScale=0.0);
 	void getPops();
 	int addPop(std::string popName, std::vector<std::string> texts, std::vector<std::string> secondaryPops, int mask);
+	void topLeftUpdate();
 	void popUpdate();
 	void handleHoverPlay();
 	void update();
 
+	static void camMap(void* ptr);
 	static void maper(void* ptr);
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 };

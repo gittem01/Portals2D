@@ -15,5 +15,5 @@ Turkish
 English
 <local_1>
 <selected_language_index>
-0
+1
 <selected_language_index>

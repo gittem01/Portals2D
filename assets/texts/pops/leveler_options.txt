@@ -1,0 +1,16 @@
+<0>
+Kaydet
+Yükle
+<0>
+<1>
+Save
+Load
+<1>
+<linked_options>
+-
+-
+<linked_options>
+<signal_options>
+0
+0
+<signal_options>

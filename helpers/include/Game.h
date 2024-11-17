@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <functional>
+#include <mutex>
 #include "SDL3/SDL.h"
 
 class Game
@@ -14,6 +15,9 @@ public:
 	static SDL_Scancode downKey;
 	static SDL_Scancode rotateKey;
 	static SDL_Scancode holdKey;
+
+	static int lastLevel;
+	static int maxLevel;
 
 	static Game* object;
 

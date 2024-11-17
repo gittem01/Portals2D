@@ -30,6 +30,7 @@ public:
 	std::vector<unsigned char> fontData;
 	stbtt_fontinfo fontInfo;
 	int selectedLanguageIndex;
+	int creationHeight;
 	std::string languageName;
 
 	std::vector<s_lineRenderData> renderDatas;
@@ -40,6 +41,7 @@ public:
 
 	std::vector<s_charRenderData> getRenderData(const std::string& text, int targetHeight, float& x);
 
+	static float calcSize(std::vector<s_charRenderData> rd);
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 
 	bool loadFontFile(const std::string& filename, std::vector<unsigned char>& fontData, stbtt_fontinfo& fontInfo);

@@ -4,7 +4,11 @@ project(Teleporter VERSION 2.0.0)
 set(APP_NAME PhysicsTeleport)
 set(CMAKE_CXX_STANDARD 20)
 
-add_definitions(-DGL_SLIENCE_DEPRECATION)
+if(MSVC)
+  add_definitions(/MP)
+  add_definitions(/ZI)
+  add_definitions(-DGL_SLIENCE_DEPRECATION)
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/helpers/include)

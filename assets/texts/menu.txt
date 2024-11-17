@@ -1,12 +1,27 @@
-<0>
+<play_0>
 OYNA
+<play_0>
+
+<play_1>
+PLAY
+<play_1>
+
+<leveler_0>
 LEVEL DÜZENLEYİCİ
-AYARLAR
-KATKILAR
-ÇIKIŞ
 YENİ
 YÜKLE
 TOPLULUK
+<leveler_0>
+
+<leveler_1>
+LEVEL EDITOR
+NEW
+LOAD
+COMMUNITY
+<leveler_1>
+
+<settings_0>
+AYARLAR
 GENEL SES
 MÜZİK
 SES EFEKTLERİ
@@ -16,16 +31,10 @@ TUT
 SOL
 AŞAĞI
 SAĞ
-<0>
-<1>
-PLAY
-LEVEL EDITOR
+<settings_0>
+
+<settings_1>
 SETTINGS
-CREDITS
-EXIT
-NEW
-LOAD
-COMMUNITY
 GENERAL SOUND
 MUSIC
 SOUND EFFECTS
@@ -35,4 +44,36 @@ HOLD
 LEFT
 DOWN
 RIGHT
-<1>
+<settings_1>
+
+<credits_0>
+KATKILAR
+<credits_0>
+
+<credits_1>
+CREDITS
+<credits_1>
+
+<exit_0>
+ÇIKIŞ
+<exit_0>
+
+<exit_1>
+EXIT
+<exit_1>
+
+<back_0>
+GERİ
+<back_0>
+
+<back_1>
+BACK
+<back_1>
+
+<to_menu_0>
+MENÜYE DÖN
+<to_menu_0>
+
+<to_menu_1>
+BACK TO MENU
+<to_menu_1>

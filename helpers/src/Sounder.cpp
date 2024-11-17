@@ -36,7 +36,7 @@ Sounder::Sounder()
 
     Sounder::object = this;
 
-    alListenerf(AL_GAIN, 5.0);
+    alListenerf(AL_GAIN, 20.0);
 
     // load default
     ALuint src = loadSound("portalRadio.wav");

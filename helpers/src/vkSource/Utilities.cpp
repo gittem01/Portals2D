@@ -421,7 +421,8 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
     vkFreeMemory(logicalDevice, stagingMemory, VK_NULL_HANDLE);
     vkDestroyBuffer(logicalDevice, stagingBuffer, VK_NULL_HANDLE);
 
-    generateMipmaps(texture->image, format, texData->width, texData->height, texture->mipLevels);
+    if (texture->mipLevels > 1)
+        generateMipmaps(texture->image, format, texData->width, texData->height, texture->mipLevels);
 
     texture->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 

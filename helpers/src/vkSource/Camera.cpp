@@ -1,6 +1,7 @@
 #include <Camera.h>
 #include <WindowHandler.h>
 #include <Sounder.h>
+#include "Game.h"
 
 std::vector<Camera*> Camera::cameras;
 
@@ -30,6 +31,8 @@ Camera::~Camera()
 
 void Camera::init(glm::vec2 pos, WindowHandler* wh)
 {
+	mousePos = getMouseCoords();
+
 	this->pos = pos;
 	this->window = wh->window;
 	this->windowHandler = wh;
@@ -90,6 +93,8 @@ void Camera::update()
 	{
 		return;
 	}
+
+	mousePos = getMouseCoords_i();
 
 	this->dragFunc(windowHandler->windowSizes.x, windowHandler->windowSizes.y);
 
@@ -152,7 +157,7 @@ void Camera::dragFunc(int width, int height)
 	}
 }
 
-glm::vec2 Camera::getMouseCoords()
+glm::vec2 Camera::getMouseCoords_i()
 {
 	int width, height;
 	SDL_GetWindowSize(this->window, &width, &height);
@@ -169,6 +174,21 @@ glm::vec2 Camera::getMouseCoords()
 	float yPos = ySides.x + yPerct * yDiff;
 
 	return glm::vec2(xPos, yPos);
+}
+
+glm::vec2 Camera::getMouseCoords()
+{
+	if (Game::object->gameTime != lastMouseUpdateTime)
+	{
+		mousePos = getMouseCoords_i();
+		lastMouseUpdateTime = Game::object->gameTime;
+
+		return mousePos;
+	}
+	else
+	{
+		return mousePos;
+	}
 }
 
 glm::vec2 Camera::getCameraCoords(glm::vec2 p)

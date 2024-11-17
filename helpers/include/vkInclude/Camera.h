@@ -10,6 +10,9 @@ class WindowHandler;
 
 class Camera
 {
+private:
+	glm::vec2 getMouseCoords_i();
+
 public:
 	glm::vec2 pos;
 	float rotation;
@@ -31,6 +34,8 @@ public:
 	float zoomInc = 0.15;
 	float dragSmth = 0.2f;
 	float neededZoom = 0;
+	double lastMouseUpdateTime = 0.0;
+	glm::vec2 mousePos;
 	glm::vec2 zoomPoint;
 	glm::vec2 lastPos = glm::vec2(-1, -1);
 	glm::vec2 dragTo = glm::vec2(0, 0);

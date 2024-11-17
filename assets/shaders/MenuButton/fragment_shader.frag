@@ -66,9 +66,12 @@ void main()
     vec2 p = localPos;
     float d = 2.0 * boxSDF(p, size * 0.5) - extra;
 
-    float noiseVal = 1.0 - voronoi(worldPos) * 0.5;
-    colour.w *= noiseVal;
-
+    if (pc.data.z > 0.0001)
+    {
+        float noiseVal = 1.0 - voronoi(worldPos) * 0.5;
+        colour.w *= noiseVal;
+    }
+    
     if (d < 0.0)
     {
         FragColour = colour;

@@ -2,6 +2,7 @@
 #include <Camera.h>
 #include <backends/imgui_impl_sdl3.h>
 #include "ThinDrawer.h"
+#include "SDL3/SDL_events.h"
 
 WindowHandler::WindowHandler(Camera* cam)
 {
@@ -42,10 +43,12 @@ void WindowHandler::handleKeyData()
 
 bool WindowHandler::handleEvents()
 {
-    SDL_StartTextInput(window); // to enable SDL_EVENT_TEXT_INPUT events
+    //SDL_StartTextInput(window); // to enable SDL_EVENT_TEXT_INPUT events
     
+    text = "";
+
     SDL_Event evnt;
-    while (SDL_PollEvent(&evnt))
+    while (SDL_WaitEventTimeout(&evnt, 1))
     {
 		ImGui_ImplSDL3_ProcessEvent(&evnt);
 
@@ -58,7 +61,7 @@ bool WindowHandler::handleEvents()
             break;
         case (SDL_EVENT_TEXT_INPUT):
             {
-                SDL_TextInputEvent textEvent = evnt.text;
+				text = std::string(evnt.text.text);
             }
             break;
 		case (SDL_EVENT_MOUSE_BUTTON_DOWN):
@@ -90,9 +93,20 @@ bool WindowHandler::handleEvents()
             windowSizes.x = evnt.window.data1;
 			windowSizes.y = evnt.window.data2;
 
+            if (windowSizes.x / windowSizes.y > 2.0f)
+            {
+				windowSizes.x = windowSizes.y * 2.0f;
+				SDL_SetWindowSize(window, windowSizes.x, windowSizes.y);
+            }
+			else if (windowSizes.y / windowSizes.x > 1.0f)
+			{
+				windowSizes.y = windowSizes.x;
+				SDL_SetWindowSize(window, windowSizes.x, windowSizes.y);
+			}
+
             for (Camera* cam : Camera::cameras)
             {
-                float ratio = (float)evnt.window.data2 / evnt.window.data1;
+                float ratio = (float)windowSizes.y / windowSizes.x;
 
                 cam->defaultYSides = glm::vec2(-cam->baseX * ratio * 0.5f, cam->baseX * ratio * 0.5f);
 
@@ -134,7 +148,8 @@ void WindowHandler::massInit()
         exit(1);
     }
 
-    window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y, SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
+    window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y,
+        SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_FULLSCREEN);
     if (!window)
     {
         printf("Could not create window\n");

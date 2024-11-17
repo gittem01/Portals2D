@@ -9,6 +9,7 @@
 #include <vulkan/vulkan.h>
 #include <PlatformRectangle.h>
 #include <TestPlayer.h>
+#include <stack>
 
 typedef union GridData
 {
@@ -128,6 +129,7 @@ constexpr int getRotVal(int rot)
 
 typedef enum OperationType																 
 {
+	NO_OP	= 0,
 	ADD		= 1,
 	REMOVE	= 2,
 } operationType;
@@ -240,7 +242,7 @@ typedef struct GridOperation_O
 typedef struct GridOperationList
 {
 	std::vector<s_gridOperation> operations;
-	s_gridOperation_o* objectOperation = nullptr;
+	s_gridOperation_o objectOperation = { nullptr, NO_OP };
 	s_connection* connection = nullptr;
 	GridOperationList* next = nullptr;
 	GridOperationList* prev = nullptr;
@@ -284,6 +286,7 @@ public:
 
 	//////////////////
 	s_gridOperationList* currentOperation;
+	std::stack<s_gridOperationList> opList;
 
 	//////////////////
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;
@@ -332,7 +335,6 @@ public:
 	s_gridSquare endSquare = { 10, 1 };
 
 	Leveler(Game* game);
-	~Leveler();
 	
 	void renderInit();
 	void initOffsets();

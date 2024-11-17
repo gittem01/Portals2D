@@ -87,6 +87,8 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 	fontShader = new FontShader(thinDrawer);
 	thinDrawer->shaders.push_back(fontShader);
 	fontShader->init();
+
+	creationHeight = thinDrawer->wh->windowSizes.y;
 }
 
 void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
@@ -141,6 +143,30 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 	}
 
 	cd->renderDatas.clear();
+}
+
+float CharDrawer::calcSize(std::vector<s_charRenderData> rd)
+{
+	float x = 0.0f;
+	float prevX = 0.0f;
+
+	for (auto& chrData : rd)
+	{
+		if (chrData.tex == nullptr)
+		{
+			x += chrData.size_leftBotMargin.x + prevX * 0.5;
+			prevX = 0.0f;
+			continue;
+		}
+
+		x += chrData.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0 ? chrData.size_leftBotMargin.z : 0.0);
+
+		prevX = chrData.size_leftBotMargin.x;
+	}
+
+	x += prevX * 0.5;
+
+	return x;
 }
 
 std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, int targetHeight, float& x)
@@ -211,7 +237,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		rdBitmap.h = y1 - y0;
 		rdBitmap.stride = rdBitmap.w;
 		rdBitmap.pixels = new uint8_t[rdBitmap.w * rdBitmap.h];
-		stbtt_Rasterize(&rdBitmap, 0.35f, rdShape, numVert, scale, scale, 0.0f, 0.0f, x0, y0, 1, nullptr);
+		stbtt_Rasterize(&rdBitmap, 0.01f, rdShape, numVert, scale, scale, 0.0f, 0.0f, x0, y0, 1, nullptr);
 
 		float toMid = 0.5 - ((float)y / targetHeight + ((float)rdBitmap.h * 0.5f / targetHeight));
 		float left = lsb * scale / targetHeight;
@@ -223,7 +249,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		texData.numChannels = 1;
 		s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
 
-		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 2);
+		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 1);
 
 		IOHelper::updateTextureSet(tex);
 

@@ -27,7 +27,7 @@ public:
 	static ThinDrawer* thinDrawer;
 
 	static const int searchDepth = 4;
-	static inline char assetsFolderName[] = "assets";
+	static constexpr char assetsFolderName[] = "assets";
 	static const int sizeofAssetsFolderName = sizeof(assetsFolderName) / sizeof(char);
 	// ex : ../../%assetsFolderName%/
 	static std::string assetsFolder;

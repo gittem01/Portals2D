@@ -31,6 +31,9 @@ SDL_Scancode Game::downKey = SDL_SCANCODE_S;
 SDL_Scancode Game::rotateKey = SDL_SCANCODE_Q;
 SDL_Scancode Game::holdKey = SDL_SCANCODE_E;
 
+int Game::lastLevel = 1;
+int Game::maxLevel = 27;
+
 Game::Game()
 {
     Game::object = this;
@@ -44,7 +47,6 @@ Game::Game()
     gameTime = 0.0;
     dtMult = 1.0;
     testCase = nullptr;
-    leveler = nullptr;
     pWorld = nullptr;
 
     contactListener = nullptr;
@@ -54,6 +56,12 @@ Game::Game()
 	thinDrawer = new ThinDrawer(pWorld);
 
 	sounder = new Sounder();
+
+    leveler = new Leveler(this);
+    
+    menu = new Menu();
+
+    thinDrawer->releaseRenderResources();
 
     loadGameData();
 
@@ -89,6 +97,8 @@ void Game::loadGameData()
 		sounder->generalVolume = arr[6] / 1024.0;
 		sounder->musicVolume = arr[7] / 1024.0;
 		sounder->effectVolume = arr[8] / 1024.0;
+
+		lastLevel = arr[9];
 	}
 	else
 	{
@@ -125,6 +135,8 @@ void Game::saveGameData()
 			arr[7] = (uint16_t)std::round(sounder->musicVolume * 1024);
 			arr[8] = (uint16_t)std::round(sounder->effectVolume * 1024);
 
+			arr[9] = lastLevel;
+
 			file.write((char*)arr, sizeof(arr));
 			file.close();
 		}
@@ -142,17 +154,18 @@ void Game::saveGameData()
 
 void Game::LevelerState()
 {
-    if (!leveler)
-    {
-        leveler = new Leveler(this);
-        leveler->renderInit();
-    }
-    else if (lastState == &Game::MenuState)
+    leveler->ol->overlayOverlay = LEVELER;
+
+    if (lastState == &Game::MenuState)
     {
         thinDrawer->releaseRenderResources();
 
         leveler->pushRenderFunctions();
 		leveler->ol->pushRenderFunctions();
+        leveler->renderInit();
+    }
+    else
+    {
         leveler->renderInit();
     }
 
@@ -162,7 +175,8 @@ void Game::LevelerState()
     while (!shouldQuit && !leveler->shouldQuit)
     {
         shouldQuit = thinDrawer->wh->looper();
-        thinDrawer->wh->cam->update();
+        if (!leveler->ol->overlayOverlay)
+            thinDrawer->wh->cam->update();
 
         frame++;
 
@@ -177,15 +191,20 @@ void Game::LevelerState()
         thinDrawer->renderLoop();
     }
 
-    if (leveler->shouldQuit)
+    shouldQuit = false;
+
+    if (leveler->shouldQuit && gameStater == &Game::LevelerState)
     {
         leveler->shouldQuit = false;
-        shouldQuit = false;
         gameStater = &Game::TestState;
+    }
+    else if (gameStater == &Game::LevelerState)
+    {
+        gameStater = nullptr;
     }
     else
     {
-        gameStater = nullptr;
+        thinDrawer->releaseRenderResources();
     }
 
 	lastState = &Game::LevelerState;
@@ -194,7 +213,7 @@ void Game::LevelerState()
 void Game::TestState()
 {
     dtMult = 1.0;
-    if (leveler)
+    if (lastState == &Game::LevelerState)
     {
         LightBridge::staticInit();
         Turret::staticInit();
@@ -287,7 +306,7 @@ void Game::TestState()
 
     if (testCase)
     {
-        if (leveler)
+        if (lastState == &Game::LevelerState)
         {
             ForceField::toLeveler();
             HazardField::toLeveler();
@@ -331,7 +350,7 @@ void Game::TestState()
         return;
 	}
 
-    if (leveler)
+    if (lastState == &Game::LevelerState)
     {
         gameStater = &Game::LevelerState;
         shouldQuit = false;
@@ -344,13 +363,15 @@ void Game::TestState()
 
 void Game::MenuState()
 {
-    if (!leveler)
-    {
-        leveler = new Leveler(this);
-        thinDrawer->releaseRenderResources();
-    }
+    menu->initDefaults();
 
-	menu = new Menu();
+    menu->renderInit();
+
+    menu->initPlay();
+    menu->initLeveler();
+    menu->initSettings();
+    menu->initCredits();
+    menu->exitButton = menu->initWithName("exit", glm::vec4(1.0, 0.0, 0.0, 0.2));
 
     SDL_ShowWindow(thinDrawer->wh->window);
 

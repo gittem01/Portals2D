@@ -220,9 +220,6 @@ void BaseTestCase::keyHandler(WindowHandler* wh)
     }
 }
 
-
-
-
 // helpers
 
 float getRand()

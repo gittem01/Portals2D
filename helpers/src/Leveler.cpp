@@ -41,18 +41,6 @@ Leveler::Leveler(Game* game)
 	ol->cd->getRenderData("(),0123456789", 50, x);
 }
 
-Leveler::~Leveler()
-{
-	for (auto iter = thinDrawer->lateDrawFuncs.begin(); iter != thinDrawer->lateDrawFuncs.end(); iter++)
-	{
-		if (iter->second == this)
-		{
-			thinDrawer->lateDrawFuncs.erase(iter);
-			break;
-		}
-	}
-}
-
 void Leveler::pushRenderFunctions()
 {
 	//thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
@@ -1401,6 +1389,18 @@ inline cableDir Leveler::getCable(short x, short y)
 	return cableMap[y + ySize_H + extraCable][x + xSize_H + extraCable];
 }
 
+void deleteAfter(s_gridOperationList* op)
+{
+	for (; op;)
+	{
+		s_gridOperationList* del = op;
+		op = op->next;
+		if (del->connection) delete del->connection;
+		if (del->objectOperation.objData) delete del->objectOperation.objData;
+		delete del;
+	}
+}
+
 void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData, s_connection* connection)
 {
 	s_gridOperationList* tempNextOp = currentOperation->next;
@@ -1408,16 +1408,10 @@ void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* ob
 	currentOperation->next->prev = currentOperation;
 	currentOperation = currentOperation->next;
 
-	for (; tempNextOp;)
-	{
-		s_gridOperationList* del = tempNextOp;
-		tempNextOp = tempNextOp->next;
-		delete del;
-	}
+	deleteAfter(tempNextOp);
 
-	currentOperation->objectOperation = new s_gridOperation_o();
-	currentOperation->objectOperation->operationType = opType;
-	currentOperation->objectOperation->objData = objectData;
+	currentOperation->objectOperation.operationType = opType;
+	currentOperation->objectOperation.objData = objectData;
 	currentOperation->connection = connection;
 }
 
@@ -1452,12 +1446,19 @@ void Leveler::update()
 			const s_levelGridData& lgd = getSquare(consqClickVec[0].x, consqClickVec[0].y);
 			if (lgd.objectType & CATAPULT)
 			{
-				takeBack(wh->keyData[SDL_SCANCODE_LSHIFT] != 0);
+				takeBack(false);
 
-				if (currentOperation->next && currentOperation->next->objectOperation &&
-					currentOperation->next->objectOperation->objData->objectType == CATAPULT && currentOperation->next->objectOperation->operationType == ADD)
+				if (currentOperation->next && currentOperation->next->objectOperation.objData &&
+					currentOperation->next->objectOperation.objData->objectType == CATAPULT &&
+					currentOperation->next->objectOperation.operationType == ADD)
 				{
+					s_gridOperationList* removeOperation = currentOperation->next;
 					currentOperation->next = currentOperation->next->next;
+					
+					if (removeOperation->connection) delete removeOperation->connection;
+					if (removeOperation->objectOperation.objData) delete removeOperation->objectOperation.objData;
+					delete removeOperation;
+
 					consqClickVec.clear();
 				}
 			}
@@ -1601,10 +1602,11 @@ void Leveler::update()
 	{
 		double st = SDL_GetTicksNS() / 1000000000.0;
 
-		takeBack(wh->keyData[SDL_SCANCODE_LSHIFT] != 0);
+		takeBack(wh->keyData[SDL_SCANCODE_LSHIFT] != 0 && !ol->overlayOverlay);
 
-		if (currentOperation->next && !currentOperation->next->connection && currentOperation->next->objectOperation &&
-			currentOperation->next->objectOperation->objData->objectType == CATAPULT && currentOperation->next->objectOperation->operationType == ADD &&
+		if (currentOperation->next && !currentOperation->next->connection && currentOperation->next->objectOperation.objData &&
+			currentOperation->next->objectOperation.objData->objectType == CATAPULT &&
+			currentOperation->next->objectOperation.operationType == ADD &&
 			consqClickVec.size() != 0 && item && item->objectType == CATAPULT)
 		{
 			currentOperation->next = currentOperation->next->next;
@@ -1670,6 +1672,7 @@ void Leveler::putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData)
 		{
 			thinDrawer->polynomShader->datas.push_back({ data, true });
 		}
+
 		return;
 	}
 
@@ -3138,7 +3141,7 @@ void Leveler::takeBack(bool shiftPressed)
 
 			currentOperation = currentOperation->next;
 
-			if (!currentOperation->objectOperation)
+			if (!currentOperation->objectOperation.objData && !currentOperation->connection)
 			{
 				putBarrierOnMemories({ thinDrawer->whiteWallShader, thinDrawer->blackWallShader, thinDrawer->diagonalLiner, thinDrawer->laserShader });
 
@@ -3165,10 +3168,10 @@ void Leveler::takeBack(bool shiftPressed)
 			}
 			else
 			{
-				if (currentOperation->objectOperation->objData)
+				if (currentOperation->objectOperation.objData && !currentOperation->connection)
 				{
-					glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
-					switch (currentOperation->objectOperation->operationType)
+					glm::i16vec2 sq = currentOperation->objectOperation.objData->pos;
+					switch (currentOperation->objectOperation.operationType)
 					{
 					case REMOVE:
 						removeObject(sq.x, sq.y);
@@ -3176,7 +3179,7 @@ void Leveler::takeBack(bool shiftPressed)
 
 					case ADD:
 					{
-						s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
+						s_objectDataGrid* objectData = currentOperation->objectOperation.objData;
 						int objIndex = getLevelObjectIndex(objectData->objectType);
 						const s_gridItemData& item = ol->items[objIndex];
 
@@ -3195,7 +3198,7 @@ void Leveler::takeBack(bool shiftPressed)
 				}
 				else if (currentOperation->connection)
 				{
-					if (currentOperation->objectOperation->operationType == REMOVE)
+					if (currentOperation->objectOperation.operationType == REMOVE)
 					{
 						removeConnection(currentOperation->connection, nullptr, false);
 					}
@@ -3213,7 +3216,7 @@ void Leveler::takeBack(bool shiftPressed)
 		ALuint source = ol->sounder->playSound(ol->undoSound, 0.4);
 		alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
 
-		if (!currentOperation->objectOperation)
+		if (!currentOperation->objectOperation.objData && !currentOperation->connection)
 		{
 			putBarrierOnMemories({ thinDrawer->whiteWallShader, thinDrawer->blackWallShader, thinDrawer->diagonalLiner, thinDrawer->laserShader });
 
@@ -3240,14 +3243,14 @@ void Leveler::takeBack(bool shiftPressed)
 		}
 		else
 		{
-			if (currentOperation->objectOperation->objData)
+			if (currentOperation->objectOperation.objData && !currentOperation->connection)
 			{
-				glm::i16vec2 sq = currentOperation->objectOperation->objData->pos;
-				switch (currentOperation->objectOperation->operationType)
+				glm::i16vec2 sq = currentOperation->objectOperation.objData->pos;
+				switch (currentOperation->objectOperation.operationType)
 				{
 				case REMOVE:
 				{
-					s_objectDataGrid* objectData = currentOperation->objectOperation->objData;
+					s_objectDataGrid* objectData = currentOperation->objectOperation.objData;
 					int objIndex = getLevelObjectIndex(objectData->objectType);
 					const s_gridItemData& item = ol->items[objIndex];
 
@@ -3270,7 +3273,7 @@ void Leveler::takeBack(bool shiftPressed)
 			}
 			else if (currentOperation->connection)
 			{
-				if (currentOperation->objectOperation->operationType == REMOVE)
+				if (currentOperation->objectOperation.operationType == REMOVE)
 				{
 					connectObjects(currentOperation->connection->transmitter, currentOperation->connection->receiver, currentOperation->connection);
 					updateConnectionRenderData(currentOperation->connection);
@@ -3390,12 +3393,7 @@ void Leveler::fillGrid(short minX, short minY, short maxX, short maxY, levelObje
 		currentOperation = currentOperation->next;
 		currentOperation->region = { minX, maxX, minY, maxY };
 
-		for (; tempNextOp;)
-		{
-			s_gridOperationList* del = tempNextOp;
-			tempNextOp = tempNextOp->next;
-			delete del;
-		}
+		deleteAfter(tempNextOp);
 
 		afterFillRayCheck(minX, minY, maxX, maxY);
 	}
@@ -3880,6 +3878,7 @@ void Leveler::setRealTimeActivation(s_objectDataGrid* objectData)
 		vkUnmapMemory(thinDrawer->funnelShader->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory);
 	}
 	break;
+	
 	case HAZARDER:
 	{
 		putBarrierOnMemories({ thinDrawer->hazardShader });
@@ -3890,6 +3889,7 @@ void Leveler::setRealTimeActivation(s_objectDataGrid* objectData)
 		vkUnmapMemory(thinDrawer->hazardShader->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 	}
 	break;
+	
 	case FORCE_FIELD:
 	{
 		putBarrierOnMemories({ thinDrawer->blueField });
@@ -3901,6 +3901,7 @@ void Leveler::setRealTimeActivation(s_objectDataGrid* objectData)
 		vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 	}
 	break;
+	
 	default:
 		break;
 	}
