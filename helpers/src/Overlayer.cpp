@@ -77,9 +77,6 @@ Overlayer::Overlayer(Game* game)
 
     pushRenderFunctions();
 
-    startAlloc = mt->lastAvailablePos;
-    mt->lastAvailablePos += numX * numY * 4;
-
     items.resize(getLevelObjectIndex(PLATFORM) + 1);
 
     addItem("PortallableWall", "ww.png", WHITE_WALL);
@@ -666,6 +663,8 @@ void Overlayer::topLeftUpdate()
     if (wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
     {
         selectedItemIndex = -1;
+        popShowName = "";
+        renderPops.clear();
 
         if (overlayOverlay == LEVELER)
         {

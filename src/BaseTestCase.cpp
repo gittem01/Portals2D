@@ -179,13 +179,13 @@ void BaseTestCase::onUpdate()
         {
             g->mjh->mouseHandler(g->frame, requiredIters);
 
+            g->pWorld->PortalStep(dt, 8, 3);
+
             Platform::perTickUpdate(dt);
 
             tp->update(dt, requiredIters);
-            
-            LightBridge::perTickUpdate();
 
-            g->pWorld->PortalStep(dt, 8, 3);
+            LightBridge::perTickUpdate();
 
             Gel::update();
             DownButton::update();

@@ -67,28 +67,28 @@ Portal::~Portal()
             }
 
             float d = PortalWorld::getDistanceFromPortal(outPortal, leftOutBody);
-            float d2 = -1.0f;
+            /*float d2 = -1.0f;
             b2Vec2 dir2;
             if (outPortal->connections[i].size() > 0)
 			{
 				Portal* p2 = outPortal->connections[i].at(0)->portal2;
                 d2 = PortalWorld::getDistanceFromPortal(p2, leftOutBody);
                 dir2 = p2->dir;
-			}
+			}*/
 
             if (leftOutBody->body->GetFixtureList()->IsSensor())
             {
                 d += 0.2f;
-                d2 += 0.2f;
+                //d2 += 0.2f;
             }
 
             if (d > 0.0)
             {
                 b2Vec2 newPos = leftOutBody->body->GetPosition() + d * posChangeDir;
-                if (d2 > 0.0)
-				{
-					newPos += d2 * dir2;
-				}
+				//if (d2 > 0.0) // neeeeed to fix this
+				//{
+				//	newPos += d2 * dir2;
+				//}
                 leftOutBody->body->SetTransform(newPos, leftOutBody->body->GetAngle());
             }
         }

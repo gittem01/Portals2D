@@ -272,12 +272,17 @@ void TestPlayer::memMap(void* ptr)
 
 void TestPlayer::memMapDeathByElectrocution(void* ptr)
 {
-    double realDt = Game::object->deltaTime / std::max(Game::object->dtMult, 0.000001);
-    Game::object->dtMult = std::max(Game::object->dtMult - realDt * Game::object->dtMult * 30.0, 0.0);
+	static double lastTime = 0.0;
+
+	double timeNow = SDL_GetTicksSec();
+	double deltaTime = std::min(timeNow - lastTime, 0.1);
+    lastTime = timeNow;
+
+    Game::object->dtMult = 0.0f;
 
     TestPlayer* tp = (TestPlayer*)ptr;
 
-    tp->deathTimer += realDt;
+    tp->deathTimer += deltaTime;
     double time01 = glm::smoothstep(0.0, 0.5, tp->deathTimer);
     
     write0(tp);
@@ -364,7 +369,6 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
 
             UseButton::toDeath();
             ForceField::toDeath();
-            Platform::toDeath();
             Gel::toDeath();
             DownButton::toDeath();
             CubeButton::toDeath();
@@ -372,6 +376,7 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
             LaserEmitter::toDeath();
             GndLaserReceiver::toDeath();
             WallLaserReceiver::toDeath();
+            Platform::toDeath();
 		});
     }
 
@@ -949,7 +954,11 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 
     contact->SetRestitution(0.0f);
 
-    if (wManifold.separations[0] < -0.04f && contact->IsEnabled()); // dead
+    if (wManifold.separations[0] < -0.2f && contact->IsEnabled())
+    {
+        health = 0;
+        healthCheck();
+    }
 }
 
 void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
@@ -2122,20 +2131,20 @@ void TestPlayer::update(float dt, int totalIter)
             right = true;
         }
         else if (lastDoubleKey == Game::leftKey)
-{
+    {
             right = true;
         }
         else if (lastDoubleKey == Game::rightKey)
-{
+    {
             left = true;
         }
     }
     else if (wh->keyData[Game::rightKey])
-{
+    {
         right = true;
     }
     else if (wh->keyData[Game::leftKey])
-{
+    {
         left = true;
     }
 

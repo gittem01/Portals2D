@@ -73,9 +73,9 @@ void DefaultObject::enterForceField(ForceField* forceField)
 	npBody[0]->worldIndex->destrTime = Game::object->gameTime - 0.5;
 	npBody[0]->worldIndex->gravityScale = 0.0f;
 
-	Game::object->singleTaskRegistry.push_back([npBody]() -> void
+	Game::object->singleTaskRegistry.push_back([this]() -> void
 	{
-		for (PortalBody* pb : npBody)
+		for (PortalBody* pb : wData->pbIndices)
 		{
 			b2Vec2 velocity = pb->body->GetLinearVelocity();
 			velocity.Normalize();
@@ -245,6 +245,7 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixt
 			{
 				tryBounce(contact, thisFix, otherFix);
 			}
+			
 			break;
 		default:
 			break;
@@ -305,5 +306,14 @@ void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fi
 
 void DefaultObject::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
-
+	if (wData->destrTime < -10.0f)
+	{
+		b2Manifold* manifold = contact->GetManifold();
+		b2WorldManifold wMan;
+		contact->GetWorldManifold(&wMan);
+		if (wMan.separations[0] < -0.05f)
+		{
+			enterForceField(nullptr);
+		}
+	}
 }

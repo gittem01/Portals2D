@@ -78,8 +78,10 @@ DefaultCube::DefaultCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(p
 
 void DefaultCube::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
+	DefaultObject::reportContact(contact, impulse, contactingBody, fix2);
+
     if (impulse->normalImpulses[0] > 3.0 &&
-        (contactingBody->GetLinearVelocity().Length() > 1.0 || contactingBody->GetAngularVelocity() > 0.5) && ThinDrawer::object->gameTime - lastSoundTime > 0.1)
+        (contactingBody->GetLinearVelocity().Length() > 1.0 || contactingBody->GetAngularVelocity() > 0.5) && ThinDrawer::object->gameTime - lastSoundTime > 0.2)
     {
         lastSoundTime = ThinDrawer::object->gameTime;
         ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], fmax(impulse->normalImpulses[0] * 0.03, 0.2));

@@ -174,7 +174,8 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
 	}
 
-	if (objData->startActive)
+	startEnabled = objData->startActive;
+	if (startEnabled)
 	{
 		body->SetLinearVelocity(platformSpeed * fwdDir);
 
@@ -256,15 +257,34 @@ Platform* Platform::createPlatform(PortalWorld* portalWorld, s_objectDataGrid* o
 
 void Platform::toDeath()
 {
+	loopingPlatforms = std::vector<uint8_t>();
+	oneTimeMovePlatforms = std::vector<uint8_t>();
+
 	for (int i = 0; i < platforms.size(); i++)
 	{
 		Platform* platform = &platforms[i];
 
 		platform->body->SetTransform(platform->basePos, 0.0f);
-	}
 
-	loopingPlatforms = std::vector<uint8_t>();
-	oneTimeMovePlatforms = std::vector<uint8_t>();
+		if (platform->startEnabled)
+		{
+			if (platform->looping)
+			{
+				loopingPlatforms.push_back(platform->platformIndex);
+			}
+			else
+			{
+				oneTimeMovePlatforms.push_back(platform->platformIndex);
+			}
+
+			platform->body->SetLinearVelocity(platformSpeed * platform->fwdDir);
+			platform->dirMult = platformSpeed;
+		}
+		else
+		{
+			platform->body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+		}
+	}
 }
 
 void Platform::toLeveler()

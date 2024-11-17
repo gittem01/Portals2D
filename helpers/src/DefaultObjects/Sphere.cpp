@@ -34,5 +34,5 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld
 
 void Sphere::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
-    
+    DefaultObject::reportContact(contact, impulse, contactingBody, fix2);
 }

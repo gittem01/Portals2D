@@ -397,6 +397,8 @@ public:
 	glm::i16vec2 getBestVert(glm::i16vec2 checkStart, int desiredSize, levelObject mask); // returns y0, y1
 	void handleRightClickClick();
 
+	void renderClear();
+
 	void pushRenderFunctions();
 	void createLevel();
 

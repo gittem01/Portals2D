@@ -235,6 +235,23 @@ void ThinDrawer::buildCommandBuffers()
         ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
     }
 
+    VkClearValue clrVal = {};
+    clrVal.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+    VkClearAttachment clearAttachment = { };
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clearAttachment.colorAttachment = 0;
+    clearAttachment.clearValue = clrVal;
+
+    VkClearRect clearRect = { };
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+    clearRect.rect.extent = swapChain->extent;
+    clearRect.rect.extent.width -= 500 * (sin(gameTime) + 1.0f);
+    clearRect.rect.offset = { 0, 0 };
+
+    //vkCmdClearAttachments(cmdBuff, 1, &clearAttachment, 1, &clearRect);
+
     vkCmdEndRenderPass(cmdBuff);
     CHECK_RESULT_VK(vkEndCommandBuffer(cmdBuff));
 }

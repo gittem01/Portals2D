@@ -52,3 +52,8 @@ void Gun::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
         contact->SetEnabled(false);
     }
 }
+
+void Gun::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
+{
+
+}

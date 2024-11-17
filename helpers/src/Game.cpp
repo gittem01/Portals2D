@@ -164,7 +164,7 @@ void Game::LevelerState()
 		leveler->ol->pushRenderFunctions();
         leveler->renderInit();
     }
-    else
+    else if (lastState != &Game::TestState)
     {
         leveler->renderInit();
     }
@@ -204,6 +204,7 @@ void Game::LevelerState()
     }
     else
     {
+        leveler->renderClear();
         thinDrawer->releaseRenderResources();
     }
 

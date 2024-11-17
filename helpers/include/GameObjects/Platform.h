@@ -28,6 +28,7 @@ public:
 	int edgeRenderIndex;
 	uint8_t platformIndex;
 	bool looping;
+	bool startEnabled;
 
 	Platform(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	Platform() {}

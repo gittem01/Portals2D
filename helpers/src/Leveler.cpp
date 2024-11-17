@@ -41,12 +41,26 @@ Leveler::Leveler(Game* game)
 	ol->cd->getRenderData("(),0123456789", 50, x);
 }
 
+void Leveler::renderClear()
+{
+	thinDrawer->laserShader->numLasers = 0;
+	thinDrawer->funnelShader->numFunnels = 0;
+	thinDrawer->hazardShader->numHazards = 0;
+	thinDrawer->blueField->numFields = 0;
+	thinDrawer->platformRectangle->numPlatforms = 0;
+	thinDrawer->lightBridge->numbridges = 0;
+	thinDrawer->polynomShader->freeIndices.clear();
+	thinDrawer->polynomShader->datas.clear();
+	thinDrawer->debugLineShader->numLines = 0;
+	thinDrawer->lineZ->numZs = 0;
+}
+
 void Leveler::pushRenderFunctions()
 {
 	//thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
-	thinDrawer->midDrawFuncs.push_back({ renderLasers, (void*)this });
-	thinDrawer->midDrawFuncs.push_back({ renderFunnels, (void*)this });
-	thinDrawer->midDrawFuncs.push_back({ renderBridges, (void*)this });
+	thinDrawer->drawFuncs.push_back({ renderLasers, (void*)this });
+	thinDrawer->drawFuncs.push_back({ renderFunnels, (void*)this });
+	thinDrawer->drawFuncs.push_back({ renderBridges, (void*)this });
 	thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
 }
 
@@ -80,6 +94,8 @@ void Leveler::renderInit()
 	thinDrawer->diagonalLiner->recreateUniforms(numWhiteWall * 2);
 
 	thinDrawer->diagonalLiner->testFill();
+
+	textureRenderOffset = 0;
 
 	initOffsets();
 }
@@ -120,6 +136,11 @@ void Leveler::initOffsets()
 	rupFiller(thinDrawer->blackWallShader->renderGridUp);
 	rupFiller(thinDrawer->wallLight->renderGridUp);
 	rupFiller(thinDrawer->diagonalLiner->renderGridUp);
+
+	mt->lastAvailablePos = 0;
+
+	ol->startAlloc = mt->lastAvailablePos;
+	mt->lastAvailablePos += ol->numX * ol->numY * numSwapChainImages;
 
 	textureRenderOffset = mt->lastAvailablePos;
 	mt->lastAvailablePos += numSwapChainImages;
@@ -1025,7 +1046,7 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 		mp = leveler->getMouseGrid();
 	const s_levelGridData& lgd = leveler->getSquare(mp.x, mp.y);
 
-	if (lgd.objectType & (SINGLE_DRAWS | PLATFORM))
+	if (lgd.objectType & (SINGLE_DRAWS | PLATFORM) && leveler->ol->overlayOverlay == LEVELER)
 	{
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->gridSquare->pipeline);
 
@@ -1395,8 +1416,13 @@ void deleteAfter(s_gridOperationList* op)
 	{
 		s_gridOperationList* del = op;
 		op = op->next;
-		if (del->connection) delete del->connection;
-		if (del->objectOperation.objData) delete del->objectOperation.objData;
+		
+		if (del->objectOperation.operationType == ADD)
+		{
+			if (del->connection) delete del->connection;
+			if (del->objectOperation.objData) delete del->objectOperation.objData;
+		}
+		
 		delete del;
 	}
 }
@@ -4062,6 +4088,7 @@ void Leveler::createLevel()
 
 	thinDrawer->eraseFromRenderFunctions(thinDrawer->earlyDrawFuncs, (void*)this);
 	thinDrawer->eraseFromRenderFunctions(thinDrawer->midDrawFuncs, (void*)this);
+	thinDrawer->eraseFromRenderFunctions(thinDrawer->drawFuncs, (void*)this);
 	thinDrawer->eraseFromRenderFunctions(thinDrawer->lateDrawFuncs, (void*)this);
 
 	ol->eraseRenderFunctions();
