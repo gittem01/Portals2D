@@ -10,7 +10,7 @@ int Geller::numGellers = 0;
 s_perTextureData* Geller::ptData[4];
 s_texture* Geller::tex[4];
 
-glm::vec2 gelSpeeds[4] = { { 0.0, -1.0 }, { +3.0, 0.5 }, { 0.0, 0.0 }, { -3.0, 0.5 } };
+glm::vec2 gelSpeeds[4] = { { 0.0, -1.0 }, { +5.0, 0.5 }, { 0.0, 0.0 }, { -5.0, 0.5 } };
 glm::vec2 randVecs[4] = { { 1.0, 0.0 }, { 0.0, 1.0 }, { 0.0, 0.0 }, { 0.0, 1.0 } };
 
 int getGellerIndex(LevelObject obj)

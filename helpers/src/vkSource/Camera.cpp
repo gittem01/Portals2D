@@ -1,7 +1,7 @@
 #include <Camera.h>
 #include <WindowHandler.h>
 #include <Sounder.h>
-#include "Game.h"
+#include "ThinDrawer.h"
 
 std::vector<Camera*> Camera::cameras;
 
@@ -178,10 +178,10 @@ glm::vec2 Camera::getMouseCoords_i()
 
 glm::vec2 Camera::getMouseCoords()
 {
-	if (Game::object->gameTime != lastMouseUpdateTime)
+	if (ThinDrawer::object->gameTime != lastMouseUpdateTime)
 	{
 		mousePos = getMouseCoords_i();
-		lastMouseUpdateTime = Game::object->gameTime;
+		lastMouseUpdateTime = ThinDrawer::object->gameTime;
 
 		return mousePos;
 	}

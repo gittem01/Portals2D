@@ -70,7 +70,7 @@ void DefaultObject::enterForceField(ForceField* forceField)
 	}
 
 	ForceField::destroyCList.push(npBody[0]->worldIndex);
-	npBody[0]->worldIndex->destrTime = Game::object->gameTime - 0.5;
+	npBody[0]->worldIndex->destrTime = ThinDrawer::object->gameTime - 0.5;
 	npBody[0]->worldIndex->gravityScale = 0.0f;
 
 	Game::object->singleTaskRegistry.push_back([this]() -> void

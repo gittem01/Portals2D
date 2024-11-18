@@ -743,6 +743,12 @@ void PortalBody::getBodyOut(pbWorldData* worldData)
     if (d > 0.0)
     {
         leftOutBody->body->SetTransform(leftOutBody->body->GetPosition() + d * posChangeDir, leftOutBody->body->GetAngle());
+
+        b2Vec2 velocity = leftOutBody->body->GetLinearVelocity();
+        float speed = velocity.Normalize();
+        speed = std::max(0.0f, speed - 0.5f);
+        velocity = speed * velocity;
+        leftOutBody->body->SetLinearVelocity(velocity);
     }
 
     for (b2Fixture* fix : leftOutBody->fixtures)

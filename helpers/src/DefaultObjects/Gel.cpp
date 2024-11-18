@@ -23,7 +23,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     bDef.type = b2_dynamicBody;
     //bDef.type = b2_kinematicBody;
     bDef.position.Set(pos.x, pos.y);
-    bDef.linearDamping = 0.5;
+    bDef.linearDamping = 0.75;
 
     b2CircleShape cShape;
     cShape.m_radius = radius;
@@ -45,7 +45,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
 
     // too slow
     // must be done once in the game initialisation but it is not possible for now
-    // ThinDrawer::object->debug_addPortalBody(portalBody);
+    ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
 void Gel::generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex)
@@ -92,8 +92,13 @@ void Gel::staticInit()
 		float randVal = (float)rand() / RAND_MAX;
         randVal = 0.35 + randVal * 0.4;
 		new (gel) Gel(Game::object->pWorld, glm::vec2(-1000.0f - i * 2.0f, 0.0f), glm::vec2(0.0f, 0.0f), randVal, 0);
-        //DefaultObject::recreate
         PortalBody* pb = gel->wData->pbIndices[0];
+
+        for (auto pair : pb->worldIndex->destroyCallbacks)
+        {
+            pair.first(pb, pair.second);
+        }
+
         delete pb;
 	}
 
@@ -330,7 +335,7 @@ out:
     sData.posSpeed.z = (float)rand() / RAND_MAX;
     sData.posSpeed.w = 1.0;
     sData.data.x = 0.075;
-    sData.data.y = Game::object->gameTime;
+    sData.data.y = ThinDrawer::object->gameTime;
     sData.data.z = b2_pi * 2.0;
     sData.data.w = 0.0;
 
@@ -354,12 +359,9 @@ out:
     gels[gelIndex] = lastGel;
     gelIndex = -1;
 
-    for (PortalBody* pb : wData->pbIndices)
-    {
-        pWorld->destroyBodies.insert(pb);
-    }
+    pWorld->fullDestroys.push_back(wData);
 
-	freeGels.push_back(this);
+    freeGels.push_back(this);
 }
 
 void Gel::update()
@@ -552,7 +554,7 @@ bool Gel::bounceAt(b2Body* body, b2Fixture* edgeFix, b2Vec2 pos)
             for (int i = 0; i < memMapSize; i++)
             {
                 float dist = (float)abs(index - extraJumpRange[0] - i) * 0.1;
-                mapMem2[i].data.z = Game::object->gameTime + dist * 0.2 - 0.05;
+                mapMem2[i].data.z = ThinDrawer::object->gameTime + dist * 0.2 - 0.05;
                 mapMem2[i].data.w = (1.0 - dist) * 0.4;
             }
 
@@ -645,7 +647,7 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
 
         vkCmdDraw(cmdBuff, 6, 25, 0, 0);
 
-		float dt = Game::object->gameTime - sData.data.y;
+		float dt = ThinDrawer::object->gameTime - sData.data.y;
 
 		if (dt > sData.data3.y)
 		{

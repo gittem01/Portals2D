@@ -185,6 +185,7 @@ public:
     std::vector<pbWorldData*> bodyIndices;
     std::vector<Portal*> portals;
     std::set<PortalBody*> destroyBodies;
+    std::vector<pbWorldData*> fullDestroys;
 
     PortalWorld();
     ~PortalWorld();

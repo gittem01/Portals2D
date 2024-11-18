@@ -16,6 +16,8 @@
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 #include "GameObjects/Catapult.h"
+#include "Menu.h"
+#include "Leveler.h"
 
 s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
@@ -939,8 +941,56 @@ void LevelerTestCase::perFrameUpdate()
 {
     if (g->thinDrawer->wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
     {
-        shouldQuit = true;
+        if (menuUpdate)
+        {
+            goto stopMenuUpdate;
+        }
+        else
+        {
+			g->dtMult = 0.0;
+            menuUpdate = true;
+
+            td->eraseFromRenderFunctions(td->lateDrawFuncs, (void*)Leveler::object->ol->cd);
+
+            g->menu->renderInit(false);
+			td->lateDrawFuncs.push_back({ CharDrawer::draw, Leveler::object->ol->cd });
+
+            g->menu->initDefaults();
+
+            g->menu->initWithName("resume", glm::vec4(1.0, 0.5, 0.0, 0.5f));
+            g->menu->initSettings(glm::vec4(0.3, 0.3, 0.3, 0.9));
+            if (g->lastState == &Game::LevelerState)
+                g->menu->initWithName("to_editor", glm::vec4(0.3, 0.3, 0.3, 0.9));
+            else if (g->lastState == &Game::MenuState)
+                g->menu->initWithName("to_menu", glm::vec4(0.3, 0.3, 0.3, 0.9));
+        }
     }
+
+    if (menuUpdate)
+    {
+        if (g->menu->activeButton)
+        {
+            if (g->menu->activeButton->strText == "resume")
+            {
+                goto stopMenuUpdate;
+            }
+            else if (g->menu->activeButton->strText == "to_editor" || g->menu->activeButton->strText == "to_menu")
+            {
+                shouldQuit = true;
+                goto stopMenuUpdate;
+            }
+        }
+
+        g->menu->update();
+    }
+
+    return;
+
+stopMenuUpdate:
+    menuUpdate = false;
+    g->dtMult = 1.0;
+    td->eraseFromRenderFunctions(td->lateDrawFuncs, (void*)Leveler::object->ol->cd);
+    g->menu->renderDestroy();
 }
 
 void LevelerTestCase::onUpdate()

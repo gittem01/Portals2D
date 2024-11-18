@@ -573,7 +573,7 @@ void TestPlayer::portalEffect(Portal* portal)
             if (uData.gelType & WHITE)
             {
                 float dist = (float)abs(index - portal->range[0] - i);
-                mapMem2[i].data.z = gameTime + dist * 0.0075 - 0.075;
+                mapMem2[i].data.z = ThinDrawer::object->gameTime + dist * 0.0075 - 0.075;
                 mapMem2[i].data.w = 0.3;
             }
         }
@@ -663,7 +663,7 @@ void TestPlayer::runEffect()
                     s_wallPerGelData* mapMem2;
                     vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
 						renderOffset * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData), 0, (void**)&mapMem2);
-                    mapMem2->data.z = gameTime - 0.03;
+                    mapMem2->data.z = ThinDrawer::object->gameTime - 0.03;
                     mapMem2->data.w = std::min(abs(vel.x) * 0.04, 0.3);
 					vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
                 }
@@ -1045,7 +1045,7 @@ void TestPlayer::handleBodyRotation()
 
     PortalBody* pb = wData->pbIndices[0];
     float ang = PortalWorld::normalizeAngle(pb->body->GetAngle());
-    
+
     for (PortalBody* l_portalBody : wData->pbIndices)
     {
         l_portalBody->body->SetAngularVelocity(0.0f);
@@ -1477,7 +1477,7 @@ void TestPlayer::handlePortalCD(float dt)
                     ff->fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 
                 blueFieldUbo->colour2 = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
-                blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, gameTime, 0.0f);
+                blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, thinDrawer->gameTime, 0.0f);
 
                 vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 
@@ -1552,7 +1552,7 @@ void TestPlayer::handlePortalCD(float dt)
                     ff->fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);
 
                 blueFieldUbo->colour2 = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-                blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, gameTime, 0.0f);
+                blueFieldUbo->shootData = glm::vec4(rayCaster.rayPoint.x, rayCaster.rayPoint.y, thinDrawer->gameTime, 0.0f);
 
                 vkUnmapMemory(thinDrawer->blueField->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 

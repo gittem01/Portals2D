@@ -671,8 +671,9 @@ void Overlayer::topLeftUpdate()
             overlayOverlay = LEVELER_MENU;
 
             game->menu->initDefaults();
+
             game->menu->initWithName("back", glm::vec4(1.0, 0.5, 0.0, 0.5f));
-            game->menu->initSettings(0.4f);
+            game->menu->initSettings(glm::vec4(1.0, 1.0, 1.0, 0.4));
             game->menu->initWithName("to_menu", glm::vec4(1.0f, 1.0f, 1.0f, 0.4f));
         }
         else

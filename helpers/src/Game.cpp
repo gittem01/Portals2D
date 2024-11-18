@@ -152,6 +152,17 @@ void Game::saveGameData()
 	saveThread.detach();
 }
 
+void Game::timeHandle()
+{
+    double timeNow = SDL_GetTicksSec();
+
+    float baseDeltaTime = std::min((timeNow - lastTime), 0.1);
+    deltaTime = baseDeltaTime * dtMult;
+    thinDrawer->gameTime += baseDeltaTime;
+    thinDrawer->deltaTime = baseDeltaTime;
+    lastTime = timeNow;
+}
+
 void Game::LevelerState()
 {
     leveler->ol->overlayOverlay = LEVELER;
@@ -180,14 +191,11 @@ void Game::LevelerState()
 
         frame++;
 
-        deltaTime = SDL_GetTicksSec() - lastTime;
-        gameTime += deltaTime;
-        lastTime = SDL_GetTicksSec();
+        timeHandle();
 
         leveler->update();
         sounder->update();
 
-        thinDrawer->gameTime = gameTime;
         thinDrawer->renderLoop();
     }
 
@@ -206,6 +214,7 @@ void Game::LevelerState()
     {
         leveler->renderClear();
         thinDrawer->releaseRenderResources();
+        leveler->quitLeveler();
     }
 
 	lastState = &Game::LevelerState;
@@ -250,13 +259,13 @@ void Game::TestState()
     while (!shouldQuit && (testCase && !testCase->shouldQuit || !testCase))
     {
         shouldQuit = thinDrawer->wh->looper();
-        thinDrawer->wh->cam->update();
+        
+        if (dtMult > 0.0000000001) thinDrawer->wh->cam->update();
 
         frame++;
 
-        double timeNow = SDL_GetTicksSec();
-        deltaTime = std::min((timeNow - lastTime) * dtMult, 0.1);
-        lastTime = timeNow;
+        timeHandle();
+
         if ((!isPaused || tick) && testCase)
         {
             gameTime += deltaTime;
@@ -301,7 +310,6 @@ void Game::TestState()
             }
         }
 
-        thinDrawer->gameTime = gameTime;
         thinDrawer->renderLoop();
     }
 
@@ -383,15 +391,12 @@ void Game::MenuState()
 
         frame++;
 
-        deltaTime = SDL_GetTicksSec() - lastTime;
-        gameTime += deltaTime;
-        lastTime = SDL_GetTicksSec();
+        timeHandle();
 
         sounder->update();
 
         menu->update();
 
-        thinDrawer->gameTime = gameTime;
         thinDrawer->renderLoop();
     }
 

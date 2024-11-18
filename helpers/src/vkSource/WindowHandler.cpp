@@ -50,7 +50,7 @@ bool WindowHandler::handleEvents()
     SDL_Event evnt;
     while (SDL_WaitEventTimeout(&evnt, 1))
     {
-		ImGui_ImplSDL3_ProcessEvent(&evnt);
+        if (ImGui::GetDrawData()) ImGui_ImplSDL3_ProcessEvent(&evnt);
 
         switch (evnt.type)
         {
@@ -149,7 +149,7 @@ void WindowHandler::massInit()
     }
 
     window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y,
-        SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_FULLSCREEN);
+        SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
     if (!window)
     {
         printf("Could not create window\n");

@@ -81,10 +81,10 @@ public:
 	void renderInit(bool fullInit=true);
 	void renderDestroy();
 
-	void initPlay(float w = 0.2f);
-	void initLeveler(float w = 0.2f);
-	void initSettings(float w = 0.2f);
-	void initCredits(float w = 0.2f);
+	void initPlay(glm::vec4 clr = glm::vec4(1.0, 1.0, 1.0, 0.4));
+	void initLeveler(glm::vec4 clr = glm::vec4(1.0, 1.0, 1.0, 0.4));
+	void initSettings(glm::vec4 clr = glm::vec4(1.0, 1.0, 1.0, 0.4));
+	void initCredits(glm::vec4 clr = glm::vec4(0.0, 1.0, 0.0, 0.4));
 	Button* initWithName(std::string name, glm::vec4 clr); // simple only click button
 
 	void addTextToButton(Button& b, std::string text);

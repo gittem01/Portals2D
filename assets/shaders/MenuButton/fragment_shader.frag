@@ -79,6 +79,7 @@ void main()
     else
     {
         d /= smoother - extra;
-        FragColour = colour * (1.0 - d);
+        colour.w *= (1.0 - d);
+        FragColour = colour;
     }
 }

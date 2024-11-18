@@ -3,7 +3,7 @@
 #include <ShaderBase.h>
 
 #define NUM_GEL_TYPE 4
-#define MAX_GEL_COUNT 1024
+#define MAX_GEL_COUNT 512
 #define GEL_SQUARE_SIZE 2.0f
 
 typedef struct

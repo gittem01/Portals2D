@@ -730,8 +730,6 @@ void ThinDrawer::animate()
     upDownAnim = fmod(gameTime, 2.0);
     if (upDownAnim > 1.0) upDownAnim = 2.0 - upDownAnim;
 
-    double pDeltaTime = Game::object->deltaTime;
-
     for (AnimGroup* animGroup = animations; ;)
     {
         if (!animGroup)
@@ -746,7 +744,7 @@ void ThinDrawer::animate()
                 break;
             }
             
-            animStruct->xProg += pDeltaTime * animStruct->scale;
+            animStruct->xProg += deltaTime * animStruct->scale;
 
             if (animStruct->xProg >= 1.0f)
             {

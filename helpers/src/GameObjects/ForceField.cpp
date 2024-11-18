@@ -238,10 +238,7 @@ void ForceField::update()
 		pbWorldData* data = destroyCList.front();
 		if (data->destrTime + 2.0f < Game::object->gameTime)
 		{
-			for (PortalBody* pb : data->pbIndices)
-			{
-				Game::object->pWorld->destroyBodies.insert(pb);
-			}
+			Game::object->pWorld->fullDestroys.push_back(data);
 
 			destroyCList.pop();
 		}

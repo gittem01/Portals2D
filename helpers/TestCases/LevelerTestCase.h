@@ -68,6 +68,7 @@ public:
     std::vector<std::vector<ReachableType>> reachableMap;
     std::vector<std::vector<EdgeUse>> edgeUsedMap;
     std::map<s_objectDataGrid*, void*> connMap;
+    bool menuUpdate = false;
 
     LevelerTestCase(Game* game);
 

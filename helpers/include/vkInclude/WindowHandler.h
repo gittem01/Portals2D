@@ -24,7 +24,7 @@ public:
 	double mouseData[7] = {0};
 	double trackpadData[2] = {0};
 	int lastMousePos[2] = {0};
-	glm::vec2 windowSizes = glm::vec2(1920, 1080);
+	glm::vec2 windowSizes = glm::vec2(1600, 900);
 	std::vector<int> newPressIndices;
 	SDL_Window* window;
 	Camera* cam;

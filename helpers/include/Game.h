@@ -54,6 +54,8 @@ public:
 
 	void loop();
 
+	void timeHandle();
+
 	void LevelerState();
 	void TestState();
 	void MenuState();

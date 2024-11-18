@@ -70,10 +70,26 @@ GERİ
 BACK
 <back_1>
 
+<resume_0>
+DEVAM ET
+<resume_0>
+
+<resume_1>
+RESUME
+<resume_1>
+
 <to_menu_0>
 MENÜYE DÖN
 <to_menu_0>
 
 <to_menu_1>
-BACK TO MENU
+RETURN TO MENU
 <to_menu_1>
+
+<to_editor_0>
+EDİTÖRE DÖN
+<to_editor_0>
+
+<to_editor_1>
+RETURN TO EDITOR
+<to_editor_1>

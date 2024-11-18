@@ -130,11 +130,11 @@ void Funnel::enable()
 		data2.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, 1.0f);
 	}
 
-	data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
-	data.data2.w = Game::object->gameTime;
+	data.data.y += (ThinDrawer::object->gameTime - data.data2.w) * data.data.w;
+	data.data2.w = ThinDrawer::object->gameTime;
 
-	data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
-	data2.data2.w = Game::object->gameTime;
+	data2.data.y += (ThinDrawer::object->gameTime - data2.data2.w) * data2.data.w;
+	data2.data2.w = ThinDrawer::object->gameTime;
 
 	reqMapCount = ThinDrawer::object->swapChain->imageCount;
 }
@@ -154,16 +154,16 @@ void Funnel::enable2()
 {
 	turnAngle = PortalWorld::normalizeAngle(baseAngle + b2_pi);
 
-	data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
-	data.data2.w = Game::object->gameTime;
+	data.data.y += (ThinDrawer::object->gameTime - data.data2.w) * data.data.w;
+	data.data2.w = ThinDrawer::object->gameTime;
 	data.data2.x = data.data2.z + 5.0f;
 
 	if (extraRenderIndex > -1)
 	{
 		data.data2.x += data2.data2.z;
 
-		data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
-		data2.data2.w = Game::object->gameTime;
+		data2.data.y += (ThinDrawer::object->gameTime - data2.data2.w) * data2.data.w;
+		data2.data2.w = ThinDrawer::object->gameTime;
 		data2.data2.x = data2.data2.z + 5.0f;
 	}
 
@@ -190,12 +190,12 @@ void Funnel::disable2()
 {
 	turnAngle = PortalWorld::normalizeAngle(baseAngle);
 
-	data.data.y += (Game::object->gameTime - data.data2.w) * data.data.w;
-	data.data2.w = Game::object->gameTime;
+	data.data.y += (ThinDrawer::object->gameTime - data.data2.w) * data.data.w;
+	data.data2.w = ThinDrawer::object->gameTime;
 	data.data2.x = 0.0f;
 
-	data2.data.y += (Game::object->gameTime - data2.data2.w) * data2.data.w;
-	data2.data2.w = Game::object->gameTime;
+	data2.data.y += (ThinDrawer::object->gameTime - data2.data2.w) * data2.data.w;
+	data2.data2.w = ThinDrawer::object->gameTime;
 	data2.data2.x = -data.data2.z;
 
 	data.data.w = -3.0f;

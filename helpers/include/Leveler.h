@@ -398,6 +398,7 @@ public:
 	void handleRightClickClick();
 
 	void renderClear();
+	void quitLeveler();
 
 	void pushRenderFunctions();
 	void createLevel();

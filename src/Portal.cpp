@@ -90,6 +90,12 @@ Portal::~Portal()
 				//	newPos += d2 * dir2;
 				//}
                 leftOutBody->body->SetTransform(newPos, leftOutBody->body->GetAngle());
+
+				b2Vec2 velocity = leftOutBody->body->GetLinearVelocity();
+				float speed = velocity.Normalize();
+				speed = std::max(0.0f, speed - 0.5f);
+				velocity = speed * velocity;
+				leftOutBody->body->SetLinearVelocity(velocity);
             }
         }
 

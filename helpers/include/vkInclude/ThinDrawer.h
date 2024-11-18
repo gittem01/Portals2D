@@ -168,6 +168,7 @@ public:
 
     AnimGroup* animations = nullptr;
     double gameTime = 0.0;
+    double deltaTime = 0.0;
     double frameDT = 0.0;
     double upUpAnim = 0.0;
     double upDownAnim = 0.0;

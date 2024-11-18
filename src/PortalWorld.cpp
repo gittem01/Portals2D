@@ -241,6 +241,21 @@ void PortalWorld::globalPostHandle()
         delete portalBody;
     }
 
+    for (PbWorldData* wData : fullDestroys)
+    {
+        for (int i = wData->pbIndices.size() - 1; i >= 0; i--)
+        {
+			PortalBody* portalBody = wData->pbIndices[i];
+
+            for (auto pair : portalBody->worldIndex->destroyCallbacks)
+            {
+                pair.first(portalBody, pair.second);
+            }
+
+            delete portalBody;
+        }
+    }
+
     for (auto& hBody : handledBodies)
     {
         int numBodies = hBody->pbIndices.size();
@@ -257,6 +272,7 @@ void PortalWorld::globalPostHandle()
 
     handledBodies.clear();
     destroyBodies.clear();
+    fullDestroys.clear();
 }
 
 bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBody)

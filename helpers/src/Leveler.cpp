@@ -55,6 +55,44 @@ void Leveler::renderClear()
 	thinDrawer->lineZ->numZs = 0;
 }
 
+void Leveler::quitLeveler()
+{
+	//////////////////
+	currentOperation = new s_gridOperationList();
+
+	opList;
+
+	//////////////////
+	lastOffsetPos_W = std::vector<std::vector<std::vector<s_gridSquare>>>();
+	lastOffsetPos_B = std::vector<std::vector<std::vector<s_gridSquare>>>();
+	lastOffsetPos_G = std::vector<std::vector<std::vector<s_gridSquare>>>();
+
+	lastOffsetPos_M = std::vector<std::vector<s_gridSquare>>();
+	lastOffsetPos_Laser = std::vector<s_gridSquare>();
+	lastOffsetPos_Bridge = std::vector<s_gridSquare>();
+	lastOffsetPos_Funnel = std::vector<s_gridSquare>();
+	lastOffsetPos_Hazard = std::vector<s_gridSquare>();
+	lastOffsetPos_Field = std::vector<s_gridSquare>();
+	lastOffsetPos_Platform = std::vector<s_gridSquare>();
+	lastOffsetPos_Connection = std::vector<s_connection*>();
+
+	clickStart = glm::ivec2(0, 0);
+	lastGrid = glm::ivec2(0, 0);
+	selectedObjectRotation = 0;
+	selectedObjectMirror = 0;
+	consqClickVec = std::vector<glm::ivec2>();
+	connecting = false;
+
+	perTextureData = std::vector<s_perTextureData>();
+
+	numSwapChainImages = thinDrawer->swapChain->imageCount;
+
+	startRenderData = {};
+	levelObjects = std::set<s_objectDataGrid*>();
+	startSquare = { -10, 1 };
+	endSquare = { 10, 1 };
+}
+
 void Leveler::pushRenderFunctions()
 {
 	//thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
@@ -1128,9 +1166,9 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 	// Start Player Render
 	{
-		float differ = sin(Game::object->gameTime * 3.0) * 0.05 - 0.02;
+		float differ = sin(ThinDrawer::object->gameTime * 3.0) * 0.05 - 0.02;
 		leveler->startRenderData.bodyRatio = 0.35 + differ;
-		differ = sin(Game::object->gameTime * 3.0) * 0.01;
+		differ = sin(ThinDrawer::object->gameTime * 3.0) * 0.01;
 		leveler->startRenderData.headCircles = glm::vec2(0.05 + differ, 0.05 - differ);
 		leveler->startRenderData.bodyCircles = 0.07 + differ * 3.0;
 		leveler->startRenderData.ld.legCircleSize = 0.03 + differ;
@@ -2789,15 +2827,15 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		{
 			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 0.0);
 			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, objectData->startActive ? 1.0 : 0.15);
-			funnelUbo->data2 = glm::vec4(std::min(50.0f, diffLen), diffLen - 1.0, diffLen, game->gameTime);
-			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, 3.0);
+			funnelUbo->data2 = glm::vec4(std::min(50.0f, diffLen), diffLen - 1.0, diffLen, thinDrawer->gameTime);
+			funnelUbo->data = glm::vec4(1.75, thinDrawer->gameTime, 0.0, 3.0);
 		}
 		else
 		{
 			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
 			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, 0.0);
-			funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, game->gameTime);
-			funnelUbo->data = glm::vec4(1.75, game->gameTime, 0.0, -3.0);
+			funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, thinDrawer->gameTime);
+			funnelUbo->data = glm::vec4(1.75, thinDrawer->gameTime, 0.0, -3.0);
 		}
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
@@ -2820,7 +2858,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 
 		hazardUbo->pointts = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		hazardUbo->colour = glm::vec4(1.0, 0.0, 0.0, objectData->startActive ? 1.0 : 0.15);
-		hazardUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
+		hazardUbo->data = glm::vec4(0.8, thinDrawer->gameTime, 1.0, thinDrawer->gameTime);
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
@@ -2843,7 +2881,7 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 		blueFieldUbo->points = glm::vec4(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		blueFieldUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
 		blueFieldUbo->colour2 = glm::vec4(1.0, 1.0, 0.0, objectData->startActive ? 1.0 : 0.15);
-		blueFieldUbo->data = glm::vec4(0.8, game->gameTime, 1.0, game->gameTime);
+		blueFieldUbo->data = glm::vec4(0.8, thinDrawer->gameTime, 1.0, thinDrawer->gameTime);
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
 
@@ -3492,8 +3530,8 @@ void Leveler::afterFillRayCheck(short minX, short minY, short maxX, short maxY)
 				funnelUbo->data2.y = diffLen - 1.0; funnelUbo->data2.z = diffLen;
 				if (diffBefore < diffLen && funnelUbo->data.w < 0.0)
 				{
-					float data2WChange = game->gameTime - funnelUbo->data2.w;
-					funnelUbo->data2.x = diffBefore; funnelUbo->data2.w = game->gameTime;
+					float data2WChange = thinDrawer->gameTime - funnelUbo->data2.w;
+					funnelUbo->data2.x = diffBefore; funnelUbo->data2.w = thinDrawer->gameTime;
 					funnelUbo->data.y -= data2WChange;
 				}
 
@@ -4002,11 +4040,11 @@ void Leveler::handleRightClickClick()
 					s_funnelUbo* funnelUbo;
 					vkMapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory,
 						objectData->extraOffsets[0] * sizeof(s_funnelUbo), sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
-					float colorSplitPos = std::max(std::min(funnelUbo->data2.x + funnelUbo->data.w * ((float)game->gameTime - funnelUbo->data2.w) *
+					float colorSplitPos = std::max(std::min(funnelUbo->data2.x + funnelUbo->data.w * ((float)thinDrawer->gameTime - funnelUbo->data2.w) *
 						-200.0f, std::min(funnelUbo->data2.z + 10.0f, 60.0f)), -10.0f);
-					funnelUbo->data.y += (game->gameTime - funnelUbo->data2.w) * funnelUbo->data.w;
+					funnelUbo->data.y += (thinDrawer->gameTime - funnelUbo->data2.w) * funnelUbo->data.w;
 					funnelUbo->data2.x = colorSplitPos;
-					funnelUbo->data2.w = game->gameTime;
+					funnelUbo->data2.w = thinDrawer->gameTime;
 
 					funnelUbo->data.w = objectData->startPolarized ? 3.0 : -3.0;
 					funnelUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
