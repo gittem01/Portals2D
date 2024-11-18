@@ -55,12 +55,35 @@ void Leveler::renderClear()
 	thinDrawer->lineZ->numZs = 0;
 }
 
+void deleteAfter(s_gridOperationList* op)
+{
+	for (; op;)
+	{
+		s_gridOperationList* del = op;
+		op = op->next;
+
+		if (del->objectOperation.operationType == ADD)
+		{
+			if (del->connection) delete del->connection;
+			if (del->objectOperation.objData) delete del->objectOperation.objData;
+		}
+
+		delete del;
+	}
+}
+
 void Leveler::quitLeveler()
 {
 	//////////////////
-	currentOperation = new s_gridOperationList();
+	s_gridOperationList* firstOperation = currentOperation;
+	while (firstOperation->prev)
+	{
+		firstOperation = firstOperation->prev;
+	}
 
-	opList;
+	deleteAfter(firstOperation);
+
+	currentOperation = new s_gridOperationList();
 
 	//////////////////
 	lastOffsetPos_W = std::vector<std::vector<std::vector<s_gridSquare>>>();
@@ -1446,23 +1469,6 @@ inline void Leveler::setCable(short x, short y, cableDir cblDir)
 inline cableDir Leveler::getCable(short x, short y)
 {
 	return cableMap[y + ySize_H + extraCable][x + xSize_H + extraCable];
-}
-
-void deleteAfter(s_gridOperationList* op)
-{
-	for (; op;)
-	{
-		s_gridOperationList* del = op;
-		op = op->next;
-		
-		if (del->objectOperation.operationType == ADD)
-		{
-			if (del->connection) delete del->connection;
-			if (del->objectOperation.objData) delete del->objectOperation.objData;
-		}
-		
-		delete del;
-	}
 }
 
 void Leveler::setObjectOperationTrack(operationType opType, s_objectDataGrid* objectData, s_connection* connection)

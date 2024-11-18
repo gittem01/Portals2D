@@ -286,7 +286,6 @@ public:
 
 	//////////////////
 	s_gridOperationList* currentOperation;
-	std::stack<s_gridOperationList> opList;
 
 	//////////////////
 	std::vector<std::vector<std::vector<s_gridSquare>>> lastOffsetPos_W;
