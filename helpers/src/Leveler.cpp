@@ -57,6 +57,59 @@ void Leveler::addPopText(std::string text, glm::vec2 pos, glm::vec3 colour)
 	popLrd.posScale.x -= 2.5f * x;
 }
 
+void readObjectData(std::ifstream& file, s_objectDataGrid* objData)
+{
+	uint32_t offset = offsetof(s_objectDataGrid, fullData);
+	file.read(((char*)objData) + offset, sizeof(s_objectDataGrid) - offset);
+}
+
+void writeObjectData(std::ofstream& file, s_objectDataGrid* objData)
+{
+	uint32_t offset = offsetof(s_objectDataGrid, fullData);
+	file.write(((char*)objData) + offset, sizeof(s_objectDataGrid) - offset);
+}
+
+void writeConnectionData(std::map<s_connection*, std::pair<int, int>>& connectionPairs, std::ofstream& file, s_connection* conn)
+{
+	size_t numPaths = conn->pathPoints.size();
+	file.write((const char*)&numPaths, sizeof(size_t));
+	if (numPaths > 0)
+	{
+		file.write((const char*)conn->pathPoints.data(), sizeof(conn->pathPoints[0])* conn->pathPoints.size());
+	}
+
+	size_t numrenderPaths = conn->renderPathPoints.size();
+	file.write((const char*)&numrenderPaths, sizeof(size_t));
+	if (numrenderPaths > 0)
+	{
+		file.write((const char*)conn->renderPathPoints.data(), sizeof(conn->renderPathPoints[0]) * conn->renderPathPoints.size());
+	}
+
+	int transmitterIndex = connectionPairs[conn].first;
+	int receiverIndex = connectionPairs[conn].second;
+
+	file.write((const char*)&transmitterIndex, sizeof(int));
+	file.write((const char*)&receiverIndex, sizeof(int));
+
+	file.write((const char*)&conn->index, sizeof(conn->index));
+	file.write((const char*)&conn->changePolarization, sizeof(conn->changePolarization));
+}
+
+void updateConnectionMap(std::map<s_connection*, std::pair<int, int>>& connectionPairs, s_objectDataGrid* objectData, int objectIndex)
+{
+	for (s_connection* conn : objectData->connections)
+	{
+		if (conn->transmitter == objectData)
+		{
+			connectionPairs[conn].first = objectIndex;
+		}
+		else
+		{
+			connectionPairs[conn].second = objectIndex;
+		}
+	}
+}
+
 int Leveler::saveLevel(std::string fileName, bool overwrite)
 {
 	if (fileName.size() < 5 || fileName.compare(fileName.size() - 4, 4, ".pld") != 0)
@@ -89,10 +142,47 @@ int Leveler::saveLevel(std::string fileName, bool overwrite)
 
 	std::ofstream file(finalName, std::ios_base::binary);
 
-	// write random chars
 	if (file.is_open())
 	{
-		file << "random chars";
+		size_t numObjects = levelObjects.size();
+
+		file.write((const char*)&numObjects, sizeof(size_t));
+
+		for (int i = 0; i < ySize; i++)
+		{
+			for (int j = 0; j < xSize; j++)
+			{
+				s_levelGridData& lgd = gridMap[i][j];
+				
+				uint8_t writeData = (lgd.objectType & GRID_DRAWS) ? lgd.objectType : 0;
+
+				file.write((const char*)&writeData, sizeof(uint8_t));
+			}
+		}
+
+		std::map<s_connection*, std::pair<int, int>> connectionPairs;
+		std::map<s_objectDataGrid*, int> objectIndices;
+
+		int i = 0;
+		for (s_objectDataGrid* objectData : levelObjects)
+		{
+			writeObjectData(file, objectData);
+
+			updateConnectionMap(connectionPairs, objectData, i);
+
+			objectIndices[objectData] = i;
+
+			i++;
+		}
+
+		size_t numConnections = connectionPairs.size();
+		file.write((const char*)&numConnections, sizeof(numConnections));
+
+		for (auto& pair: connectionPairs)
+		{
+			writeConnectionData(connectionPairs, file, pair.first);
+		}
+
 		file.close();
 
 		addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -127,6 +217,113 @@ int Leveler::openLevel(std::string fileName)
 	if (file.is_open())
 	{
 		addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		renderClear();
+		thinDrawer->releaseRenderResources();
+		quitLeveler();
+
+		pushRenderFunctions();
+		ol->pushRenderFunctions();
+		renderInit();
+
+		size_t numObjects;
+
+		file.read((char*)&numObjects, sizeof(size_t));
+
+		for (int i = 0; i < ySize; i++)
+		{
+			for (int j = 0; j < xSize; j++)
+			{
+				s_levelGridData& lgd = gridMap[i][j];
+
+				uint8_t gridData;
+				file.read((char*)&gridData, sizeof(uint8_t));
+
+				levelObject objectType = (LevelObject)gridData;
+
+				glm::i16vec2 gridPos = glm::i16vec2(j - xSize_H, i - ySize_H);
+
+				switch (objectType)
+				{
+				case WHITE_WALL:
+					addGridSquare_W(gridPos.x, gridPos.y);
+					break;
+				case BLACK_WALL:
+					addGridSquare_B(gridPos.x, gridPos.y);
+					break;
+				case GLASS_WALL:
+					addGridSquare_G(gridPos.x, gridPos.y);
+					break;
+				case FENCE_WALL:
+					addGridSquare_F(gridPos.x, gridPos.y);
+					break;
+				default:
+					break;
+				}
+			}
+		}
+
+		sideUpdate(-200, 200, -200, 200);
+
+		std::vector<s_objectDataGrid*> levelObjects;
+
+		for (int i = 0; i < numObjects; i++)
+		{
+			s_objectDataGrid* objectData = new s_objectDataGrid();
+			levelObjects.push_back(objectData);
+
+			readObjectData(file, objectData);
+			int itemIndex = getLevelObjectIndex(objectData->objectType);
+			putObject(ol->items[itemIndex], objectData);
+		}
+
+		size_t numConnections;
+		file.read((char*)&numConnections, sizeof(numConnections));
+
+		for (int i = 0; i < numConnections; i++)
+		{
+			s_connection* connection = new s_connection();
+
+			size_t numPaths;
+			file.read((char*)&numPaths, sizeof(size_t));
+			
+			if (numPaths > 0)
+			{
+				connection->pathPoints.resize(numPaths);
+				file.read((char*)connection->pathPoints.data(),
+					sizeof(connection->pathPoints[0]) * connection->pathPoints.size());
+			}
+
+			size_t numrenderPaths;
+			file.read((char*)&numrenderPaths, sizeof(size_t));
+			if (numrenderPaths > 0)
+			{
+				connection->renderPathPoints.resize(numrenderPaths);
+				file.read((char*)connection->renderPathPoints.data(),
+					sizeof(connection->renderPathPoints[0]) * connection->renderPathPoints.size());
+			}
+
+			int transmitterIndex;
+			int receiverIndex;
+
+			int lineIndex;
+			bool changePolarization;
+
+			file.read((char*)&transmitterIndex, sizeof(int));
+			file.read((char*)&receiverIndex, sizeof(int));
+
+			file.read((char*)&lineIndex, sizeof(lineIndex));
+			file.read((char*)&changePolarization, sizeof(changePolarization));
+
+			connection->index = lineIndex;
+			connection->changePolarization = changePolarization;
+
+			s_objectDataGrid* transmitter = levelObjects[transmitterIndex];
+			s_objectDataGrid* receiver = levelObjects[receiverIndex];
+
+			connectObjects(transmitter, receiver, connection);
+			updateConnectionRenderData(connection);
+		}
 
 		return 0;
 	}
@@ -2355,7 +2552,7 @@ void Leveler::updateConnectionRenderData(s_connection* connection)
 
 	if (connection->pathPoints.size() > 1)
 	{
-		for (int i = 0; i < connection->renderPathPoints.size() - 1; i++)
+		for (int i = 0; i < (int)connection->renderPathPoints.size() - 1; i++)
 		{
 			lastOffsetPos_Connection.push_back(connection);
 			connection->offsets.push_back(thinDrawer->lineZ->numZs);
@@ -2528,7 +2725,6 @@ s_connection* Leveler::connectObjects(s_objectDataGrid* obj1, s_objectDataGrid* 
 
 	connection->transmitter = transmitter;
 	connection->receiver = receiver;
-	
 
 	if (transmitter != noAddObject)
 	{

@@ -182,9 +182,9 @@ typedef struct GridData_S
 
 typedef struct ObjectDataGrid
 {
-	glm::vec4 fullData;
 	std::vector<int> extraOffsets;
 	std::vector<struct Connection*> connections;
+	glm::vec4 fullData;
 	levelObject objectType;
 	levelObject extraType;
 	int offset;
