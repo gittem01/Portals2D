@@ -1,0 +1,6 @@
+blueGelJump - a
+shots - https://opengameart.org/content/4-projectile-launches
+emancipate - https://opengameart.org/content/machine-death-sound
+Menu - https://opengameart.org/content/high-tech-lab
+fizzle - https://opengameart.org/content/9-sci-fi-computer-sounds-and-beeps
+sdliderHit - https://opengameart.org/content/impact

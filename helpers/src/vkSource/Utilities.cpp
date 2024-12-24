@@ -76,12 +76,16 @@ void ThinDrawer::flushCommandBuffer(VkCommandBuffer commandBuffer)
     VkFenceCreateInfo fenceCreateInfo = vkinit::fenceCreateInfo();
     VkFence fence;
     CHECK_RESULT_VK(vkCreateFence(logicalDevice, &fenceCreateInfo, VK_NULL_HANDLE, &fence));
-
-    CHECK_RESULT_VK(vkQueueSubmit(queues.graphicsQueue, 1, &submitInfo, fence));
+    {
+        queueMutex.lock();
+        CHECK_RESULT_VK(vkQueueSubmit(queues.graphicsQueue, 1, &submitInfo, fence));
+        queueMutex.unlock();
+    }
     CHECK_RESULT_VK(vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX));
 
     vkDestroyFence(logicalDevice, fence, VK_NULL_HANDLE);
     vkFreeCommandBuffers(logicalDevice, uploadPool, 1, &commandBuffer);
+
 }
 
 uint32_t ThinDrawer::getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties)
@@ -176,24 +180,6 @@ void ThinDrawer::bufferStage(void* bufferData, uint32_t dataSize, VkBufferUsageF
     vkDestroyBuffer(logicalDevice, stagingBuffer.buffer, VK_NULL_HANDLE);
     vkFreeMemory(logicalDevice, stagingBuffer.memory, VK_NULL_HANDLE);
 };
-
-VkCommandBuffer ThinDrawer::createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, const bool begin)
-{
-    VkCommandBufferAllocateInfo cmdBufAllocateInfo = { };
-    cmdBufAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmdBufAllocateInfo.commandPool = pool;
-    cmdBufAllocateInfo.level = level;
-    cmdBufAllocateInfo.commandBufferCount = 1;
-
-    VkCommandBuffer cmdBuffer;
-    CHECK_RESULT_VK(vkAllocateCommandBuffers(logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
-    if (begin)
-    {
-        VkCommandBufferBeginInfo cmdBufInfo = vkinit::commandBufferBeginInfo();
-        CHECK_RESULT_VK(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
-    }
-    return cmdBuffer;
-}
 
 void ThinDrawer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
 {
@@ -308,18 +294,21 @@ void ThinDrawer::loadTexture(char* fileName, s_texture* texture, bool enableAnis
     stbi_image_free(pixels);
 }
 
-void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy, VkSamplerAddressMode addressMode, int numMipLevels)
+void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy,
+    VkSamplerAddressMode addressMode, int numMipLevels, VkFilter filter)
 {
-	VkFilter filter;
-	if (texData->width > 32 && texData->height > 32)
-	{
-		filter = VK_FILTER_LINEAR;
-	}
-	else
-	{
-		filter = VK_FILTER_NEAREST;
-	}
-
+    if (filter == VK_FILTER_MAX_ENUM)
+    {
+        if (texData->width > 32 && texData->height > 32)
+        {
+            filter = VK_FILTER_LINEAR;
+        }
+        else
+        {
+            filter = VK_FILTER_NEAREST;
+        }
+    }
+	
     VkFormat format;
     if (texData->numChannels == 4)
     {
@@ -342,14 +331,14 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
 
     texture->width = texData->width;
     texture->height = texData->height;
-    if (numMipLevels == 0)
+
+    texture->mipLevels = (uint32_t)std::floor(std::log2(std::max(texData->width, texData->height))) + 1;
+
+    if (numMipLevels != 0)
     {
-        texture->mipLevels = (uint32_t)std::floor(std::log2(std::max(texData->width, texData->height))) + 1;
+        texture->mipLevels = std::min((uint32_t)numMipLevels, texture->mipLevels);
     }
-    else
-    {
-        texture->mipLevels = numMipLevels;
-    }
+
     VkMemoryAllocateInfo memAllocInfo = { };
     memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 
@@ -382,7 +371,7 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         texture->image, texture->deviceMemory);
 
-    VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, uploadPool, true);
+    VkCommandBuffer copyCmd = getCommandBuffer(true);
 
     VkImageSubresourceRange subresourceRange = { };
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

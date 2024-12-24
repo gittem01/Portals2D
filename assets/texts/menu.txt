@@ -78,6 +78,14 @@ DEVAM ET
 RESUME
 <resume_1>
 
+<restart_0>
+YENİDEN BAŞLA
+<restart_0>
+
+<restart_1>
+RESTART
+<restart_1>
+
 <to_menu_0>
 MENÜYE DÖN
 <to_menu_0>
@@ -93,3 +101,33 @@ EDİTÖRE DÖN
 <to_editor_1>
 RETURN TO EDITOR
 <to_editor_1>
+
+<enterName>
+Level Kayıt Adı
+Level Save Name
+<enterName>
+
+<saveSuccess>
+Kaydetme Başarılı
+Save Successful
+<saveSuccess>
+
+<saveFailure>
+Kaydetme Başarısız
+Save Failed
+<saveFailure>
+
+<openSuccess>
+Level Açma Başarılı
+Level Opened Successfully
+<openSuccess>
+
+<openFailure>
+Level Açma Başarısız
+Level Opening Failed
+<openFailure>
+
+<alreadyExists>
+Dosya Zaten Var
+File Already Exists
+<alreadyExists>

@@ -5,6 +5,7 @@
 #include <AL/alext.h>
 #include <AudioFile.h>
 #include <map>
+#include <vector>
 #include <string>
 #include <glm/glm.hpp>
 
@@ -18,6 +19,16 @@ typedef struct s_sourceInUse
 	ALuint source;
 	s_sourceInUse* next;
 } s_sourceInUse;
+
+typedef struct
+{
+	ALuint source;
+	double startTime;
+	double reachTime;
+	float initialVolume;
+	float finalVolume;
+	bool stopOnEnd;
+} fader;
 
 class Sounder
 {
@@ -36,6 +47,9 @@ public:
 
 	s_sourceInUse* sourcesInUse;
 	s_sourceInUse* sourceToCheck;
+
+	std::vector<fader> faderData;
+	void addFader(ALuint source, float initialVolume, float finalVolume, double reachTime, bool stopOnEnd=false);
 
 public:
 	static Sounder* object;
@@ -59,7 +73,7 @@ public:
 	ALuint playSound(ALuint buffer, float volume);
 	void setSoundVolume(const ALuint source, const float volume);
 	void setSoundPosition(const ALuint source, glm::vec3 pos);
-	ALuint playLoopingSound(ALuint buffer);
+	ALuint playLoopingSound(ALuint buffer, float volume);
 	void stopSound(ALuint source);
 	void stopLoopingSound(ALuint source);
 };

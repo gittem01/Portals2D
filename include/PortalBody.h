@@ -50,7 +50,7 @@ typedef struct
 
 typedef struct PBFixtureData
 {
-    std::vector<portalCollision*> pCollisions;
+    std::vector<portalCollision> pCollisions;
     int index;
     // will be calculated only for polygon shapes
     float angleThold;
@@ -58,9 +58,9 @@ typedef struct PBFixtureData
     // return 2 if not found, return 1 for colliding, otherwise return release value
     int getPortalStatus(Portal* portal, int side) {
         for (auto pCollision : pCollisions) {
-            if (pCollision->portal == portal) {
-                if (pCollision->side == side) {
-                    return pCollision->status;
+            if (pCollision.portal == portal) {
+                if (pCollision.side == side) {
+                    return pCollision.status;
                 }
                 else {
                     return 2;
@@ -71,16 +71,16 @@ typedef struct PBFixtureData
         return 2;
     }
 
-    std::vector<portalCollision*>::iterator getPortalCollision(Portal* portal, int status = 2) {
+    std::vector<portalCollision>::iterator getPortalCollision(Portal* portal, int status = 2) {
         for (auto i = pCollisions.begin(); i != pCollisions.end(); i++) {
-            portalCollision* pColl = *i;
+            portalCollision pColl = *i;
             if (status == 2) {
-                if (pColl->portal == portal) {
+                if (pColl.portal == portal) {
                     return i;
                 }
             }
             else {
-                if (pColl->portal == portal && pColl->status == status) {
+                if (pColl.portal == portal && pColl.status == status) {
                     return i;
                 }
             }
@@ -107,7 +107,7 @@ friend class Gel;
 
 public:
     pbWorldData* worldIndex;
-    std::vector<bodyCollisionStatus*> bodyMaps;
+    std::vector<bodyCollisionStatus> bodyMaps;
 
     // arrangement of the fixtures are fixed always
     std::vector<b2Fixture*> fixtures;
@@ -125,6 +125,7 @@ private:
 
     ~PortalBody();
 
+    bodyData bData;
     std::map<Portal*, int> outFixtures[2];
     std::map<Portal*, int> createDestroyMap[2];
 
@@ -137,7 +138,7 @@ private:
 
     void destroyCheck(b2Fixture* fix, Portal* portal, PortalCollisionType out);
     bool shouldCreate(b2Fixture* fix, Portal* portal, PortalCollisionType out);
-    int shouldCollideHelper(portalCollision* coll, PBFixtureData* pbfData1, PBFixtureData* pbfData2, PortalBody* pb);
+    int shouldCollideHelper(portalCollision coll, PBFixtureData* pbfData1, PBFixtureData* pbfData2, PortalBody* pb);
     bool shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* fix2, class fixtureData* fData);
     void outHelper(b2Fixture* fix, Portal* portal, int status, PortalCollisionType out);
     void handleOut(b2Fixture* fix, Portal* portal, PortalCollisionType out);

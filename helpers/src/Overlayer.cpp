@@ -4,6 +4,7 @@
 #include <Sounder.h>
 #include <OptionShader.h>
 #include "Menu.h"
+#include "PopUp.h"
 
 // funnel thingy
 //if (wh->keyData[SDL_SCANCODE_SPACE] == 2)
@@ -122,15 +123,15 @@ Overlayer::Overlayer(Game* game)
     }
 
     s_pop& levelerOptions = pops["leveler_options"];
-    const float by = 3.0f;
+    const float by = 2.0f;
 
 	topLeftButtons[0].colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
-	topLeftButtons[0].posSize = glm::vec4(0.0f, 0.0f, xSize * 0.48f, by);
-    topLeftButtons[0].data = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	topLeftButtons[0].posSize = glm::vec4(0.0f, 0.0f, xSize * 0.45f, by);
+    topLeftButtons[0].data = glm::vec4(xSize * 0.03f, xSize * 0.04f, 1.0f, 0.0f);
 
     topLeftButtons[1].colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
-    topLeftButtons[1].posSize = glm::vec4(0.0f, 0.0f, xSize * 0.48f, by);
-    topLeftButtons[1].data = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    topLeftButtons[1].posSize = glm::vec4(0.0f, 0.0f, xSize * 0.45f, by);
+    topLeftButtons[1].data = glm::vec4(xSize * 0.03f, xSize * 0.04f, 1.0f, 0.0f);
 }
 
 void Overlayer::pushRenderFunctions()
@@ -153,7 +154,7 @@ void Overlayer::camMap(void* ptr)
 
     s_sharedUniformData* sharedData;
     CHECK_RESULT_VK(vkMapMemory(td->logicalDevice, ShaderBase::sharedOrthoUniform->memory,
-        ShaderBase::alignedSharedSize * (td->lastSwapChainImageIndex + 8),
+        ShaderBase::alignedSharedSize * (td->frameIndex + 8),
         ShaderBase::alignedSharedSize, 0, (void**)&sharedData));
 
     sharedData->orthoMatrix = ol->cam.camMatrix;
@@ -187,7 +188,7 @@ void Overlayer::maper(void* ptr)
             char y = i / ol->numX;
 
             s_manyTextureData* mtd;
-            vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0].memory, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc) * sizeof(s_manyTextureData),
+            vkMapMemory(ol->mt->logicalDevice, ol->mt->uniformBuffers[0].memory, (i + td->frameIndex * ol->totalNum + ol->startAlloc) * sizeof(s_manyTextureData),
                 sizeof(s_manyTextureData), 0, (void**)&mtd);
             mtd->posSize = glm::vec4(ol->leftX - ol->xSize + ol->itemRatio * ol->xSize + x * 9.0 + 5.0f, 31.5 - y * 9.0,
                 (6.0 + item.extraScale) * item.scaleRatio.x, (6.0 + item.extraScale) * item.scaleRatio.y);
@@ -207,7 +208,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
     OptionShader* os = ol->os;
 
     const VkDeviceSize offsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->lastSwapChainImageIndex + 8);
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
     
     int i = 0;
     for (auto& rp : ol->renderPops)
@@ -268,7 +269,8 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             ol->il->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-        vkCmdPushConstants(cmdBuff, ol->il->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_itemData), (void*)&iData);
+        vkCmdPushConstants(cmdBuff, ol->il->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,sizeof(s_itemData), (void*)&iData);
 
         vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
 
@@ -289,7 +291,7 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
             vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 ol->mt->pipelineLayout, 2, 1, &item.tex->set, 0, VK_NULL_HANDLE);
 
-            vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, (i + td->lastSwapChainImageIndex * ol->totalNum + ol->startAlloc));
+            vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, (i + td->frameIndex * ol->totalNum + ol->startAlloc));
 
             i++;
         }
@@ -300,6 +302,11 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
             td->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
         for (int i = 0; i < 2; i++)
         {
+            if (ol->overlayOverlay - LOAD_LEVEL == i)
+            {
+                continue;
+            }
+
             vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &ol->topLeftButtons[i]);
 
@@ -360,6 +367,11 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 void Overlayer::getPops()
 {
+    int winSizeY = wh->windowSizes.y;
+    float camY = cam.ySides.y - cam.ySides.x;
+    float camRatio = 2.5f / camY;
+    popHeight = 1.5f * winSizeY * camRatio;
+
     auto popNames = IOHelper::loadLines("popNames.txt");
     for (auto& name : popNames)
     {
@@ -403,12 +415,8 @@ int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::
     float maxSize = 1.0;
     for (std::string& text : texts)
     {
-		int winSizeY = wh->windowSizes.y;
-		float camY = cam.ySides.y - cam.ySides.x;
-		float camRatio = 2.5f / camY;
-		int requiredSize = 2.0f * winSizeY * camRatio;
         float x;
-        std::vector<s_charRenderData> rd = cd->getRenderData(text, requiredSize, x);
+        std::vector<s_charRenderData> rd = cd->getRenderData(text, popHeight, x);
         
         maxSize = std::max(maxSize, x);
 
@@ -660,7 +668,9 @@ const float mult = 6.0;
 
 void Overlayer::topLeftUpdate()
 {
-    if (wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
+    const glm::vec4 buttonClr = glm::vec4(0.03f, 0.00f, 0.10f, 1.0f);
+
+    if (wh->keyData[SDL_SCANCODE_ESCAPE] == 2 && !game->pop.active)
     {
         selectedItemIndex = -1;
         popShowName = "";
@@ -707,33 +717,48 @@ void Overlayer::topLeftUpdate()
     }
 
     s_pop& levelerOptions = pops["leveler_options"];
-    float xAdd = -xSize * (1.0f - itemRatio);
+    float xAdd = -xSize * (1.0f - itemRatio) + 0.3f;
 
     int hoverIndex = -1;
     for (int i = 0; i < 2; i++)
     {
         float texSize = cd->calcSize(levelerOptions.texts[i]);
 
-        topLeftButtons[i].posSize.x = leftX + xSize * (0.24f + i * 0.5f) + xAdd;
-        topLeftButtons[i].posSize.y = cam.defaultYSides.y - topLeftButtons[i].posSize.w * 0.5f;
+        topLeftButtons[i].posSize.x = leftX + xSize * (0.24f + i * 0.50f) + xAdd;
+        topLeftButtons[i].posSize.y = cam.defaultYSides.y - topLeftButtons[i].posSize.w * 0.5f - 0.9f;
 
         if (topLeftButtons[i].hoverCheck(cam.getMouseCoords()) && hoverIndex < 0 && overlayOverlay == LEVELER)
         {
-            topLeftButtons[i].colour = glm::vec4(0.5, 0.5, 0.5, 1.0);
+            topLeftButtons[i].colour = buttonClr * 0.75f;
+            topLeftButtons[i].data.w = thinDrawer->gameTime;
             hoverIndex = i;
         }
         else
         {
-            topLeftButtons[i].colour = glm::vec4(1.0);
+            topLeftButtons[i].colour = buttonClr;
         }
 
+        topLeftButtons[i].data.y = std::max(1.0f - (float)(thinDrawer->gameTime - topLeftButtons[i].data.w) * 4.0f, xSize * 0.05f);
+
+        if (overlayOverlay - LOAD_LEVEL == i)
+            continue;
+
         cd->renderDatas.push_back({ levelerOptions.texts[i],
-            { topLeftButtons[i].posSize.x - texSize * 1.5f, topLeftButtons[i].posSize.y, 3.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } });
+            { topLeftButtons[i].posSize.x - texSize * 1.5f, topLeftButtons[i].posSize.y, 3.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });
     }
 
     if (hoverIndex >= 0 && wh->mouseData[2] == 2)
     {
         overlayOverlay = (overlayType)(LOAD_LEVEL + hoverIndex);
+
+        s_menuButton finalButton;
+		finalButton.colour = glm::vec4(0.05, 0.05, 0.05, 1.0);
+		finalButton.posSize = glm::vec4(0.0f, 0.0f, 80.0f, 10.0f);
+		finalButton.data = glm::vec4(5.0f, 5.25f, 1.1f, 0.0f);
+
+        const char* tlNames[2] = { "loadRender", "saveRender" };
+
+        Game::object->pop.init(topLeftButtons[hoverIndex], tlNames[hoverIndex], 0.5);
     }
 }
 

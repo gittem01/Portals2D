@@ -11,6 +11,24 @@ PortalWorld::PortalWorld() : b2World(b2Vec2(0, -11.15f))
 
 PortalWorld::~PortalWorld()
 {
+    for (PbWorldData* wData : bodyIndices)
+    {
+        for (int i = wData->pbIndices.size() - 1; i >= 0; i--)
+        {
+            PortalBody* portalBody = wData->pbIndices[i];
+
+            delete portalBody;
+        }
+    }
+
+    portalDestroyCallbacks.clear();
+
+    for (int i = 0; i < portals.size(); i++)
+    {
+        destroyPortal(portals[i]);
+        i--;
+    }
+
     for (int i = bodyIndices.size() - 1; i > -1; i--)
     {
         pbWorldData* worldData = bodyIndices.at(i);
@@ -30,19 +48,6 @@ PortalWorld::~PortalWorld()
         }
 
         delete worldData;
-    }
-
-    portalDestroyCallbacks.clear();
-
-    for (int i = 0; i < portals.size(); i++)
-    {
-        destroyPortal(portals[i]);
-        i--;
-    }
-
-    for (Portal* portal : portals)
-    {
-        delete portal;
     }
 
     delete rayHandler;
@@ -365,14 +370,14 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             PortalBody* pbB = (PortalBody*)bd->data;
 
             b2RevoluteJoint* rj = (b2RevoluteJoint*)j;
-            for (bodyCollisionStatus* bcs : pbB->bodyMaps)
+            for (bodyCollisionStatus bcs : pbB->bodyMaps)
             {
-                if (bcs->connection == c)
+                if (bcs.connection == c)
                 {
                     b2RevoluteJointDef jDef;
 
                     float angle1 = body2->GetAngle();
-                    float angle2 = bcs->body->body->GetAngle();
+                    float angle2 = bcs.body->body->GetAngle();
 
                     float length1;
                     float length2;
@@ -404,7 +409,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                         }
                     }
 
-                    if (bcs->body->isMirrored)
+                    if (bcs.body->isMirrored)
                     {
                         if (switched)
                         {
@@ -434,23 +439,23 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                     if (!switched ^ c->isReversed)
                     {
                         jDef.bodyA = body2;
-                        jDef.bodyB = bcs->body->body;
+                        jDef.bodyB = bcs.body->body;
 
                         jDef.localAnchorA = length1 * b2Vec2(cos(angle1), sin(angle1));
                         jDef.localAnchorA = body2->GetLocalPoint(body2->GetPosition() + jDef.localAnchorA);
 
                         jDef.localAnchorB = length2 * b2Vec2(cos(angle2), sin(angle2));
-                        jDef.localAnchorB = bcs->body->body->GetLocalPoint(bcs->body->body->GetPosition() + jDef.localAnchorB);
+                        jDef.localAnchorB = bcs.body->body->GetLocalPoint(bcs.body->body->GetPosition() + jDef.localAnchorB);
 
                         jDef.referenceAngle = 0.0;
                     }
                     else
                     {
-                        jDef.bodyA = bcs->body->body;
+                        jDef.bodyA = bcs.body->body;
                         jDef.bodyB = body2;
 
                         jDef.localAnchorA = length2 * b2Vec2(cos(angle2), sin(angle2));
-                        jDef.localAnchorA = bcs->body->body->GetLocalPoint(bcs->body->body->GetPosition() + jDef.localAnchorA);
+                        jDef.localAnchorA = bcs.body->body->GetLocalPoint(bcs.body->body->GetPosition() + jDef.localAnchorA);
 
                         jDef.localAnchorB = length1 * b2Vec2(cos(angle1), sin(angle1));
                         jDef.localAnchorB = npb->body->GetLocalPoint(npb->body->GetPosition() + jDef.localAnchorB);
@@ -485,23 +490,25 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             }
         }
 
-        bodyCollisionStatus* bcs = new bodyCollisionStatus;
-        bcs->body = pBody;
+        bodyCollisionStatus bcs;
+        bcs.body = pBody;
 
         for (portalConnection* conn : portal2->connections[c->side2])
         {
             if (conn->portal2 == collPortal && conn->side2 == c->side1)
             {
-                bcs->connection = conn;
+                bcs.connection = conn;
                 conn->portal1->collidingBodies[conn->side1].insert(npb);
                 break;
             }
         }
 
-        bodyCollisionStatus* t_bcs = new bodyCollisionStatus;
-        t_bcs->body = npb;
+        bodyCollisionStatus t_bcs;
+        t_bcs.body = npb;
         npb->fixtures.resize(pBody->fixtures.size());
-        t_bcs->connection = c;
+        t_bcs.connection = c;
+
+		s_combinedPortalData* cpd = new s_combinedPortalData[pBody->fixtures.size()];
 
         bool allOut = true;
         int fixMargin = 0;
@@ -528,8 +535,8 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
             fixtureData* fixData1 = (fixtureData*)fix->GetUserData().pointer;
             PBFixtureData* pbfData1 = (PBFixtureData*)fixData1->data;
-            fixtureData* fixData2 = new fixtureData();
-            PBFixtureData* pbfData2 = new PBFixtureData();
+            fixtureData* fixData2 = &cpd[i].fData;
+            PBFixtureData* pbfData2 = (PBFixtureData*)&cpd[i].pbfData;
             fixData2->type = F_PORTAL_BODY;
             fixData2->data = (void*)pbfData2;
 
@@ -537,7 +544,7 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             pbfData2->angleThold = PortalBody::calculateAngleThold(f);
             f->GetUserData().pointer = (uintptr_t)fixData2;
 
-            portalCollision* col = (portalCollision*)malloc(sizeof(portalCollision));;
+            portalCollision col;
 
             int status = pbfData1->getPortalStatus(collPortal, side);
             int status2 = pbfData1->getPortalStatus(collPortal, side ^ 1);
@@ -564,23 +571,19 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                 if (rayCheck)
                 {
                     fixMargin -= 1;
-                    col->portal = portal2;
-                    col->side = c->side2;
-                    col->status = 1;
+                    col.portal = portal2;
+                    col.side = c->side2;
+                    col.status = 1;
                     pbfData2->pCollisions.push_back(col);
                     allOut = false;
                 }
                 else if (release){
                     fixMargin -= 2;
-                    col->portal = portal2;
-                    col->side = c->side2;
-                    col->status = -1;
+                    col.portal = portal2;
+                    col.side = c->side2;
+                    col.status = -1;
                     pbfData2->pCollisions.push_back(col);
                     allOut = false;
-                }
-                else
-                {
-                    free(col);
                 }
             }
             else if (status == 2)
@@ -588,9 +591,9 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
                 fixMargin -= 2;
                 if (status2 == 1)
                 {
-                    col->portal = portal2;
-                    col->side = c->side2;
-                    col->status = -2;
+                    col.portal = portal2;
+                    col.side = c->side2;
+                    col.status = -2;
                     pbfData2->pCollisions.push_back(col);
 
                     bool rayCheck;
@@ -600,13 +603,13 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
                     if (!rayCheck)
                     {
-                        col->status++;
+                        col.status++;
                     }
                 }
                 else if (status2 < 0){
-                    col->portal = portal2;
-                    col->side = c->side2;
-                    col->status = status2 - 2;
+                    col.portal = portal2;
+                    col.side = c->side2;
+                    col.status = status2 - 2;
                     pbfData2->pCollisions.push_back(col);
 
                     if (status2 % 2 == 0)
@@ -618,21 +621,17 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
 
                         if (!rayCheck)
                         {
-                            col->status++;
+                            col.status++;
                         }
                     }
                 }
                 else
                 {
-                    col->portal = portal2;
-                    col->side = c->side2;
-                    col->status = -1;
+                    col.portal = portal2;
+                    col.side = c->side2;
+                    col.status = -1;
                     pbfData2->pCollisions.push_back(col);
                 }
-            }
-            else
-            {
-                free(col);
             }
 
             if (status != 1 && status2 != 1)

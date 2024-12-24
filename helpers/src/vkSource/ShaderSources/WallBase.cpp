@@ -41,7 +41,7 @@ void WallBase::render(VkCommandBuffer cmdBuff, int layer, float camX, float camY
     if (renderGridUp.size() == 0) return;
 
     VkDeviceSize offsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * thinDrawer->lastSwapChainImageIndex;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * thinDrawer->frameIndex;
     s_gridPositionShader p = getGridSquare(camX, camY);
     const int n = 1;
 

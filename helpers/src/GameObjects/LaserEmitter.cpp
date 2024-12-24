@@ -278,18 +278,18 @@ void LaserEmitter::update()
 						else
 						{
 							PortalBody* pb = lc->wData->pbIndices[0];
-							for (bodyCollisionStatus* bcs : pb->bodyMaps)
+							for (bodyCollisionStatus bcs : pb->bodyMaps)
 							{
-								if (bcs->connection->portal1->getPointSide(pb->body->GetPosition()) != bcs->connection->side1)
+								if (bcs.connection->portal1->getPointSide(pb->body->GetPosition()) != bcs.connection->side1)
 								{
-									b2Body* body2 = bcs->body->body;
-									laserPos = body2->GetPosition() + 0.001f * bcs->connection->portal2->dir;
+									b2Body* body2 = bcs.body->body;
+									laserPos = body2->GetPosition() + 0.001f * bcs.connection->portal2->dir;
 									laserDir = body2->GetTransform().q.GetXAxis();
 								}
 								else
 								{
 									b2Body* body = pb->body;
-									laserPos = body->GetPosition() + 0.001f * bcs->connection->portal1->dir;
+									laserPos = body->GetPosition() + 0.001f * bcs.connection->portal1->dir;
 									laserDir = body->GetTransform().q.GetXAxis();
 								}
 							}

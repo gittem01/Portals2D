@@ -106,6 +106,8 @@ public:
     static void portalDestrCallBack(Portal* portal);
     static float springMovement(float value, float vel, float springFactor, float dampingFactor, float deltaTime);
 
+    void restartWorld();
+
     static void memMap(void* ptr);
     static void memMapDeathByElectrocution(void* ptr);
     static void memMapDeathNatural(void* ptr);
@@ -119,6 +121,7 @@ public:
 
     void createBody(b2Vec2 pos);
 
+    void recreate(bool mirrored = false);
     void enterForceField(ForceField* forceField);
     void beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix);
     void endContact(b2Contact* contact, b2Fixture* otherFix);

@@ -95,7 +95,7 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 {
 	CharDrawer* cd = (CharDrawer*)ptr;
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * (cd->thinDrawer->lastSwapChainImageIndex + 8);
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (cd->thinDrawer->frameIndex + 8);
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, cd->fontShader->pipeline);
 
@@ -176,6 +176,8 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 
 	std::vector<s_charRenderData> rd;
 
+	targetHeight = std::round(targetHeight * ThinDrawer::object->wh->dpiScaling);
+
 	x = 0;
 	float prevX = 0.0;
 	for (uint32_t codepoint : codePoints)
@@ -232,6 +234,8 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		stbtt_vertex* rdShape;
 		int numVert = stbtt_GetGlyphShape(&fontInfo, glyph, &rdShape);
 
+		if (numVert == 0) return rd;
+
 		stbtt__bitmap rdBitmap;
 		rdBitmap.w = x1 - x0;
 		rdBitmap.h = y1 - y0;
@@ -249,7 +253,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		texData.numChannels = 1;
 		s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
 
-		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 1);
+		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 2, VK_FILTER_LINEAR);
 
 		IOHelper::updateTextureSet(tex);
 

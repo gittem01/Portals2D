@@ -328,7 +328,7 @@ void Platform::render(VkCommandBuffer cmdBuff, void* ptr)
 		ThinDrawer::object->platformRectangle->pipelineLayout, 1, 1, &ThinDrawer::object->platformRectangle->descriptorSets[1], 0, VK_NULL_HANDLE);
 
 	vkCmdDraw(cmdBuff, ThinDrawer::object->wallLight->buffers[0].count, ThinDrawer::object->platformRectangle->numPlatforms, 0,
-		MAX_PLATFORMS * ThinDrawer::object->lastSwapChainImageIndex);
+		MAX_PLATFORMS * ThinDrawer::object->frameIndex);
 
 	// gels
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ThinDrawer::object->wallGel->pipeline);
@@ -340,7 +340,7 @@ void Platform::render(VkCommandBuffer cmdBuff, void* ptr)
 		ThinDrawer::object->wallGel->pipelineLayout, 1, 1, &ThinDrawer::object->wallGel->descriptorSets[1], 0, nullptr);
 
 	vkCmdDraw(cmdBuff, 6, platforms.size() * 4, 0, ThinDrawer::object->wallGel->numWallLines +
-		MAX_PLATFORMS * ThinDrawer::object->lastSwapChainImageIndex);
+		MAX_PLATFORMS * ThinDrawer::object->frameIndex);
 }
 
 void Platform::memMapFunc(void* ptr)
@@ -363,14 +363,14 @@ void Platform::memMapFunc(void* ptr)
 
 			s_wallGelData* mapMem;
 			vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory,
-				sizeof(s_wallGelData) * (platform->edgeRenderIndex + i + MAX_PLATFORMS * td->lastSwapChainImageIndex), sizeof(s_wallGelData), 0, (void**)&mapMem);
+				sizeof(s_wallGelData) * (platform->edgeRenderIndex + i + MAX_PLATFORMS * td->frameIndex), sizeof(s_wallGelData), 0, (void**)&mapMem);
 			mapMem->positions = glm::vec4(p1.x, p1.y, p0.x, p0.y);
 			vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory);
 		}
 
 		b2Vec2 bodyPos = body->GetPosition();
 
-		int offset = ThinDrawer::object->lastSwapChainImageIndex * sizeof(s_platformRectUbo) * MAX_PLATFORMS + platform->platformRenderOffset;
+		int offset = ThinDrawer::object->frameIndex * sizeof(s_platformRectUbo) * MAX_PLATFORMS + platform->platformRenderOffset;
 		s_platformRectUbo* platformUbo;
 		vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory,
 			offset, sizeof(s_platformRectUbo), 0, (void**)&platformUbo);

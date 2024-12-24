@@ -16,11 +16,9 @@ typedef struct portalConnection {
 class PortalWorldQuery : public b2QueryCallback
 {
 public:
-    Portal* portal;
+    PortalWorldQuery();
 
-    PortalWorldQuery(Portal* portal);
-
-	virtual bool ReportFixture(b2Fixture* fixture);
+	bool ReportFixture(b2Fixture* fixture);
 };
 
 class Portal
@@ -37,6 +35,7 @@ friend class Gel;
 friend class Platform;
 
 public:
+    static PortalWorldQuery queryClass;
 
     void connect(Portal* portal2, bool isReversed=false, int side1=0, int side2=0);
     void setVoid(int side);
@@ -53,7 +52,6 @@ public:
 
     int range[2];
     b2Fixture* sideFixtures[2];
-    PortalWorldQuery* queryClass;
     b2Vec2 boxMin;
     b2Vec2 boxMax;
 
@@ -80,6 +78,7 @@ private:
     
     b2Fixture* midFixture;
     b2Fixture* yFix[2];
+    fixtureData fData;
 
     b2RayCastInput rcInp1;
     b2RayCastInput rcInp2;

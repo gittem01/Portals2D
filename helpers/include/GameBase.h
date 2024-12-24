@@ -78,6 +78,25 @@ public:
 
 } fixtureData;
 
+typedef struct
+{
+    class Portal* portal;
+    int status;
+    int side;
+} ppcc;
+
+typedef struct
+{
+    fixtureData fData;
+    struct
+    {
+        std::vector<ppcc> pCollisions;
+        int index;
+        float angleThold;
+	} pbfData;
+
+} s_combinedPortalData;
+
 typedef struct UnitWallData
 {
     GEL_TYPE gelType = NONE;

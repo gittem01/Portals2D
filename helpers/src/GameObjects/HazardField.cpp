@@ -141,7 +141,7 @@ void HazardField::enable()
 	s_hazardUbo* hazardUbo;
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory,
 		fieldRenderOffset * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
-	hazardUbo->data = glm::vec4(0.8, Game::object->gameTime, 1.0, Game::object->gameTime);
+	hazardUbo->data = glm::vec4(0.8, ThinDrawer::object->gameTime, 1.0, ThinDrawer::object->gameTime);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 }
 
@@ -155,7 +155,7 @@ void HazardField::disable()
 	s_hazardUbo* hazardUbo;
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory,
 		fieldRenderOffset * sizeof(s_hazardUbo), sizeof(s_hazardUbo), 0, (void**)&hazardUbo);
-	hazardUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
+	hazardUbo->data = glm::vec4(0.8, ThinDrawer::object->gameTime, 0.0, ThinDrawer::object->gameTime);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->hazardShader->uniformBuffers[0].memory);
 }
 
@@ -167,7 +167,7 @@ void HazardField::staticInit()
 	ptData = &Leveler::object->perTextureData[index];
 	tex = Leveler::object->ol->items[index + 4].tex;
 
-	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
+	ThinDrawer::object->drawFuncs.push_back({ render, nullptr });
 }
 
 void HazardField::render(VkCommandBuffer cmdBuff, void* ptr)

@@ -27,11 +27,11 @@ BaseTestCase::BaseTestCase(Game* game, const char* name)
 
 void BaseTestCase::destroy()
 {
-    td->releaseRenderResources();
-
     delete g->mjh;
     delete g->pWorld;
     delete tp;
+
+    td->releaseRenderResources();
 
     g->pWorld = nullptr;
     td->pWorld = nullptr;

@@ -9,7 +9,7 @@
 #include <vulkan/vulkan.h>
 #include <PlatformRectangle.h>
 #include <TestPlayer.h>
-#include <stack>
+#include "CharDrawer.h"
 
 typedef union GridData
 {
@@ -333,6 +333,9 @@ public:
 	s_gridSquare startSquare = { -10, 1 };
 	s_gridSquare endSquare = { 10, 1 };
 
+	s_lineRenderData popLrd;
+	double popTextTime = 0.0;
+
 	Leveler(Game* game);
 	
 	void renderInit();
@@ -396,6 +399,9 @@ public:
 	glm::i16vec2 getBestVert(glm::i16vec2 checkStart, int desiredSize, levelObject mask); // returns y0, y1
 	void handleRightClickClick();
 
+	void addPopText(std::string text, glm::vec2 pos, glm::vec3 colour);
+	int saveLevel(std::string fileName, bool overwrite=false); // 0 = success, 1 = can't open file, 2 = file exists
+	int openLevel(std::string fileName); // 0 = success, 1 = can't open file, 2 = file exists
 	void renderClear();
 	void quitLeveler();
 

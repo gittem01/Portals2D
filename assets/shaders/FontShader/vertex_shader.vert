@@ -21,7 +21,7 @@ layout (push_constant) uniform PC
 
 void main() 
 {
-    const float scaleUp = 1.2; // scale vertices but keep the look same
+    const float scaleUp = 1.1; // scale vertices but keep the look same
 	texCoord = (vec2(vertex.x, -vertex.y) * scaleUp + vec2(0.5, 0.5));
     outData = pc.data;
     colour = pc.colour;

@@ -1,16 +1,32 @@
 <0>
-Kaydet
 Yükle
+Kaydet
+Y
+Dosya Adı Bu Karakterleri İçeremez:
+Farklı Kaydet
+Dosyadan Aç
 <0>
 <1>
-Save
 Load
+Save
+L
+File Name Cannot Contain These Characters:
+Save As
+Open From File
 <1>
 <linked_options>
+-
+-
+ığüşöçİĞŞÖÇ
+-
 -
 -
 <linked_options>
 <signal_options>
+0
+0
+0
+0
 0
 0
 <signal_options>

@@ -68,7 +68,7 @@ void main()
 
     if (pc.data.z > 0.0001)
     {
-        float noiseVal = 1.0 - voronoi(worldPos) * 0.5;
+        float noiseVal = pc.data.z - voronoi(worldPos) * 0.5;
         colour.w *= noiseVal;
     }
     

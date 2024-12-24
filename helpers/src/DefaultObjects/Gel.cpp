@@ -622,7 +622,7 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
             float opRadius = gel->gelRadius * 2.0;
             for (auto bm : pb->bodyMaps)
             {
-                float dist = PortalWorld::getRealDist(bm->connection->portal1->points[0], bm->connection->portal1->points[1], pos);
+                float dist = PortalWorld::getRealDist(bm.connection->portal1->points[0], bm.connection->portal1->points[1], pos);
                 float remVal = std::max((gel->gelRadius + dist) - 0.5f, 0.0f);
                 opRadius = std::min(gel->gelRadius * 2.0f - remVal * 2.0f, opRadius);
             }
@@ -632,7 +632,7 @@ void Gel::render(VkCommandBuffer cmdBuff, void* ptr)
     }
 
     if (gelCount > 0)
-        ThinDrawer::object->gelShader->render(cmdBuff, ThinDrawer::object->lastSwapChainImageIndex);
+        ThinDrawer::object->gelShader->render(cmdBuff, ThinDrawer::object->frameIndex);
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ThinDrawer::object->splash->pipeline);
 

@@ -443,10 +443,10 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
             if (pb->worldIndex == filterBody) return minFraction;
 
             PBFixtureData* pbfData = (PBFixtureData*)fData->data;
-            std::vector<portalCollision*> collidingPortals = pbfData->pCollisions;
-            for (portalCollision* pc : collidingPortals)
+            std::vector<portalCollision> collidingPortals = pbfData->pCollisions;
+            for (portalCollision pc : collidingPortals)
             {
-                if (pc->status < 1 || PortalWorld::isLeft(pc->portal->points[1], pc->portal->points[0], point, 0.000001f) == (pc->side ^ 1))
+                if (pc.status < 1 || PortalWorld::isLeft(pc.portal->points[1], pc.portal->points[0], point, 0.000001f) == (pc.side ^ 1))
                 {
                     return minFraction;
                 }

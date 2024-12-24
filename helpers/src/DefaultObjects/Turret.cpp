@@ -160,6 +160,23 @@ void Turret::recreate(bool unused_mirrored)
 		DefaultObject::recreate(mirrored);
 	}
 
+	lastTrackTime = -10.0;
+	lastTrackPtr = nullptr;
+	tracking = false;
+
+	shootGundex = 0;
+	lastShootTime = -10.0;
+	shootTimes[0] = -10.0f; shootTimes[1] = -10.0f;
+	fallTime = -10.0;
+	gunBacks[0] = 0.0f; gunBacks[1] = 0.0f;
+	status = false;
+	deactivated = false;
+	openAmount = 0.0f;
+	rotation = 0.0f;
+
+	firstLaserIndex = 0;
+	lastLaserIndex = 0;
+
 	eyeBody = wData->pbIndices[0];
 }
 
@@ -185,7 +202,7 @@ void Turret::staticInit()
 	coverVertexBuffer->count = coverVertices.size();
 	ThinDrawer::object->bufferStage(coverVertices.data(), coverVertices.size() * sizeof(s_vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, coverVertexBuffer);
 
-	ThinDrawer::object->drawFuncs.push_back({ draw, nullptr });
+	ThinDrawer::object->midDrawFuncs.push_back({ draw, nullptr });
 
 	ALuint buffer = Sounder::object->loadSound("firee.wav");
 	soundBuffers.push_back(buffer);
@@ -201,13 +218,13 @@ glm::vec2 rotateArroundPoint(glm::vec2 c, glm::vec2 p, float angle)
 
 void Turret::shoot()
 {
-	if (ThinDrawer::object->gameTime - lastShootTime > shootTimer && openAmount > 0.999f)
+	if (Game::object->gameTime - lastShootTime > shootTimer && openAmount > 0.999f)
 	{
 		ALuint source = Sounder::object->playSound(soundBuffers[0], 0.2 + 0.1 * rand() / (float)RAND_MAX);
 		Sounder::object->setSoundPosition(source, glm::vec3(wData->pbIndices[0]->body->GetPosition().x, wData->pbIndices[0]->body->GetPosition().y, 0.0));
 
-		lastShootTime = ThinDrawer::object->gameTime;
-		shootTimes[shootGundex] = ThinDrawer::object->gameTime;
+		lastShootTime = Game::object->gameTime;
+		shootTimes[shootGundex] = Game::object->gameTime;
 
 		float mirrMult = wData->pbIndices[0]->isMirrored ? -1.0f : 1.0f;
 		float effectiveRotation = rotation * mirrMult;
@@ -229,12 +246,12 @@ void Turret::shoot()
 		{
 			for (int i = 0; i < wData->pbIndices[0]->bodyMaps.size(); i++)
 			{
-				bodyCollisionStatus* bcs = wData->pbIndices[0]->bodyMaps[i];
-				Portal* portal = bcs->connection->portal1;
+				bodyCollisionStatus bcs = wData->pbIndices[0]->bodyMaps[i];
+				Portal* portal = bcs.connection->portal1;
 				if (PortalWorld::getRealDist(portal->points[0], portal->points[1], bPos) > -0.01f)
 				{
-					bPos = PortalWorld::getRelativePortalPosition_W(bPos, bcs->connection);
-					dir = -PortalWorld::getRelativePortalPosition_L(dir, bcs->connection);
+					bPos = PortalWorld::getRelativePortalPosition_W(bPos, bcs.connection);
+					dir = -PortalWorld::getRelativePortalPosition_L(dir, bcs.connection);
 					break;
 				}
 			}
@@ -280,7 +297,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 	VkDeviceSize offsets = 0;
 
-	double timeNow = SDL_GetTicksSec();
+	double timeNow = Game::object->gameTime;
 
 	for (auto trt : turrets)
 	{
@@ -303,7 +320,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, drawer->bodyShader->pipeline);
 
-		const uint32_t camOffset = ShaderBase::alignedSharedSize * drawer->lastSwapChainImageIndex;
+		const uint32_t camOffset = ShaderBase::alignedSharedSize * drawer->frameIndex;
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			drawer->bodyShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
@@ -328,16 +345,16 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 			{
 				for (int i = 0; i < pbfData->pCollisions.size(); i++)
 				{
-					portalCollision* pc = pbfData->pCollisions[i];
-					if (pc->status < 0)
+					portalCollision pc = pbfData->pCollisions[i];
+					if (pc.status < 0)
 					{
 						renderDisabled = true; i++;
 						break;
 					}
 
 					pshData.portals[i] = glm::vec4(
-						pc->portal->points[pc->side ^ 1].x, pc->portal->points[pc->side ^ 1].y,
-						pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+						pc.portal->points[pc.side ^ 1].x, pc.portal->points[pc.side ^ 1].y,
+						pc.portal->points[pc.side].x, pc.portal->points[pc.side].y);
 				}
 
 				pshData.data.x = (float)pbfData->pCollisions.size();
@@ -429,7 +446,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 		float destrDiff = 1.0f;
 		if (trt->wData->destrTime > 0.0)
 		{
-			destrDiff = 1.5f - (ThinDrawer::object->gameTime - trt->wData->destrTime);
+			destrDiff = std::max(1.5f - (float)(ThinDrawer::object->gameTime - trt->wData->destrTime), 0.0f);
 		}
 
 		s_laserUbo laserData;
@@ -493,7 +510,7 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 void Turret::perTickUpdate(float dt)
 {
-	double timeNow = SDL_GetTicksSec();
+	double timeNow = Game::object->gameTime;
 	for (auto trt : turrets)
 	{
 		if (trt->wData->destrTime > 0.0f) continue;
@@ -514,12 +531,12 @@ void Turret::perTickUpdate(float dt)
 
 		if (trt->status)
 		{
-			trt->openAmount += 0.01f;
+			trt->openAmount += 0.002f;
 			trt->openAmount = std::min(trt->openAmount, 1.0f);
 		}
 		else
 		{
-			trt->openAmount -= 0.01f;
+			trt->openAmount -= 0.002f;
 			trt->openAmount = std::max(trt->openAmount, 0.0f);
 		}
 
@@ -535,7 +552,7 @@ void Turret::perTickUpdate(float dt)
 			eyePos = tPb->body->GetWorldPoint(eyePos);
 			if (tPb->bodyMaps.size() > 0)
 			{
-				portalConnection* pc = tPb->bodyMaps[0]->connection;
+				portalConnection* pc = tPb->bodyMaps[0].connection;
 				if (pc->portal1->getPointSide(eyePos) != pc->side1)
 				{
 					tPb = trt->wData->pbIndices[1];
@@ -563,7 +580,7 @@ void Turret::perTickUpdate(float dt)
 		ThinDrawer::object->registerDebugLine(glm::vec4(trt->eyePos.x, trt->eyePos.y, trt->eyePos.x, trt->eyePos.y),
 			glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.1f, 0.5f);
 
-		if (trt->lastTrackTime + 0.25 > timeNow)
+		if (trt->lastTrackTime + 0.5 > timeNow)
 		{
 			b2Vec2 v = trt->trackPoint - trt->eyePos;
 
@@ -573,6 +590,7 @@ void Turret::perTickUpdate(float dt)
 			v.Normalize();
 
 			float vAngle = PortalWorld::calcAngle2(trt->fwd) - PortalWorld::calcAngle2(v);
+			vAngle = PortalWorld::normalizeAngle(vAngle);
 			vAngle = std::clamp(vAngle, -1.1f, 1.1f);
 			v = PortalWorld::rotateVec(trt->fwd, -vAngle);
 			
@@ -634,7 +652,7 @@ void Turret::perTickUpdate(float dt)
 		{
 			Turret* trt = turrets.at(i % turrets.size());
 
-			if (trt->lastTrackPtr != pb && trt->lastTrackTime + 0.15 > timeNow || trt->wData->destrTime > 0.0f || trt->deactivated) continue;
+			if (trt->lastTrackPtr != pb && trt->lastTrackTime + 0.3 > timeNow || trt->wData->destrTime > 0.0f || trt->deactivated) continue;
 			
 			PortalBody* tPb = trt->eyeBody;
 
@@ -675,7 +693,7 @@ void Turret::perTickUpdate(float dt)
 		for (Portal* p : Game::object->pWorld->portals)
 		{
 			if (p->connections->size() == 0 || p->getPointSide(trt->eyePos) != p->connections->at(0)->side1 ||
-				trt->lastTrackPtr != p && trt->lastTrackTime + 0.15 > timeNow)
+				trt->lastTrackPtr != p && trt->lastTrackTime + 0.3 > timeNow)
 			{
 				continue;
 			}

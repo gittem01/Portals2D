@@ -218,7 +218,6 @@ public:
 
         Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0, 0.0));
 
-        Turret* tr = new Turret(g->pWorld, b2Vec2(0.0f, 0.0f), false);
         dc2->wData->pbIndices[0]->body->SetTransform(b2Vec2(-3.0f, 3.0f), 0.0);
     }
 

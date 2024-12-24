@@ -66,6 +66,7 @@ public:
 	std::string lastPopName = std::string("");
 	std::string popShowName = std::string("");
 	int popHoverIndices[2] = { -1, -1 };
+	int popHeight;
 	glm::vec2 popShowPos;
 	glm::ivec2 levelerRCPos;
 	s_gridData rightClickItem;

@@ -249,7 +249,7 @@ void Menu::addTextToButton(Button& b, std::string text)
 	float texSize = b.data.posSize.w * 0.8f;
 	float camY = ol->cam.defaultYSides.y * 2.0f;
 	float screenY = td->wh->windowSizes.y;
-	int reqTexSize = (int)(1.5f * texSize * screenY / camY);
+	int reqTexSize = (int)(1.0f * texSize * screenY / camY);
 
 	b.strText = text;
 	float x;
@@ -470,7 +470,7 @@ void Menu::update()
 			
 			if ((int)(clickButton->data.posSize.x * 128.0f) != lastPos)
 			{
-				ALuint source = Sounder::object->playSound(ol->clickSound, 1.0);
+				ALuint source = Sounder::object->playSound(ol->clickSound, 0.25);
 				alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
 
 				float ratio = (clickButton->data.posSize.x - minX) / (maxX - minX);
@@ -537,16 +537,6 @@ void Menu::update()
 	}*/
 }
 
-void dialogCallBack(void* userdata, const char* const* filelist, int filter)
-{
-	if (!filelist) return;
-
-	for (; *filelist; filelist++)
-	{
-		std::cout << *filelist << std::endl;
-	}
-}
-
 void Menu::buttonPressed(Button* button)
 {
 	if (button->type == BUTTON_CIRCLE) return;
@@ -557,8 +547,6 @@ void Menu::buttonPressed(Button* button)
 		keyAssignmentButton = button;
 		return;
 	}
-
-	//SDL_ShowOpenFileDialog(dialogCallBack, this, td->wh->window, nullptr, 0, nullptr, false);
 
 	if (!activeButton) upCamTime = td->gameTime;
 	else
@@ -606,7 +594,7 @@ void Menu::draw(VkCommandBuffer cmdBuff, void* ptr)
 	ThinDrawer* td = ThinDrawer::object;
 	Overlayer* ol = Leveler::object->ol;
 
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->lastSwapChainImageIndex + 8);
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
 

@@ -80,7 +80,7 @@ void DefaultCube::reportContact(b2Contact* contact, const b2ContactImpulse* impu
 {
 	DefaultObject::reportContact(contact, impulse, contactingBody, fix2);
 
-    if (impulse->normalImpulses[0] > 3.0 &&
+    if (wData->destrTime < -10.0f && impulse->normalImpulses[0] > 3.0 &&
         (contactingBody->GetLinearVelocity().Length() > 1.0 || contactingBody->GetAngularVelocity() > 0.5) && ThinDrawer::object->gameTime - lastSoundTime > 0.2)
     {
         lastSoundTime = ThinDrawer::object->gameTime;

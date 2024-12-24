@@ -299,14 +299,14 @@ void memWrite(Funnel* funnel)
 {
 	s_funnelUbo* funnelUbo;
 	vkMapMemory(ThinDrawer::object->funnelShader->logicalDevice, ThinDrawer::object->funnelShader->uniformBuffers[0].memory,
-		(Funnel::numFunnels + funnel->funnelRenderOffset + (Funnel::numFunnels + 2) * ThinDrawer::object->lastSwapChainImageIndex) * sizeof(s_funnelUbo),
+		(Funnel::numFunnels + funnel->funnelRenderOffset + (Funnel::numFunnels + 2) * ThinDrawer::object->frameIndex) * sizeof(s_funnelUbo),
 		sizeof(s_funnelUbo), 0, (void**)&funnelUbo);
 	memcpy(funnelUbo, &funnel->data, sizeof(s_funnelUbo));
 	vkUnmapMemory(ThinDrawer::object->funnelShader->logicalDevice, ThinDrawer::object->funnelShader->uniformBuffers[0].memory);
 
 	if (funnel->extraRenderIndex >= 0)
 	{
-		int writeOffset = (Funnel::numFunnels * 2 + (Funnel::numFunnels + 2) * ThinDrawer::object->lastSwapChainImageIndex + funnel->extraRenderIndex) * sizeof(s_funnelUbo);
+		int writeOffset = (Funnel::numFunnels * 2 + (Funnel::numFunnels + 2) * ThinDrawer::object->frameIndex + funnel->extraRenderIndex) * sizeof(s_funnelUbo);
 
 		s_funnelUbo* funnelUbo;
 		vkMapMemory(ThinDrawer::object->funnelShader->logicalDevice, ThinDrawer::object->funnelShader->uniformBuffers[0].memory,
@@ -352,7 +352,7 @@ void Funnel::render(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->funnelShader->pipelineLayout, 1, 1, &td->funnelShader->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-	int offset = (numFunnels + 2) * td->lastSwapChainImageIndex + numFunnels;
+	int offset = (numFunnels + 2) * td->frameIndex + numFunnels;
 	vkCmdDraw(cmdBuff, td->debugCircleShader->buffers[0].count, numFunnels, 0, offset);
 
 	for (int i = 0; i < 2; i++)
@@ -658,8 +658,8 @@ void Funnel::perTickUpdate()
 				b2Vec2 funnelStart = dobj->inPortalFunel ? f->lastStartPos2 : f->funnelPos;
 				b2Vec2 funnelEnd = dobj->inPortalFunel ? f->lastStartPos2 + f->lastLen2 * f->funnelDir2 : f->funnelPos + f->lastLen * f->funnelDir;
 				
-				Portal* portal1 = dobj->wData->pbIndices[0]->bodyMaps[0]->connection->portal1;
-				Portal* portal2 = dobj->wData->pbIndices[0]->bodyMaps[0]->connection->portal2;
+				Portal* portal1 = dobj->wData->pbIndices[0]->bodyMaps[0].connection->portal1;
+				Portal* portal2 = dobj->wData->pbIndices[0]->bodyMaps[0].connection->portal2;
 
 				float len1 = sdSegment(portal1->pos, funnelStart, funnelEnd);
 				float len2 = sdSegment(portal2->pos, funnelStart, funnelEnd);

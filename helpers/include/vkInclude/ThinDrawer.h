@@ -43,10 +43,9 @@
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <vulkan/vulkan.h>
+#include <mutex>
 
 #include <IOHelper.h>
-
-#define PRINT_INFO_MESSAGES 1
 
 static const char* ENABLE_EXTENSIONS[] =
 {
@@ -112,6 +111,8 @@ public:
 
     ThinDrawer(PortalWorld* pWorld);
 
+    std::mutex queueMutex;
+
     bool drawReleases = false;
     bool drawDebugBodies = false;
     bool drawDebugEdges = false;
@@ -125,7 +126,8 @@ public:
 
     uint32_t camOffset;
     uint32_t frameNumber = 0;
-    uint32_t lastSwapChainImageIndex = 0;
+    uint32_t frameIndex = 0;
+    uint32_t swapchainImageIndex = 0;
     VkSampleCountFlagBits samples;
     VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -236,7 +238,7 @@ public:
     void renderPortalBodies3D(VkCommandBuffer& cmdBuff);
     void renderWalls(VkCommandBuffer& cmdBuff);
     void renderPortals3D(VkCommandBuffer& cmdBuff);
-    void buildCommandBuffers();
+    void buildCommandBuffers(VkCommandBuffer cmdBuff);
 
     void beforeCreate();
     void afterCreate();
@@ -259,12 +261,11 @@ public:
     uint32_t getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
     void setSamples();
 
-    VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin);
     void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
     void loadTexture(char* fileName, s_texture* texture, bool enableAnisotropy = true,
         VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, float lodBias=0.0);
     void loadTextureFromMemory(s_textureData* texData, s_texture* texture, bool enableAnisotropy = true,
-        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, int numMipLevels=0);
+        VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, int numMipLevels=0, VkFilter filter=VK_FILTER_MAX_ENUM);
     void updateImageDescriptors(s_texture* tex, VkDescriptorSetLayout& setLayout);
     void createImage(uint32_t width, uint32_t p_height, uint32_t mipLevels,
                      VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,

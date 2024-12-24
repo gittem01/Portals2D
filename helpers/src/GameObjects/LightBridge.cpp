@@ -217,7 +217,7 @@ void LightBridge::staticInit()
 
 void LightBridge::memMap(void* ptr)
 {
-	int swpNum = ThinDrawer::object->lastSwapChainImageIndex + 1;
+	int swpNum = ThinDrawer::object->frameIndex + 1;
 
 	for (int i = 0; i < numLightBridges; i++)
 	{
@@ -322,13 +322,13 @@ void LightBridge::render(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->lightBridge->pipelineLayout, 1, 1, &td->lightBridge->descriptorSets[1], 0, VK_NULL_HANDLE);
 
-	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, numLightBridges, 0, numLightBridges * (td->lastSwapChainImageIndex + 1));
+	vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, numLightBridges, 0, numLightBridges * (td->frameIndex + 1));
 
 	for (int i = 0; i < 6; i++)
 	{
 		if (extraIndices[i] <= 0) continue;
 
-		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, extraIndices[i], 0, numLightBridges * 3 + i * 5 + 5 * 6 * td->lastSwapChainImageIndex);
+		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, extraIndices[i], 0, numLightBridges * 3 + i * 5 + 5 * 6 * td->frameIndex);
 	}
 
 	// gels
@@ -347,7 +347,7 @@ void LightBridge::render(VkCommandBuffer cmdBuff, void* ptr)
 	{
 		if (extraIndices[i] <= 0) continue;
 
-		vkCmdDraw(cmdBuff, 6, extraIndices[i], 0, extraWallStartOffset + i * 10 + td->lastSwapChainImageIndex * 30);
+		vkCmdDraw(cmdBuff, 6, extraIndices[i], 0, extraWallStartOffset + i * 10 + td->frameIndex * 30);
 	}
 
 	// tex

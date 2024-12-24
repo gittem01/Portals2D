@@ -97,9 +97,9 @@ void ThinDrawer::selectPhysicalDevice()
         printf("failed to find GPUs with Vulkan support!");
         exit(1);
     }
-    VkPhysicalDevice* devices = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * deviceCount);
+    std::vector<VkPhysicalDevice> devices(deviceCount);
 
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
     physicalDevice = VK_NULL_HANDLE;
 
@@ -111,8 +111,8 @@ void ThinDrawer::selectPhysicalDevice()
         vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(devices[i], &queueFamilyCount, nullptr);
-        VkQueueFamilyProperties* queueFamilies = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(devices[i], &queueFamilyCount, queueFamilies);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(devices[i], &queueFamilyCount, queueFamilies.data());
 
         if (isDeviceSuitable(devices[i], swapChain->surface))
         {
@@ -127,11 +127,13 @@ void ThinDrawer::selectPhysicalDevice()
                     {
                         continue;
                     }
+
                     vkGetPhysicalDeviceMemoryProperties(devices[i], &vulkanInfo->deviceMemoryProperties);
-#if PRINT_INFO_MESSAGES
+
                     printf("Selected GPU : %s\n", vulkanInfo->deviceProperties.deviceName);
-#endif
+
                     physicalDevice = devices[i];
+
                     queues.graphicsQueueFamilyIndex = j;
                     gpuFound = true;
 
@@ -149,9 +151,7 @@ void ThinDrawer::selectPhysicalDevice()
                 }
             }
         }
-        free(queueFamilies);
     }
-    free(devices);
 
     if (!gpuFound)
     {
@@ -309,7 +309,7 @@ void ThinDrawer::createCommands()
     commandCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandCreateInfo.queueFamilyIndex = queues.graphicsQueueFamilyIndex;
     CHECK_RESULT_VK(vkCreateCommandPool(logicalDevice, &commandCreateInfo, nullptr, &uploadPool));
-
+    
     commandCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     for (int i = 0; i < frames.size(); i++)

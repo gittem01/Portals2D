@@ -4,6 +4,7 @@
 #include <functional>
 #include <mutex>
 #include "SDL3/SDL.h"
+#include "PopUp.h"
 
 class Game
 {
@@ -40,6 +41,7 @@ public:
 	class ContactListener* contactListener;
 	class ThinDrawer* thinDrawer;
 	class Sounder* sounder;
+	PopUp pop;
 
 	class Leveler* leveler;
 	class Menu* menu;
@@ -52,6 +54,7 @@ public:
 	void loadGameData();
 	void saveGameData();
 
+	void runSingleTaskRegistry();
 	void loop();
 
 	void timeHandle();

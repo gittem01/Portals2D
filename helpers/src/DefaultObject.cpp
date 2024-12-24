@@ -306,12 +306,12 @@ void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fi
 
 void DefaultObject::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
-	if (wData->destrTime < -10.0f)
+	if (fix2->GetBody()->GetType() != b2_dynamicBody && wData->destrTime < -10.0f && wData->pbIndices.size() == 1)
 	{
 		b2Manifold* manifold = contact->GetManifold();
 		b2WorldManifold wMan;
 		contact->GetWorldManifold(&wMan);
-		if (wMan.separations[0] < -0.05f)
+		if (wMan.separations[0] < -0.2f)
 		{
 			enterForceField(nullptr);
 		}

@@ -40,6 +40,11 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     ThinDrawer::object->debug_addPortalBody(pb);
 }
 
+void Gun::recreate(bool mirrored)
+{
+
+}
+
 void Gun::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix)
 {
 	

@@ -38,7 +38,14 @@ void WindowHandler::handleKeyData()
     {
         keyData[i] = 1;
     }
+
+    for (int i : repeatClears)
+    {
+        repeatKeys[i] = 0;
+    }
+
     newPressIndices.clear();
+	repeatClears.clear();
 }
 
 bool WindowHandler::handleEvents()
@@ -77,7 +84,12 @@ bool WindowHandler::handleEvents()
 			trackpadData[1] = evnt.wheel.y;
 			break;
 		case (SDL_EVENT_KEY_DOWN):
-            if (evnt.key.repeat) break;
+            if (evnt.key.repeat)
+            {
+                repeatKeys[evnt.key.scancode] = 1;
+				repeatClears.push_back(evnt.key.scancode);
+                break;
+            }
             
 			keyData[evnt.key.scancode] = 2;
 			newPressIndices.push_back(evnt.key.scancode);
@@ -86,7 +98,13 @@ bool WindowHandler::handleEvents()
 			keyData[evnt.key.scancode] = 0;
 			break;
 		case (SDL_EVENT_WINDOW_FOCUS_LOST):
-			handleMouseData();
+            for (int i = 2; i < std::size(mouseData); i++)
+            {
+                mouseData[i] = 0;
+            }
+
+            trackpadData[0] = 0; trackpadData[1] = 0;
+
             break;
 		case (SDL_EVENT_WINDOW_RESIZED):
         {

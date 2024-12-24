@@ -66,11 +66,13 @@ Game::Game()
     loadGameData();
 
     gameStater = &Game::MenuState;
+
+    pop.construct();
 }
 
 void Game::loadGameData()
 {
-	std::string fileName = "gameData.bin";
+	std::string fileName = IOHelper::assetsFolder + "gamedata/basicdata.bin";
 	std::ifstream file(fileName, std::ios::binary);
 
     const uint32_t expectedFileSize = 16;
@@ -117,7 +119,7 @@ void Game::saveGameData()
 			return;
         }
 
-		std::string fileName = "gameData.bin";
+		std::string fileName = IOHelper::assetsFolder + "gamedata/basicdata.bin";
 		std::ofstream file(fileName, std::ios::binary);
 
 		if (file.is_open())
@@ -196,6 +198,8 @@ void Game::LevelerState()
         leveler->update();
         sounder->update();
 
+        runSingleTaskRegistry();
+
         thinDrawer->renderLoop();
     }
 
@@ -245,7 +249,7 @@ void Game::TestState()
     }
     else
     {
-        testCase = newTest(this, 3);
+        testCase = newTest(this, 1);
 
         thinDrawer->whiteWallShader->testFill();
         thinDrawer->blackWallShader->testFill();
@@ -283,11 +287,7 @@ void Game::TestState()
             LightBridge::update();
         }
 
-        for (auto func : singleTaskRegistry)
-        {
-            func();
-        }
-        singleTaskRegistry.clear();
+        runSingleTaskRegistry();
 
         sounder->update();
 
@@ -345,6 +345,7 @@ void Game::TestState()
         LaserEmitter::numLaserEmitters = 0;
         WallLaserReceiver::disableChecks.clear();
         WallLaserReceiver::enableChecks.clear();
+        WallLaserReceiver::numWallLaserReceivers = 0;
         GndLaserReceiver::disableChecks.clear();
         GndLaserReceiver::enableChecks.clear();
         GndLaserReceiver::numGndLaserReceivers = 0;
@@ -384,6 +385,9 @@ void Game::MenuState()
 
     SDL_ShowWindow(thinDrawer->wh->window);
 
+    ALuint menuMusic = sounder->playLoopingSound(sounder->loadSound("Menu.wav"), 0.0);
+    sounder->addFader(menuMusic, 0.0f, 0.15f, 1.0f);
+
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && gameStater == &Game::MenuState)
     {
@@ -397,6 +401,8 @@ void Game::MenuState()
 
         menu->update();
 
+        runSingleTaskRegistry();
+
         thinDrawer->renderLoop();
     }
 
@@ -409,7 +415,19 @@ void Game::MenuState()
         shouldQuit = false;
     }
 
+    sounder->addFader(menuMusic, 0.15f, 0.0f, 1.0f, true);
+
 	lastState = &Game::MenuState;
+}
+
+void Game::runSingleTaskRegistry()
+{
+    for (auto func : singleTaskRegistry)
+    {
+        func();
+    }
+
+    singleTaskRegistry.clear();
 }
 
 void Game::loop()

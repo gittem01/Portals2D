@@ -1,5 +1,6 @@
 #include <Sounder.h>
 #include <IOHelper.h>
+#include "ThinDrawer.h"
 
 Sounder* Sounder::object;
 
@@ -69,6 +70,20 @@ void Sounder::update()
     //const ALCchar* defaultDeviceSpecifier = alcGetString(device2, ALC_ALL_DEVICES_SPECIFIER);
     //printf("%s\n", defaultDeviceSpecifier);
 
+    static float lastMusicVolume = 0.0;
+
+    float currentMusicVolume = musicVolume * generalVolume;
+
+    if (lastMusicVolume != musicVolume)
+    {
+        for (int i = 0; i < lastAvailableLoopingSource; i++)
+        {
+            alSourcef(loopingSources[i], AL_GAIN, 0.1f * currentMusicVolume);
+        }
+    }
+
+    lastMusicVolume = currentMusicVolume;
+
     alListenerfv(AL_POSITION, &listenerPos.x);
 
     if (sourceToCheck)
@@ -123,6 +138,44 @@ void Sounder::update()
             sourceToCheck = src;
         }
     }
+
+    for (int i = 0; i < faderData.size(); i++)
+    {
+		fader& f = faderData[i];
+		double dt01 = (ThinDrawer::object->gameTime - f.startTime) / f.reachTime;
+        float finalVolume = (f.initialVolume + (f.finalVolume - f.initialVolume) * dt01) * generalVolume * musicVolume;
+
+        if (dt01 >= 1.0)
+        {
+            faderData[i] = faderData.back();
+            faderData.pop_back();
+
+            if (f.stopOnEnd)
+            {
+                stopLoopingSound(f.source);
+            }
+
+            i--; continue;
+        }
+        else
+        {
+            alSourcef(f.source, AL_GAIN, finalVolume);
+        }
+    }
+}
+
+void Sounder::addFader(ALuint source, float initialVolume, float finalVolume, double reachTime, bool stopOnEnd)
+{
+    for (int i = 0; i < faderData.size(); i++)
+    {
+		if (faderData[i].source == source)
+		{
+            faderData[i] = { source, ThinDrawer::object->gameTime, reachTime, initialVolume, finalVolume, stopOnEnd };
+            return;
+		}
+    }
+
+	faderData.push_back({ source, ThinDrawer::object->gameTime, reachTime, initialVolume, finalVolume, stopOnEnd });
 }
 
 ALuint Sounder::loadSound(std::string fileName)
@@ -199,11 +252,13 @@ void Sounder::setSoundPosition(ALuint source, glm::vec3 pos)
     alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z);
 }
 
-ALuint Sounder::playLoopingSound(ALuint buffer)
+ALuint Sounder::playLoopingSound(ALuint buffer, float volume)
 {
     ALuint source = loopingSources[lastAvailableLoopingSource++];
     alSourcei(source, AL_BUFFER, buffer);
-    //alSourcei(source, AL_LOOPING, AL_TRUE);
+    alSourcei(source, AL_LOOPING, AL_TRUE);
+    alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+    alSourcef(source, AL_GAIN, volume * musicVolume * generalVolume);
     alSourcePlay(source);
 
     return source;

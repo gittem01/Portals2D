@@ -110,7 +110,7 @@ void PolynomialShader::setupDescriptorSet()
 void PolynomialShader::render(VkCommandBuffer cmdBuff, class Camera* cam)
 {
     const VkDeviceSize offsets = 0;
-    const uint32_t camOffset = ShaderBase::alignedSharedSize * thinDrawer->lastSwapChainImageIndex;
+    const uint32_t camOffset = ShaderBase::alignedSharedSize * thinDrawer->frameIndex;
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 

@@ -957,7 +957,8 @@ void LevelerTestCase::perFrameUpdate()
 
             g->menu->initDefaults();
 
-            g->menu->initWithName("resume", glm::vec4(1.0, 0.5, 0.0, 0.5f));
+            g->menu->initWithName("resume", glm::vec4(1.0, 0.3, 0.0, 0.4f));
+            g->menu->initWithName("restart", glm::vec4(1.0, 0.3, 0.0, 0.4f));
             g->menu->initSettings(glm::vec4(0.3, 0.3, 0.3, 0.9));
             if (g->lastState == &Game::LevelerState)
                 g->menu->initWithName("to_editor", glm::vec4(0.3, 0.3, 0.3, 0.9));
@@ -977,6 +978,15 @@ void LevelerTestCase::perFrameUpdate()
             else if (g->menu->activeButton->strText == "to_editor" || g->menu->activeButton->strText == "to_menu")
             {
                 shouldQuit = true;
+                goto stopMenuUpdate;
+            }
+            else if (g->menu->activeButton->strText == "restart")
+            {
+                g->singleTaskRegistry.push_back([]() {
+                    TestPlayer::object->restartWorld();
+                    Game::object->dtMult = 1.0f;
+                });
+
                 goto stopMenuUpdate;
             }
         }

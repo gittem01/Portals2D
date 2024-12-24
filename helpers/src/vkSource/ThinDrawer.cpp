@@ -104,7 +104,7 @@ void ThinDrawer::initExtra()
 void ThinDrawer::uniformFiller()
 {
     s_sharedUniformData* sharedData;
-    CHECK_RESULT_VK(vkMapMemory(logicalDevice, ShaderBase::sharedOrthoUniform->memory, ShaderBase::alignedSharedSize * lastSwapChainImageIndex,
+    CHECK_RESULT_VK(vkMapMemory(logicalDevice, ShaderBase::sharedOrthoUniform->memory, ShaderBase::alignedSharedSize * frameIndex,
         ShaderBase::alignedSharedSize, 0, (void**)&sharedData));
 
     sharedData->orthoMatrix = wh->cam->camMatrix;
@@ -123,16 +123,16 @@ void ThinDrawer::uniformFiller()
 
 void ThinDrawer::renderLoop()
 {
-    int imNum = frameNumber % swapChain->imageCount;
+    frameIndex = frameNumber % swapChain->imageCount;
 
-    s_frameData currentFrame = frames[imNum];
+    s_frameData& currentFrame = frames[frameIndex];
 
-    CHECK_RESULT_VK(vkWaitForFences(logicalDevice, 1, &currentFrame.renderFence, true, UINT64_MAX));
+    vkWaitForFences(logicalDevice, 1, &currentFrame.renderFence, true, UINT64_MAX);
+
+    vkResetFences(logicalDevice, 1, &currentFrame.renderFence);
 
     VkResult result = vkAcquireNextImageKHR(logicalDevice, swapChain->swapChain, UINT64_MAX,
-                          currentFrame.presentSemaphore, VK_NULL_HANDLE, &lastSwapChainImageIndex);
-
-    CHECK_RESULT_VK(vkResetFences(logicalDevice, 1, &currentFrame.renderFence));
+        currentFrame.presentSemaphore, VK_NULL_HANDLE, &swapchainImageIndex);
 
     animate();
 
@@ -143,9 +143,9 @@ void ThinDrawer::renderLoop()
 
     uniformFiller();
 
-    vkResetCommandBuffer(frames[lastSwapChainImageIndex].commandBuffer, 0);
+    vkResetCommandBuffer(currentFrame.commandBuffer, 0);
 
-    buildCommandBuffers();
+    buildCommandBuffers(currentFrame.commandBuffer);
 
     VkSubmitInfo submit = { };
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -159,11 +159,13 @@ void ThinDrawer::renderLoop()
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &currentFrame.renderSemaphore;
 
-    VkCommandBuffer cmdBuffers[] = { frames[lastSwapChainImageIndex].commandBuffer };
+    VkCommandBuffer cmdBuffers[] = { currentFrame.commandBuffer };
     submit.commandBufferCount = std::size(cmdBuffers);
     submit.pCommandBuffers = cmdBuffers;
 
-    CHECK_RESULT_VK(vkQueueSubmit(queues.graphicsQueue, 1, &submit, currentFrame.renderFence));
+    queueMutex.lock();
+    vkQueueSubmit(queues.graphicsQueue, 1, &submit, currentFrame.renderFence);
+
     VkPresentInfoKHR presentInfo = { };
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pSwapchains = &swapChain->swapChain;
@@ -172,9 +174,10 @@ void ThinDrawer::renderLoop()
     presentInfo.pWaitSemaphores = &currentFrame.renderSemaphore;
     presentInfo.waitSemaphoreCount = 1;
 
-    presentInfo.pImageIndices = &lastSwapChainImageIndex;
+    presentInfo.pImageIndices = &swapchainImageIndex;
 
     result = vkQueuePresentKHR(queues.graphicsQueue, &presentInfo);
+    queueMutex.unlock();
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
@@ -184,14 +187,12 @@ void ThinDrawer::renderLoop()
     frameNumber++;
 }
 
-void ThinDrawer::buildCommandBuffers()
+void ThinDrawer::buildCommandBuffers(VkCommandBuffer cmdBuff)
 {
-    VkCommandBuffer cmdBuff = frames[lastSwapChainImageIndex].commandBuffer;
-
     renderCommandBeginner(cmdBuff);
 
     VkDeviceSize offsets = 0;
-    camOffset = ShaderBase::alignedSharedSize * lastSwapChainImageIndex;
+    camOffset = ShaderBase::alignedSharedSize * frameIndex;
 
     for (auto& f : earlyDrawFuncs)
     {
@@ -199,8 +200,6 @@ void ThinDrawer::buildCommandBuffers()
     }
 
     renderWalls(cmdBuff);
-
-    renderPortalBodies(cmdBuff);
 
     for (auto& f : drawFuncs)
     {
@@ -293,7 +292,7 @@ void ThinDrawer::renderCommandBeginner(VkCommandBuffer& cmdBuff)
 
     VkRenderPassBeginInfo renderPassBeginInfo = vkinit::renderPassBeginInfo(renderPass, swapChain->extent.width, swapChain->extent.height, &clrVal);
 
-    renderPassBeginInfo.framebuffer = swapChain->frameBuffers[lastSwapChainImageIndex];
+    renderPassBeginInfo.framebuffer = swapChain->frameBuffers[swapchainImageIndex];
 
     CHECK_RESULT_VK(vkBeginCommandBuffer(cmdBuff, &cmdBufInfo));
 
@@ -325,7 +324,7 @@ void ThinDrawer::debug_renderPortalBodies(VkCommandBuffer& cmdBuff)
             {
                 s_uboAll* allData;
                 vkMapMemory(logicalDevice, ShaderBase::commonStorageBuffers[0]->memory,
-                    renderStruct->dynamicOffsets[lastSwapChainImageIndex][0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
+                    renderStruct->dynamicOffsets[frameIndex][0], ShaderBase::alignedSizes[0], 0, (void**)&allData);
                 allData->modelMatrix = modelMatrix;
 
                 allData->data.x = renderStruct->pbfData->pCollisions.size();
@@ -333,15 +332,15 @@ void ThinDrawer::debug_renderPortalBodies(VkCommandBuffer& cmdBuff)
                 bool fullOut = false;
                 for (int i = 0; i < renderStruct->pbfData->pCollisions.size(); i++)
                 {
-                    portalCollision* pc = renderStruct->pbfData->pCollisions[i];
-                    if (pc->status < 0)
+                    portalCollision pc = renderStruct->pbfData->pCollisions[i];
+                    if (pc.status < 0)
                     {
                         fullOut = true;
                         allData->extraData.z = -2.0f;
                         break;
                     }
-                    allData->portals[i] = glm::vec4(pc->portal->points[1 ^ pc->side].x, pc->portal->points[1 ^ pc->side].y,
-                        pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+                    allData->portals[i] = glm::vec4(pc.portal->points[1 ^ pc.side].x, pc.portal->points[1 ^ pc.side].y,
+                        pc.portal->points[pc.side].x, pc.portal->points[pc.side].y);
                 }
 
                 if (fullOut)
@@ -370,7 +369,7 @@ void ThinDrawer::debug_renderPortalBodies(VkCommandBuffer& cmdBuff)
 
                     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         debugCircleShader->pipelineLayout, 1, 1, &debugCircleShader->descriptorSets[1],
-                        renderStruct->dynamicOffsets[lastSwapChainImageIndex].size(), renderStruct->dynamicOffsets[lastSwapChainImageIndex].data());
+                        renderStruct->dynamicOffsets[frameIndex].size(), renderStruct->dynamicOffsets[frameIndex].data());
 
                     vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderStruct->vertexBuffer->buffer, &offsets);
                     vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
@@ -388,7 +387,7 @@ void ThinDrawer::debug_renderPortalBodies(VkCommandBuffer& cmdBuff)
 
                     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         debugPolygonShader->pipelineLayout, 1, 1, &debugPolygonShader->descriptorSets[1],
-                        renderStruct->dynamicOffsets[lastSwapChainImageIndex].size(), renderStruct->dynamicOffsets[lastSwapChainImageIndex].data());
+                        renderStruct->dynamicOffsets[frameIndex].size(), renderStruct->dynamicOffsets[frameIndex].data());
 
                     vkCmdDraw(cmdBuff, renderStruct->vertexBuffer->count, 1, 0, 0);
                 }
@@ -478,6 +477,25 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
     wallLight->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
     diagonalLiner->render(cmdBuff, 0, camPos.x * WallBase::layerMult, -camPos.y * WallBase::layerMult);
 
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, lineZ->pipeline);
+
+    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0].buffer, &offsets);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        lineZ->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        lineZ->pipelineLayout, 1, 1, &lineZ->descriptorSets[1], 0, VK_NULL_HANDLE);
+
+    vkCmdDraw(cmdBuff, wallLight->buffers[0].count, lineZ->numZs, 0, 0);
+
+    renderPortalBodies(cmdBuff);
+
+    for (auto& f : midDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
+
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, hazardShader->pipeline);
 
     vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0].buffer, &offsets);
@@ -503,23 +521,6 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
 
     vkCmdDraw(cmdBuff, wallLight->buffers[0].count, blueField->numFields, 0, 0);
 
-
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, lineZ->pipeline);
-
-    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &wallLight->buffers[0].buffer, &offsets);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        lineZ->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        lineZ->pipelineLayout, 1, 1, &lineZ->descriptorSets[1], 0, VK_NULL_HANDLE);
-
-    vkCmdDraw(cmdBuff, wallLight->buffers[0].count, lineZ->numZs, 0, 0);
-
-    for (auto& f : midDrawFuncs)
-    {
-        f.first(cmdBuff, f.second);
-    }
 
     blackWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
     whiteWallShader->render(cmdBuff, 1, camPos.x, -camPos.y);
@@ -563,7 +564,7 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
     for (s_renderGroup* renderGroup : renderGroups)
     {
         double animVal = upUpAnim * renderGroup->imageSets.size();
-        vkCmdBindDescriptorSets(frames[lastSwapChainImageIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
             bodyShader->pipelineLayout, 1, 1, renderGroup->imageSets[renderGroup->currentImgIndex % renderGroup->imageSets.size()], 0, VK_NULL_HANDLE);
         for (s_renderBody* renderBody : renderGroup->renderBodies)
         {
@@ -582,16 +583,16 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
                 {
                     for (int i = 0; i < pFixData->pCollisions.size(); i++)
                     {
-                        portalCollision* pc = pFixData->pCollisions[i];
-                        if (pc->status < 0)
+                        portalCollision pc = pFixData->pCollisions[i];
+                        if (pc.status < 0)
                         {
                             renderDisabled = true; i++;
                             break;
                         }
 
                         pshConst.portals[i] = glm::vec4(
-                            pc->portal->points[pc->side ^ 1].x, pc->portal->points[pc->side ^ 1].y,
-                            pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+                            pc.portal->points[pc.side ^ 1].x, pc.portal->points[pc.side ^ 1].y,
+                            pc.portal->points[pc.side].x, pc.portal->points[pc.side].y);
                     }
                     pshConst.data.x = pFixData->pCollisions.size();
                 }
@@ -602,12 +603,12 @@ void ThinDrawer::renderPortalBodies(VkCommandBuffer& cmdBuff)
 
                 if (!renderDisabled)
                 {
-                    vkCmdBindVertexBuffers(frames[lastSwapChainImageIndex].commandBuffer, 0, 1, &renderGroup->vertexBuffers[i]->buffer, &offsets);
+                    vkCmdBindVertexBuffers(cmdBuff, 0, 1, &renderGroup->vertexBuffers[i]->buffer, &offsets);
 
-                    vkCmdPushConstants(frames[lastSwapChainImageIndex].commandBuffer, bodyShader->pipelineLayout,
+                    vkCmdPushConstants(cmdBuff, bodyShader->pipelineLayout,
                         						VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &pshConst);
 
-                    vkCmdDraw(frames[lastSwapChainImageIndex].commandBuffer, renderGroup->vertexBuffers[i]->count, 1, 0, 0);
+                    vkCmdDraw(cmdBuff, renderGroup->vertexBuffers[i]->count, 1, 0, 0);
                 }
                 
                 i++;
@@ -628,7 +629,7 @@ void ThinDrawer::renderPortalBodies3D(VkCommandBuffer& cmdBuff)
             s_bodyUbo* bodyUbo;
             
             CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader3D->uniformBuffers[0].memory,
-                renderBody->dynamicOffsets[lastSwapChainImageIndex], bodyShader3D->alignedSize_body, 0, (void**)&bodyUbo));
+                renderBody->dynamicOffsets[frameIndex], bodyShader3D->alignedSize_body, 0, (void**)&bodyUbo));
 
             bodyUbo->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(pb->body->GetPosition().x, pb->body->GetPosition().y, 0.0f));
             bodyUbo->rotationMatrix = glm::rotate(glm::mat4(1.0f), pb->body->GetAngle(), glm::vec3(0.0f, 0.0f, 1.0));
@@ -639,19 +640,19 @@ void ThinDrawer::renderPortalBodies3D(VkCommandBuffer& cmdBuff)
             {
                 s_fixUbo* fixUbo;
                 CHECK_RESULT_VK(vkMapMemory(logicalDevice, bodyShader3D->uniformBuffers[1].memory,
-                    renderStruct->dynamicOffsets[lastSwapChainImageIndex][1], bodyShader3D->alignedSize_fixture, 0, (void**)&fixUbo));
+                    renderStruct->dynamicOffsets[frameIndex][1], bodyShader3D->alignedSize_fixture, 0, (void**)&fixUbo));
 
                 int i = 0;
                 bool fullOut = false;
-                for (portalCollision* pc : renderStruct->pbfData->pCollisions)
+                for (portalCollision pc : renderStruct->pbfData->pCollisions)
                 {
-                    if (pc->status < 0)
+                    if (pc.status < 0)
                     {
                         fullOut = true;
                         break;
                     }
-                    fixUbo->portals[i] = glm::vec4( pc->portal->points[pc->side ^ 1].x, pc->portal->points[pc->side ^ 1].y,
-                                                    pc->portal->points[pc->side].x, pc->portal->points[pc->side].y);
+                    fixUbo->portals[i] = glm::vec4( pc.portal->points[pc.side ^ 1].x, pc.portal->points[pc.side ^ 1].y,
+                                                    pc.portal->points[pc.side].x, pc.portal->points[pc.side].y);
                 }
 
                 if (fullOut)
@@ -666,7 +667,7 @@ void ThinDrawer::renderPortalBodies3D(VkCommandBuffer& cmdBuff)
 
                 vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     bodyShader3D->pipelineLayout, 1, 1, &bodyShader3D->descriptorSets[1],
-                    std::size(renderStruct->dynamicOffsets[lastSwapChainImageIndex]), renderStruct->dynamicOffsets[lastSwapChainImageIndex].data());
+                    std::size(renderStruct->dynamicOffsets[frameIndex]), renderStruct->dynamicOffsets[frameIndex].data());
 
 
                 vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,

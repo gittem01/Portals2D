@@ -6,6 +6,11 @@
 #include <Sounder.h>
 #include <SwapChain.h>
 #include <LevelerTestCase.h>
+#include "Menu.h"
+
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
 // for math things
 #include <PortalWorld.h>
@@ -41,6 +46,98 @@ Leveler::Leveler(Game* game)
 	ol->cd->getRenderData("(),0123456789", 50, x);
 }
 
+void Leveler::addPopText(std::string text, glm::vec2 pos, glm::vec3 colour)
+{
+	text = game->menu->buttonTexts["<" + text + ">"][ol->cd->selectedLanguageIndex];
+
+	popLrd.color = glm::vec4(colour, 1.0f);
+	popLrd.posScale = glm::vec4(pos.x, pos.y, 5.0f, ThinDrawer::object->gameTime);
+	float x;
+	popLrd.charDatas = ol->cd->getRenderData(text, ol->popHeight * 2, x);
+	popLrd.posScale.x -= 2.5f * x;
+}
+
+int Leveler::saveLevel(std::string fileName, bool overwrite)
+{
+	if (fileName.size() < 5 || fileName.compare(fileName.size() - 4, 4, ".pld") != 0)
+	{
+		fileName += ".pld";
+	}
+
+#ifdef WIN32
+	int wlen = MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, nullptr, 0);
+	if (wlen == 0)
+	{
+		return 1;
+	}
+
+	std::wstring finalName(wlen, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, &finalName[0], wlen);
+#else
+	std::string finalName = fileName;
+#endif
+
+	if (!overwrite)
+	{
+		std::ifstream fCheck(finalName, std::ios::in);
+		if (fCheck.good())
+		{
+			addPopText("alreadyExists", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			return 2;
+		}
+	}
+
+	std::ofstream file(finalName, std::ios_base::binary);
+
+	// write random chars
+	if (file.is_open())
+	{
+		file << "random chars";
+		file.close();
+
+		addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		return 0;
+	}
+	else
+	{
+		addPopText("saveFailure", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		return 1;
+	}
+}
+
+int Leveler::openLevel(std::string fileName)
+{
+#ifdef WIN32
+	int wlen = MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, nullptr, 0);
+	if (wlen == 0)
+	{
+		return 1;
+	}
+
+	std::wstring finalName(wlen, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, &finalName[0], wlen);
+#else
+	std::string finalName = fileName;
+#endif
+
+	std::ifstream file(finalName, std::ios_base::binary);
+
+	if (file.is_open())
+	{
+		addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		return 0;
+	}
+	else
+	{
+		addPopText("openFailure", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		return 1;
+	}
+}
+
 void Leveler::renderClear()
 {
 	thinDrawer->laserShader->numLasers = 0;
@@ -53,6 +150,7 @@ void Leveler::renderClear()
 	thinDrawer->polynomShader->datas.clear();
 	thinDrawer->debugLineShader->numLines = 0;
 	thinDrawer->lineZ->numZs = 0;
+	popLrd.posScale.w = -1.0f;
 }
 
 void deleteAfter(s_gridOperationList* op)
@@ -119,9 +217,9 @@ void Leveler::quitLeveler()
 void Leveler::pushRenderFunctions()
 {
 	//thinDrawer->earlyDrawFuncs.push_back({ renderParticles, (void*)this });
-	thinDrawer->drawFuncs.push_back({ renderLasers, (void*)this });
-	thinDrawer->drawFuncs.push_back({ renderFunnels, (void*)this });
-	thinDrawer->drawFuncs.push_back({ renderBridges, (void*)this });
+	thinDrawer->midDrawFuncs.push_back({ renderLasers, (void*)this });
+	thinDrawer->midDrawFuncs.push_back({ renderFunnels, (void*)this });
+	thinDrawer->midDrawFuncs.push_back({ renderBridges, (void*)this });
 	thinDrawer->lateDrawFuncs.push_back({ renderGrid, (void*)this });
 }
 
@@ -315,7 +413,7 @@ void Leveler::renderParticles(VkCommandBuffer cmdBuff, void* ptr)
 
 	VkDeviceSize offsets = 0;
 	uint32 dynamicOffsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->dualParticleShader->pipeline);
 
@@ -340,7 +438,7 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
 	ThinDrawer* td = leveler->thinDrawer;
 
 	VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->laserShader->pipeline);
 
@@ -371,7 +469,7 @@ void Leveler::renderLasers(VkCommandBuffer cmdBuff, void* ptr)
 
 		leveler->sendObjectRay(item, mp.x, mp.y, objRot, scaleX, scaleY, 0.2, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL), startPoint, endPoint);
 
-		int laserOffset = td->laserShader->numLasers + td->lastSwapChainImageIndex;
+		int laserOffset = td->laserShader->numLasers + td->frameIndex;
 
 		s_laserUbo* laserUbo;
 		vkMapMemory(td->laserShader->logicalDevice, td->laserShader->uniformBuffers[0].memory,
@@ -392,7 +490,7 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
 	ThinDrawer* td = leveler->thinDrawer;
 
 	VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->lightBridge->pipeline);
 
@@ -423,7 +521,7 @@ void Leveler::renderBridges(VkCommandBuffer cmdBuff, void* ptr)
 
 		leveler->sendObjectRay(item, mp.x, mp.y, objRot, scaleX, scaleY, 0.0, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
 
-		int bridgeOffset = td->lightBridge->numbridges + td->lastSwapChainImageIndex;
+		int bridgeOffset = td->lightBridge->numbridges + td->frameIndex;
 
 		s_bridgeUbo* bridgeUbo;
 		vkMapMemory(td->lightBridge->logicalDevice, td->lightBridge->uniformBuffers[0].memory,
@@ -443,7 +541,7 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 	ThinDrawer* td = leveler->thinDrawer;
 
 	VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->funnelShader->pipeline);
 	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &td->debugCircleShader->buffers[0].buffer, &offsets);
@@ -476,7 +574,7 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 
 		leveler->sendObjectRay(item, mp.x + xSub, mp.y + ySub, objRot, scaleX, scaleY, 0.1, 0.0, (levelObject)(WHITE_WALL | BLACK_WALL | GLASS_WALL), startPoint, endPoint);
 
-		int funnelOffset = td->funnelShader->numFunnels + td->lastSwapChainImageIndex;
+		int funnelOffset = td->funnelShader->numFunnels + td->frameIndex;
 
 		s_funnelUbo* funnelUbo;
 		vkMapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0].memory,
@@ -501,7 +599,7 @@ void renderTextureds(VkCommandBuffer cmdBuff, Leveler* leveler)
 	ThinDrawer* td = leveler->thinDrawer;
 
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	int i = 3;
 	for (auto& data : leveler->perTextureData)
@@ -535,7 +633,7 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 	ThinDrawer* td = leveler->thinDrawer;
 
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	glm::ivec2 mp = leveler->getMouseGrid();
 	const s_gridItemData& item = leveler->ol->items[leveler->ol->selectedItemIndex];
@@ -630,7 +728,7 @@ void renderSingleDrawSelection(VkCommandBuffer cmdBuff, Leveler* leveler)
 		}
 	}
 
-	int renderIndex = leveler->textureRenderOffset + td->lastSwapChainImageIndex;
+	int renderIndex = leveler->textureRenderOffset + td->frameIndex;
 	s_manyTextureData* mtd;
 	vkMapMemory(mt->logicalDevice, mt->uniformBuffers[0].memory, renderIndex * sizeof(s_manyTextureData),
 		sizeof(s_manyTextureData), 0, (void**)&mtd);
@@ -720,7 +818,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 	glm::ivec2 mp = leveler->getMouseGrid();
 
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	// lines
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->debugLineShader->pipeline);
@@ -1050,7 +1148,7 @@ void renderCatapultLines(VkCommandBuffer cmdBuff, Leveler* leveler)
 {
 	ThinDrawer* td = leveler->thinDrawer;
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	glm::vec2 p0 = (glm::vec2)leveler->consqClickVec[0] + glm::vec2(0.5, 0.5);
 	glm::vec2 mp = (glm::vec2)leveler->getMouseGrid() + glm::vec2(0.5f, 0.5f);
@@ -1098,7 +1196,7 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 {
 	ThinDrawer* td = leveler->thinDrawer;
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	glm::ivec2 mp;
 	if (leveler->ol->rightClickItem.ptr != nullptr && leveler->ol->popShowName != "")
@@ -1181,7 +1279,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 	ThinDrawer* td = leveler->thinDrawer;
 
 	const VkDeviceSize offsets = 0;
-	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->lastSwapChainImageIndex;
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * td->frameIndex;
 
 	renderTextureds(cmdBuff, leveler);
 
@@ -1214,7 +1312,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 
 		s_dRenderPlayerUbo* ru2;
 		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory,
-			td->playerShader->alignedSize * td->lastSwapChainImageIndex * 2, td->playerShader->alignedSize, 0, (void**)&ru2);
+			td->playerShader->alignedSize * td->frameIndex * 2, td->playerShader->alignedSize, 0, (void**)&ru2);
 
 		ru2->posRotD = glm::vec4(leveler->startSquare.x + 0.5, leveler->startSquare.y + 0.75, 0.0, 0.0);
 		ru2->numPortals = 0;
@@ -1222,7 +1320,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory);
 
 		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory,
-			td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2 + 1), td->playerShader->alignedSize, 0, (void**)&ru2);
+			td->playerShader->alignedSize * (td->frameIndex * 2 + 1), td->playerShader->alignedSize, 0, (void**)&ru2);
 
 		ru2->posRotD = glm::vec4(leveler->endSquare.x + 0.5, leveler->endSquare.y + 0.75, 0.0, 0.0);
 		ru2->numPortals = 0;
@@ -1237,12 +1335,12 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 			td->playerShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
 		uint32_t dynOffsets[2];
-		dynOffsets[0] = td->playerShader->alignedSize * td->lastSwapChainImageIndex * 2; dynOffsets[1] = 0;
+		dynOffsets[0] = td->playerShader->alignedSize * td->frameIndex * 2; dynOffsets[1] = 0;
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->playerShader->pipelineLayout, 1, 1, &td->playerShader->descriptorSets[1], 2, dynOffsets);
 		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-		dynOffsets[0] = td->playerShader->alignedSize * (td->lastSwapChainImageIndex * 2 + 1); dynOffsets[1] = td->playerShader->alignedSize2;
+		dynOffsets[0] = td->playerShader->alignedSize * (td->frameIndex * 2 + 1); dynOffsets[1] = td->playerShader->alignedSize2;
 		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			td->playerShader->pipelineLayout, 1, 1, &td->playerShader->descriptorSets[1], 2, dynOffsets);
 		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
@@ -1506,6 +1604,13 @@ void Leveler::update()
 	float x;
 	auto rd = ol->cd->getRenderData(result, 50, x);
 	ol->cd->renderDatas.push_back({ rd, { ol->cam.xSides.x + 0.25, ol->cam.ySides.x + 1.25, 2.0, 0.0 }, { 1.0, 1.0, 1.0, 0.5 } });
+
+	if (popLrd.posScale.w > 0.0)
+	{
+		float td01 = 1.0f - std::min(thinDrawer->gameTime - popLrd.posScale.w, 2.0) * 0.5f;
+		popLrd.color.w = td01;
+		ol->cd->renderDatas.push_back(popLrd);
+	}
 
 	s_gridItemData* item = ol->selectedItemIndex >= 0 ? &ol->items[ol->selectedItemIndex] : nullptr;
 
@@ -2217,7 +2322,7 @@ bool Leveler::extraPutCheck(const s_gridItemData& item, s_objectDataGrid* object
 
 			setSquare(px, py, { (levelObject)(lgd.objectType | (DOWN_DEPENDENT << ((objectData->rotation + 2) % 4))), lgd.data });
 
-			glm::i16vec2 midStart = { std::floor(startPoint.x + sToE.x), std::floor(startPoint.y + sToE.y) };
+			glm::i16vec2 midStart = { std::floor(startPoint.x), std::floor(startPoint.y) };
 			glm::i16vec2 midEnd = { px2, py2 };
 			glm::i16vec2 dir = glm::min(glm::max(midEnd - midStart, glm::i16vec2(-1, -1)), glm::i16vec2(1, 1));
 
@@ -2732,6 +2837,7 @@ void Leveler::sendObjectRay(const s_gridItemData& item, short x, short y, short 
 	while (1)
 	{
 		roadSize += 1;
+
 		for (int i = 0; i < item.gridScale.x; i++)
 		{
 			finalX = startPosition.x + frwdDir.x * roadSize + rightDir.x * i;
@@ -3361,7 +3467,7 @@ void Leveler::takeBack(bool shiftPressed)
 
 void Leveler::putBarrierOnMemories(std::vector<ShaderBase*> shaders)
 {
-	VkCommandBuffer cmd = thinDrawer->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, thinDrawer->uploadPool, true);
+	VkCommandBuffer cmd = thinDrawer->getCommandBuffer(true);
 
 	VkBufferMemoryBarrier bufferBarrier = {};
 	bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -3739,7 +3845,7 @@ void Leveler::addGridSquare_F(short x, short y)
 		offset, sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
 	wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
 	wallUbo->colour = glm::vec4(0.1, 0.1, 0.1, 1.0);
-	wallUbo->bgColour = glm::vec4(0.0, 0.0, 0.0, 0.0);
+	wallUbo->bgColour = glm::vec4(0.1, 0.1, 0.1, 0.0);
 	wallUbo->data = glm::vec4(2.0, 0.4, 1.0, 0.5);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory);
 

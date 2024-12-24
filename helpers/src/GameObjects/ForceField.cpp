@@ -86,11 +86,11 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	startEnabled = objData->startActive;
 	if (!startEnabled)
 	{
-		blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
+		blueUbo->data = glm::vec4(0.8, ThinDrawer::object->gameTime, 0.0, ThinDrawer::object->gameTime);
 	}
 	else
 	{
-		blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 1.0, Game::object->gameTime);
+		blueUbo->data = glm::vec4(0.8, ThinDrawer::object->gameTime, 1.0, ThinDrawer::object->gameTime);
 	}
 	blueUbo->colour.w = 1.0f;
 
@@ -143,7 +143,7 @@ void ForceField::enable()
 	s_blueFieldUbo* blueUbo;
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
 		fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
-	blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 1.0, Game::object->gameTime);
+	blueUbo->data = glm::vec4(0.8, ThinDrawer::object->gameTime, 1.0, ThinDrawer::object->gameTime);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 }
 
@@ -154,7 +154,7 @@ void ForceField::disable()
 	s_blueFieldUbo* blueUbo;
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
 		fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
-	blueUbo->data = glm::vec4(0.8, Game::object->gameTime, 0.0, Game::object->gameTime);
+	blueUbo->data = glm::vec4(0.8, ThinDrawer::object->gameTime, 0.0, ThinDrawer::object->gameTime);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 }
 
@@ -181,7 +181,7 @@ void ForceField::toLeveler()
 		s_blueFieldUbo* blueUbo;
 		vkMapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory,
 			ff->fieldRenderOffset * sizeof(s_blueFieldUbo), sizeof(s_blueFieldUbo), 0, (void**)&blueUbo);
-		blueUbo->data = glm::vec4(0.8f, Game::object->gameTime, 1.0f, -1.0f);
+		blueUbo->data = glm::vec4(0.8f, ThinDrawer::object->gameTime, 1.0f, -1.0f);
 		blueUbo->colour.w = ff->startEnabled ? 1.0f : 0.3f;
 		vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
 
@@ -200,7 +200,7 @@ void ForceField::staticInit()
 	ptData = &Leveler::object->perTextureData[index];
 	tex = Leveler::object->ol->items[index + 4].tex;
 
-	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
+	ThinDrawer::object->drawFuncs.push_back({ render, nullptr });
 }
 
 void ForceField::render(VkCommandBuffer cmdBuff, void* ptr)
@@ -234,9 +234,9 @@ void ForceField::render(VkCommandBuffer cmdBuff, void* ptr)
 void ForceField::update()
 {
 	while (!destroyCList.empty())
-	{
+	{	
 		pbWorldData* data = destroyCList.front();
-		if (data->destrTime + 2.0f < Game::object->gameTime)
+		if (data->destrTime + 2.0f < ThinDrawer::object->gameTime)
 		{
 			Game::object->pWorld->fullDestroys.push_back(data);
 
