@@ -253,7 +253,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		texData.numChannels = 1;
 		s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
 
-		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 2, VK_FILTER_LINEAR);
+		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 1, VK_FILTER_LINEAR);
 
 		IOHelper::updateTextureSet(tex);
 

@@ -40,10 +40,10 @@ void ThinDrawer::surfaceRecreate()
     swapChain->createFrameBuffers();
     preparePipelines();
 
-   for (int i = 0; i < frames.size(); i++)
-   {
-       vkResetCommandBuffer(frames[i].commandBuffer, 0);
-   }
+    for (int i = 0; i < frames.size(); i++)
+    {
+        vkResetCommandBuffer(frames[i].commandBuffer, 0);
+    }
 
     vkDeviceWaitIdle(logicalDevice);
 }

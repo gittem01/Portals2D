@@ -33,7 +33,7 @@ public:
 	double lastMouseMovementTime = 0.0;
 	std::string text;
 	
-	uint32_t dpiScaling = 1;
+	float dpiScaling = 1.0f;
 
 	WindowHandler(Camera* cam);
 

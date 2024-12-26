@@ -118,11 +118,15 @@ void openDialogCallBack(void* userdata, const char* const* filelist, int filter)
 
 	if (strlen(*filelist) > 0)
 	{
-		int res = Leveler::object->openLevel(*filelist);
-		if (res == 0)
+		std::string fileName(*filelist);
+		Game::object->singleTaskRegistry.push_back([p, fileName]
 		{
-			setClose(p);
-		}
+			int res = Leveler::object->openLevel(fileName);
+			if (res == 0)
+			{
+				setClose(p);
+			}
+		});
 	}
 }
 
@@ -753,7 +757,7 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	if (buttonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()))
 	{
 		buttonData.data.y = 2.0f;
-		if (td->wh->mouseData[2] == 2 && p->active)
+		if (td->wh->mouseData[2] == 2 && p->active && sizedt > 0.99f)
 		{
 			p->noAction = true;
 			SDL_ShowOpenFileDialog(openDialogCallBack, p, td->wh->window, filters, std::size(filters), nullptr, false);

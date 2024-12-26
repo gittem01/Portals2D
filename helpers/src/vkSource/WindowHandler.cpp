@@ -111,6 +111,8 @@ bool WindowHandler::handleEvents()
             windowSizes.x = evnt.window.data1;
 			windowSizes.y = evnt.window.data2;
 
+            ThinDrawer::object->surfaceRecreate();
+
             if (windowSizes.x / windowSizes.y > 2.0f)
             {
 				windowSizes.x = windowSizes.y * 2.0f;
@@ -166,6 +168,29 @@ void WindowHandler::massInit()
         exit(1);
     }
 
+    int numDisplays;
+    SDL_DisplayID* ids = SDL_GetDisplays(&numDisplays);
+
+    if (numDisplays == 0)
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Couldn't find any display", nullptr);
+        exit(1);
+    }
+
+    const SDL_DisplayMode* dm = SDL_GetCurrentDisplayMode(*ids);
+
+    if (!dm)
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error getting display mode", nullptr);
+        exit(1);
+    }
+
+    int width = dm->w;
+    int height = dm->h;
+
+    windowSizes.x = width * 0.8f;
+    windowSizes.y = windowSizes.x * 9.0f / 16.0f;
+
     window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y,
         SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
     if (!window)
@@ -175,11 +200,7 @@ void WindowHandler::massInit()
         exit(1);
     }
 
-    int x1, y1, x2, y2;
-    SDL_GetWindowSize(window, &x1, &y1);
-    SDL_GetWindowSizeInPixels(window, &x2, &y2);
-
-    dpiScaling = std::round(x2 / x1);
+    dpiScaling = dm->pixel_density;
     
     mouseData[0] = windowSizes.x / 2.0f;
     mouseData[1] = windowSizes.y / 2.0f;

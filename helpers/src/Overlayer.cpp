@@ -370,7 +370,7 @@ void Overlayer::getPops()
     int winSizeY = wh->windowSizes.y;
     float camY = cam.ySides.y - cam.ySides.x;
     float camRatio = 2.5f / camY;
-    popHeight = 1.5f * winSizeY * camRatio;
+    popHeight = winSizeY * camRatio + 8;
 
     auto popNames = IOHelper::loadLines("popNames.txt");
     for (auto& name : popNames)
@@ -757,6 +757,8 @@ void Overlayer::topLeftUpdate()
 		finalButton.data = glm::vec4(5.0f, 5.25f, 1.1f, 0.0f);
 
         const char* tlNames[2] = { "loadRender", "saveRender" };
+
+        selectedItemIndex = -1;
 
         Game::object->pop.init(topLeftButtons[hoverIndex], tlNames[hoverIndex], 0.5);
     }
