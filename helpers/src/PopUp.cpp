@@ -4,6 +4,7 @@
 #include "Overlayer.h"
 #include "Menu.h"
 #include <filesystem>
+#include <thread>
 
 static const std::string bans = "/\\*:?\"<>|";
 static const std::string spacedBans = " / \\ * : ? \" < > |";
