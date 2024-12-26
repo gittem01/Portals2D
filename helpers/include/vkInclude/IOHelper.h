@@ -45,5 +45,6 @@ public:
 	static void loadGlTF(std::string fileName);
 	static s_texture* loadTexture(std::string fileName,
 		VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
+	static void createTextureLayout();
 	static void updateTextureSet(s_texture* tex, bool preAllocated=false);
 };

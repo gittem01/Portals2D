@@ -367,10 +367,9 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 void Overlayer::getPops()
 {
-    int winSizeY = wh->windowSizes.y;
     float camY = cam.ySides.y - cam.ySides.x;
     float camRatio = 2.5f / camY;
-    popHeight = winSizeY * camRatio + 8;
+    popHeight = cd->creationHeight * camRatio * 1.5f;
 
     auto popNames = IOHelper::loadLines("popNames.txt");
     for (auto& name : popNames)

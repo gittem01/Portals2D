@@ -248,8 +248,8 @@ void Menu::addTextToButton(Button& b, std::string text)
 {
 	float texSize = b.data.posSize.w * 0.8f;
 	float camY = ol->cam.defaultYSides.y * 2.0f;
-	float screenY = td->wh->windowSizes.y;
-	int reqTexSize = (int)(1.0f * texSize * screenY / camY);
+	float screenY = ol->cd->creationHeight;
+	int reqTexSize = (int)(texSize * screenY / camY) + 8;
 
 	b.strText = text;
 	float x;
@@ -263,7 +263,6 @@ void Menu::addTextToButton(Button& b, std::string text)
 	}
 
 	b.text.posScale = glm::vec4(b.data.posSize.x - x * texSize * 0.5f, b.data.posSize.y, texSize, x);
-
 }
 
 Button* Menu::addButton(glm::vec2 pos, glm::vec2 size, std::string text, glm::vec4 color, glm::vec2 data)

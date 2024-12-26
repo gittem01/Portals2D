@@ -39,10 +39,12 @@ public:
 
 	CharDrawer(ThinDrawer* thinDrawer);
 
-	std::vector<s_charRenderData> getRenderData(const std::string& text, int targetHeight, float& x);
+	std::vector<s_charRenderData> getRenderData(const std::string& text, int targetHeight, float& x,
+		s_texture* prevTex=nullptr, int prevCodepoint =0);
 
 	static float calcSize(std::vector<s_charRenderData> rd);
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 
+	void recreate();
 	bool loadFontFile(const std::string& filename, std::vector<unsigned char>& fontData, stbtt_fontinfo& fontInfo);
 };

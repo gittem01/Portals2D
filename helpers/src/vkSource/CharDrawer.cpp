@@ -169,14 +169,22 @@ float CharDrawer::calcSize(std::vector<s_charRenderData> rd)
 	return x;
 }
 
-std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, int targetHeight, float& x)
+std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, int targetHeight, float& x, s_texture* prevTex, int prevCodepoint)
 {
-	// Convert the UTF-8 encoded bytes to Unicode code points
-	std::vector<uint32_t> codePoints = utf8ToUnicode(text);
+	std::vector<uint32_t> codePoints;
+
+	if (prevTex)
+	{
+		codePoints.push_back(prevCodepoint);
+	}
+	else
+	{
+		codePoints = utf8ToUnicode(text);
+	}
 
 	std::vector<s_charRenderData> rd;
 
-	targetHeight = std::round(targetHeight * ThinDrawer::object->wh->dpiScaling);
+	int renderHeight = ((float)ThinDrawer::object->wh->dpiScaling * thinDrawer->wh->windowSizes.y / creationHeight) * targetHeight + 2;
 
 	x = 0;
 	float prevX = 0.0;
@@ -201,7 +209,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 			continue;
 		}
 
-		float scale = stbtt_ScaleForPixelHeight(&fontInfo, targetHeight);
+		float scale = stbtt_ScaleForPixelHeight(&fontInfo, renderHeight);
 
 		int x0, y0, x1, y1;
 		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
@@ -243,22 +251,31 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		rdBitmap.pixels = new uint8_t[rdBitmap.w * rdBitmap.h];
 		stbtt_Rasterize(&rdBitmap, 0.01f, rdShape, numVert, scale, scale, 0.0f, 0.0f, x0, y0, 1, nullptr);
 
-		float toMid = 0.5 - ((float)y / targetHeight + ((float)rdBitmap.h * 0.5f / targetHeight));
-		float left = lsb * scale / targetHeight;
+		float toMid = 0.5 - ((float)y / renderHeight + ((float)rdBitmap.h * 0.5f / renderHeight));
+		float left = lsb * scale / renderHeight;
 
 		s_textureData texData;
 		texData.data = rdBitmap.pixels;
 		texData.width = rdBitmap.w;
 		texData.height = rdBitmap.h;
 		texData.numChannels = 1;
-		s_texture* tex = (s_texture*)malloc(sizeof(s_texture));
+
+		s_texture* tex;
+		if (!prevTex)
+		{
+			tex = new s_texture();
+		}
+		else
+		{
+			tex = prevTex;
+		}
 
 		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 1, VK_FILTER_LINEAR);
 
 		IOHelper::updateTextureSet(tex);
 
 		s_charRenderData rData;
-		rData.size_leftBotMargin = glm::vec4((float)rdBitmap.w / targetHeight, (float)rdBitmap.h / targetHeight, left, toMid);
+		rData.size_leftBotMargin = glm::vec4((float)rdBitmap.w / renderHeight, (float)rdBitmap.h / renderHeight, left, toMid);
 		rData.tex = tex;
 
 		x += rData.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? rData.size_leftBotMargin.z : 0.0);
@@ -276,6 +293,24 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 	x += prevX * 0.5;
 
 	return rd;
+}
+
+void CharDrawer::recreate()
+{
+	auto newCodepointMap = std::move(codepointMap);
+
+	for (auto pair : newCodepointMap)
+	{
+		s_texture* tex = pair.second.tex;
+
+		vkDestroyImageView(thinDrawer->logicalDevice, tex->view, nullptr);
+		vkDestroySampler(thinDrawer->logicalDevice, tex->sampler, nullptr);
+		vkDestroyImage(thinDrawer->logicalDevice, tex->image, nullptr);
+		vkFreeMemory(thinDrawer->logicalDevice, tex->deviceMemory, nullptr);
+
+		float x;
+		getRenderData("", pair.first.second, x, tex, pair.first.first);
+	}
 }
 
 bool CharDrawer::loadFontFile(const std::string& filename, std::vector<unsigned char>& fontData, stbtt_fontinfo& fontInfo)

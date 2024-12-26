@@ -111,8 +111,6 @@ bool WindowHandler::handleEvents()
             windowSizes.x = evnt.window.data1;
 			windowSizes.y = evnt.window.data2;
 
-            ThinDrawer::object->surfaceRecreate();
-
             if (windowSizes.x / windowSizes.y > 2.0f)
             {
 				windowSizes.x = windowSizes.y * 2.0f;
@@ -123,6 +121,8 @@ bool WindowHandler::handleEvents()
 				windowSizes.y = windowSizes.x;
 				SDL_SetWindowSize(window, windowSizes.x, windowSizes.y);
 			}
+
+            ThinDrawer::object->surfaceRecreate();
 
             for (Camera* cam : Camera::cameras)
             {
@@ -189,6 +189,7 @@ void WindowHandler::massInit()
     int height = dm->h;
 
     windowSizes.x = width * 0.8f;
+    windowSizes.x = 1280 * 0.8f;
     windowSizes.y = windowSizes.x * 9.0f / 16.0f;
 
     window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y,

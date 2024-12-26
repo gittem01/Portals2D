@@ -11,6 +11,7 @@
 #include <IOHelper.h>
 #include <Game.h>
 #include <cmath>
+#include <Overlayer.h>
 
 ThinDrawer* ThinDrawer::object = nullptr;
 
@@ -46,6 +47,8 @@ void ThinDrawer::surfaceRecreate()
     }
 
     vkDeviceWaitIdle(logicalDevice);
+
+    Leveler::object->ol->cd->recreate();
 }
 
 void ThinDrawer::initExtra()
@@ -90,6 +93,8 @@ void ThinDrawer::initExtra()
     ShaderBase::init(this);
     ShaderBase::setSharedLayout(this);
     ShaderBase::writeSharedDescriptors(this);
+
+    IOHelper::createTextureLayout();
 
     for (ShaderBase* shader : shaders)
     {
