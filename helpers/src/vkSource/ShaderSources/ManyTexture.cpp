@@ -4,6 +4,7 @@
 #include <Shader.h>
 #include <definitions.h>
 #include <vkInit.h>
+#include <SwapChain.h>
 
 void ManyTexture::prepareVertexData()
 {
@@ -14,7 +15,7 @@ void ManyTexture::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(sizeof(s_manyTextureData) * 40000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_manyTextureData) * 20000 * thinDrawer->swapChain->imageCount, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void ManyTexture::setupDescriptorSetLayout()
