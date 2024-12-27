@@ -98,7 +98,7 @@ void DownButton::toLeveler()
 void DownButton::staticInit()
 {
 	bodyTex = IOHelper::loadTexture("downButtonBody.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
-	buttonTex = IOHelper::loadTexture("downButtonButton.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+	buttonTex = IOHelper::loadTexture("DownButtonButton.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 
 	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
 }
