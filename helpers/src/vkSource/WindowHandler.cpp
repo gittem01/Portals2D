@@ -46,8 +46,6 @@ void WindowHandler::handleKeyData()
 
 bool WindowHandler::handleEvents()
 {
-    //SDL_StartTextInput(window); // to enable SDL_EVENT_TEXT_INPUT events
-    
     text = "";
 
     SDL_Event evnt;
