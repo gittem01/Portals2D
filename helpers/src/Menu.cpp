@@ -443,7 +443,7 @@ void Menu::update()
 		if (button.text.charDatas.size() > 0)
 			ol->cd->renderDatas.push_back(button.text);
 
-		if (button.bools[INTERACTABLE])
+		if (button.bools[INTERACTABLE] && !Game::object->pop.active)
 		{
 			if (mouseTimeDiff < 0.1 && diffLen > 0.5f)
 			{

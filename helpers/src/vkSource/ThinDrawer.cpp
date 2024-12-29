@@ -45,6 +45,23 @@ void ThinDrawer::surfaceRecreate()
     }
 #else
     SDL_SetWindowFullscreen(wh->window, setFullScreen);
+
+    if (setFullScreen)
+    {
+        if (setBorderless)
+        {
+            SDL_SetWindowFullscreenMode(wh->window, nullptr);
+        }
+        else
+        {
+            SDL_SetWindowFullscreenMode(wh->window, wh->displayMode);
+        }
+
+        SDL_SyncWindow(wh->window);
+    }
+
+    
+
     SDL_SetWindowBordered(wh->window, !setBorderless);
 #endif
 
