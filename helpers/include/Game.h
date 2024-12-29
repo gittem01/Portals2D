@@ -67,3 +67,5 @@ public:
 	void TestState();
 	void MenuState();
 };
+
+double SDL_GetTicksSec();

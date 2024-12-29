@@ -671,9 +671,9 @@ void SDL_DelayNS(Uint64 ns)
     const int SCHEDULING_TIMESLICE_NS = 1 * SDL_NS_PER_MS;
     while (current_value < target_value) {
         Uint64 remaining_ns = (target_value - current_value);
-        if (remaining_ns > (SCHEDULING_TIMESLICE_NS + SDL_NS_PER_US)) {
+        if (remaining_ns > (SCHEDULING_TIMESLICE_NS * 2)) {
             // Sleep for a short time, less than the scheduling timeslice
-            SDL_SYS_DelayNS(SCHEDULING_TIMESLICE_NS - SDL_NS_PER_US);
+            SDL_SYS_DelayNS(SCHEDULING_TIMESLICE_NS);
         } else {
             // Spin for any remaining time
             SDL_CPUPauseInstruction();

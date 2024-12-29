@@ -492,3 +492,8 @@ void Game::loop()
         (this->*gameStater)();
     }
 }
+
+double SDL_GetTicksSec()
+{
+    return SDL_GetTicksNS() / 1000000000.0;
+}
