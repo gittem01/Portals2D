@@ -95,11 +95,6 @@ void SwapChain::querySwapChainSupport()
 
 void SwapChain::createSwapChain()
 {
-    const VkPresentModeKHR modes[2][3] = {
-        { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR },
-        { VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR},
-    };
-
     querySwapChainSupport();
 
     if (surfaceFormats.size() == 0 || presentModes.size() == 0)
@@ -130,24 +125,24 @@ void SwapChain::createSwapChain()
         mask |= (int)presentModes[i];
     }
 
-    if (mask & modes[enableVsync][0])
+    if (!enableVsync)
     {
-        presentMode = modes[enableVsync][0];
+        if (mask & VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        }
+        else
+        {
+            presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        }
     }
-    else if (mask & modes[enableVsync][1])
+    else if (mask & VK_PRESENT_MODE_FIFO_KHR)
     {
-        presentMode = modes[enableVsync][1];
-    }
-	else if (mask & modes[enableVsync][2])
-    {
-        presentMode = modes[enableVsync][2];
+        presentMode = VK_PRESENT_MODE_FIFO_KHR;
     }
     else
     {
-        // shouldn't happen
-        // show sdl message box error
-
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Vulkan does not support any present modes", NULL);
+        presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
 
     //presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;

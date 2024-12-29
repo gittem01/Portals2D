@@ -70,8 +70,6 @@ extern SDL_DECLSPEC Uint64 SDLCALL SDL_GetTicks(void);
  */
 extern SDL_DECLSPEC Uint64 SDLCALL SDL_GetTicksNS(void);
 
-double SDL_GetTicksSec(void);
-
 /**
  * Get the current value of the high resolution counter.
  *

@@ -138,11 +138,7 @@ bool WindowHandler::looper()
     handleMouseData();
     handleKeyData();
 
-    double t0 = SDL_GetTicksSec();
-
     bool done = handleEvents();
-
-	//printf("Time passed: %f\n", (SDL_GetTicksSec() - t0) * 1000.0);
 
     return done;
 }
