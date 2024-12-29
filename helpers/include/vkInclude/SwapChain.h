@@ -10,6 +10,8 @@ class ThinDrawer;
 class SwapChain
 {
 public:
+    static bool enableVsync;
+
     ThinDrawer* thinDrawer;
 
     VkSwapchainKHR swapChain;
@@ -21,14 +23,14 @@ public:
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     std::vector<VkPresentModeKHR> presentModes;
 
-    VkImage* images;
-    VkImageView* imageViews;
+    std::vector<VkImage> images;
+    std::vector<VkImageView> imageViews;
     
     VkImage colorImage;
     VkImageView colorImageView;
     VkDeviceMemory colorImageMemory;
 
-    VkFramebuffer* frameBuffers;
+    std::vector<VkFramebuffer> frameBuffers;
     int imageCount;
 
     SwapChain(ThinDrawer* td);

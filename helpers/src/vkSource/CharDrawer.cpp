@@ -185,6 +185,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 	std::vector<s_charRenderData> rd;
 
 	int renderHeight = ((float)ThinDrawer::object->wh->dpiScaling * thinDrawer->wh->windowSizes.y / creationHeight) * targetHeight + 2;
+	renderHeight = std::max(renderHeight, 8);
 
 	x = 0;
 	float prevX = 0.0;

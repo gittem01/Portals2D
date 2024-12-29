@@ -16,6 +16,7 @@ public:
 	static SDL_Scancode downKey;
 	static SDL_Scancode rotateKey;
 	static SDL_Scancode holdKey;
+	static int limitFramerate;
 
 	static int lastLevel;
 	static int maxLevel;
@@ -33,6 +34,8 @@ public:
 	double dtMult;
 
 	std::vector<std::function<void(void)>> singleTaskRegistry;
+	std::vector<std::function<void(void)>> singleTaskRegistry2;
+	std::mutex taskRegistryMutex;
 
 	class BaseTestCase* testCase;
 
@@ -55,6 +58,7 @@ public:
 	void saveGameData();
 
 	void runSingleTaskRegistry();
+	void runSingleTaskRegistry2();
 	void loop();
 
 	void timeHandle();

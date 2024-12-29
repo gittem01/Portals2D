@@ -108,6 +108,30 @@ void saveDialogCallBack(void* userdata, const char* const* filelist, int filter)
 	}
 }
 
+void openLevel(std::string fileName, PopUp* pop)
+{
+	Game::object->taskRegistryMutex.lock();
+
+	Game::object->singleTaskRegistry2.push_back([pop, fileName]
+	{
+		Game::object->singleTaskRegistry.push_back([pop, fileName]
+		{
+			int res = Leveler::object->openLevel(fileName);
+			if (res == 0)
+			{
+				setClose(pop);
+			}
+		});
+
+		if (Game::object->gameStater == &Game::MenuState)
+		{
+			Game::object->gameStater = &Game::LevelerState;
+		}
+	});
+
+	Game::object->taskRegistryMutex.unlock();
+}
+
 void openDialogCallBack(void* userdata, const char* const* filelist, int filter)
 {
 	PopUp* p = (PopUp*)userdata;
@@ -120,14 +144,7 @@ void openDialogCallBack(void* userdata, const char* const* filelist, int filter)
 	if (strlen(*filelist) > 0)
 	{
 		std::string fileName(*filelist);
-		Game::object->singleTaskRegistry.push_back([p, fileName]
-		{
-			int res = Leveler::object->openLevel(fileName);
-			if (res == 0)
-			{
-				setClose(p);
-			}
-		});
+		openLevel(fileName, p);
 	}
 }
 
@@ -521,9 +538,8 @@ void PopUp::renderAt(VkCommandBuffer cmdBuff, glm::vec4 posSize, glm::vec2 pos, 
 
 		if (ThinDrawer::object->wh->mouseData[2] == 2 && active && data.status == lLoadEnum::L_LOADED)
 		{
-			int res = Leveler::object->openLevel(IOHelper::assetsFolder + "levelfiles/" + data.text + ".pld");
-
-			if (res == 0) setClose(this);
+			std::string fileName = IOHelper::assetsFolder + "levelfiles/" + data.text + ".pld";
+			openLevel(fileName, this);
 		}
 	}
 

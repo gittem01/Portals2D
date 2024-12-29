@@ -19,10 +19,11 @@ public:
 	static const int pIndRightCommand = SDL_SCANCODE_RCTRL;
 #endif // APPLE
 
+	static uint64_t windowCreateFlags;
 
 	int keyData[SDL_SCANCODE_COUNT] = { 0 };
 	int repeatKeys[SDL_SCANCODE_COUNT] = { 0 };
-	double mouseData[7] = {0};
+	double mouseData[9] = {0};
 	double trackpadData[2] = {0};
 	int lastMousePos[2] = {0};
 	glm::vec2 windowSizes = glm::vec2(1600, 900);
@@ -33,10 +34,14 @@ public:
 	double lastMouseMovementTime = 0.0;
 	std::string text;
 	
+	SDL_DisplayID displayId;
+	const SDL_DisplayMode* displayMode;
 	float dpiScaling = 1.0f;
 
 	WindowHandler(Camera* cam);
 
+	void clampWindowSizes();
+	void setWindowSizes(float ratio);
 	void massInit();
 	bool handleEvents();
 	bool looper();

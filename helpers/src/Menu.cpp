@@ -3,6 +3,8 @@
 #include "Leveler.h"
 #include "Overlayer.h"
 
+#define INFINITY_CHAR "\xE2\x88\x9E"
+
 Button::Button()
 {
 	bools.reset();
@@ -36,6 +38,7 @@ void Menu::initDefaults()
 	activeButton = nullptr;
 	qButton = nullptr;
 	soundButton = nullptr;
+	loadButton = nullptr;
 	newEditorButton = nullptr;
 	exitButton = nullptr;
 	keyAssignmentButton = nullptr;
@@ -129,6 +132,7 @@ void Menu::initLeveler(glm::vec4 clr)
 
 	Button* editorButton = b;
 	newEditorButton = &buttons[buttons.size() - 1] + 1;
+	loadButton = newEditorButton + 1;
 	for (int i = 0; i < 3; i++)
 	{
 		Button* b = addButton(glm::vec2(0.0f, -i * 8.0f), glm::vec2(50.0f, 6.0f), allTexts[texIndex++], glm::vec4(0.0, 0.5, 1.0, 0.2));
@@ -140,6 +144,8 @@ void Menu::initLeveler(glm::vec4 clr)
 
 	editorButton->openYMult = 24.0f;
 	editorButton->openYAdder = 0.5f;
+
+	loadButton->bools.set(NO_INTERACTION);
 }
 
 void Menu::initSettings(glm::vec4 clr)
@@ -160,7 +166,8 @@ void Menu::initSettings(glm::vec4 clr)
 	soundButton = &buttons[buttons.size() - 1] + 3;
 	for (int i = 0; i < soundValues.size(); i++)
 	{
-		Button* b = addButton(glm::vec2(0.0f, -i * 6), glm::vec2(50.0f, 4.0f), allTexts[texIndex++], glm::vec4(0.3, 0.6, 1.0, 1.0f));
+		Button* b = addButton(glm::vec2(0.0f, -i * 6), glm::vec2(50.0f - 0.75f, 4.0f), allTexts[texIndex++],
+			glm::vec4(0.3, 0.6, 1.0, 1.0f), glm::vec2(1.0f, 1.5f));
 		b->bools.set(TEXT_LEFT);
 		b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.5;
 		optionsButton->dependentButtons.push_back(b);
@@ -194,7 +201,7 @@ void Menu::initSettings(glm::vec4 clr)
 		for (int x = 0; x < 3; x++)
 		{
 			Button* b = addButton(glm::vec2(-25.0f + bSize * 0.5f + x * (bSize + 2.0f), -y * 14.0f - 18.0f),
-				glm::vec2(bSize - 0.5f, 11.5f), "", clrs[y * 3 + x], glm::vec2(1.0f, 1.5f));
+				glm::vec2(bSize - 0.75f, 11.5f), "", clrs[y * 3 + x], glm::vec2(1.0f, 1.5f));
 			b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.3;
 			optionsButton->dependentButtons.push_back(b);
 
@@ -213,8 +220,53 @@ void Menu::initSettings(glm::vec4 clr)
 		}
 	}
 
-	optionsButton->openYMult = 46.0f;
-	optionsButton->openYAdder = 0.15f;
+	maxFramerateButton;
+
+	for (int i = 0; i < 3; i++)
+	{
+		b = addButton(glm::vec2(0.0f, -46.0f - i * 6.0f),
+			glm::vec2(50.0f - 0.75f, 4.0f), allTexts[texIndex++], glm::vec4(0.5f, 0.0f, 0.5f, 1.0f), glm::vec2(1.0f, 1.5f));
+		b->bools.set(TEXT_LEFT);
+		b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.6;
+		optionsButton->dependentButtons.push_back(b);
+
+		b = addButton(glm::vec2(21.5f, -46.0f - i * 6.0f - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(0.0f), glm::vec2(4.0f));
+		b->bools.set(INTERACTABLE);
+		b->alphaMult = 0.0; b->baseAlpha = 1.0f;
+		optionsButton->dependentButtons.push_back(b);
+
+		b = addButton(glm::vec2(21.5f, -46.0f - i * 6.0f - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), glm::vec2(2.5f, 3.5f));
+		b->alphaMult = 0.0; b->baseAlpha = 0.6f;
+		optionsButton->dependentButtons.push_back(b);
+	}
+
+	b = addButton(glm::vec2(0.0f, -46.0f - 3 * 6.0f),
+		glm::vec2(50.0f - 0.75f, 4.0f), allTexts[texIndex++], glm::vec4(0.5f, 0.0f, 0.5f, 1.0f), glm::vec2(1.0f, 1.5f));
+	b->bools.set(TEXT_LEFT);
+	b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.6;
+	optionsButton->dependentButtons.push_back(b);
+
+	std::string frameString = Game::limitFramerate < 1001 ? std::to_string(Game::limitFramerate) : INFINITY_CHAR;
+
+	b = addButton(glm::vec2(19.0f, -46.0f - 3 * 6.0f - 1.0f), glm::vec2(8.0f, 2.0f), frameString, glm::vec4(0.0f), glm::vec2(2.0f, 2.5f));
+	b->bools.set(INTERACTABLE);
+	b->alphaMult = 0.0; b->baseAlpha = 1.0f;
+	addTextToButton(*b, frameString, Game::limitFramerate == 1001 ? 5.0f : 2.0f);
+	optionsButton->dependentButtons.push_back(b);
+
+	maxFramerateButton = b;
+	vsyncButton = b - 3;
+	borderlessButton = b - 6;
+	fullScreenButton = b - 9;
+	
+	auto flags = SDL_GetWindowFlags(td->wh->window);
+
+	(fullScreenButton + 1)->baseAlpha = (flags & SDL_WINDOW_FULLSCREEN) ? 1.0f : 0.0f;
+	(borderlessButton + 1)->baseAlpha = (flags & SDL_WINDOW_BORDERLESS) ? 1.0f : 0.0f;
+	(vsyncButton + 1)->baseAlpha = td->swapChain->enableVsync ? 1.0f : 0.0f;
+
+	optionsButton->openYMult = 70.0f;
+	optionsButton->openYAdder = 0.1f;
 }
 
 Button* Menu::initWithName(std::string name, glm::vec4 clr)
@@ -244,9 +296,9 @@ void Menu::initCredits(glm::vec4 clr)
 	currentY += 8.0f;
 }
 
-void Menu::addTextToButton(Button& b, std::string text)
+void Menu::addTextToButton(Button& b, std::string text, float sizeMult)
 {
-	float texSize = b.data.posSize.w * 0.8f;
+	float texSize = b.data.posSize.w * 0.8f * sizeMult;
 	float camY = ol->cam.defaultYSides.y * 2.0f;
 	float screenY = ol->cd->creationHeight;
 	int reqTexSize = (int)(texSize * screenY / camY) + 8;
@@ -430,6 +482,9 @@ void Menu::update()
 
 		if (hoverButton)
 		{
+			windowClickPos.x = td->wh->mouseData[0];
+			windowClickPos.y = td->wh->mouseData[1];
+
 			if ((hoverButton + 1) < buttons.data() + buttons.size() && (hoverButton + 1)->type == BUTTON_CIRCLE)
 			{
 				clickButton = hoverButton + 1;
@@ -437,6 +492,12 @@ void Menu::update()
 			else
 			{
 				clickButton = hoverButton;
+				if (clickButton == maxFramerateButton)
+				{
+					SDL_CaptureMouse(true);
+					SDL_HideCursor();
+					SDL_SetWindowRelativeMouseMode(td->wh->window, true);
+				}
 			}
 		}
 	}
@@ -449,6 +510,15 @@ void Menu::update()
 		}
 
 		clickButton->text.color = glm::vec4(1.0f, 1.0, 1.0, std::clamp(clickButton->alphaMult, 0.0f, 1.0f));
+
+		if (clickButton == maxFramerateButton)
+		{
+			SDL_SetWindowRelativeMouseMode(td->wh->window, false);
+			SDL_WarpMouseInWindow(td->wh->window, windowClickPos.x, windowClickPos.y);
+			SDL_SetWindowMouseGrab(td->wh->window, false);
+			SDL_CaptureMouse(false);
+			SDL_ShowCursor();
+		}
 
 		clickButton = nullptr;
 	}
@@ -487,6 +557,39 @@ void Menu::update()
 	else if (clickButton)
 	{
 		clickButton->text.color = glm::vec4(1.0f);
+	}
+
+	float differ = 0.0f;
+	if (clickButton == maxFramerateButton)
+	{
+		maxFramerateButton->text.color = glm::vec4(1.0f);
+
+		differ = td->wh->mouseData[7] * 0.1f;
+	}
+	else if (hoverButton == maxFramerateButton)
+	{
+		differ += td->wh->mouseData[5];
+	}
+
+	if (abs(differ) > 0.000001f)
+	{
+		int frameRateNum;
+		if (maxFramerateButton->strText == INFINITY_CHAR)
+		{
+			frameRateNum = 1001;
+		}
+		else
+		{
+			frameRateNum = atoi(maxFramerateButton->strText.c_str());
+		}
+
+		frameRateNum += differ * 10.0f;
+		frameRateNum = std::clamp(frameRateNum, 30, 1001);
+
+		Game::limitFramerate = frameRateNum;
+
+		std::string str = frameRateNum == 1001 ? INFINITY_CHAR : std::to_string(frameRateNum);
+		addTextToButton(*maxFramerateButton, str, frameRateNum == 1001 ? 5.0f : 2.0f);
 	}
 
 	if (keyAssignmentButton)
@@ -528,12 +631,6 @@ void Menu::update()
 
 	lastMousePos = mousePos;
 	lastMouseTime = td->wh->lastMouseMovementTime;
-
-	/*if (Game::object->gameStater == &Game::MenuState)
-	{
-		td->wh->cam->zoom = sin(td->gameTime * 0.5f) * 0.02 + cos(td->gameTime * 0.31f) * 0.02 + 0.5;
-		td->wh->cam->updateOrtho();
-	}*/
 }
 
 void Menu::buttonPressed(Button* button)
@@ -544,6 +641,51 @@ void Menu::buttonPressed(Button* button)
 	if (button >= qButton && button <= qButton + 15)
 	{
 		keyAssignmentButton = button;
+		return;
+	}
+
+	if (button >= fullScreenButton && button <= vsyncButton)
+	{
+		Button* displayButton = button + 1;
+		displayButton->baseAlpha = displayButton->baseAlpha > 0.99f ? 0.0f : 1.0f;
+
+		uint64_t setMask = 0;
+
+		if (button == fullScreenButton)
+		{
+			setMask = SDL_WINDOW_FULLSCREEN;
+			if (displayButton->baseAlpha < 0.01f)
+			{
+				td->wh->setWindowSizes(0.8f);
+				SDL_SetWindowPosition(td->wh->window,
+					(td->wh->displayMode->w - td->wh->windowSizes.x) / 2,
+					(td->wh->displayMode->h - td->wh->windowSizes.y) / 2);
+			}
+		}
+		else if (button == borderlessButton)
+		{
+			setMask = SDL_WINDOW_BORDERLESS;
+		}
+		else if (button == vsyncButton)
+		{
+			td->swapChain->enableVsync = !td->swapChain->enableVsync;
+		}
+
+		if (displayButton->baseAlpha > 0.99f)
+		{
+			WindowHandler::windowCreateFlags |= setMask;
+		}
+		else
+		{
+			WindowHandler::windowCreateFlags &= ~setMask;
+		}
+
+		Game::object->singleTaskRegistry.push_back([] { ThinDrawer::object->surfaceRecreate(); });
+
+		return;
+	}
+	else if (button == maxFramerateButton)
+	{
 		return;
 	}
 
@@ -563,7 +705,7 @@ void Menu::buttonPressed(Button* button)
 		upCamTime = -td->gameTime;
 		activeButton = nullptr;
 	}
-	else
+	else if (!button->bools[NO_INTERACTION])
 	{
 		activationTime = td->gameTime;
 		activeButton = button;
@@ -583,6 +725,10 @@ void Menu::buttonPressed(Button* button)
 	else if (button == newEditorButton)
 	{
 		Game::object->gameStater = &Game::LevelerState;
+	}
+	else if (button == loadButton)
+	{
+		Game::object->pop.init(loadButton->data, "loadRender", 0.5);
 	}
 }
 

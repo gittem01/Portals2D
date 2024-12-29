@@ -66,6 +66,8 @@ void main()
 
     vec2 arrV = center + vec2(xSquareCount, ySquareCount) - sharedUboData.cameraPos.xy * vec2(1.0, -1.0);
 
+    outGelData[0][0] = 0;
+
     for (int i = -1; i < 2; i++)
     {
         for (int j = -1; j < 2; j++)

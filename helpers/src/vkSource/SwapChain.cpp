@@ -2,6 +2,8 @@
 #include <ThinDrawer.h>
 #include <algorithm>
 
+bool SwapChain::enableVsync = true;
+
 #define MIN(a, b) a > (b) ? (a) : b
 #define MAX(a, b) a < (b) ? (a) : b
 
@@ -17,9 +19,9 @@ void SwapChain::destroy()
         vkDestroyImageView(thinDrawer->logicalDevice, imageViews[i], VK_NULL_HANDLE);
     }
 
-    free(frameBuffers);
-    free(imageViews);
-    free(images);
+    frameBuffers.clear();
+    imageViews.clear();
+    images.clear();
 
     vkDestroySwapchainKHR(thinDrawer->logicalDevice, swapChain, VK_NULL_HANDLE);
 
@@ -93,6 +95,11 @@ void SwapChain::querySwapChainSupport()
 
 void SwapChain::createSwapChain()
 {
+    const VkPresentModeKHR modes[2][3] = {
+        { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR },
+        { VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR},
+    };
+
     querySwapChainSupport();
 
     if (surfaceFormats.size() == 0 || presentModes.size() == 0)
@@ -123,17 +130,24 @@ void SwapChain::createSwapChain()
         mask |= (int)presentModes[i];
     }
 
-    if (mask & VK_PRESENT_MODE_FIFO_KHR)
+    if (mask & modes[enableVsync][0])
     {
-        presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        presentMode = modes[enableVsync][0];
     }
-    else if (mask & VK_PRESENT_MODE_MAILBOX_KHR)
+    else if (mask & modes[enableVsync][1])
     {
-        presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        presentMode = modes[enableVsync][1];
+    }
+	else if (mask & modes[enableVsync][2])
+    {
+        presentMode = modes[enableVsync][2];
     }
     else
     {
-        presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        // shouldn't happen
+        // show sdl message box error
+
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Vulkan does not support any present modes", NULL);
     }
 
     //presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
@@ -167,12 +181,12 @@ void SwapChain::createSwapChain()
 
     CHECK_RESULT_VK(vkCreateSwapchainKHR(thinDrawer->logicalDevice, &swapChainCreateInfo, NULL, &swapChain));
 
-    vkGetSwapchainImagesKHR(thinDrawer->logicalDevice, swapChain,
-        (uint32_t*)&imageCount, NULL);
-    images = (VkImage*)malloc(sizeof(VkImage) * imageCount);
-    imageViews = (VkImageView*)malloc(sizeof(VkImageView) * imageCount);
-    vkGetSwapchainImagesKHR(thinDrawer->logicalDevice, swapChain,
-        (uint32_t*)&imageCount, images);
+    vkGetSwapchainImagesKHR(thinDrawer->logicalDevice, swapChain, (uint32_t*)&imageCount, NULL);
+
+    images.resize(imageCount);
+    imageViews.resize(imageCount);
+
+    vkGetSwapchainImagesKHR(thinDrawer->logicalDevice, swapChain, (uint32_t*)&imageCount, images.data());
 
     for (i = 0; i < imageCount; i++)
     {
@@ -210,7 +224,7 @@ void SwapChain::createFrameBuffers()
 	frameBufferInfo.height = extent.height;
 	frameBufferInfo.layers = 1;
 
-	frameBuffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * imageCount);
+	frameBuffers.resize(imageCount);
 
 	for (int i = 0; i < imageCount; i++)
     {
@@ -221,7 +235,7 @@ void SwapChain::createFrameBuffers()
 		frameBufferInfo.attachmentCount = attachments.size();
 		frameBufferInfo.pAttachments = attachments.data();
 
-        CHECK_RESULT_VK(vkCreateFramebuffer(thinDrawer->logicalDevice, &frameBufferInfo, NULL, frameBuffers + i));
+        CHECK_RESULT_VK(vkCreateFramebuffer(thinDrawer->logicalDevice, &frameBufferInfo, NULL, &frameBuffers[i]));
 	}
 }
 

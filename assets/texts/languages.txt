@@ -1,6 +1,6 @@
 <0>
 Turkish
-NotoSans-Medium.ttf
+OpenSans-SemiBold.ttf
 <0>
 <1>
 English

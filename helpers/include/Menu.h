@@ -10,9 +10,10 @@
 typedef enum
 {
 	RENDER_ENABLED = 0,
-	INTERACTABLE = 1,
-	MOVE_NEXT = 2,
-	TEXT_LEFT = 3,
+	INTERACTABLE,
+	MOVE_NEXT,
+	TEXT_LEFT,
+	NO_INTERACTION,
 } bitmapIndices;
 
 typedef enum
@@ -66,14 +67,21 @@ public:
 	float currentY;
 	glm::vec2 lastMousePos;
 
+	glm::vec2 windowClickPos = glm::vec2(0.0f, 0.0f);
+
 	Button* hoverButton;
 	Button* clickButton;
 	Button* activeButton;
 	Button* qButton;
 	Button* soundButton;
+	Button* loadButton;;
 	Button* newEditorButton;
 	Button* exitButton;
 	Button* keyAssignmentButton;
+	Button* fullScreenButton;
+	Button* borderlessButton;
+	Button* vsyncButton;
+	Button* maxFramerateButton;
 
 	Menu();
 
@@ -87,7 +95,7 @@ public:
 	void initCredits(glm::vec4 clr = glm::vec4(0.0, 1.0, 0.0, 0.4));
 	Button* initWithName(std::string name, glm::vec4 clr); // simple only click button
 
-	void addTextToButton(Button& b, std::string text);
+	void addTextToButton(Button& b, std::string text, float sizeMult = 1.0f);
 	Button* addButton(glm::vec2 pos, glm::vec2 size, std::string text, glm::vec4 color=glm::vec4(1.0, 1.0, 1.0, 0.2), glm::vec2 data=glm::vec2(0.25f, 0.5f));
 	void buttonPressed(Button* button);
 	void update();

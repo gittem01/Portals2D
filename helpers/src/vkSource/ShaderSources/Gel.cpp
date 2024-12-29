@@ -89,7 +89,7 @@ void GelShader::render(VkCommandBuffer cmdBuff, int swapChainImage)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineLayout, 1, 1, &descriptorSets[1], 0, VK_NULL_HANDLE);
 
-    vkCmdDraw(cmdBuff, thinDrawer->wallLight->buffers[0].count, numRender, 0, 0);
+    vkCmdDraw(cmdBuff, 6, numRender, 0, 0);
 }
 
 void GelShader::prepareVertexData()

@@ -4,6 +4,10 @@
 
 Sounder* Sounder::object;
 
+float Sounder::generalVolume = 1.0f;
+float Sounder::musicVolume = 1.0f;
+float Sounder::effectVolume = 1.0f;
+
 Sounder::Sounder()
 {
     device = alcOpenDevice(nullptr);

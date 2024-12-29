@@ -12,6 +12,7 @@
 #include <Game.h>
 #include <cmath>
 #include <Overlayer.h>
+#include "SDL3/SDL_vulkan.h"
 
 ThinDrawer* ThinDrawer::object = nullptr;
 
@@ -29,16 +30,23 @@ void ThinDrawer::surfaceRecreate()
 {
     vkDeviceWaitIdle(logicalDevice);
 
+    bool setFullScreen = (WindowHandler::windowCreateFlags & SDL_WINDOW_FULLSCREEN) != 0;
+	bool setBorderless = (WindowHandler::windowCreateFlags & SDL_WINDOW_BORDERLESS) != 0;
+
+	SDL_SetWindowFullscreen(wh->window, setFullScreen);
+	SDL_SetWindowBordered(wh->window, !setBorderless);
+
     for (ShaderBase* shader : shaders)
     {
         vkDestroyPipeline(logicalDevice, shader->pipeline, VK_NULL_HANDLE);
     }
 
     swapChain->destroy();
-    
+
     swapChain->creationLoop();
     createRenderPass();
     swapChain->createFrameBuffers();
+
     preparePipelines();
 
     for (int i = 0; i < frames.size(); i++)

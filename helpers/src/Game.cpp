@@ -30,6 +30,7 @@ SDL_Scancode Game::rightKey = SDL_SCANCODE_D;
 SDL_Scancode Game::downKey = SDL_SCANCODE_S;
 SDL_Scancode Game::rotateKey = SDL_SCANCODE_Q;
 SDL_Scancode Game::holdKey = SDL_SCANCODE_E;
+int Game::limitFramerate = 1001;
 
 int Game::lastLevel = 1;
 int Game::maxLevel = 27;
@@ -53,17 +54,17 @@ Game::Game()
 
 	IOHelper::getAssetsFolder();
 
-	thinDrawer = new ThinDrawer(pWorld);
+    sounder = new Sounder();
 
-	sounder = new Sounder();
+    loadGameData();
+
+	thinDrawer = new ThinDrawer(pWorld);
 
     leveler = new Leveler(this);
     
     menu = new Menu();
 
     thinDrawer->releaseRenderResources();
-
-    loadGameData();
 
     gameStater = &Game::MenuState;
 
@@ -84,23 +85,27 @@ void Game::loadGameData()
 
 	if (file.is_open() && length >= expectedFileSize)
 	{
-        uint16_t arr[expectedFileSize];
+        uint64_t arr[expectedFileSize];
 
 		file.read((char*)arr, sizeof(arr));
 		file.close();
 
-		jumpKey = (SDL_Scancode)arr[0];
-		leftKey = (SDL_Scancode)arr[1];
-		rightKey = (SDL_Scancode)arr[2];
-		downKey = (SDL_Scancode)arr[3];
-		rotateKey = (SDL_Scancode)arr[4];
-		holdKey = (SDL_Scancode)arr[5];
+		Game::jumpKey = (SDL_Scancode)arr[0];
+		Game::leftKey = (SDL_Scancode)arr[1];
+		Game::rightKey = (SDL_Scancode)arr[2];
+		Game::downKey = (SDL_Scancode)arr[3];
+		Game::rotateKey = (SDL_Scancode)arr[4];
+		Game::holdKey = (SDL_Scancode)arr[5];
 
-		sounder->generalVolume = arr[6] / 1024.0;
-		sounder->musicVolume = arr[7] / 1024.0;
-		sounder->effectVolume = arr[8] / 1024.0;
+		Sounder::generalVolume = arr[6] / 1024.0;
+		Sounder::musicVolume = arr[7] / 1024.0;
+		Sounder::effectVolume = arr[8] / 1024.0;
 
 		lastLevel = arr[9];
+        
+        WindowHandler::windowCreateFlags = arr[10];
+        Game::limitFramerate = arr[11];
+		SwapChain::enableVsync = arr[12];
 	}
 	else
 	{
@@ -124,20 +129,23 @@ void Game::saveGameData()
 
 		if (file.is_open())
 		{
-			uint16_t arr[16];
+			uint64_t arr[16];
 
-			arr[0] = jumpKey;
-			arr[1] = leftKey;
-			arr[2] = rightKey;
-			arr[3] = downKey;
-			arr[4] = rotateKey;
-			arr[5] = holdKey;
+			arr[0] = Game::jumpKey;
+			arr[1] = Game::leftKey;
+			arr[2] = Game::rightKey;
+			arr[3] = Game::downKey;
+			arr[4] = Game::rotateKey;
+			arr[5] = Game::holdKey;
 
-			arr[6] = (uint16_t)std::round(sounder->generalVolume * 1024);
-			arr[7] = (uint16_t)std::round(sounder->musicVolume * 1024);
-			arr[8] = (uint16_t)std::round(sounder->effectVolume * 1024);
+			arr[6] = (uint64_t)std::round(Sounder::generalVolume * 1024);
+			arr[7] = (uint64_t)std::round(Sounder::musicVolume * 1024);
+			arr[8] = (uint64_t)std::round(Sounder::effectVolume * 1024);
 
-			arr[9] = lastLevel;
+			arr[9] = Game::lastLevel;
+            arr[10] = WindowHandler::windowCreateFlags;
+            arr[11] = Game::limitFramerate;
+			arr[12] = SwapChain::enableVsync;
 
 			file.write((char*)arr, sizeof(arr));
 			file.close();
@@ -201,6 +209,8 @@ void Game::LevelerState()
         runSingleTaskRegistry();
 
         thinDrawer->renderLoop();
+
+        runSingleTaskRegistry2();
     }
 
     shouldQuit = false;
@@ -262,6 +272,8 @@ void Game::TestState()
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && (testCase && !testCase->shouldQuit || !testCase))
     {
+        uint64_t t0 = SDL_GetTicksNS();
+
         shouldQuit = thinDrawer->wh->looper();
         
         if (dtMult > 0.0000000001) thinDrawer->wh->cam->update();
@@ -311,6 +323,19 @@ void Game::TestState()
         }
 
         thinDrawer->renderLoop();
+
+		uint64_t t1 = SDL_GetTicksNS();
+
+        if (limitFramerate < 1001)
+        {
+            uint64_t timePassed = t1 - t0;
+            uint64_t timeToWait = (double)1000000000 / limitFramerate - timePassed;
+
+            if (timeToWait > 0)
+            {
+                SDL_DelayNS(timeToWait);
+            }
+        }
     }
 
     if (testCase)
@@ -404,6 +429,8 @@ void Game::MenuState()
         runSingleTaskRegistry();
 
         thinDrawer->renderLoop();
+
+        runSingleTaskRegistry2();
     }
 
     if (gameStater == &Game::MenuState)
@@ -422,12 +449,40 @@ void Game::MenuState()
 
 void Game::runSingleTaskRegistry()
 {
+    if (singleTaskRegistry.size() == 0)
+    {
+        return;
+    }
+
+    taskRegistryMutex.lock();
+
     for (auto func : singleTaskRegistry)
     {
         func();
     }
 
     singleTaskRegistry.clear();
+
+    taskRegistryMutex.unlock();
+}
+
+void Game::runSingleTaskRegistry2()
+{
+    if (singleTaskRegistry2.size() == 0)
+    {
+        return;
+    }
+
+    taskRegistryMutex.lock();
+
+    for (auto func : singleTaskRegistry2)
+    {
+        func();
+    }
+
+    singleTaskRegistry2.clear();
+
+    taskRegistryMutex.unlock();
 }
 
 void Game::loop()
