@@ -273,7 +273,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 
 		thinDrawer->loadTextureFromMemory(&texData, tex, false, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 1, VK_FILTER_LINEAR);
 
-		IOHelper::updateTextureSet(tex);
+		IOHelper::updateTextureSet(tex, prevTex != nullptr);
 
 		s_charRenderData rData;
 		rData.size_leftBotMargin = glm::vec4((float)rdBitmap.w / renderHeight, (float)rdBitmap.h / renderHeight, left, toMid);

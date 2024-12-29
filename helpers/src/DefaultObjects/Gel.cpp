@@ -327,11 +327,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
     }
 
 out:
-    b2Vec2 pos = wData->pbIndices[0]->body->GetPosition();
-
     splashData sData;
-    sData.posSpeed.x = pos.x;
-    sData.posSpeed.y = pos.y;
     sData.posSpeed.z = (float)rand() / RAND_MAX;
     sData.posSpeed.w = 1.0;
     sData.data.x = 0.075;
@@ -352,7 +348,14 @@ out:
     sData.data3.z = 100000.0;
     sData.data3.w = 0.5;
 
-    splashEffects[splashCount++] = sData;
+    for (PortalBody* pb : wData->pbIndices)
+    {
+        b2Vec2 pos = pb->body->GetPosition();
+
+        sData.posSpeed.x = pos.x;
+        sData.posSpeed.y = pos.y;
+        splashEffects[splashCount++] = sData;
+    }
 
     Gel* lastGel = gels[--gelCount];
     lastGel->gelIndex = gelIndex;
@@ -366,7 +369,7 @@ out:
 
 void Gel::update()
 {
-    for (int i = 0; i < gelCount; i++)
+    /*for (int i = 0; i < gelCount; i++)
     {
         Gel* gel = gels[i];
 
@@ -389,7 +392,7 @@ void Gel::update()
                 tpb->body->SetLinearVelocity(velNow - 0.01f * ratio * posDiff);
             }
 		}
-    }
+    }*/
 }
 
 void Gel::toDeath()
@@ -667,15 +670,7 @@ void Gel::endContact(b2Contact* contact, b2Fixture* otherFix)
 			g_PhysicsData* physicsData = (g_PhysicsData*)bData->extraData;
 			if (physicsData->type & GEL_O)
 			{
-				Gel* gel = (Gel*)physicsData->data;
-				for (int i = 0; i < numNearGels; i++)
-				{
-					if (nearGels[i] == gel)
-					{
-						nearGels[i] = nearGels[--numNearGels];
-						break;
-					}
-				}
+                numNearGels--;
 			}
 		}
 	}
@@ -704,7 +699,7 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisF
     {
         splash(contact, otherFix);
     }
-   /* else if (numNearGels < std::size(nearGels))
+    else if (numNearGels < MAX_NEAR_GELS)
     {
         bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
         if (bData && bData->extraData)
@@ -712,14 +707,12 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisF
             g_PhysicsData* physicsData = (g_PhysicsData*)bData->extraData;
             if (physicsData->type & GEL_O)
             {
-                Gel* gel = (Gel*)physicsData->data;
-                if (gel->gelType == gelType)
-                    nearGels[numNearGels++] = gel;
+                numNearGels++;
             }
         }
     }
     else
     {
         splash(contact, otherFix);
-    }*/
+    }
 }

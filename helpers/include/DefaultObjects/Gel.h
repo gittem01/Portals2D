@@ -5,6 +5,8 @@
 
 #define GEL_COLLISION_IGNORE (F_FEDGE | F_GELLER)
 
+#define MAX_NEAR_GELS 12
+
 class Gel : public DefaultObject
 {
 	friend class Geller;
@@ -15,7 +17,7 @@ private:
 	glm::vec4 gelColor;
 	float gelRadius;
 
-	Gel* nearGels[16];
+	//Gel* nearGels[16];
 	int numNearGels = 0;
 	
 	static std::vector<splashData> splashEffects;

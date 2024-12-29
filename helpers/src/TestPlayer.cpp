@@ -114,6 +114,8 @@ void write0(TestPlayer* tp)
 {
     uint32_t imNum = ThinDrawer::object->frameIndex;
 
+	bool initialMirrored = tp->wData->pbIndices[0]->isMirrored;
+
     int i = 0;
     for (PortalBody* pb : tp->wData->pbIndices)
     {
@@ -124,7 +126,7 @@ void write0(TestPlayer* tp)
             tp->playerShader->alignedSize, 0, (void**)&ru2);
 
         b2Vec2 pos = body->GetPosition();
-        ru2->posRotD = glm::vec4(pos.x, pos.y, body->GetAngle(), 0.0);
+        ru2->posRotD = glm::vec4(pos.x, pos.y, body->GetAngle(), pb->isMirrored ? -1.0f : 1.0f);
 
         std::set<portalCollision*> pcs;
         for (b2Fixture* f : pb->fixtures)
@@ -172,8 +174,17 @@ void TestPlayer::memMap(void* ptr)
 
     float desiredValue = 0.06 - std::min(std::max(linVel.x, -8.0f), 8.0f) * 0.01;
     desiredValue = std::max(std::min(desiredValue, 0.12f), 0.01f);
-    tp->renderData.headCircles[0] -= (tp->renderData.headCircles[0] - desiredValue) * Game::object->deltaTime * 6.0f;
-    tp->renderData.headCircles[1] = 0.12 - tp->renderData.headCircles[0];
+
+    if (pb0->isMirrored)
+    {
+        tp->renderData.headCircles[1] -= (tp->renderData.headCircles[1] - desiredValue) * Game::object->deltaTime * 6.0f;
+        tp->renderData.headCircles[0] = 0.12 - tp->renderData.headCircles[1];
+    }
+    else
+    {
+        tp->renderData.headCircles[0] -= (tp->renderData.headCircles[0] - desiredValue) * Game::object->deltaTime * 6.0f;
+        tp->renderData.headCircles[1] = 0.12 - tp->renderData.headCircles[0];
+    }
 
     if (tp->l_platformBody)
     {
@@ -211,7 +222,9 @@ void TestPlayer::memMap(void* ptr)
     {
         const float m = 0.1;
         aimedRatio = 0.25;
-        float roundedAngle = fmod(tp->legAng, 2.0 * b2_pi);
+        float ang = tp->legAng;
+        if (pb0->isMirrored) ang = b2_pi - ang;
+        float roundedAngle = fmod(ang, 2.0 * b2_pi);
         if (roundedAngle < 0.0) roundedAngle += 2.0 * b2_pi;
 
         if (roundedAngle < b2_pi * 0.5)
@@ -236,7 +249,7 @@ void TestPlayer::memMap(void* ptr)
         }
     }
 
-    tp->legAng += tp->rotSpeed * Game::object->deltaTime;
+    tp->legAng += tp->rotSpeed * Game::object->deltaTime * (pb0->isMirrored ? -1.0f : 1.0f);
     tp->legAng = fmod(tp->legAng, 2.0 * b2_pi);
     if (tp->legAng < 0.0) tp->legAng += 2.0 * b2_pi;
 

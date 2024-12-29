@@ -1511,7 +1511,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory,
 			td->playerShader->alignedSize * td->frameIndex * 2, td->playerShader->alignedSize, 0, (void**)&ru2);
 
-		ru2->posRotD = glm::vec4(leveler->startSquare.x + 0.5, leveler->startSquare.y + 0.75, 0.0, 0.0);
+		ru2->posRotD = glm::vec4(leveler->startSquare.x + 0.5, leveler->startSquare.y + 0.75, 0.0, 1.0);
 		ru2->numPortals = 0;
 
 		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory);
@@ -1519,7 +1519,7 @@ void Leveler::renderGrid(VkCommandBuffer cmdBuff, void* ptr)
 		vkMapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory,
 			td->playerShader->alignedSize * (td->frameIndex * 2 + 1), td->playerShader->alignedSize, 0, (void**)&ru2);
 
-		ru2->posRotD = glm::vec4(leveler->endSquare.x + 0.5, leveler->endSquare.y + 0.75, 0.0, 0.0);
+		ru2->posRotD = glm::vec4(leveler->endSquare.x + 0.5, leveler->endSquare.y + 0.75, 0.0, 1.0);
 		ru2->numPortals = 0;
 
 		vkUnmapMemory(td->playerShader->logicalDevice, td->playerShader->uniformBuffers[0].memory);

@@ -60,8 +60,6 @@ void ThinDrawer::surfaceRecreate()
         SDL_SyncWindow(wh->window);
     }
 
-    
-
     SDL_SetWindowBordered(wh->window, !setBorderless);
 #endif
 

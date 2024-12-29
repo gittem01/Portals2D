@@ -65,6 +65,7 @@ vec2 rotateAroundOrigin(vec2 point, float angle)
 void main()
 {
 	localPos = vertex * vec2(0.5, 1.0);
+    localPos.x *= s_ubo.posRotD.w;
     worldPosition = rotateAroundOrigin(vertex * c_ubo.size, s_ubo.posRotD.z) + s_ubo.posRotD.xy;
 
     gl_Position = sharedUboData.orthoMatrix * vec4(worldPosition, 0.0, 1.0);
