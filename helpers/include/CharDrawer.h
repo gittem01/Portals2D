@@ -13,11 +13,13 @@ typedef struct CharRenderData
 {
 	glm::vec4 size_leftBotMargin;
 	s_texture* tex;
+	int codePoint;
+	int targetHeight;
 } s_charRenderData;
 
 typedef struct LineRenderData
 {
-	std::vector<s_charRenderData> charDatas;
+	std::vector<int> charDatas;
 	glm::vec4 posScale; // startX, startY, scale, unused
 	glm::vec4 color;
 } s_lineRenderData;
@@ -36,14 +38,16 @@ public:
 	std::vector<std::string> allLanguages;
 
 	std::vector<s_lineRenderData> renderDatas;
-	std::map<std::pair<int, int>, s_charRenderData> codepointMap;
+	std::vector<s_charRenderData> allCharDatas;
+	std::map<std::pair<int, int>, int> codepointMap;
 
 	CharDrawer(ThinDrawer* thinDrawer);
 
-	std::vector<s_charRenderData> getRenderData(const std::string& text, int targetHeight, float& x,
+	std::vector<int> getRenderData(const std::string& text, int targetHeight, float& x,
 		s_texture* prevTex=nullptr, int prevCodepoint =0);
 
-	static float calcSize(std::vector<s_charRenderData> rd);
+	float calcSize(std::vector<int> rd);
+	static char calculateCharBytes(char ch);
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 
 	void recreate();

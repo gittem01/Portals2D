@@ -46,17 +46,6 @@ Leveler::Leveler(Game* game)
 	ol->cd->getRenderData("(),0123456789", 50, x);
 }
 
-void Leveler::addPopText(std::string text, glm::vec2 pos, glm::vec3 colour)
-{
-	text = game->menu->buttonTexts["<" + text + ">"][ol->cd->selectedLanguageIndex];
-
-	popLrd.color = glm::vec4(colour, 1.0f);
-	popLrd.posScale = glm::vec4(pos.x, pos.y, 5.0f, ThinDrawer::object->gameTime);
-	float x;
-	popLrd.charDatas = ol->cd->getRenderData(text, ol->popHeight * 2, x);
-	popLrd.posScale.x -= 2.5f * x;
-}
-
 void readObjectData(std::ifstream& file, s_objectDataGrid* objData)
 {
 	uint32_t offset = offsetof(s_objectDataGrid, fullData);
@@ -130,12 +119,12 @@ int Leveler::saveLevel(std::string fileName, bool overwrite)
 	std::string finalName = fileName;
 #endif
 
-	if (!overwrite)
+	if (!overwrite && openLevelName != Game::object->pop.renderTexts[0])
 	{
 		std::ifstream fCheck(finalName, std::ios::in);
 		if (fCheck.good())
 		{
-			addPopText("alreadyExists", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			ThinDrawer::object->addPopText("alreadyExists", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 			return 2;
 		}
 	}
@@ -185,13 +174,18 @@ int Leveler::saveLevel(std::string fileName, bool overwrite)
 
 		file.close();
 
-		addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		ThinDrawer::object->addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		ol->overlayOverlay = LEVELER;
+
+		openLevelName = Game::object->pop.renderTexts[0];
+		textSizes.assign(Game::object->pop.textSizes.begin(), Game::object->pop.textSizes.end());
 
 		return 0;
 	}
 	else
 	{
-		addPopText("saveFailure", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		ThinDrawer::object->addPopText("saveFailure", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 		return 1;
 	}
@@ -216,7 +210,7 @@ int Leveler::openLevel(std::string fileName)
 
 	if (file.is_open())
 	{
-		addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		ThinDrawer::object->addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		renderClear();
 		thinDrawer->releaseRenderResources();
@@ -325,11 +319,24 @@ int Leveler::openLevel(std::string fileName)
 			updateConnectionRenderData(connection);
 		}
 
+		ol->overlayOverlay = LEVELER;
+
+		size_t pos = fileName.find_last_of("/", fileName.size() - 1);
+
+		openLevelName = fileName.substr(pos + 1, fileName.size() - pos - 5);
+		
+		for (int i = 0; i < openLevelName.size();)
+		{
+			char charSize = CharDrawer::calculateCharBytes(openLevelName[i]);
+			textSizes.push_back(charSize);
+			i += charSize;
+		}
+
 		return 0;
 	}
 	else
 	{
-		addPopText("openFailure", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		ThinDrawer::object->addPopText("openFailure", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 		return 1;
 	}
@@ -347,7 +354,6 @@ void Leveler::renderClear()
 	thinDrawer->polynomShader->datas.clear();
 	thinDrawer->debugLineShader->numLines = 0;
 	thinDrawer->lineZ->numZs = 0;
-	popLrd.posScale.w = -1.0f;
 }
 
 void deleteAfter(s_gridOperationList* op)
@@ -1801,13 +1807,6 @@ void Leveler::update()
 	float x;
 	auto rd = ol->cd->getRenderData(result, 50, x);
 	ol->cd->renderDatas.push_back({ rd, { ol->cam.xSides.x + 0.25, ol->cam.ySides.x + 1.25, 2.0, 0.0 }, { 1.0, 1.0, 1.0, 0.5 } });
-
-	if (popLrd.posScale.w > 0.0)
-	{
-		float td01 = 1.0f - std::min(thinDrawer->gameTime - popLrd.posScale.w, 2.0) * 0.5f;
-		popLrd.color.w = td01;
-		ol->cd->renderDatas.push_back(popLrd);
-	}
 
 	s_gridItemData* item = ol->selectedItemIndex >= 0 ? &ol->items[ol->selectedItemIndex] : nullptr;
 

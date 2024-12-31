@@ -63,6 +63,7 @@ public:
 	double activationTime;
 	double upCamTime;
 	double lastDataSaveTime;
+	double menuCallTime;
 	float upMargin;
 	float currentY;
 	glm::vec2 lastMousePos;

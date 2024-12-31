@@ -425,7 +425,7 @@ int Overlayer::addPop(std::string popName, std::vector<std::string> texts, std::
     for (std::string& text : texts)
     {
         float x;
-        std::vector<s_charRenderData> rd = cd->getRenderData(text, popHeight, x);
+        std::vector<int> rd = cd->getRenderData(text, popHeight, x);
         
         maxSize = std::max(maxSize, x);
 
@@ -679,7 +679,7 @@ void Overlayer::topLeftUpdate()
 {
     const glm::vec4 buttonClr = glm::vec4(0.03f, 0.00f, 0.10f, 1.0f);
 
-    if (wh->keyData[SDL_SCANCODE_ESCAPE] == 2 && !game->pop.active)
+    if (wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
     {
         selectedItemIndex = -1;
         popShowName = "";
@@ -695,9 +695,10 @@ void Overlayer::topLeftUpdate()
             game->menu->initSettings(glm::vec4(1.0, 1.0, 1.0, 0.4));
             game->menu->initWithName("to_menu", glm::vec4(1.0f, 1.0f, 1.0f, 0.4f));
         }
-        else
+        else if (!(overlayOverlay == LEVELER_MENU && game->pop.active))
         {
 			overlayOverlay = LEVELER;
+            game->menu->buttons.clear();
         }
     }
 
@@ -770,6 +771,12 @@ void Overlayer::topLeftUpdate()
         selectedItemIndex = -1;
 
         Game::object->pop.init(topLeftButtons[hoverIndex], tlNames[hoverIndex], 0.5);
+
+        if (overlayOverlay == SAVE_LEVEL)
+        {
+            Game::object->pop.renderTexts[0] = Leveler::object->openLevelName;
+            Game::object->pop.textSizes.assign(Leveler::object->textSizes.begin(), Leveler::object->textSizes.end());
+        }
     }
 }
 

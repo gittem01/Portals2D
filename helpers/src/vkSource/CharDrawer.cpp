@@ -7,6 +7,28 @@
 
 int CharDrawer::selectedLanguageIndex = 0;
 
+char CharDrawer::calculateCharBytes(char ch)
+{
+	if ((ch & 0x80) == 0)
+	{
+		return 1;
+	}
+	else if ((ch & 0xE0) == 0xC0)
+	{
+		return 2;
+	}
+	else if ((ch & 0xF0) == 0xE0)
+	{
+		return 3;
+	}
+	else if ((ch & 0xF8) == 0xF0)
+	{
+		return 4;
+	}
+
+	return 0;
+}
+
 std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 {
 	std::vector<uint32_t> codePoints;
@@ -54,6 +76,7 @@ std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 			{
 				break;
 			}
+
 			codePoint = (codePoint << 6) | (utf8String[i + j] & 0x3F);
 		}
 
@@ -88,6 +111,8 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 	fontShader->init();
 
 	creationHeight = thinDrawer->wh->windowSizes.y;
+
+	allCharDatas.push_back({ { 0.25, 0.0, 0.0, 0.0 }, nullptr });
 }
 
 void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
@@ -116,8 +141,9 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 		s_textData texData;
 		texData.color = data.color;
 
-		for (auto& chrData : data.charDatas)
+		for (int index : data.charDatas)
 		{
+			auto& chrData = cd->allCharDatas[index];
 			if (chrData.tex == nullptr)
 			{
 				x += chrData.size_leftBotMargin.x + prevData.size_leftBotMargin.x * 0.5;
@@ -144,13 +170,14 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 	cd->renderDatas.clear();
 }
 
-float CharDrawer::calcSize(std::vector<s_charRenderData> rd)
+float CharDrawer::calcSize(std::vector<int> rd)
 {
 	float x = 0.0f;
 	float prevX = 0.0f;
 
-	for (auto& chrData : rd)
+	for (int index : rd)
 	{
+		auto& chrData = allCharDatas[index];
 		if (chrData.tex == nullptr)
 		{
 			x += chrData.size_leftBotMargin.x + prevX * 0.5;
@@ -168,7 +195,7 @@ float CharDrawer::calcSize(std::vector<s_charRenderData> rd)
 	return x;
 }
 
-std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text, int targetHeight, float& x, s_texture* prevTex, int prevCodepoint)
+std::vector<int> CharDrawer::getRenderData(const std::string& text, int targetHeight, float& x, s_texture* prevTex, int prevCodepoint)
 {
 	std::vector<uint32_t> codePoints;
 
@@ -181,9 +208,9 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		codePoints = utf8ToUnicode(text);
 	}
 
-	std::vector<s_charRenderData> rd;
+	std::vector<int> rd;
 
-	int renderHeight = ((float)ThinDrawer::object->wh->dpiScaling * thinDrawer->wh->windowSizes.y / creationHeight) * targetHeight + 2;
+	int renderHeight = ((float)ThinDrawer::object->wh->dpiScaling * thinDrawer->wh->windowSizes.y / creationHeight) * targetHeight;
 	renderHeight = std::max(renderHeight, 8);
 
 	x = 0;
@@ -192,7 +219,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 	{
 		if (codepoint == 32)
 		{
-			rd.push_back({ {0.25, 0.0, 0.0, 0.0}, nullptr });
+			rd.push_back(0);
 
 			x += 0.25 + prevX * 0.5;
 			prevX = 0.0;
@@ -204,8 +231,9 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		if (iterFind != codepointMap.end())
 		{
 			rd.push_back((*iterFind).second);
-			x += (*iterFind).second.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? (*iterFind).second.size_leftBotMargin.z : 0.0);
-			prevX = (*iterFind).second.size_leftBotMargin.x;
+			auto chrData = allCharDatas[(*iterFind).second];
+			x += chrData.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? chrData.size_leftBotMargin.z : 0.0);
+			prevX = chrData.size_leftBotMargin.x;
 			continue;
 		}
 
@@ -233,8 +261,9 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 			if (iterFind != codepointMap.end())
 			{
 				rd.push_back((*iterFind).second);
-				x += (*iterFind).second.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? (*iterFind).second.size_leftBotMargin.z : 0.0);
-				prevX = (*iterFind).second.size_leftBotMargin.x;
+				auto chrData = allCharDatas[(*iterFind).second];
+				x += chrData.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? chrData.size_leftBotMargin.z : 0.0);
+				prevX = chrData.size_leftBotMargin.x;
 				continue;
 			}
 		}
@@ -242,7 +271,7 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		stbtt_vertex* rdShape;
 		int numVert = stbtt_GetGlyphShape(&fontInfo, glyph, &rdShape);
 
-		if (numVert == 0) return rd;
+		if (numVert == 0) continue;
 
 		stbtt__bitmap rdBitmap;
 		rdBitmap.w = x1 - x0;
@@ -277,13 +306,16 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 		s_charRenderData rData;
 		rData.size_leftBotMargin = glm::vec4((float)rdBitmap.w / renderHeight, (float)rdBitmap.h / renderHeight, left, toMid);
 		rData.tex = tex;
+		rData.codePoint = codepoint;
+		rData.targetHeight = targetHeight;
 
 		x += rData.size_leftBotMargin.x * 0.5 + prevX * 0.5 + (x != 0.0 ? rData.size_leftBotMargin.z : 0.0);
 		prevX = rData.size_leftBotMargin.x;
 
-		codepointMap[{ codepoint, targetHeight }] = rData;
-
-		rd.push_back(rData);
+		codepointMap[{ codepoint, targetHeight }] = allCharDatas.size();
+		rd.push_back(allCharDatas.size());
+		
+		allCharDatas.push_back(rData);
 
 		delete rdBitmap.pixels;
 
@@ -297,11 +329,16 @@ std::vector<s_charRenderData> CharDrawer::getRenderData(const std::string& text,
 
 void CharDrawer::recreate()
 {
-	auto newCodepointMap = std::move(codepointMap);
+	codepointMap.clear();
+	auto newAllCharDatas = std::move(allCharDatas);
 
-	for (auto pair : newCodepointMap)
+	allCharDatas.push_back({{ 0.25, 0.0, 0.0, 0.0 }, nullptr});
+
+	for (int i = 1; i < newAllCharDatas.size(); i++)
 	{
-		s_texture* tex = pair.second.tex;
+		auto& charData = newAllCharDatas[i];
+
+		s_texture* tex = charData.tex;
 
 		vkDestroyImageView(thinDrawer->logicalDevice, tex->view, nullptr);
 		vkDestroySampler(thinDrawer->logicalDevice, tex->sampler, nullptr);
@@ -309,7 +346,7 @@ void CharDrawer::recreate()
 		vkFreeMemory(thinDrawer->logicalDevice, tex->deviceMemory, nullptr);
 
 		float x;
-		getRenderData("", pair.first.second, x, tex, pair.first.first);
+		getRenderData("", charData.targetHeight, x, tex, charData.codePoint);
 	}
 }
 

@@ -13,6 +13,7 @@
 #include <cmath>
 #include <Overlayer.h>
 #include "SDL3/SDL_vulkan.h"
+#include "Menu.h"
 
 ThinDrawer* ThinDrawer::object = nullptr;
 
@@ -268,6 +269,15 @@ void ThinDrawer::buildCommandBuffers(VkCommandBuffer cmdBuff)
     {
         f.first(cmdBuff, f.second);
     }
+
+    if (popLrd.posScale.w > 0.0)
+    {
+        float td01 = 1.0f - std::min(gameTime - popLrd.posScale.w, 2.0) * 0.5f;
+        popLrd.color.w = td01;
+        Leveler::object->ol->cd->renderDatas.push_back(popLrd);
+    }
+
+	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
 
     if (drawData)
     {
@@ -1844,4 +1854,15 @@ void ThinDrawer::releaseRenderResources()
     }
 
     renderGroups3D.clear();
+}
+
+void ThinDrawer::addPopText(std::string text, glm::vec2 pos, glm::vec3 colour)
+{
+    text = Game::object->menu->buttonTexts["<" + text + ">"][CharDrawer::selectedLanguageIndex];
+
+    popLrd.color = glm::vec4(colour, 1.0f);
+    popLrd.posScale = glm::vec4(pos.x, pos.y, 5.0f, gameTime);
+    float x;
+    popLrd.charDatas = Leveler::object->ol->cd->getRenderData(text, Leveler::object->ol->popHeight * 2, x);
+    popLrd.posScale.x -= 2.5f * x;
 }

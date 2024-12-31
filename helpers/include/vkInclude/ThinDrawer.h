@@ -34,6 +34,7 @@
 #include <ShaderHeaders/SplashShader.h>
 #include <ShaderHeaders/PushLine.h>
 #include <ShaderHeaders/MenuButton.h>
+#include "CharDrawer.h"
 
 #include <WindowHandler.h>
 #include <definitions.h>
@@ -168,6 +169,9 @@ public:
     std::vector<s_debugLineUbo> debugLineRegistry;
     std::vector<s_debugLineUbo> oneTimeRenderLines;
 
+    s_lineRenderData popLrd;
+    double popTextTime = 0.0;
+
     AnimGroup* animations = nullptr;
     double gameTime = 0.0;
     double deltaTime = 0.0;
@@ -243,6 +247,8 @@ public:
     void beforeCreate();
     void afterCreate();
     
+    void addPopText(std::string text, glm::vec2 pos, glm::vec3 colour);
+
     void uniformFiller();
     void renderLoop();
     void animate();

@@ -939,7 +939,7 @@ void LevelerTestCase::onCreate()
 
 void LevelerTestCase::perFrameUpdate()
 {
-    if (g->thinDrawer->wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
+    if (g->thinDrawer->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 && !g->pop.active)
     {
         if (menuUpdate)
         {
@@ -1001,6 +1001,7 @@ stopMenuUpdate:
     g->dtMult = 1.0;
     td->eraseFromRenderFunctions(td->lateDrawFuncs, (void*)Leveler::object->ol->cd);
     g->menu->renderDestroy();
+    g->menu->buttons.clear();
 }
 
 void LevelerTestCase::onUpdate()

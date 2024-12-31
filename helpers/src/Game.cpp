@@ -449,6 +449,8 @@ void Game::MenuState()
         shouldQuit = false;
     }
 
+    menu->buttons.clear();
+
     sounder->addFader(menuMusic, 0.15f, 0.0f, 1.0f, true);
 
 	lastState = &Game::MenuState;

@@ -88,8 +88,6 @@ void setClose(PopUp* p, s_menuButton* currentButton=nullptr)
 
 	p->closeOnEnd = true;
 	p->active = false;
-
-	Leveler::object->ol->overlayOverlay = LEVELER;
 }
 
 void saveDialogCallBack(void* userdata, const char* const* filelist, int filter)
@@ -103,11 +101,20 @@ void saveDialogCallBack(void* userdata, const char* const* filelist, int filter)
 
 	if (strlen(*filelist) > 0)
 	{
-		int res = Leveler::object->saveLevel(*filelist, true);
-		if (res == 0)
+		std::string copyString = *filelist;
+
+		Game::object->taskRegistryMutex.lock();
+
+		Game::object->singleTaskRegistry.push_back([p, copyString]
 		{
-			setClose(p);
-		}
+			int res = Leveler::object->saveLevel(copyString, true);
+			if (res == 0)
+			{
+				setClose(p);
+			}
+		});
+
+		Game::object->taskRegistryMutex.unlock();
 	}
 }
 
@@ -129,6 +136,7 @@ void openLevel(std::string fileName, PopUp* pop)
 		if (Game::object->gameStater == &Game::MenuState)
 		{
 			Game::object->gameStater = &Game::LevelerState;
+			setClose(pop);
 		}
 	});
 
@@ -205,6 +213,18 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 	currentButtonData.colour = p->initialButton.colour + (p->finalButton.colour - p->initialButton.colour) * td01;
 	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
 	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
+
+	float sizedt = currentButtonData.posSize.z / 60.0f;
+
+	s_menuButton bgView;
+	bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, sizedt);
+	bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
+	bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.0f);
+
+	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
+
+	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
 	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &currentButtonData);
@@ -425,18 +445,18 @@ void loadbgThread()
 		}
 	}
 
-	/*for (int i = 0; i < 30; i++)
+	for (int i = 0; i < 2025; i++)
 	{
-		std::string randStr;
+		std::string randStr = std::to_string(i);
 
-		for (int i = 0; i < 10; i++)
-		{
-			int randIndex = rand() % 26;
-			randStr += 'a' + randIndex;
-		}
+		//for (int i = 0; i < 10; i++)
+		//{
+		//	int randIndex = rand() % 26;
+		//	randStr += 'a' + randIndex;
+		//}
 
 		levelFiles.push_back(randStr);
-	}*/
+	}
 
 	levelSelects.resize(levelFiles.size());
 
@@ -589,6 +609,21 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
 	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
 
+	float sizedt = currentButtonData.posSize.z / 120.0f;
+
+	if (Game::object->gameStater == &Game::MenuState || Game::object->menu->buttons.size() == 0)
+	{
+		s_menuButton bgView;
+		bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, sizedt);
+		bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
+		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.0f);
+
+		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+	}
+
 	glm::vec2 pos = glm::vec2(currentButtonData.posSize);
 
 	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
@@ -614,7 +649,6 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	float maxScroll = std::max(levelSelects.size() * sizep1 - sizep1 * 7.0f, 0.0f);
 	float leftX = currentButtonData.posSize.x - (currentButtonData.posSize.z + currentButtonData.data.y) * 0.5f;
 	float rightX = currentButtonData.posSize.x + (currentButtonData.posSize.z + currentButtonData.data.y) * 0.5f;
-	float sizedt = currentButtonData.posSize.z / 120.0f;
 	s_menuButton buttonData;
 
 	if (maxScroll > 10.0f)
@@ -847,7 +881,18 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	float size01 = currentButtonData.posSize.w / finalSize;
 
-	glm::vec2 pos = glm::vec2(currentButtonData.posSize);
+	if (Game::object->gameStater == &Game::MenuState)
+	{
+		s_menuButton bgView;
+		bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, size01);
+		bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
+		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.0f);
+
+		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+	}
 
 	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &currentButtonData);
@@ -880,14 +925,16 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	topStart -= 6.0f;
 
+	bool changed = false;
+
 	int i = 0;
 	for (auto& lrd : renderTextDatas)
 	{
 		lrd.posScale.x = -lrd.posScale.w * 2.5f * size01;
-		lrd.posScale.y = topStart * size01;
+		lrd.posScale.y = topStart;
 		lrd.posScale.z = size01 * 5.0f;
 		lrd.color.w = size01;
-		topStart -= 7.0f;
+		topStart -= 7.0f * size01;
 
 		Leveler::object->ol->cd->renderDatas.push_back(lrd);
 
@@ -904,6 +951,7 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 		button.data = glm::vec4(2.5f, 3.0f, 1.1f, 0.0f) * size01;
 		button.posSize = glm::vec4(0.0f, lrd.posScale.y, 47.5f, 3.5f * size01);
 
+		
 		if (button.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && p->active)
 		{
 			button.colour.w = 1.0f;
@@ -911,6 +959,7 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 			if (ThinDrawer::object->wh->mouseData[2] == 2)
 			{
 				CharDrawer::selectedLanguageIndex = i;
+				changed = true;
 			}
 		}
 
@@ -922,6 +971,11 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
 		i++;
+	}
+
+	if (ThinDrawer::object->wh->mouseData[2] == 2 && !changed && size01 > 0.75f)
+	{
+		setClose(p, &currentButtonData);
 	}
 
 	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);

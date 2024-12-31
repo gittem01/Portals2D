@@ -16,7 +16,7 @@ typedef enum
 
 typedef struct Pop
 {
-	std::vector<std::vector<s_charRenderData>> texts;
+	std::vector<std::vector<int>> texts;
 	std::vector<std::string> secondaryPops;
 	glm::vec2 size;
 	int mask;
