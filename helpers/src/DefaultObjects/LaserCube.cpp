@@ -26,13 +26,16 @@ LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(porta
 
 void LaserCube::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
+    float sumImpulse = impulse->normalImpulses[0];
+    if (impulse->count > 1) sumImpulse += impulse->normalImpulses[1];
+
     DefaultObject::reportContact(contact, impulse, contactingBody, fix2);
 
-    if (wData->destrTime < -10.0f && impulse->normalImpulses[0] > 3.0 &&
+    if (wData->destrTime < -10.0f && sumImpulse > 3.0 &&
         (contactingBody->GetLinearVelocity().Length() > 1.0 || contactingBody->GetAngularVelocity() > 0.5) && ThinDrawer::object->gameTime - lastSoundTime > 0.2)
     {
         lastSoundTime = ThinDrawer::object->gameTime;
-        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], fmax(impulse->normalImpulses[0] * 0.03, 0.2));
+        ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], fmax(sumImpulse * 0.02, 0.075));
         Sounder::object->setSoundPosition(source, glm::vec3(wData->pbIndices[0]->body->GetPosition().x, wData->pbIndices[0]->body->GetPosition().y, 0.0));
     }
 }

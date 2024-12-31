@@ -53,6 +53,7 @@ Sounder::Sounder()
     loadSound("blueShootJ.wav");
     loadSound("orangeShootJ.wav");
     loadSound("portalFizzle.wav");
+    loadSound("leveler.wav");
 
     //playLoopingSound(src);
 
@@ -145,19 +146,19 @@ void Sounder::update()
 
     for (int i = 0; i < faderData.size(); i++)
     {
-		fader& f = faderData[i];
+		fader f = faderData[i];
 		double dt01 = (ThinDrawer::object->gameTime - f.startTime) / f.reachTime;
         float finalVolume = (f.initialVolume + (f.finalVolume - f.initialVolume) * dt01) * generalVolume * musicVolume;
 
         if (dt01 >= 1.0)
         {
-            faderData[i] = faderData.back();
-            faderData.pop_back();
-
             if (f.stopOnEnd)
             {
                 stopLoopingSound(f.source);
             }
+
+            faderData[i] = faderData.back();
+            faderData.pop_back();
 
             i--; continue;
         }
@@ -276,5 +277,14 @@ void Sounder::stopSound(ALuint source)
 void Sounder::stopLoopingSound(ALuint source)
 {
     alSourceStop(source);
-    loopingSources[--lastAvailableLoopingSource] = source;
+
+    for (int i = 0; i < lastAvailableLoopingSource; i++)
+    {
+        if (loopingSources[i] == source)
+        {
+            loopingSources[i] = loopingSources[--lastAvailableLoopingSource];
+            loopingSources[lastAvailableLoopingSource] = source;
+            return;
+        }
+    }
 }
