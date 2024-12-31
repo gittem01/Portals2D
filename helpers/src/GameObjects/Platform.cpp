@@ -18,6 +18,8 @@ glm::vec2 vertexMults[4][2] =
 
 static b2Vec2 fwdDirs[4] = { { 0, -1.0f }, { +1.0f, 0 }, { 0, +1.0f }, { -1.0f, 0 } };
 
+static float platformSpeeds[4] = { 1.0f, 2.0f, 4.0f, 8.0f };
+
 void fillWallGelData(b2Body* body, WALL_TYPE wType, int edgeIndex, int prevEdgeIndex)
 {
 	b2Fixture* fix = body->GetFixtureList();
@@ -174,6 +176,8 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
 	}
 
+	platformSpeed = platformSpeeds[std::clamp((int)objData->speed, 0, (int)std::size(platformSpeeds))];
+
 	startEnabled = objData->startActive;
 	if (startEnabled)
 	{
@@ -277,8 +281,8 @@ void Platform::toDeath()
 				oneTimeMovePlatforms.push_back(platform->platformIndex);
 			}
 
-			platform->body->SetLinearVelocity(platformSpeed * platform->fwdDir);
-			platform->dirMult = platformSpeed;
+			platform->body->SetLinearVelocity(platform->platformSpeed * platform->fwdDir);
+			platform->dirMult = platform->platformSpeed;
 		}
 		else
 		{
@@ -397,11 +401,11 @@ void Platform::perTickUpdate(float dt)
 
 		if (speed > 0.0f && posDiff + moveAmnt >= platform->limitDist)
 		{
-			platform->dirMult = -platformSpeed;
+			platform->dirMult = -platform->platformSpeed;
 		}
 		else if (speed < 0.0f && posDiff <= moveAmnt)
 		{
-			platform->dirMult = platformSpeed;
+			platform->dirMult = platform->platformSpeed;
 		}
 
 		body->SetLinearVelocity(platform->dirMult * platform->fwdDir);

@@ -1,0 +1,24 @@
+<0>
+1 m/s
+2 m/s
+4 m/s
+8 m/s
+<0>
+<1>
+1 m/s
+2 m/s
+4 m/s
+8 m/s
+<1>
+<linked_options>
+-
+-
+-
+-
+<linked_options>
+<signal_options>
+1
+1
+1
+1
+<signal_options>

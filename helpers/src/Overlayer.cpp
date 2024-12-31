@@ -99,7 +99,7 @@ Overlayer::Overlayer(Game* game)
     addItem("", "laserReceiverWall.png", LASER_REC_WALL, "base_connector", { 0.5, +0.41 }, 1, { 1.0, 1.0 }, 0.8, true, 0);
     addItem("", "sphere.png", SPHERE_CUBE, "remove", { 0.5, +0.01 }, 1, { 1, 1 }, 1.0, false, 0, true);
     addItem("", "turret.png", TURRET, "remove", { 0.5, +0.23 }, 1, { 1, 2 }, 1.6, false, 0, true);
-    addItem("", "clickButton.png", CLICK_BUTTON, "base_connector", { 0.5, +0.32 }, 2, { 1, 2 }, 1.4, true, 0, true);
+    addItem("", "clickButton.png", CLICK_BUTTON, "push_button", { 0.5, +0.32 }, 2, { 1, 2 }, 1.4, true, 0, true);
     addItem("", "cubeButton.png", CUBE_BUTTON, "base_connector", { 0.5, +0.35 }, 1, { 2, 1 }, 1.6, true, 0);
     addItem("", "circleButton.png", SPHERE_BUTTON, "base_connector", { 0.5, +0.37 }, 1, { 2, 1 }, 1.6, true, 0);
 
@@ -556,8 +556,7 @@ void Overlayer::popUpdate()
             }
         }
 
-        if (cp.x > popShowPos.x && cp.x < popShowPos.x + pop.size.x &&
-            cp.y < popShowPos.y && cp.y > popShowPos.y - pop.size.y)
+        if (cp.x > popShowPos.x && cp.x < popShowPos.x + pop.size.x && cp.y < popShowPos.y && cp.y > popShowPos.y - pop.size.y)
         {
             int intPosY = (int)((-cp.y + popShowPos.y) / 3.0);
             popHoverIndices[0] = intPosY;
@@ -598,8 +597,21 @@ void Overlayer::popUpdate()
                     s_objectDataGrid* objectData = (s_objectDataGrid*)rightClickItem.ptr;
                     if (objectData->objectType == PLATFORM)
                     {
-                        pop2.mask &= (0xF << 8) ^ -1ll;
-                        pop2.mask |= 1 << (objectData->platformType + 8);
+                        if (popHoverIndices[0] == 3)
+                        {
+                            pop2.mask &= (0xF << 8) ^ -1ll;
+                            pop2.mask |= 1 << (objectData->platformType + 8);
+                        }
+						else if (popHoverIndices[0] == 6)
+						{
+							pop2.mask &= (0xF << 8) ^ -1ll;
+							pop2.mask |= 1 << (objectData->speed + 8);
+						}
+                    }
+                    else if (objectData->objectType & CLICK_BUTTON && popHoverIndices[0] == 3)
+                    {
+                        pop2.mask &= (0x1F << 8) ^ -1ll;
+                        pop2.mask |= 1 << (objectData->speed + 8);
                     }
                 }
 

@@ -2189,6 +2189,8 @@ void Leveler::putPlatformOnClick()
 		inData->rotation = rotation;
 		inData->fullData.w = 0.0;
 		inData->extraScale.x = pSize;
+		inData->platformType = 0;
+		inData->speed = 1;
 
 		putPlatform(inData);
 
@@ -4359,7 +4361,7 @@ void Leveler::handleRightClickClick()
 
 					vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->funnelShader->uniformBuffers[0].memory);
 				}
-				else if (ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
+				else if (ol->popHoverIndices[0] == 3 && ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
 				{
 					if (objectData->platformType != ol->popHoverIndices[1])
 					{
@@ -4376,6 +4378,14 @@ void Leveler::handleRightClickClick()
 
 						vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory);
 					}
+				}
+				else if (ol->popHoverIndices[0] == 6 && ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
+				{
+					objectData->speed = ol->popHoverIndices[1];
+				}
+				else if (ol->popHoverIndices[0] == 3 && ol->popHoverIndices[1] > -1 && objectData->objectType == CLICK_BUTTON)
+				{
+					objectData->speed = ol->popHoverIndices[1];
 				}
 				
 				if (ol->popHoverIndices[0] == 2 && ol->popHoverIndices[1] > -1 && ol->popHoverIndices[1] < objectData->connections.size())

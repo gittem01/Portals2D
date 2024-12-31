@@ -1,0 +1,24 @@
+<0>
+Eşyayı Sil
+Eşyaya Bağla...
+Bağlantıları Kaldır
+Etkin Süre
+<0>
+<1>
+Delete Item
+Connect to...
+Remove Connections
+Active Duration
+<1>
+<linked_options>
+-
+-
+connection_select
+button_timer
+<linked_options>
+<signal_options>
+0
+0
+0
+0
+<signal_options>

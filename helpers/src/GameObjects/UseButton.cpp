@@ -15,9 +15,19 @@ b2Vec2 offsets[4] =
 						b2Vec2(ySize * 0.5f, 0.5f)
 };
 
+b2Vec2 vertexPositions[4] =
+{
+	b2Vec2(+0.1f, -ySize * 0.5f),
+	b2Vec2(+0.1f, +ySize * 0.5f),
+	b2Vec2(-0.1f, +ySize * 0.5f),
+	b2Vec2(-0.1f, -ySize * 0.5f),
+};
+
+float activeTimes[5] = { 2.0f, 4.0f, 8.0f, 16.0f, 3169140101.0f };
+
 UseButton::UseButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	disableAfter = 2.0f;
+	disableAfter = activeTimes[std::clamp((int)objData->speed, 0, (int)std::size(activeTimes))];
 
 	b2BodyDef bDef;
 	bDef.type = b2_staticBody;
@@ -26,18 +36,22 @@ UseButton::UseButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	b2Body* body = portalWorld->CreateBody(&bDef);
 
-	b2PolygonShape shape;
-	shape.SetAsBox(0.1f, ySize * 0.5f);
-
-	b2Fixture* fix = body->CreateFixture(&shape, 0.0f);
-	//fix->SetSensor(true);
-
 	fixtureData* fData = new fixtureData();
 	fData->type = F_USE_BUTTON;
 	fData->data = (void*)this;
 	fData->extraData = nullptr;
 
-	fix->GetUserData().pointer = (uintptr_t)fData;
+	for (int i = 0; i < 3; i++)
+	{
+		b2Vec2 pos = vertexPositions[i];
+		b2Vec2 pos2 = vertexPositions[i + 1];
+		b2EdgeShape shape;
+		shape.SetTwoSided(pos, pos2);
+		b2Fixture* fix = body->CreateFixture(&shape, 0.0f);
+		//fix->SetSensor(true);
+
+		fix->GetUserData().pointer = (uintptr_t)fData;
+	}
 }
 
 void UseButton::enable()

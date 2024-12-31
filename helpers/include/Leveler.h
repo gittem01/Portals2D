@@ -194,6 +194,7 @@ typedef struct ObjectDataGrid
 	glm::i16vec2 extraScale;
 	int rotation;
 	char platformType;
+	char speed;
 	bool startActive = true;
 	bool startPolarized;
 	bool loop;

@@ -206,16 +206,15 @@ void Menu::initSettings(glm::vec4 clr)
 			b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.3;
 			optionsButton->dependentButtons.push_back(b);
 
-			glm::vec2 pos = glm::vec2(b->data.posSize.x, b->data.posSize.y + 0.75f);
-			b = addButton(pos, glm::vec2(0.0f, 5.0f), allTexts[texIndex++], glm::vec4(0.0f));
+			glm::vec2 pos = glm::vec2(b->data.posSize.x, b->data.posSize.y + 0.5f);
+			b = addButton(pos, glm::vec2(0.0f, 4.0f), allTexts[texIndex++], glm::vec4(0.0f));
 			b->alphaMult = 0.0; b->baseAlpha = 0.0f;
 			optionsButton->dependentButtons.push_back(b);
 
 			const char* text = SDL_GetScancodeName(scanCodes[y * 3 + x]);
 
 			pos.y -= 5.5f;
-			b = addButton(pos, glm::vec2(bSize * 0.8f, 4.0f), "", glm::vec4(1.0f), glm::vec2(1.5f));
-			addTextToButton(*b, text, 1.5f);
+			b = addButton(pos, glm::vec2(bSize * 0.8f, 4.0f), text, glm::vec4(1.0f), glm::vec2(1.5f));
 			b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.3;
 			b->bools.set(INTERACTABLE);
 			optionsButton->dependentButtons.push_back(b);

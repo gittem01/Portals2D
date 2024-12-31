@@ -5,6 +5,7 @@ Bağlantıları Kaldır
 Platform Tipi
 Aktif Başlat
 Döngü Modu
+Platform Hızı
 <0>
 <1>
 Delete Item
@@ -13,6 +14,7 @@ Remove Connections
 Platform Type
 Start Active
 Loop Mode
+Platform Speed
 <1>
 <linked_options>
 -
@@ -21,6 +23,7 @@ connection_select
 platform_type
 -
 -
+platform_speed
 <linked_options>
 <signal_options>
 0
@@ -29,4 +32,5 @@ platform_type
 0
 1
 1
+0
 <signal_options>

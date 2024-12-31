@@ -7,8 +7,6 @@
 #include "PlatformRectangle.h"
 #include "GameObjects/Receiver.h"
 
-const float platformSpeed = 2.0f;
-
 class Platform : public Receiver
 {
 public:
@@ -23,6 +21,7 @@ public:
 	b2Vec2 fwdDir;
 	float dirMult;
 	float limitDist;
+	float platformSpeed;
 
 	int platformRenderOffset;
 	int edgeRenderIndex;

@@ -3,7 +3,10 @@ activated_connector
 activated_connector_funnel
 platform
 platform_type
+platform_speed
 remove
 none
 polarization
 leveler_options
+push_button
+button_timer
