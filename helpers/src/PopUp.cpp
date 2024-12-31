@@ -25,6 +25,9 @@ void PopUp::construct()
 	renderFunctions["loadRender"] = &PopUp::loadRender;
 	initFunctions["loadRender"] = &PopUp::initLoad;
 
+	renderFunctions["languageRender"] = &PopUp::languageRender;
+	initFunctions["languageRender"] = &PopUp::initLanguage;
+
 	sliderHitSound = Sounder::object->loadSound("sliderHit.wav");
 }
 
@@ -794,6 +797,132 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	lrd.posScale = glm::vec4(buttonData.posSize.x - x * 1.25f * sizedt, buttonData.posSize.y, 2.5f * sizedt, 0.0f);
 
 	Leveler::object->ol->cd->renderDatas.push_back(lrd);
+
+	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
+}
+
+static std::vector<s_lineRenderData> renderTextDatas;
+static float finalSize = 70.0f;
+
+void PopUp::initLanguage()
+{
+	finalSize = std::min(Leveler::object->ol->cd->allLanguages.size() * 7.0f + 3.0f, 70.0f);
+
+	finalButton = {
+		glm::vec4(0.0f, 0.0f, 50.0f, finalSize), // posSize
+		glm::vec4(0.04, 0.04, 0.08, 1.0), // clr
+		glm::vec4(5.0f, 5.5f, 1.1f, 0.0f) }; // data
+
+	renderTextDatas.clear();
+
+	for (auto& str : Leveler::object->ol->cd->allLanguages)
+	{
+		s_lineRenderData lrd;
+		lrd.charDatas = Leveler::object->ol->cd->getRenderData(str, Leveler::object->ol->popHeight * 2, lrd.posScale.w);
+		lrd.color = glm::vec4(1.0f);
+		lrd.posScale = glm::vec4(-lrd.posScale.w * 2.5f, 0.0f, 5.0f, lrd.posScale.w);
+		renderTextDatas.push_back(lrd);
+	}
+}
+
+void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
+{
+	ThinDrawer* td = ThinDrawer::object;
+	PopUp* p = (PopUp*)ptr;
+
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		td->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+	float td01 = std::min((td->gameTime - p->startTime) / p->animationTime, 1.0);
+	td01 = (sin(td01 * glm::pi<float>() - glm::pi<float>() * 0.5f) + 1.0f) * 0.5f;
+
+	s_menuButton currentButtonData;
+	currentButtonData.colour = p->initialButton.colour + (p->finalButton.colour - p->initialButton.colour) * td01;
+	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
+	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
+
+	float size01 = currentButtonData.posSize.w / finalSize;
+
+	glm::vec2 pos = glm::vec2(currentButtonData.posSize);
+
+	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &currentButtonData);
+
+	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+	if (td01 > 0.999f && p->closeOnEnd)
+	{
+		Game::object->singleTaskRegistry.push_back([p]
+		{
+			ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+		});
+	}
+
+	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
+	{
+		setClose(p, &currentButtonData);
+	}
+
+	std::string topText = Game::object->menu->buttonTexts["<langset_" + std::to_string(Leveler::object->ol->cd->selectedLanguageIndex) + ">"][0];
+
+	float topStart = currentButtonData.posSize.y + currentButtonData.posSize.w * 0.5f;
+
+	s_lineRenderData lrd;
+	lrd.charDatas = Leveler::object->ol->cd->getRenderData(topText, Leveler::object->ol->popHeight, lrd.posScale.w);
+	lrd.color = glm::vec4(0.3f, 0.0f, 0.0f, size01);
+	lrd.posScale = glm::vec4(-lrd.posScale.w * 1.25f * size01, topStart, 2.5f * size01, 0.0f);
+
+	Leveler::object->ol->cd->renderDatas.push_back(lrd);
+
+	topStart -= 6.0f;
+
+	int i = 0;
+	for (auto& lrd : renderTextDatas)
+	{
+		lrd.posScale.x = -lrd.posScale.w * 2.5f * size01;
+		lrd.posScale.y = topStart * size01;
+		lrd.posScale.z = size01 * 5.0f;
+		lrd.color.w = size01;
+		topStart -= 7.0f;
+
+		Leveler::object->ol->cd->renderDatas.push_back(lrd);
+
+		s_menuButton button;
+		if (i == Leveler::object->ol->cd->selectedLanguageIndex)
+		{
+			button.colour = glm::vec4(0.7f, 0.0f, 0.2f, 0.5f);
+		}
+		else
+		{
+			button.colour = glm::vec4(0.7f, 0.3f, 0.05f, 0.5f);
+		}
+
+		button.data = glm::vec4(2.5f, 3.0f, 1.1f, 0.0f) * size01;
+		button.posSize = glm::vec4(0.0f, lrd.posScale.y, 47.5f, 3.5f * size01);
+
+		if (button.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && p->active)
+		{
+			button.colour.w = 1.0f;
+
+			if (ThinDrawer::object->wh->mouseData[2] == 2)
+			{
+				CharDrawer::selectedLanguageIndex = i;
+			}
+		}
+
+		button.colour.w *= size01;
+
+		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &button);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+		i++;
+	}
 
 	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
 }

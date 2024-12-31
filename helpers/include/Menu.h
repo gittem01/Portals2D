@@ -82,6 +82,7 @@ public:
 	Button* borderlessButton;
 	Button* vsyncButton;
 	Button* maxFramerateButton;
+	Button* languageButton;
 
 	Menu();
 

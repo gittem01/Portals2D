@@ -106,6 +106,7 @@ void Game::loadGameData()
         WindowHandler::windowCreateFlags = arr[10];
         Game::limitFramerate = arr[11];
 		SwapChain::enableVsync = arr[12];
+		CharDrawer::selectedLanguageIndex = arr[13];
 	}
 	else
 	{
@@ -146,6 +147,7 @@ void Game::saveGameData()
             arr[10] = WindowHandler::windowCreateFlags;
             arr[11] = Game::limitFramerate;
 			arr[12] = SwapChain::enableVsync;
+			arr[13] = CharDrawer::selectedLanguageIndex;
 
 			file.write((char*)arr, sizeof(arr));
 			file.close();

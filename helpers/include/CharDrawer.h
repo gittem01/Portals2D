@@ -25,17 +25,18 @@ typedef struct LineRenderData
 class CharDrawer
 {
 public:
+	static int selectedLanguageIndex;
+	
 	class ThinDrawer* thinDrawer;
 	FontShader* fontShader;
 	std::vector<unsigned char> fontData;
 	stbtt_fontinfo fontInfo;
-	int selectedLanguageIndex;
 	int creationHeight;
 	std::string languageName;
+	std::vector<std::string> allLanguages;
 
 	std::vector<s_lineRenderData> renderDatas;
 	std::map<std::pair<int, int>, s_charRenderData> codepointMap;
-	std::map<int, std::string> polarizationString;
 
 	CharDrawer(ThinDrawer* thinDrawer);
 

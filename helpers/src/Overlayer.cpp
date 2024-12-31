@@ -122,6 +122,16 @@ Overlayer::Overlayer(Game* game)
         items[i + 4].name = res[s][cd->selectedLanguageIndex];
     }
 
+    auto polarizations = IOHelper::loadLines("pops/polarization_language.txt");
+    auto polarizationMap = IOHelper::mapVector(polarizations);
+
+    for (auto& p : polarizationMap)
+    {
+        if (p.first.size() < 2 || p.first[1] < '0' || p.first[1] > '9') continue;
+        std::string subString = p.first.substr(1, p.first.size() - 2);
+        polarizationString[std::stoi(subString)] = p.second[0];
+    }
+
     s_pop& levelerOptions = pops["leveler_options"];
     const float by = 2.0f;
 
@@ -500,7 +510,7 @@ void Overlayer::popUpdate()
                 }
 
                 const s_gridItemData& gid = items[itemIndex];
-                connectionNames.push_back(gid.name + (conn->changePolarization ? (" - " + cd->polarizationString[cd->selectedLanguageIndex]) : ""));
+                connectionNames.push_back(gid.name + (conn->changePolarization ? (" - " + polarizationString[cd->selectedLanguageIndex]) : ""));
                 empties.push_back("");
             }
 
@@ -787,7 +797,7 @@ void Overlayer::update()
     }
 
     if ((leftX + itemRatio * xSize + 1.5 < p.x && !wh->keyData[SDL_SCANCODE_TAB]) || game->leveler->clickStart[0] != -100000 ||
-        game->leveler->consqClickVec.size() > 0 || popShowName != "")
+        game->leveler->consqClickVec.size() > 0 || popShowName != "" || wh->mouseData[3] != 0.0)
     {
         if (itemDir == 1)
         {

@@ -200,8 +200,8 @@ void Menu::initSettings(glm::vec4 clr)
 	{
 		for (int x = 0; x < 3; x++)
 		{
-			Button* b = addButton(glm::vec2(-25.0f + bSize * 0.5f + x * (bSize + 2.0f), -y * 14.0f - 18.0f),
-				glm::vec2(bSize - 0.75f, 11.5f), "", clrs[y * 3 + x], glm::vec2(1.0f, 1.5f));
+			Button* b = addButton(glm::vec2(-25.0f + bSize * 0.5f + x * (bSize + 2.0f), -y * 12.5f - 18.0f),
+				glm::vec2(bSize - 0.75f, 10.0f), "", clrs[y * 3 + x], glm::vec2(1.0f, 1.5f));
 			b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.3;
 			optionsButton->dependentButtons.push_back(b);
 
@@ -213,7 +213,8 @@ void Menu::initSettings(glm::vec4 clr)
 			const char* text = SDL_GetScancodeName(scanCodes[y * 3 + x]);
 
 			pos.y -= 5.5f;
-			b = addButton(pos, glm::vec2(bSize * 0.8f, 5.75f), text, glm::vec4(1.0f), glm::vec2(1.5f));
+			b = addButton(pos, glm::vec2(bSize * 0.8f, 4.0f), "", glm::vec4(1.0f), glm::vec2(1.5f));
+			addTextToButton(*b, text, 1.5f);
 			b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.3;
 			b->bools.set(INTERACTABLE);
 			optionsButton->dependentButtons.push_back(b);
@@ -224,23 +225,23 @@ void Menu::initSettings(glm::vec4 clr)
 
 	for (int i = 0; i < 3; i++)
 	{
-		b = addButton(glm::vec2(0.0f, -46.0f - i * 6.0f),
+		b = addButton(glm::vec2(0.0f, -43.0f - i * 6.0f),
 			glm::vec2(50.0f - 0.75f, 4.0f), allTexts[texIndex++], glm::vec4(0.5f, 0.0f, 0.5f, 1.0f), glm::vec2(1.0f, 1.5f));
 		b->bools.set(TEXT_LEFT);
 		b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.6;
 		optionsButton->dependentButtons.push_back(b);
 
-		b = addButton(glm::vec2(21.5f, -46.0f - i * 6.0f - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(0.0f), glm::vec2(4.0f));
+		b = addButton(glm::vec2(21.5f, -43.0f - i * 6.0f - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(0.0f), glm::vec2(4.0f));
 		b->bools.set(INTERACTABLE);
 		b->alphaMult = 0.0; b->baseAlpha = 1.0f;
 		optionsButton->dependentButtons.push_back(b);
 
-		b = addButton(glm::vec2(21.5f, -46.0f - i * 6.0f - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), glm::vec2(2.5f, 3.5f));
+		b = addButton(glm::vec2(21.5f, -43.0f - i * 6.0f - 2.0f), glm::vec2(0.0f, 0.0f), "", glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), glm::vec2(2.5f, 3.5f));
 		b->alphaMult = 0.0; b->baseAlpha = 0.6f;
 		optionsButton->dependentButtons.push_back(b);
 	}
 
-	b = addButton(glm::vec2(0.0f, -46.0f - 3 * 6.0f),
+	b = addButton(glm::vec2(0.0f, -43.0f - 3 * 6.0f),
 		glm::vec2(50.0f - 0.75f, 4.0f), allTexts[texIndex++], glm::vec4(0.5f, 0.0f, 0.5f, 1.0f), glm::vec2(1.0f, 1.5f));
 	b->bools.set(TEXT_LEFT);
 	b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.6;
@@ -248,7 +249,7 @@ void Menu::initSettings(glm::vec4 clr)
 
 	std::string frameString = Game::limitFramerate < 1001 ? std::to_string(Game::limitFramerate) : INFINITY_CHAR;
 
-	b = addButton(glm::vec2(19.0f, -46.0f - 3 * 6.0f - 1.0f), glm::vec2(8.0f, 2.0f), frameString, glm::vec4(0.0f), glm::vec2(2.0f, 2.5f));
+	b = addButton(glm::vec2(19.0f, -43.0f - 3 * 6.0f - 1.0f), glm::vec2(8.0f, 2.0f), frameString, glm::vec4(0.0f), glm::vec2(2.0f, 2.5f));
 	b->bools.set(INTERACTABLE);
 	b->alphaMult = 0.0; b->baseAlpha = 1.0f;
 	addTextToButton(*b, frameString, Game::limitFramerate == 1001 ? 5.0f : 2.0f);
@@ -265,8 +266,15 @@ void Menu::initSettings(glm::vec4 clr)
 	(borderlessButton + 1)->baseAlpha = (flags & SDL_WINDOW_BORDERLESS) ? 1.0f : 0.0f;
 	(vsyncButton + 1)->baseAlpha = td->swapChain->enableVsync ? 1.0f : 0.0f;
 
-	optionsButton->openYMult = 70.0f;
-	optionsButton->openYAdder = 0.1f;
+	b = addButton(glm::vec2(0.0f, -43.0f - 4 * 6.0f),
+		glm::vec2(50.0f - 0.75f, 4.0f), allTexts[texIndex++], glm::vec4(0.0f, 0.5f, 0.5f, 1.0f), glm::vec2(1.0f, 1.5f));
+	b->bools.set(INTERACTABLE);
+	b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.6;
+	languageButton = b;
+	optionsButton->dependentButtons.push_back(b);
+
+	optionsButton->openYMult = 73.0f;
+	optionsButton->openYAdder = 0.05f;
 }
 
 Button* Menu::initWithName(std::string name, glm::vec4 clr)
@@ -443,7 +451,7 @@ void Menu::update()
 		if (button.text.charDatas.size() > 0)
 			ol->cd->renderDatas.push_back(button.text);
 
-		if (button.bools[INTERACTABLE] && !Game::object->pop.active)
+		if (button.bools[INTERACTABLE] && !Game::object->pop.active && clickButton != maxFramerateButton)
 		{
 			if (mouseTimeDiff < 0.1 && diffLen > 0.5f)
 			{
@@ -641,6 +649,12 @@ void Menu::buttonPressed(Button* button)
 	if (button >= qButton && button <= qButton + 15)
 	{
 		keyAssignmentButton = button;
+		return;
+	}
+
+	if (button == languageButton)
+	{
+		Game::object->pop.init(languageButton->data, "languageRender", 0.5);
 		return;
 	}
 

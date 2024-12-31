@@ -5,6 +5,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vkInit.h>
 
+int CharDrawer::selectedLanguageIndex = 0;
+
 std::vector<uint32_t> utf8ToUnicode(const std::string& utf8String)
 {
 	std::vector<uint32_t> codePoints;
@@ -66,20 +68,17 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 {
 	auto languages = IOHelper::loadLines("languages.txt");
 	auto languageMap = IOHelper::mapVector(languages);
-	selectedLanguageIndex = std::stoi(languageMap["<selected_language_index>"][0]);
 	std::string s = "<" + std::to_string(selectedLanguageIndex) + ">";
-	
-	auto polarizations = IOHelper::loadLines("pops/polarization_language.txt");
-	auto polarizationMap = IOHelper::mapVector(polarizations);
-
-	for (auto& p : polarizationMap)
-	{
-		if (p.first.size() < 2 || p.first[1] < '0' || p.first[1] > '9') continue;
-		std::string subString = p.first.substr(1, p.first.size() - 2);
-		polarizationString[std::stoi(subString)] = p.second[0];
-	}
 
 	languageName = languageMap[s][0];
+
+	std::string s2 = "<local_" + std::to_string(selectedLanguageIndex) + ">";
+
+	for (auto str : languageMap[s2])
+	{
+		allLanguages.push_back(str);
+	}
+
 	loadFontFile(languageMap[s][1], fontData, fontInfo);
 
 	this->thinDrawer = thinDrawer;

@@ -45,7 +45,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
 
     // too slow
     // must be done once in the game initialisation but it is not possible for now
-    ThinDrawer::object->debug_addPortalBody(portalBody);
+    //ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
 void Gel::generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex)
