@@ -38,6 +38,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
 	looping = objData->loop;
 	platformIndex = numPlatforms - 1;
+	platformSpeed = platformSpeeds[std::clamp((int)objData->speed, 0, (int)std::size(platformSpeeds))];
 	setMovementData(objData);
 
 	glm::vec2 halfSize = glm::vec2(size) / 2.0f;
@@ -175,8 +176,6 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		memcpy(platformUbo2, &platformData, sizeof(s_platformRectUbo));
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
 	}
-
-	platformSpeed = platformSpeeds[std::clamp((int)objData->speed, 0, (int)std::size(platformSpeeds))];
 
 	startEnabled = objData->startActive;
 	if (startEnabled)
