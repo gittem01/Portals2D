@@ -471,7 +471,11 @@ void loadbgThread()
 			loadingString += ".";
 		}
 		
+		Leveler::object->ol->cd->loadMutex.lock();
+
 		loadRenderData.charDatas = Leveler::object->ol->cd->getRenderData(loadingString, Leveler::object->ol->popHeight * 2, loadRenderData.posScale.z);
+
+		Leveler::object->ol->cd->loadMutex.unlock();
 
 		uint32_t renderBegin = (int)(p->scrollAmount / (size.y + 1.0f));
 		uint32_t renderEnd = std::min(renderBegin + 10, (uint32_t)levelSelects.size());
@@ -687,10 +691,10 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 
 			const float top01 = std::clamp((maxY - mousePos.y - p->clickOffset) / diff, 0.0f, 1.0f);
 			float newScroll = top01 * maxScroll;
-			scrollSpeed = (newScroll - p->scrollAmount) * 100.0f * td->deltaTime;
+			scrollSpeed = (newScroll - p->scrollAmount) * 100.0f * td->deltaTime * 0.25f + 0.75f * scrollSpeed;
 			p->scrollAmount = newScroll;
 		}
-		else if (abs(scrollSpeed) > 0.01f)
+		else if (abs(scrollSpeed) > 0.0001f)
 		{
 			float addScroll = scrollSpeed * td->deltaTime * 5.0f;
 			scrollSpeed -= addScroll;

@@ -329,6 +329,8 @@ std::vector<int> CharDrawer::getRenderData(const std::string& text, int targetHe
 
 void CharDrawer::recreate()
 {
+	loadMutex.lock();
+
 	codepointMap.clear();
 	auto newAllCharDatas = std::move(allCharDatas);
 
@@ -348,6 +350,10 @@ void CharDrawer::recreate()
 		float x;
 		getRenderData("", charData.targetHeight, x, tex, charData.codePoint);
 	}
+
+	assert(newAllCharDatas.size() == allCharDatas.size());
+
+	loadMutex.unlock();
 }
 
 bool CharDrawer::loadFontFile(const std::string& filename, std::vector<unsigned char>& fontData, stbtt_fontinfo& fontInfo)

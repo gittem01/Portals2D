@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <mutex>
 
 #include <stb_truetype.h>
 #include <FontShader.h>
@@ -40,6 +41,7 @@ public:
 	std::vector<s_lineRenderData> renderDatas;
 	std::vector<s_charRenderData> allCharDatas;
 	std::map<std::pair<int, int>, int> codepointMap;
+	std::mutex loadMutex;
 
 	CharDrawer(ThinDrawer* thinDrawer);
 
