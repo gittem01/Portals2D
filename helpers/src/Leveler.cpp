@@ -3881,7 +3881,7 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
 		for (int x = leftX; x <= rightX; x++)
 		{
 			const s_levelGridData& squareData = getSquare(x, y);
-			if ((squareData.objectType & (WHITE_WALL | BLACK_WALL)) == 0)
+			if ((squareData.objectType & GRID_DRAWS) == 0)
 			{
 				continue;
 			}
@@ -3896,7 +3896,12 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
 					sideData |= SIDE_ENABLE | (DOWN_LINE << j);
 					continue;
 				}
-				if (!(getSquare(xPos, yPos).objectType & (WHITE_WALL | BLACK_WALL)))
+
+				if ((!(getSquare(xPos, yPos).objectType & (WHITE_WALL | BLACK_WALL)) &&
+					squareData.objectType & (WHITE_WALL | BLACK_WALL))
+					||
+					(!(getSquare(xPos, yPos).objectType & squareData.objectType) &&
+						squareData.objectType & (FENCE_WALL | GLASS_WALL)))
 				{
 					sideData |= SIDE_ENABLE | (DOWN_LINE << j);
 				}
@@ -3922,6 +3927,14 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
 					squareData.data.offset, sizeof(s_wallUbo_w), 0, (void**)&wData);
 				wData->sideData.x = sideData;
 				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory);
+			}
+			else
+			{
+				s_wallUbo_l* lData;
+				vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory,
+					squareData.data.offset, sizeof(s_wallUbo_l), 0, (void**)&lData);
+				lData->sideData.x = sideData;
+				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory);
 			}
 		}
 	}
@@ -4043,7 +4056,7 @@ void Leveler::addGridSquare_F(short x, short y)
 	wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
 	wallUbo->colour = glm::vec4(0.1, 0.1, 0.1, 1.0);
 	wallUbo->bgColour = glm::vec4(0.1, 0.1, 0.1, 0.0);
-	wallUbo->data = glm::vec4(2.0, 0.4, 1.0, 0.5);
+	wallUbo->data = glm::vec4(2.0, 0.3, 1.0, 0.5);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory);
 
 	const s_levelGridData& currentGridData = getSquare(x, y);

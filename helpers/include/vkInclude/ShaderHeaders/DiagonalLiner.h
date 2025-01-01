@@ -8,6 +8,7 @@ typedef struct
     glm::vec4 colour;
     glm::vec4 bgColour;
     glm::vec4 data; // gridSize, lineThick, camMult, gridRatio
+    glm::ivec4 sideData;
 } s_wallUbo_l;
 
 class DiagonalLiner : public WallBase

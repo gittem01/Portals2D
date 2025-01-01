@@ -20,18 +20,26 @@ typedef union GridData
 
 typedef enum SideData
 {
-	SIDE_DISABLE = 0x0,
-	SIDE_ENABLE = 0x1 << 0,
-	DOWN_LINE = 0x1 << 1,
-	RIGHT_LINE = 0x1 << 2,
-	UP_LINE = 0x1 << 3,
-	LEFT_LINE = 0x1 << 4,
-	LD_POINT = 0x1 << 5,
-	RD_POINT = 0x1 << 6,
-	RU_POINT = 0x1 << 7,
-	LU_POINT = 0x1 << 8,
-	ALL_SIDES = 0x1FF,
+	SIDE_DISABLE =	0x0,
+	SIDE_ENABLE =	0x1 << 0,
+	DOWN_LINE =		0x1 << 1,
+	RIGHT_LINE =	0x1 << 2,
+	UP_LINE =		0x1 << 3,
+	LEFT_LINE =		0x1 << 4,
+	LD_POINT =		0x1 << 5,
+	RD_POINT =		0x1 << 6,
+	RU_POINT =		0x1 << 7,
+	LU_POINT =		0x1 << 8,
+	ALL_SIDES =		0x1FF,
 } sideData;
+
+typedef enum SideData_FG
+{
+	BOTTOM_LINE_FG =	0x1 << 0,
+	RIGHT_LINE_FG =		0x1 << 1,
+	UP_LINE_FG =		0x1 << 2,
+	LEFT_LINE_FG =		0x1 << 3,
+} sideData_fg;
 
 typedef enum LevelObject : long long
 {

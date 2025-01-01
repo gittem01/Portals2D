@@ -691,12 +691,13 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 
 			const float top01 = std::clamp((maxY - mousePos.y - p->clickOffset) / diff, 0.0f, 1.0f);
 			float newScroll = top01 * maxScroll;
-			scrollSpeed = (newScroll - p->scrollAmount) * 100.0f * td->deltaTime * 0.25f + 0.75f * scrollSpeed;
+
+			scrollSpeed = (newScroll - p->scrollAmount) * 0.2f + scrollSpeed * 0.8f;
 			p->scrollAmount = newScroll;
 		}
 		else if (abs(scrollSpeed) > 0.0001f)
 		{
-			float addScroll = scrollSpeed * td->deltaTime * 5.0f;
+			float addScroll = scrollSpeed * td->deltaTime * 6.0f;
 			scrollSpeed -= addScroll;
 			p->scrollAmount += scrollSpeed;
 

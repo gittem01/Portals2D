@@ -8,6 +8,7 @@ layout (location = 2) flat out vec4 lineColour;
 layout (location = 3) flat out vec4 bgColour;
 layout (location = 4) flat out vec4 sizeLtRat;
 layout (location = 5) flat out float gridSize;
+layout (location = 6) flat out int sideData;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -22,6 +23,7 @@ struct storageData
     vec4 colour;
     vec4 bgColour;
     vec4 data; // gridSize, lineThick, camMult, gridRatio
+    ivec4 sideData; // side, unused, unused, unused
 };
 
 layout (std140, set = 1, binding = 0) readonly buffer UBO
@@ -40,6 +42,7 @@ void main()
     bgColour = data.bgColour;
     sizeLtRat = vec4(data.posSize.zw, data.data.y, data.data.w);
     gridSize = data.data.x;
+    sideData = data.sideData.x;
 
     mat4 newCameraMatrix = sharedUboData.cameraMatrix;
 

@@ -7,13 +7,11 @@
 
 void DiagonalLiner::prepareUniforms()
 {
-    // offset is not used no need for alignment
-    int alignedSizeFS = sizeof(s_wallUbo_b);
     uniformBuffers.resize(1);
 
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(alignedSizeFS * 1, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_wallUbo_l) * 1, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 }
 
 void DiagonalLiner::testFill()
