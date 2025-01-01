@@ -951,9 +951,11 @@ void LevelerTestCase::perFrameUpdate()
             menuUpdate = true;
 
             td->eraseFromRenderFunctions(td->lateDrawFuncs, (void*)Leveler::object->ol->cd);
+            td->eraseFromMaperFunctions(td->memMapFuncs, this);
 
             g->menu->renderInit(false);
 			td->lateDrawFuncs.push_back({ CharDrawer::draw, Leveler::object->ol->cd });
+            td->memMapFuncs.push_back({ Overlayer::camMap, this });
 
             g->menu->initDefaults();
 
@@ -1000,6 +1002,7 @@ stopMenuUpdate:
     menuUpdate = false;
     g->dtMult = 1.0;
     td->eraseFromRenderFunctions(td->lateDrawFuncs, (void*)Leveler::object->ol->cd);
+    td->memMapFuncs.push_back({ Overlayer::camMap, this });
     g->menu->renderDestroy();
     g->menu->buttons.clear();
 }
