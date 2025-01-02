@@ -167,7 +167,10 @@ void CharDrawer::draw(VkCommandBuffer cmdBuff, void* ptr)
 		}
 	}
 
-	cd->renderDatas.clear();
+	if (cd->clear)
+	{
+		cd->renderDatas.clear();
+	}
 }
 
 float CharDrawer::calcSize(std::vector<int> rd)

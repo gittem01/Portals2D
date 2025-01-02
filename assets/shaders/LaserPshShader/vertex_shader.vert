@@ -7,7 +7,6 @@ layout (location = 0) in vec2 vertex;
 layout (location = 0) out vec2 localPos;
 layout (location = 1) out vec2 worldPos;
 layout (location = 2) flat out vec2 size;
-layout (location = 3) flat out int instanceIndex;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {

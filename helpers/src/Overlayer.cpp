@@ -137,11 +137,13 @@ Overlayer::Overlayer(Game* game)
 
 	topLeftButtons[0].colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
 	topLeftButtons[0].posSize = glm::vec4(0.0f, 0.0f, xSize * 0.45f, by);
-    topLeftButtons[0].data = glm::vec4(xSize * 0.03f, xSize * 0.04f, 1.0f, 0.0f);
+    topLeftButtons[0].data = glm::vec4(xSize * 0.03f, xSize * 0.04f, 1.0f, 0.5f);
+    topLeftHoverTimes[0] = 0.0;
 
     topLeftButtons[1].colour = glm::vec4(1.0, 1.0, 1.0, 1.0);
     topLeftButtons[1].posSize = glm::vec4(0.0f, 0.0f, xSize * 0.45f, by);
-    topLeftButtons[1].data = glm::vec4(xSize * 0.03f, xSize * 0.04f, 1.0f, 0.0f);
+    topLeftButtons[1].data = glm::vec4(xSize * 0.03f, xSize * 0.04f, 1.0f, 0.5f);
+    topLeftHoverTimes[1] = 0.0;
 }
 
 void Overlayer::pushRenderFunctions()
@@ -367,11 +369,6 @@ void Overlayer::draw(VkCommandBuffer cmdBuff, void* ptr)
         vkCmdPushConstants(cmdBuff, ol->as->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_arrowData), (void*)&aData);
 
         vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, 1, 0, 0);
-    }
-
-    if (ol->overlayOverlay == LEVELER_MENU)
-    {
-		ol->game->menu->draw(cmdBuff, ol->game->menu);
     }
 }
 
@@ -706,11 +703,18 @@ void Overlayer::topLeftUpdate()
             game->menu->initWithName("back", glm::vec4(1.0, 0.5, 0.0, 0.5f));
             game->menu->initSettings(glm::vec4(1.0, 1.0, 1.0, 0.4));
             game->menu->initWithName("to_menu", glm::vec4(1.0f, 1.0f, 1.0f, 0.4f));
+
+            game->menu->renderDestroy();
+
+			thinDrawer->lateDrawFuncs.push_back({ Menu::draw, game->menu });
+            
+            game->menu->setNewState(true);
         }
         else if (!(overlayOverlay == LEVELER_MENU && game->pop.active))
         {
 			overlayOverlay = LEVELER;
-            game->menu->buttons.clear();
+
+            game->menu->setNewState(false);
         }
     }
 
@@ -721,6 +725,8 @@ void Overlayer::topLeftUpdate()
             if (game->menu->activeButton->strText == "back")
             {
 			    overlayOverlay = LEVELER;
+
+                game->menu->setNewState(false);
             }
             else if (game->menu->activeButton->strText == "to_menu")
             {
@@ -752,7 +758,7 @@ void Overlayer::topLeftUpdate()
         if (topLeftButtons[i].hoverCheck(cam.getMouseCoords()) && hoverIndex < 0 && overlayOverlay == LEVELER)
         {
             topLeftButtons[i].colour = buttonClr * 0.75f;
-            topLeftButtons[i].data.w = thinDrawer->gameTime;
+            topLeftHoverTimes[i] = thinDrawer->gameTime;
             hoverIndex = i;
         }
         else
@@ -760,7 +766,7 @@ void Overlayer::topLeftUpdate()
             topLeftButtons[i].colour = buttonClr;
         }
 
-        topLeftButtons[i].data.y = std::max(1.0f - (float)(thinDrawer->gameTime - topLeftButtons[i].data.w) * 4.0f, xSize * 0.05f);
+        topLeftButtons[i].data.y = std::max(1.0f - (float)(thinDrawer->gameTime - topLeftHoverTimes[i]) * 4.0f, xSize * 0.05f);
 
         if (overlayOverlay - LOAD_LEVEL == i)
             continue;
@@ -776,7 +782,7 @@ void Overlayer::topLeftUpdate()
         s_menuButton finalButton;
 		finalButton.colour = glm::vec4(0.05, 0.05, 0.05, 1.0);
 		finalButton.posSize = glm::vec4(0.0f, 0.0f, 80.0f, 10.0f);
-		finalButton.data = glm::vec4(5.0f, 5.25f, 1.1f, 0.0f);
+		finalButton.data = glm::vec4(5.0f, 5.25f, 1.1f, 1.0f);
 
         const char* tlNames[2] = { "loadRender", "saveRender" };
 

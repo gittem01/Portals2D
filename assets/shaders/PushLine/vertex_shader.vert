@@ -4,7 +4,6 @@
 
 layout (location = 0) out vec2 localPos;
 layout (location = 1) flat out vec2 size;
-layout (location = 2) flat out int instanceIndex;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -46,8 +45,6 @@ vec2 vertices[6] =
 
 void main()
 {
-    instanceIndex = gl_InstanceIndex;
-
     float zoom = sharedUboData.data.x;
     vec2 diffVec = pc.positions.zw - pc.positions.xy;
     vec2 midPoint = (pc.positions.xy + pc.positions.zw) * 0.5f;

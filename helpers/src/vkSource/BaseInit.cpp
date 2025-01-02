@@ -4,7 +4,7 @@
 #include <Camera.h>
 #include "SDL3/SDL_vulkan.h"
 
-#define PREFER_DISCRETE 1
+#define PREFER_DISCRETE 0
 
 void ThinDrawer::createWindow()
 {
@@ -334,6 +334,7 @@ void ThinDrawer::createSyncThings()
 
     VkSemaphoreCreateInfo semaphoreCreateInfo = { };
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreCreateInfo.flags = VK_SEMAPHORE_TYPE_BINARY;
 
     for (int i = 0; i < frames.size(); i++)
     {

@@ -63,7 +63,7 @@ void PopUp::initSave()
 	finalButton = {
 		glm::vec4(0.0f, 0.0f, 60.0f, 15.0f), // posSize
 		glm::vec4(0.05, 0.05, 0.05, 1.0), // clr
-		glm::vec4(5.0f, 5.25f, 1.1f, 0.0f) }; // data
+		glm::vec4(5.0f, 5.25f, 1.1f, 1.0f) }; // data
 }
 
 void setClose(PopUp* p, s_menuButton* currentButton=nullptr)
@@ -219,7 +219,7 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 	s_menuButton bgView;
 	bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, sizedt);
 	bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
-	bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.0f);
+	bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.25f);
 
 	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
@@ -231,9 +231,16 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
-	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 && !p->noAction)
+	if ((td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 || 
+		!currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && td->wh->mouseData[2] == 2)
+		&& !p->noAction)
 	{
 		setClose(p, &currentButtonData);
+
+		if (Leveler::object->ol->overlayOverlay == SAVE_LEVEL)
+		{
+			Leveler::object->ol->overlayOverlay = LEVELER;
+		}
 	}
 
 	if (td->wh->text.size() > 0 && p->textSizes.size() < 32 && (td->wh->text != " " || p->textSizes.size() > 0))
@@ -343,7 +350,7 @@ noAdd:
 	currentButtonData.posSize.z -= 30.0f;
 	currentButtonData.posSize.z = std::min(currentButtonData.posSize.z, 20.0f);
 	currentButtonData.posSize.w += 1.5f;
-	currentButtonData.data = glm::vec4(1.0f, 1.25f, 1.2f, 0.0f);
+	currentButtonData.data = glm::vec4(1.0f, 1.25f, 1.2f, 1.0f);
 
 	if (p->textSizes.size() > 0)
 	{
@@ -518,7 +525,7 @@ void PopUp::initLoad()
 	finalButton = {
 		glm::vec4(0.0f, 0.0f, 120.0f, 70.0f), // posSize
 		glm::vec4(0.04, 0.04, 0.05, 1.0), // clr
-		glm::vec4(5.0f, 5.25f, 1.1f, 0.0f) }; // data
+		glm::vec4(5.0f, 5.25f, 1.1f, 1.0f) }; // data
 
 	levelSelects.clear();
 
@@ -540,7 +547,7 @@ void PopUp::renderAt(VkCommandBuffer cmdBuff, glm::vec4 posSize, glm::vec2 pos, 
 	s_menuButton buttonData;
 	buttonData.posSize = glm::vec4(pos, newSize - 1.0f);
 	buttonData.colour = glm::vec4(0.3f);
-	buttonData.data = glm::vec4(1.0f, 1.25f, 1.0f, 0.0f);
+	buttonData.data = glm::vec4(1.0f, 1.25f, 1.0f, 1.0f);
 
 	float overlapAmount = pos.y + newSize.y * 0.5f - maxY;
 	float overlapPerct = 0.0f;
@@ -613,14 +620,14 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
 	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
 
-	float sizedt = currentButtonData.posSize.z / 120.0f;
+	float sizedt = currentButtonData.posSize.w / 70.0f;
 
 	if (Game::object->gameStater == &Game::MenuState || Game::object->menu->buttons.size() == 0)
 	{
 		s_menuButton bgView;
 		bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, sizedt);
 		bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
-		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.0f);
+		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 1.0f);
 
 		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
@@ -643,9 +650,15 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 		});
 	}
 
-	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
+	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 ||
+		!currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && td->wh->mouseData[2] == 2)
 	{
 		setClose(p, &currentButtonData);
+
+		if (Leveler::object->ol->overlayOverlay == LOAD_LEVEL)
+		{
+			Leveler::object->ol->overlayOverlay = LEVELER;
+		}
 	}
 
 	float sizep1 = size.y + 1.0f;
@@ -659,7 +672,7 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	{
 		buttonData.posSize = glm::vec4(leftX + 2.5f, currentButtonData.posSize.y - 4.0f, 0.0f, 60.0f * sizedt);
 		buttonData.colour = glm::vec4(0.4f * sizedt);
-		buttonData.data = glm::vec4(0.25f, 0.5f, -1.0f, 0.0f);
+		buttonData.data = glm::vec4(0.25f, 0.5f, -1.0f, 1.0f);
 
 		vkCmdPushConstants(cmdBuff, ThinDrawer::object->menuButton->pipelineLayout,
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &buttonData);
@@ -695,7 +708,7 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 			scrollSpeed = (newScroll - p->scrollAmount) * 0.2f + scrollSpeed * 0.8f;
 			p->scrollAmount = newScroll;
 		}
-		else if (abs(scrollSpeed) > 0.0001f)
+		else if (abs(scrollSpeed) > 0.01f)
 		{
 			float addScroll = scrollSpeed * td->deltaTime * 6.0f;
 			scrollSpeed -= addScroll;
@@ -811,7 +824,7 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	buttonData.colour = glm::vec4(0.2f * sizedt);
 	buttonData.colour.w *= 3.0f;
 	buttonData.colour.x *= 2.5f;
-	buttonData.data = glm::vec4(1.0f, 1.25f, 1.0f, 0.0f);
+	buttonData.data = glm::vec4(1.0f, 1.25f, 1.0f, 1.0f);
 
 	if (buttonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()))
 	{
@@ -850,7 +863,7 @@ void PopUp::initLanguage()
 	finalButton = {
 		glm::vec4(0.0f, 0.0f, 50.0f, finalSize), // posSize
 		glm::vec4(0.04, 0.04, 0.08, 1.0), // clr
-		glm::vec4(5.0f, 5.5f, 1.1f, 0.0f) }; // data
+		glm::vec4(5.0f, 5.5f, 1.1f, 1.0f) }; // data
 
 	renderTextDatas.clear();
 
@@ -891,7 +904,7 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 		s_menuButton bgView;
 		bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, size01);
 		bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
-		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.0f);
+		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 1.0f);
 
 		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
@@ -912,7 +925,8 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 		});
 	}
 
-	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2)
+	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 ||
+		!currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && td->wh->mouseData[2] == 2)
 	{
 		setClose(p, &currentButtonData);
 	}
@@ -929,8 +943,6 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 	Leveler::object->ol->cd->renderDatas.push_back(lrd);
 
 	topStart -= 6.0f;
-
-	bool changed = false;
 
 	int i = 0;
 	for (auto& lrd : renderTextDatas)
@@ -954,6 +966,7 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 		}
 
 		button.data = glm::vec4(2.5f, 3.0f, 1.1f, 0.0f) * size01;
+		button.data.w = 1.0;
 		button.posSize = glm::vec4(0.0f, lrd.posScale.y, 47.5f, 3.5f * size01);
 
 		
@@ -964,7 +977,6 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 			if (ThinDrawer::object->wh->mouseData[2] == 2)
 			{
 				CharDrawer::selectedLanguageIndex = i;
-				changed = true;
 			}
 		}
 
@@ -976,11 +988,6 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
 		i++;
-	}
-
-	if (ThinDrawer::object->wh->mouseData[2] == 2 && !changed && size01 > 0.75f)
-	{
-		setClose(p, &currentButtonData);
 	}
 
 	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);

@@ -73,6 +73,7 @@ public:
 	s_gridData rightClickItem;
 	int startAlloc;
 	s_menuButton topLeftButtons[2];
+	double topLeftHoverTimes[2];
 
 	unsigned int switchSound;
 	unsigned int clickSound;

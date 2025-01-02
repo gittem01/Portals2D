@@ -56,6 +56,7 @@ public:
 	class ThinDrawer* td;
 	class Overlayer* ol;
 
+	std::vector<s_lineRenderData> renderDatas;
 	std::vector<Button> buttons;
 	std::map<std::string, std::vector<std::string>> buttonTexts;
 
@@ -64,9 +65,12 @@ public:
 	double upCamTime;
 	double lastDataSaveTime;
 	double menuCallTime;
+	double menuCloseTime;
+	float openCloseSpeed = 1.0f;
 	float upMargin;
 	float currentY;
 	glm::vec2 lastMousePos;
+	bool state = true;
 
 	glm::vec2 windowClickPos = glm::vec2(0.0f, 0.0f);
 
@@ -88,7 +92,7 @@ public:
 	Menu();
 
 	void initDefaults();
-	void renderInit(bool fullInit=true);
+	void renderInit();
 	void renderDestroy();
 
 	void initPlay(glm::vec4 clr = glm::vec4(1.0, 1.0, 1.0, 0.4));
@@ -101,6 +105,9 @@ public:
 	Button* addButton(glm::vec2 pos, glm::vec2 size, std::string text, glm::vec4 color=glm::vec4(1.0, 1.0, 1.0, 0.2), glm::vec2 data=glm::vec2(0.25f, 0.5f));
 	void buttonPressed(Button* button);
 	void update();
+
+	float getDt01();
+	void setNewState(bool newState);
 
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 };

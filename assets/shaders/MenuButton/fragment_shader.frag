@@ -16,7 +16,7 @@ layout (push_constant) uniform PC
 {
     vec4 posSize;
     vec4 colour;
-    vec4 data; // extraFill, smoothFill, unused, unused
+    vec4 data; // extraFill, smoothFill, noise alpha, noise scaler
 } pc;
 
 
@@ -68,7 +68,7 @@ void main()
 
     if (pc.data.z > 0.0001)
     {
-        float noiseVal = pc.data.z - voronoi(worldPos) * 0.5;
+        float noiseVal = pc.data.z - voronoi(worldPos * pc.data.w) * 0.5;
         colour.w *= noiseVal;
     }
     

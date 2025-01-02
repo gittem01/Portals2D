@@ -8,10 +8,9 @@ layout (location = 1) flat out vec2 speed;
 layout (location = 2) flat out vec2 outP;
 layout (location = 3) flat out float outR;
 layout (location = 4) flat out float curveMult;
-layout (location = 5) flat out float dLen;
-layout (location = 6) flat out float seeAng;
-layout (location = 7) flat out float r;
-layout (location = 8) flat out vec2 data; // dt, clr
+layout (location = 5) flat out float seeAng;
+layout (location = 6) flat out float r;
+layout (location = 7) flat out vec2 data; // dt, clr
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {
@@ -110,7 +109,7 @@ void main()
     speed *= 0.5;
     
     curveMult = speed.x < 0.0 ? -1.0 : 1.0;
-    dLen = max(length(speed) * 0.5 * pc.data2.w, r);
+    float dLen = max(length(speed) * 0.5 * pc.data2.w, r);
     outR = min(max(dLen * max(abs(speed.x / speed.y), abs(speed.y / speed.x)), r * 5.0), 1000.0);
     outP = pos + normalize(vec2(speed.y, -speed.x)) * outR * curveMult;
     seeAng = min(dLen / outR, PI * 0.5);

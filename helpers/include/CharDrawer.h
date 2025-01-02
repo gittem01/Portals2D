@@ -37,6 +37,7 @@ public:
 	int creationHeight;
 	std::string languageName;
 	std::vector<std::string> allLanguages;
+	bool clear = true;
 
 	std::vector<s_lineRenderData> renderDatas;
 	std::vector<s_charRenderData> allCharDatas;

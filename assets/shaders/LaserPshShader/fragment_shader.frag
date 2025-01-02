@@ -5,7 +5,6 @@ layout (location = 0) out vec4 FragColour;
 layout (location = 0) in vec2 localPos;
 layout (location = 1) in vec2 worldPos;
 layout (location = 2) flat in vec2 size;
-layout (location = 3) flat in int instanceIndex;
 
 layout (set = 0, binding = 0) uniform SharedUboData
 {

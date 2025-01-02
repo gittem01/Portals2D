@@ -9,10 +9,9 @@ layout (location = 1) flat in vec2 speed;
 layout (location = 2) flat in vec2 outP;
 layout (location = 3) flat in float outR;
 layout (location = 4) flat in float curveMult;
-layout (location = 5) flat in float dLen;
-layout (location = 6) flat in float seeAng;
-layout (location = 7) flat in float r;
-layout (location = 8) flat in vec2 data; // dt, clr
+layout (location = 5) flat in float seeAng;
+layout (location = 6) flat in float r;
+layout (location = 7) flat in vec2 data; // dt, clr
 
 layout(set = 1, binding = 0) uniform sampler2D tex;
 

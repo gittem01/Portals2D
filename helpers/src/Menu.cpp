@@ -19,6 +19,8 @@ Menu::Menu()
 	buttonTexts = IOHelper::mapVector(lines);
 
 	buttons.reserve(200);
+
+	openCloseSpeed = 3.0f;
 }
 
 void Menu::initDefaults()
@@ -45,21 +47,17 @@ void Menu::initDefaults()
 	keyAssignmentButton = nullptr;
 }
 
-void Menu::renderInit(bool fullInit)
+void Menu::renderInit()
 {
 	td->lateDrawFuncs.push_back({ draw, this });
+	td->memMapFuncs.push_back({ Overlayer::camMap, this });
 
-	if (fullInit)
-	{
-		td->memMapFuncs.push_back({ Overlayer::camMap, this });
-		td->lateDrawFuncs.push_back({ CharDrawer::draw, ol->cd });
-	}
+	state = true;
 }
 
 void Menu::renderDestroy()
 {
 	td->eraseFromRenderFunctions(td->lateDrawFuncs, this);
-	td->eraseFromRenderFunctions(td->lateDrawFuncs, ol->cd);
 	td->eraseFromMaperFunctions(td->memMapFuncs, this);
 }
 
@@ -329,7 +327,7 @@ Button* Menu::addButton(glm::vec2 pos, glm::vec2 size, std::string text, glm::ve
 	Button b = Button();
 	b.data.posSize = glm::vec4(pos, size);
 	b.data.colour = color;
-	b.data.data = glm::vec4(data, 1.0f, 0.0f);
+	b.data.data = glm::vec4(data, 1.0f, 1.0f);
 	b.generateVertices();
 
 	if (!text.empty())
@@ -347,6 +345,8 @@ Button* Menu::addButton(glm::vec2 pos, glm::vec2 size, std::string text, glm::ve
 
 void Menu::update()
 {
+	renderDatas.clear();
+
 	glm::vec2 mousePos = ol->cam.getMouseCoords();
 	double timeNow = ThinDrawer::object->gameTime;
 	double dt = ThinDrawer::object->deltaTime;
@@ -453,9 +453,7 @@ void Menu::update()
 
 		if (button.text.charDatas.size() > 0)
 		{
-			s_lineRenderData copy = button.text;
-			copy.color.w *= std::min(td->gameTime - menuCallTime, 1.0);
-			ol->cd->renderDatas.push_back(copy);
+			renderDatas.push_back(button.text);
 		}
 
 		if (button.bools[INTERACTABLE] && !Game::object->pop.active && clickButton != maxFramerateButton)
@@ -753,6 +751,48 @@ void Menu::buttonPressed(Button* button)
 	}
 }
 
+float Menu::getDt01()
+{
+	float dt01;
+	if (!state)
+	{
+		dt01 = 1.0 - std::min((td->gameTime - menuCloseTime) * openCloseSpeed, 1.0);
+	}
+	else
+	{
+		dt01 = std::min((td->gameTime - menuCallTime) * openCloseSpeed, 1.0);
+	}
+
+	return dt01;
+}
+
+void Menu::setNewState(bool newState)
+{
+	if (state == newState) return;
+
+	if (newState)
+	{
+		float dt01 = getDt01();
+		menuCallTime = td->gameTime - dt01 / openCloseSpeed;
+	}
+	else
+	{
+		float dt01 = getDt01();
+		menuCloseTime = td->gameTime - (1.0 - dt01) / openCloseSpeed;
+	}
+
+	if (clickButton == maxFramerateButton)
+	{
+		SDL_SetWindowRelativeMouseMode(td->wh->window, false);
+		SDL_WarpMouseInWindow(td->wh->window, windowClickPos.x, windowClickPos.y);
+		SDL_SetWindowMouseGrab(td->wh->window, false);
+		SDL_CaptureMouse(false);
+		SDL_ShowCursor();
+	}
+
+	state = newState;
+}
+
 void Menu::draw(VkCommandBuffer cmdBuff, void* ptr)
 {
 	Menu* menu = (Menu*)ptr;
@@ -767,13 +807,22 @@ void Menu::draw(VkCommandBuffer cmdBuff, void* ptr)
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		td->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-	float dt01 = std::min(td->gameTime - menu->menuCallTime, 1.0);
+	float dt01 = menu->getDt01();
+	if (!menu->state && dt01 < 0.0001f)
+	{
+		Game::object->singleTaskRegistry.push_back([menu]
+		{
+			menu->renderDestroy();
+		});
+	}
+
 	if (Game::object->gameStater != &Game::MenuState)
 	{
 		s_menuButton bgView;
+		float sinAdd = sin(td->gameTime) * 0.05 + 0.05;
 		bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, dt01);
 		bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
-		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.0f);
+		bgView.data = glm::vec4(0.0f, 0.0f, 1.05f + sinAdd, 0.1f);
 
 		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
@@ -785,12 +834,48 @@ void Menu::draw(VkCommandBuffer cmdBuff, void* ptr)
 	{
 		if (!button.bools[RENDER_ENABLED]) continue;
 
+		float oldAlpha = button.data.colour.w;
 		button.data.colour.w *= dt01;
 
 		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &button.data);
 
 		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+		button.data.colour.w = oldAlpha;
+	}
+
+	std::vector<float> oldAlphas;
+
+	if (dt01 != 1.0f)
+	{
+		oldAlphas.resize(menu->renderDatas.size());
+		int i = 0;
+		for (auto& lrd : menu->renderDatas)
+		{
+			oldAlphas[i++] = lrd.color.w;
+			lrd.color.w *= dt01;
+		}
+	}
+
+	auto temp = std::move(ol->cd->renderDatas);
+	ol->cd->renderDatas = std::move(menu->renderDatas);
+
+	bool clearTemp = ol->cd->clear;
+	ol->cd->clear = false;
+	CharDrawer::draw(cmdBuff, ol->cd);
+	ol->cd->clear = clearTemp;
+
+	menu->renderDatas = std::move(ol->cd->renderDatas);
+	ol->cd->renderDatas = std::move(temp);
+
+	if (dt01 != 1.0f)
+	{
+		int i = 0;
+		for (auto& lrd : menu->renderDatas)
+		{
+			lrd.color.w = oldAlphas[i++];
+		}
 	}
 }
 
