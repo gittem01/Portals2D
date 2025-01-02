@@ -20,6 +20,7 @@ public:
     static TestPlayer* object;
 
     PlayerShader* playerShader;
+    std::vector<splashData> endSplashes;
     std::vector<s_gunData> shootDatas;
     s_gunData gData;
 

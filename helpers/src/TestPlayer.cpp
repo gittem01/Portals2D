@@ -12,6 +12,8 @@
 
 TestPlayer* TestPlayer::object;
 
+static splashData sData;
+
 TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game->pWorld)
 {
     TestPlayer::object = this;
@@ -90,6 +92,28 @@ void TestPlayer::init()
 
     legAng = 0.0;
     rotSpeed = 0.0;
+
+    shootDatas.clear();
+    endSplashes.clear();
+
+    sData.posSpeed.z = (float)rand() / RAND_MAX;
+    sData.posSpeed.w = 1.0;
+    sData.data.x = 0.075;
+    sData.data.y = ThinDrawer::object->gameTime;
+    sData.data.z = b2_pi * 2.0;
+    sData.data.w = 0.0;
+
+    sData.color.w = 0.4;
+
+    sData.data2.z = 10.0;
+    sData.data2.x = 2.0;
+    sData.data2.y = 10.0;
+    sData.data2.w = 0.3;
+
+    sData.data3.x = 0.1;
+    sData.data3.y = 0.75;
+    sData.data3.z = 1000000.0;
+    sData.data3.w = 0.01;
 }
 
 void TestPlayer::portalDestrCallBack(Portal* portal)
@@ -476,6 +500,7 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
     TestPlayer* tp = (TestPlayer*)ptr;
 
     GunEffect* gunEffectShader = ThinDrawer::object->gunEffect;
+	SplashShader* splashShader = ThinDrawer::object->splash;
 
     const VkDeviceSize offsets = 0;
     const uint32_t camOffset = ThinDrawer::object->camOffset;
@@ -560,6 +585,26 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
         
         vkCmdPushConstants(cmdBuff, gunEffectShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gunData), (void*)shootData);
         vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+    }
+    
+    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, splashShader->pipeline);
+
+    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        splashShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+    for (int i = tp->endSplashes.size() - 1; i > -1; i--)
+    {
+        splashData* splsh = &tp->endSplashes.at(i);
+
+        if (ThinDrawer::object->gameTime - splsh->data.y >= 1.0)
+        {
+            tp->endSplashes.erase(tp->endSplashes.begin() + i);
+            continue;
+        }
+
+        vkCmdPushConstants(cmdBuff, splashShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            0, sizeof(splashData), (void*)splsh);
+        vkCmdDraw(cmdBuff, 6, 25, 0, 0);
     }
 }
 
@@ -1516,6 +1561,8 @@ void TestPlayer::handlePortalCD(float dt)
                 ALuint source = Sounder::object->playSound(blueShootBufferJ, 1.0);
                 b2Vec2 pPos = rayCaster.rayPoint;
                 Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+                canCreateBlue = nullptr;
             }
 
             if (canCreateBlue)
@@ -1566,6 +1613,24 @@ void TestPlayer::handlePortalCD(float dt)
                     iter2->second.particlePsh.data1.z = thinDrawer->gameTime;
                 }
             }
+            else if (fData && fData->type != F_FORCE_FIELD)
+            {
+                sData.color = glm::vec4(0.0f, 0.5f, 1.0f, 0.5f);
+                sData.posSpeed.x = np1.x; sData.posSpeed.y = np1.y;
+                sData.posSpeed.z = (float)rand() / RAND_MAX;
+                sData.data.y = thinDrawer->gameTime;
+                sData.data.z = 2.0f;
+                sData.data.w = atan2(rayCaster.rayNormal.y, rayCaster.rayNormal.x) - 1.0f;
+
+                endSplashes.push_back(sData);
+
+                shootDatas.push_back({ { p0.x, p0.y, np1.x, np1.y },   { 0.0, 1.0f, 1.0f, 1.0f },
+                                        { NAN, 0.0f, 0.0f, 0.0f },      { 0.5f, 0.0f, 0.0f, 0.0f } });
+
+                ALuint source = Sounder::object->playSound(blueShootBufferJ, 1.0);
+                b2Vec2 pPos = rayCaster.rayPoint;
+                Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+            }
 
             lastPortalCreationTime = gameTime;
         }
@@ -1591,6 +1656,8 @@ void TestPlayer::handlePortalCD(float dt)
                 ALuint source = Sounder::object->playSound(orangeShootBufferJ, 1.0);
                 b2Vec2 pPos = rayCaster.rayPoint;
                 Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
+
+                canCreateRed = nullptr;
             }
 
             if (canCreateRed)
@@ -1639,6 +1706,24 @@ void TestPlayer::handlePortalCD(float dt)
                     iter2->second.particlePsh.data0.z = thinDrawer->gameTime;
                     iter2->second.particlePsh.data1.z = thinDrawer->gameTime;
                 }
+            }
+            else if (fData && fData->type != F_FORCE_FIELD)
+            {
+                sData.color = glm::vec4(1.0f, 0.5f, 0.0f, 0.5f);
+                sData.posSpeed.x = np1.x; sData.posSpeed.y = np1.y;
+                sData.posSpeed.z = (float)rand() / RAND_MAX;
+                sData.data.y = thinDrawer->gameTime;
+                sData.data.z = 2.0f;
+                sData.data.w = atan2(rayCaster.rayNormal.y, rayCaster.rayNormal.x) - 1.0f;
+
+                endSplashes.push_back(sData);
+
+                shootDatas.push_back({ { p0.x, p0.y, np1.x, np1.y },   { 1.0, 0.5f, 0.0f, 1.0f },
+                                        { NAN, 0.0f, 0.0f, 0.0f },      { 0.5f, 0.0f, 0.0f, 0.0f } });
+
+                ALuint source = Sounder::object->playSound(orangeShootBufferJ, 1.0);
+                b2Vec2 pPos = rayCaster.rayPoint;
+                Sounder::object->setSoundPosition(source, glm::vec3(pPos.x, pPos.y, 0.0));
             }
 
             lastPortalCreationTime = gameTime;

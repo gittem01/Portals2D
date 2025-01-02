@@ -100,7 +100,7 @@ void main()
 
     if ((max(pc.data3.y - (data.y + 1.0) * data.x, 0.0) / pc.data3.y) <= 0.0) gl_Position = vec4(0.0);
 
-    speed = randVec * pc.data2.z;
+    speed = randVec * pc.data2.z * (0.6f + 0.4f * rnd2);
     speed.y *= rand(vec2(rander * 3.76534)) * pc.posSpeed.w + (1.0 - pc.posSpeed.w);
     vec2 pos = pc.posSpeed.xy + randVec * randR * pc.posSpeed.w;
     pos.x += speed.x * dt;
