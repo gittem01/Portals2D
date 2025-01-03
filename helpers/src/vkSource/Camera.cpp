@@ -109,8 +109,9 @@ void Camera::update()
 
 	if (this->neededZoom != 0)
 	{
-		this->changeZoom(this->zoomInc * this->neededZoom);
-		this->neededZoom -= zoomInc * this->neededZoom;
+		float zoomAddition = ThinDrawer::object->deltaTime * this->zoomInc * this->neededZoom * 100.0f;
+		this->changeZoom(zoomAddition);
+		this->neededZoom -= zoomAddition;
 	}
 
 	Sounder::object->listenerPos = glm::vec3(pos.x, pos.y, 32.0f / sqrt(zoom));
@@ -122,6 +123,8 @@ void Camera::dragFunc(int width, int height)
 {
 	glm::vec2 diffVec = glm::vec2(dragTo.x - lastPos.x, dragTo.y - lastPos.y);
 	glm::vec2 sideDiffs = glm::vec2(defaultXSides.y - defaultXSides.x, defaultYSides.y - defaultYSides.x);
+
+	dragSmth = ThinDrawer::object->deltaTime * 20.0;
 
 	float lng = glm::length(diffVec);
 

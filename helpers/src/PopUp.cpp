@@ -296,7 +296,7 @@ noAdd:
 
 		s_lineRenderData lrd;
 		lrd.charDatas = renderData;
-		lrd.color = glm::vec4(0.0, 0.0, 0.0, 1.0);
+		lrd.color = glm::vec4(0.0, 0.0, 0.0, sizedt);
 		lrd.posScale = glm::vec4(currentButtonData.posSize.x - x * renderSize * 0.5f,
 			currentButtonData.posSize.y + 2.0f, renderSize, x);
 
@@ -622,18 +622,15 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	float sizedt = currentButtonData.posSize.w / 70.0f;
 
-	if (Game::object->gameStater == &Game::MenuState || Game::object->menu->buttons.size() == 0)
-	{
-		s_menuButton bgView;
-		bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, sizedt);
-		bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
-		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 1.0f);
+	s_menuButton bgView;
+	bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, sizedt);
+	bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
+	bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.1f);
 
-		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
-			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
+	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
 
-		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
-	}
+	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
 	glm::vec2 pos = glm::vec2(currentButtonData.posSize);
 

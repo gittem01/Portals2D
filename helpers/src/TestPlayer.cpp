@@ -387,11 +387,7 @@ void TestPlayer::restartWorld()
 
 void TestPlayer::memMapDeathByElectrocution(void* ptr)
 {
-	static double lastTime = 0.0;
-
-	double timeNow = SDL_GetTicksSec();
-	double deltaTime = std::min(timeNow - lastTime, 0.1);
-    lastTime = timeNow;
+	double deltaTime = ThinDrawer::object->deltaTime;
 
     Game::object->dtMult = 0.0f;
 
@@ -415,11 +411,21 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
     glm::vec2 headPos = glm::vec2(headPos1.x, headPos1.y);
     glm::vec2 diff = headPos - camPos;
     float lenDiff = glm::length(diff);
-    camPos += diff * (float)time01 * 0.1f;
-    ThinDrawer::object->wh->cam->zoom += (10.0f - ThinDrawer::object->wh->cam->zoom) * (float)time01 * std::max(1.0f - lenDiff, 0.0f) * 0.01;
+
+    if (lenDiff < 0.05f)
+    {
+        ThinDrawer::object->wh->cam->zoom += 7.5f * deltaTime;
+    }
+    else
+    {
+        diff /= lenDiff;
+
+        camPos += (float)deltaTime * diff * glm::max(lenDiff, 3.0f) * 5.0f;
+    }
+
     ThinDrawer::object->wh->cam->pos = camPos;
 
-    if (lenDiff < 0.01f && ThinDrawer::object->wh->cam->zoom > 9.0f)
+    if (lenDiff < 0.05f && ThinDrawer::object->wh->cam->zoom > 9.0f)
     {
         Game::object->singleTaskRegistry.push_back([tp]()
 		{
