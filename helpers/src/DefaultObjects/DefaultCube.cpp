@@ -1,5 +1,6 @@
 #include <DefaultObjects/DefaultCube.h>
 #include <ThinDrawer.h>
+#include "GameObjects/Dropper.h"
 
 b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType type, float density)
 {
@@ -54,7 +55,7 @@ b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType ty
     return body;
 }
 
-DefaultCube::DefaultCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
+DefaultCube::DefaultCube(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : DefaultObject(portalWorld)
 {
 	this->pWorld = portalWorld;
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
@@ -74,6 +75,31 @@ DefaultCube::DefaultCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(p
 
     renderGroup = ThinDrawer::object->addPortalBody(portalBody, {"cube.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);
+
+    this->linkedDropper = linkedDropper;
+}
+
+void DefaultCube::recreate(bool mirrored)
+{
+    if (linkedDropper)
+    {
+        int i = wData->pbIndices.size() - 1;
+        for (; i >= 0; i--)
+        {
+            PortalBody* portalBody = wData->pbIndices[i];
+
+            for (auto pair : wData->destroyCallbacks)
+            {
+                pair.first(portalBody, pair.second);
+            }
+
+            delete portalBody;
+        }
+    }
+    else
+    {
+        DefaultObject::recreate(mirrored);
+    }
 }
 
 void DefaultCube::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)

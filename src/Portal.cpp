@@ -311,8 +311,11 @@ void Portal::createPortalBody(b2Body* onBody)
     b2Vec2 leftPoint = PortalWorld::rotateVec(b2Vec2(0.0f, -size), angleOffset) + posOffset;
     b2Vec2 rightPoint = PortalWorld::rotateVec(b2Vec2(0.0f, +size), angleOffset) + posOffset;
 
+    b2Vec2 rDir = rightPoint - leftPoint;
+    rDir.Normalize();
+
     b2EdgeShape shape;
-    shape.SetTwoSided(leftPoint, rightPoint);
+    shape.SetOneSided(leftPoint - rDir, leftPoint, rightPoint, rightPoint + rDir);
 
     b2FixtureDef midPortal;
     midPortal.shape = &shape;
@@ -322,9 +325,12 @@ void Portal::createPortalBody(b2Body* onBody)
 
     shape.SetTwoSided(leftPoint, leftPoint);
     yFix[0] = body->CreateFixture(&shape, 0.0f);
+    yFix[0]->SetSensor(true);
 
     shape.SetTwoSided(rightPoint, rightPoint);
     yFix[1] = body->CreateFixture(&shape, 0.0f);
+    yFix[1]->SetSensor(true);
+
     fData.type = F_PORTAL;
     fData.data = (void*)this;
     fData.extraData = nullptr;
@@ -861,6 +867,14 @@ void Portal::connect(Portal* portal2, bool isReversed, int side1, int side2){
 
         portal2->connections[c2->side1].push_back(c2);
     }
+
+    ((b2EdgeShape*)this->midFixture->GetShape())->m_oneSided = false;
+	this->yFix[0]->SetSensor(false);
+	this->yFix[1]->SetSensor(false);
+
+	((b2EdgeShape*)portal2->midFixture->GetShape())->m_oneSided = false;
+	portal2->yFix[0]->SetSensor(false);
+	portal2->yFix[1]->SetSensor(false);
 }
 
 void Portal::setVoid(int side){

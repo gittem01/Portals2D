@@ -5,6 +5,7 @@
 #include <mutex>
 #include "SDL3/SDL.h"
 #include "PopUp.h"
+#include "steam_api.h"
 
 class Game
 {
@@ -37,6 +38,14 @@ public:
 	std::vector<std::function<void(void)>> singleTaskRegistry2;
 	std::mutex taskRegistryMutex;
 
+	// steam
+
+	uint32_t appid;
+	CCallResult<Game, CreateItemResult_t> createItemResult;
+	CCallResult<Game, SubmitItemUpdateResult_t> updateItemResult;
+
+	// steam_end
+
 	class BaseTestCase* testCase;
 
 	class PortalWorld* pWorld;
@@ -54,6 +63,9 @@ public:
 
 	Game();
 	
+	void onItemCreated(CreateItemResult_t* pCallback, bool bIOFailure);
+	void onItemSubmitted(SubmitItemUpdateResult_t* pCallback, bool bIOFailure);
+
 	void loadGameData();
 	void saveGameData();
 

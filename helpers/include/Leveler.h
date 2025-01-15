@@ -74,7 +74,9 @@ typedef enum LevelObject : long long
 	WHITE_GELLER	= 0x1ll << 22,
 	WATER_GELLER	= 0x1ll << 23,
 
-	PLATFORM		= 0x1ll << 24,
+	CUBE_SPAWNER	= 0x1ll << 24,
+
+	PLATFORM		= 0x1ll << 25,
 
 	HAZARDER_MID_DU = 0x1ll << 55,
 	FIELD_MID_DU	= 0x1ll << 56,
@@ -92,7 +94,7 @@ typedef enum LevelObject : long long
 constexpr int getLevelObjectIndex(levelObject val)
 {
 	int index = 0;
-	val = (LevelObject)(val & 0x1FFFFFF);
+	val = (LevelObject)(val & 0x3FFFFFF);
 
 	long long value = (long long)val;
 	if (value & 0xFFFFFFFF00000000) { value >>= 32; index += 32; }
@@ -124,14 +126,17 @@ constexpr int getRotVal(int rot)
 
 #define GRID_DRAWS (WHITE_WALL | BLACK_WALL | GLASS_WALL | FENCE_WALL | ERASER)
 #define GRID_DEPS (DOWN_DEPENDENT | RIGHT_DEPENDENT | UP_DEPENDENT | LEFT_DEPENDENT)
-#define SINGLE_DRAWS 0xFFFFF0	// all except walls and platform
-#define OCCUPIERS 0x7FFFFFF		// all
+#define SINGLE_DRAWS 0x1FFFFF0	// all except walls and platform
+#define OCCUPIERS 0x3FFFFFF		// all
 #define START_END_CHECKER (OCCUPIERS | HAZARDER_MID_DU | HAZARDER_MID_LR)
 
 #define MID_FIELDS (HAZARDER_MID_DU | FIELD_MID_DU | HAZARDER_MID_LR | FIELD_MID_LR)
-#define TRANSMITTERS (CLICK_BUTTON | DOWN_BUTTON | CUBE_BUTTON | SPHERE_BUTTON | LASER_REC_GND | LASER_REC_WALL)
-#define RECEIVERS (LASERER | FUNNEL | HAZARDER | FORCE_FIELD | LIGHT_BRIDGE | PLATFORM | BLUE_GELLER | ORANGE_GELLER | WHITE_GELLER | WATER_GELLER)
+
 #define GELS (BLUE_GELLER | ORANGE_GELLER | WHITE_GELLER | WATER_GELLER)
+
+#define TRANSMITTERS (CLICK_BUTTON | DOWN_BUTTON | CUBE_BUTTON | SPHERE_BUTTON | LASER_REC_GND | LASER_REC_WALL)
+#define RECEIVERS (LASERER | FUNNEL | HAZARDER | FORCE_FIELD | LIGHT_BRIDGE | PLATFORM | GELS | CUBE_SPAWNER)
+
 #define WALL_EDGE_OCCUPIERS ((TRANSMITTERS | RECEIVERS | CATAPULT) & ~PLATFORM)
 
 
@@ -331,7 +336,7 @@ public:
 	const int numWhiteWall = xSize * ySize;
 	const int numBlackWall = xSize * ySize;
 
-	const int perTextureSpace = 1000;
+	const int perTextureSpace = 200;
 	int textureRenderOffset;
 	std::vector<s_perTextureData> perTextureData;
 

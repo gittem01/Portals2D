@@ -4,10 +4,10 @@ project(Teleporter VERSION 2.0.0)
 set(APP_NAME PhysicsTeleport)
 set(CMAKE_CXX_STANDARD 20)
 
-if(MSVC)
-  add_definitions(/MP)
-  add_definitions(/ZI)
-  add_definitions(-DGL_SLIENCE_DEPRECATION)
+if (MSVC)
+    add_definitions(/MP)
+    add_definitions(/ZI)
+    add_definitions(-DGL_SILENCE_DEPRECATION)
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -25,7 +25,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/OpenAlSoft/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/AudioFile)
 include_directories(${CMAKE_SOURCE_DIR}/external/stb_truetype)
 include_directories(${CMAKE_SOURCE_DIR}/external/SPIRV-Reflect)
-
+include_directories(${CMAKE_SOURCE_DIR}/external/steamworks/public/steam)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/SDL3)
@@ -51,6 +51,7 @@ set(
 
 # put this before add_executable else get linker error
 link_directories(${CMAKE_SOURCE_DIR}/external/vulkan/lib)
+link_directories(${CMAKE_SOURCE_DIR}/external/steamworks/redistributable_bin/win64)
 
 if(APPLE)
     # set(MACOSX_BUNDLE_ICON_FILE portal.ico)
@@ -89,4 +90,5 @@ elseif (UNIX)
 	target_link_libraries(${APP_NAME} vulkanUnx)
 elseif (WIN32)
 	target_link_libraries(${APP_NAME} vulkanWin)
+    target_link_libraries(${APP_NAME} steam_api64)
 endif()

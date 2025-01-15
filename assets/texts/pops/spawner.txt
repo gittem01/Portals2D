@@ -1,0 +1,32 @@
+<0>
+Eşyayı Sil
+Eşyaya Bağla...
+Bağlantıları Kaldır
+Başlangıçta Otomatik Düşür
+Otomatik Yeniden Oluştur
+Obje Oluşturucu Türü
+<0>
+<1>
+Delete Item
+Connect to...
+Remove Connections
+Auto Drop At Start
+Respawn Automatically
+Object Creator Type
+<1>
+<linked_options>
+-
+-
+connection_select
+-
+-
+object_select
+<linked_options>
+<signal_options>
+0
+0
+0
+1
+1
+0
+<signal_options>

@@ -1,8 +1,9 @@
 #include <DefaultObjects/Sphere.h>
+#include <GameObjects/Dropper.h>
 #include <ThinDrawer.h>
 
 
-Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
+Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : DefaultObject(portalWorld)
 {
 	this->pWorld = portalWorld;
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
@@ -17,7 +18,8 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld
 	b2Body* body = portalWorld->CreateBody(&bodyDef);
     b2CircleShape cShape;
     cShape.m_radius = 0.5f;
-    body->CreateFixture(&cShape, 1.0f);
+    b2Fixture* fix = body->CreateFixture(&cShape, 1.0f);
+    fix->SetRestitution(0.2);
 
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	
@@ -30,6 +32,31 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld
 
     renderGroup = ThinDrawer::object->addPortalBody(portalBody, {"sphere.png", "sphereEnabled.png"});
     ThinDrawer::object->debug_addPortalBody(portalBody);
+
+    this->linkedDropper = linkedDropper;
+}
+
+void Sphere::recreate(bool mirrored)
+{
+    if (linkedDropper)
+    {
+        int i = wData->pbIndices.size() - 1;
+        for (; i >= 0; i--)
+        {
+            PortalBody* portalBody = wData->pbIndices[i];
+
+            for (auto pair : wData->destroyCallbacks)
+            {
+                pair.first(portalBody, pair.second);
+            }
+
+            delete portalBody;
+        }
+    }
+    else
+    {
+        DefaultObject::recreate(mirrored);
+    }
 }
 
 void Sphere::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)

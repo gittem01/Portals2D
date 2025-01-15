@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <dbghelp.h>
+#include "steam_api.h"
 
 typedef BOOL(WINAPI* SymInitialize_t)(HANDLE, PCSTR, BOOL);
 typedef BOOL(WINAPI* SymFromAddr_t)(HANDLE, DWORD64, PDWORD64, PSYMBOL_INFO);
@@ -105,15 +106,17 @@ void PrintCallStack(CONTEXT* context)
 
     free(symbol);
 
-    int result = MessageBox(NULL,
-        "Game crashed\nSend crash report?",
-        "Crash Report",
-        MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2);
-
-    if (result == IDYES)
+    // not implemented yet
+    if (false)
     {
-        // Example: You can call a function to send the crash report via HTTP or email
-        //SendCrashReport();
+        int result = MessageBox(NULL,
+            "Game crashed\nSend crash report?",
+            "Crash Report",
+            MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2);
+
+        if (result == IDYES)
+        {
+        }
     }
 }
 

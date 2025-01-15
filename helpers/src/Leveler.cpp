@@ -504,8 +504,8 @@ void Leveler::initOffsets()
 	textureRenderOffset = mt->lastAvailablePos;
 	mt->lastAvailablePos += numSwapChainImages;
 
-	int platformIndex = getLevelObjectIndex(PLATFORM);
-	perTextureData.resize(platformIndex - 4);
+	int lastIndex = getLevelObjectIndex(PLATFORM);
+	perTextureData.resize(lastIndex - 4);
 	lastOffsetPos_M.resize(perTextureData.size());
 	for (int i = 0; i < perTextureData.size(); i++)
 	{
@@ -1908,6 +1908,8 @@ void Leveler::update()
 			inData->rotation = selectedObjectRotation;
 			inData->mirrored = selectedObjectMirror;
 			inData->fullData.w = 0.0;
+			inData->speed = 0;
+			inData->startPolarized = (item.objectType & CUBE_SPAWNER) ? 1 : 0;
 
 			bool isPut = putObject(item, inData);
 
@@ -4389,15 +4391,23 @@ void Leveler::handleRightClickClick()
 						vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory);
 					}
 				}
-				else if (ol->popHoverIndices[0] == 6 && ol->popHoverIndices[1] > -1 && objectData->objectType == PLATFORM)
+				else if (ol->popHoverIndices[0] == 6 && ol->popHoverIndices[1] > -1 && objectData->objectType & PLATFORM)
 				{
 					objectData->speed = ol->popHoverIndices[1];
 				}
-				else if (ol->popHoverIndices[0] == 3 && ol->popHoverIndices[1] > -1 && objectData->objectType == CLICK_BUTTON)
+				else if (ol->popHoverIndices[0] == 3 && ol->popHoverIndices[1] > -1 && objectData->objectType & CLICK_BUTTON)
 				{
 					objectData->speed = ol->popHoverIndices[1];
 				}
-				
+				else if (ol->popHoverIndices[0] == 4 && objectData->objectType & CUBE_SPAWNER)
+				{
+					objectData->startPolarized ^= 1;
+				}
+				else if (ol->popHoverIndices[0] == 5 && ol->popHoverIndices[1] > -1 && objectData->objectType & CUBE_SPAWNER)
+				{
+					objectData->speed = ol->popHoverIndices[1];
+				}
+
 				if (ol->popHoverIndices[0] == 2 && ol->popHoverIndices[1] > -1 && ol->popHoverIndices[1] < objectData->connections.size())
 				{
 					removeConnection(objectData->connections[ol->popHoverIndices[1]]);

@@ -109,6 +109,9 @@ Overlayer::Overlayer(Game* game)
     addItem("", "waterGeller.png", WATER_GELLER, "activated_connector", { 0.5, -0.02 }, 1, { 2, 2 }, 2.0, true, 2);
 
     addItem("", "platform.png", PLATFORM, "platform", { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
+
+    addItem("", "spawner.png", CUBE_SPAWNER, "spawner", { 0.5, -0.37 }, 1, { 2, 2 }, 2.0, false, 2);
+
     addItem("", "x.png", ERASER);
 
     getPops();
@@ -546,10 +549,11 @@ void Overlayer::popUpdate()
             s_objectDataGrid* objectData = (s_objectDataGrid*)rightClickItem.ptr;
             if (objectData->objectType & RECEIVERS)
             {
-                int shift = objectData->objectType == PLATFORM ? 12 : 11;
+                int shift = objectData->objectType & PLATFORM ? 12 : 11;
                 pop.mask &= (3 << shift) ^ -1ll;
                 pop.mask |= objectData->startActive << shift;
-                pop.mask |= (objectData->objectType == PLATFORM ? objectData->loop : objectData->startPolarized) << (shift + 1);
+                pop.mask |= (objectData->objectType & PLATFORM ? objectData->loop : (
+                    objectData->objectType & (FUNNEL | CUBE_SPAWNER) ? objectData->startPolarized : objectData->speed)) << (shift + 1);
             }
         }
 
@@ -592,7 +596,7 @@ void Overlayer::popUpdate()
                 if (rightClickItem.ptr)
                 {
                     s_objectDataGrid* objectData = (s_objectDataGrid*)rightClickItem.ptr;
-                    if (objectData->objectType == PLATFORM)
+                    if (objectData->objectType & PLATFORM)
                     {
                         if (popHoverIndices[0] == 3)
                         {
@@ -606,6 +610,11 @@ void Overlayer::popUpdate()
 						}
                     }
                     else if (objectData->objectType & CLICK_BUTTON && popHoverIndices[0] == 3)
+                    {
+                        pop2.mask &= (0x1F << 8) ^ -1ll;
+                        pop2.mask |= 1 << (objectData->speed + 8);
+                    }
+                    else if (objectData->objectType & CUBE_SPAWNER && popHoverIndices[0] == 5)
                     {
                         pop2.mask &= (0x1F << 8) ^ -1ll;
                         pop2.mask |= 1 << (objectData->speed + 8);

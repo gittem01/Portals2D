@@ -31,7 +31,7 @@ public:
 
 	void paintedBounce(b2WorldManifold& wManifold, b2Body* body);
 	b2Vec2 tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixture* otherFix);
-	virtual void enterForceField(ForceField* forceField);
+	virtual bool enterForceField(ForceField* forceField);
 	virtual void recreate(bool mirrored=false);
 	virtual void beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix);
 	virtual void endContact(b2Contact* contact, b2Fixture* otherFix);

@@ -103,6 +103,10 @@ friend class PortalWorld;
 friend class Portal;
 friend class ContactListener;
 friend class DefaultObject;
+friend class DefaultCube;
+friend class LaserCube;
+friend class Sphere;
+friend class Dropper;
 friend class Gel;
 
 public:

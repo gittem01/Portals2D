@@ -20,6 +20,7 @@
 #include "GameObjects/Funnel.h"
 #include "GameObjects/LightBridge.h"
 #include "GameObjects/Catapult.h"
+#include "GameObjects/Dropper.h"
 #include <mutex>
 
 Game* Game::object;
@@ -69,6 +70,44 @@ Game::Game()
     gameStater = &Game::MenuState;
 
     pop.construct();
+
+    SteamErrMsg errMsg;
+    if (SteamAPI_InitEx(&errMsg) != k_ESteamAPIInitResult_OK)
+    {
+        printf("Failed to init Steam.  %s", errMsg);
+        exit(1);
+    }
+
+    appid = SteamUtils()->GetAppID();
+
+    /*SteamAPICall_t call = SteamUGC()->CreateItem(appid, k_EWorkshopFileTypeCommunity);
+
+    createItemResult.Set(call, this, &Game::onItemCreated);*/
+}
+
+void Game::onItemCreated(CreateItemResult_t* pCallback, bool bIOFailure)
+{
+    if (pCallback->m_eResult == k_EResultOK && !bIOFailure)
+    {
+        UGCUpdateHandle_t handle = SteamUGC()->StartItemUpdate(appid, pCallback->m_nPublishedFileId);
+
+        SteamUGC()->SetItemTitle(handle, "Title test");
+        SteamUGC()->SetItemDescription(handle, "Description test");
+        SteamUGC()->SetItemMetadata(handle, "Test metadata");
+        SteamUGC()->SetItemVisibility(handle, k_ERemoteStoragePublishedFileVisibilityUnlisted);
+        
+        SteamAPICall_t submitCall = SteamUGC()->SubmitItemUpdate(handle, "test123");
+
+        updateItemResult.Set(submitCall, this, &Game::onItemSubmitted);
+    }
+}
+
+void Game::onItemSubmitted(SubmitItemUpdateResult_t* pCallback, bool bIOFailure)
+{
+    if (pCallback->m_eResult == k_EResultOK && !bIOFailure)
+    {
+        std::cout << "Item update submitted created!" << std::endl;
+    }
 }
 
 void Game::loadGameData()
@@ -253,6 +292,7 @@ void Game::TestState()
         Platform::staticInit();
         ForceField::staticInit();
         HazardField::staticInit();
+        TestPlayer::object->renderInit();
         Geller::staticInit();
         UseButton::staticInit();
         DownButton::staticInit();
@@ -262,7 +302,7 @@ void Game::TestState()
         GndLaserReceiver::staticInit();
         Funnel::staticInit();
         Catapult::staticInit();
-        TestPlayer::object->renderInit();
+        Dropper::staticInit();
     }
     else
     {
@@ -304,6 +344,7 @@ void Game::TestState()
             GndLaserReceiver::update();
             Funnel::update();
             LightBridge::update();
+            Dropper::update();
         }
 
         runSingleTaskRegistry();
@@ -336,7 +377,7 @@ void Game::TestState()
         if (limitFramerate < 1001)
         {
             uint64_t timePassed = t1 - t0;
-            uint64_t timeToWait = (double)1000000000 / limitFramerate - timePassed;
+            uint64_t timeToWait = (double)SDL_NS_PER_SECOND / limitFramerate - timePassed;
 
             if (timeToWait > 0)
             {
@@ -360,6 +401,7 @@ void Game::TestState()
             LightBridge::toLeveler();
             Gel::toLeveler();
             Catapult::toLeveler();
+            Dropper::toLeveler();
         }
 
         testCase->shouldQuit = false;

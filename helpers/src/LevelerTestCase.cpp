@@ -16,6 +16,7 @@
 #include "GameObjects/Receiver.h"
 #include "GameObjects/Transmitter.h"
 #include "GameObjects/Catapult.h"
+#include "GameObjects/Dropper.h"
 #include "Menu.h"
 #include "Leveler.h"
 
@@ -368,7 +369,7 @@ void LevelerTestCase::walkFwrdAndCreateEdge(glm::i16vec2 pos, char dir, glm::i16
             int dirVal = (dir + 3) % 4;
             int rot = 0;
             if (upLgd.objectType & (SINGLE_DRAWS | PLATFORM))
-                rot = (upLgd.objectType & GELS) ? (objectData->rotation + 2) % 4 : objectData->rotation;
+                rot = (upLgd.objectType & (GELS | CUBE_SPAWNER)) ? (objectData->rotation + 2) % 4 : objectData->rotation;
             bool secCond = objectData && upLgd.objectType & (FORCE_FIELD | HAZARDER) && rot == (dirVal + 2) % 4;
             if (upLgd.objectType & WALL_EDGE_OCCUPIERS && (objectData && rot == dirVal || secCond))
             {
@@ -783,6 +784,7 @@ void LevelerTestCase::createDynamics()
     LightBridge::lightBridges.resize(ThinDrawer::object->lightBridge->numbridges);
     Platform::platforms.resize(ThinDrawer::object->platformRectangle->numPlatforms);
     Geller::gellers.resize(64);
+    Dropper::droppers.reserve(64);
 
     for (s_objectDataGrid* objectData : g->leveler->levelObjects)
     {
@@ -894,6 +896,12 @@ void LevelerTestCase::createDynamics()
         case CATAPULT:
         {
             Catapult* cp = new Catapult(g->pWorld, objectData);
+        }
+        break;
+        case CUBE_SPAWNER:
+        {
+            Dropper* dropper = Dropper::createDropper(g->pWorld, objectData);
+            receiverToTransmitter(objectData, dropper);
         }
         break;
         default:

@@ -23,9 +23,6 @@ public:
 	Geller() {};
 	~Geller();
 
-	void ssignal();
-	void usignal();
-
 	static void createGeller(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void staticInit();
 	static void update();

@@ -123,7 +123,7 @@ public:
     void createBody(b2Vec2 pos);
 
     void recreate(bool mirrored = false);
-    void enterForceField(ForceField* forceField);
+    bool enterForceField(ForceField* forceField);
     void beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix);
     void endContact(b2Contact* contact, b2Fixture* otherFix);
     void preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2);

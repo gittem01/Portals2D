@@ -1,8 +1,9 @@
 #include <DefaultObjects/DefaultCube.h>
 #include <DefaultObjects/LaserCube.h>
+#include "GameObjects/Dropper.h"
 #include <ThinDrawer.h>
 
-LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(portalWorld)
+LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : DefaultObject(portalWorld)
 {
     this->pWorld = portalWorld;
     ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
@@ -22,6 +23,31 @@ LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos) : DefaultObject(porta
 
     renderGroup = ThinDrawer::object->addPortalBody(portalBody, { "laserCube.png" });
     ThinDrawer::object->debug_addPortalBody(portalBody);
+
+    this->linkedDropper = linkedDropper;
+}
+
+void LaserCube::recreate(bool mirrored)
+{
+    if (linkedDropper)
+    {
+        int i = wData->pbIndices.size() - 1;
+        for (; i >= 0; i--)
+        {
+            PortalBody* portalBody = wData->pbIndices[i];
+
+            for (auto pair : wData->destroyCallbacks)
+            {
+                pair.first(portalBody, pair.second);
+            }
+
+            delete portalBody;
+        }
+    }
+    else
+    {
+        DefaultObject::recreate(mirrored);
+    }
 }
 
 void LaserCube::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)

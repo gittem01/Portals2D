@@ -127,7 +127,7 @@ void SwapChain::createSwapChain()
 
     if (!enableVsync)
     {
-        if (mask & VK_PRESENT_MODE_MAILBOX_KHR)
+        if (mask & VK_PRESENT_MODE_MAILBOX_KHR && false)
         {
             presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
         }

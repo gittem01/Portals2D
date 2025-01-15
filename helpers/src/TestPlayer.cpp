@@ -9,6 +9,7 @@
 #include "GameObjects/WallLaserReceiver.h"
 #include "GameObjects/Funnel.h"
 #include "GameObjects/Catapult.h"
+#include "GameObjects/Dropper.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -383,6 +384,7 @@ void TestPlayer::restartWorld()
     GndLaserReceiver::toDeath();
     WallLaserReceiver::toDeath();
     Platform::toDeath();
+    Dropper::toDeath();
 }
 
 void TestPlayer::memMapDeathByElectrocution(void* ptr)
@@ -898,7 +900,7 @@ void TestPlayer::recreate(bool mirrored)
 
 }
 
-void TestPlayer::enterForceField(ForceField* forceField)
+bool TestPlayer::enterForceField(ForceField* forceField)
 {
     game->singleTaskRegistry.push_back(
         [this]()
@@ -925,6 +927,8 @@ void TestPlayer::enterForceField(ForceField* forceField)
             portalA = nullptr; portalB = nullptr;
         }
     );
+
+    return true;
 }
 
 void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix)
@@ -1017,7 +1021,7 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
     contact->GetWorldManifold(&wManifold);
 
     PortalBody* contactingwData = (PortalBody*)((bodyData*)thisBody->GetUserData().pointer)->data;
-    float tHold = 0.2f;
+    float tHold = 0.4f;
     b2Vec2 bodyPos = contactingwData->body->GetPosition();
     b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
     botVector = pWorld->rotateVec(botVector, thisBody->GetAngle());
@@ -1062,7 +1066,7 @@ void TestPlayer::reportContact(b2Contact* contact, const b2ContactImpulse* impul
         cPos *= 0.5f;
     }
 
-    float tHold = 0.25f;
+    float tHold = 0.4f;
     b2Vec2 bodyPos = contactingwData->body->GetPosition();
     b2Vec2 botVector = b2Vec2(0.0f, -1.0f);
     botVector = pWorld->rotateVec(botVector, contactingBody->GetAngle());
@@ -1124,13 +1128,22 @@ void TestPlayer::handleBodyRotation()
     if (effectiveFunnel) return;
 
     PortalBody* pb = wData->pbIndices[0];
-    float ang = PortalWorld::normalizeAngle(pb->body->GetAngle());
+
+    float angAddition = 0.0f;
+
+    if (grounded)
+    {
+        angAddition = pb->body->GetLinearVelocity().x * 0.03f;
+    }
+
+    float ang = PortalWorld::normalizeAngle(pb->body->GetAngle() + angAddition);
 
     for (PortalBody* l_portalBody : wData->pbIndices)
     {
         l_portalBody->body->SetAngularVelocity(0.0f);
     }
-    pb->body->SetAngularVelocity(-5.0f * ang);
+
+    pb->body->SetAngularVelocity(-4.0f * ang);
 }
 
 void TestPlayer::handleGunRotation()
@@ -2230,6 +2243,7 @@ void TestPlayer::update(float dt, int totalIter)
             keyBeforeSwitch = lastKey;
         }
     }
+
     if (bodySwitch)
     {
         if (gameTime - switchTimer > totalTime)
@@ -2343,6 +2357,7 @@ void TestPlayer::update(float dt, int totalIter)
         lv.x += diff * dt * 15.0f * wData->pbIndices.size();
         setFriction = 2.0;
     }
+
     if (!effectiveFunnel && (left || right))
     {
         const float groundMult = 40.0f;
@@ -2495,10 +2510,13 @@ void TestPlayer::update(float dt, int totalIter)
     {
         setFriction = 2.0;
     }
+    else
+    {
+        setFriction = 2.0;
+    }
 
     if (!contactBody) onAirFor += dt;
     else onAirFor = 0.0f;
-
 
     jumpEffect();
 

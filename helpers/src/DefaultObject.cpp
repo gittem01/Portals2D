@@ -51,14 +51,14 @@ void DefaultObject::recreate(bool mirrored)
 	bData->extraData = (void*)&pData;
 }
 
-void DefaultObject::enterForceField(ForceField* forceField)
+bool DefaultObject::enterForceField(ForceField* forceField)
 {
-	if (forceField && !forceField->enabled) return;
+	if (forceField && !forceField->enabled) return false;
 
 	auto npBody = wData->pbIndices;
 
-	if (npBody[0]->worldIndex->destrTime > -10.0f)
-		return;
+	if (npBody.size() == 0 || npBody[0]->worldIndex->destrTime > -10.0f)
+		return false;
 
 	ALuint source = Sounder::object->playSound(ForceField::emancipationBuffer, 0.5);
 	b2Vec2 pPos = npBody.at(0)->body->GetPosition();
@@ -93,6 +93,8 @@ void DefaultObject::enterForceField(ForceField* forceField)
 			pb->body->SetMassData(&massData);
 		}
 	});
+
+	return true;
 }
 
 void DefaultObject::paintedBounce(b2WorldManifold& wManifold, b2Body* body)

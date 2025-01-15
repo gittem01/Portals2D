@@ -10,3 +10,5 @@ polarization
 leveler_options
 push_button
 button_timer
+spawner
+object_select

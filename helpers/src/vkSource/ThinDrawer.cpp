@@ -204,7 +204,11 @@ void ThinDrawer::renderLoop()
     submit.commandBufferCount = std::size(cmdBuffers);
     submit.pCommandBuffers = cmdBuffers;
 
-    queueMutex.lock();
+    if (Game::object->gameStater != &Game::TestState)
+    {
+        queueMutex.lock();
+    }
+    
     vkQueueSubmit(queues.graphicsQueue, 1, &submit, currentFrame.renderFence);
 
     VkPresentInfoKHR presentInfo = { };
@@ -218,11 +222,20 @@ void ThinDrawer::renderLoop()
     presentInfo.pImageIndices = &swapchainImageIndex;
 
     result = vkQueuePresentKHR(queues.graphicsQueue, &presentInfo);
-    queueMutex.unlock();
+    
+    if (Game::object->gameStater != &Game::TestState)
+    {
+        queueMutex.unlock();
+    }
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
         surfaceRecreate();
+    }
+
+    if (frameNumber % 10 == 0)
+    {
+        SteamAPI_RunCallbacks();
     }
 
     frameNumber++;
@@ -488,12 +501,23 @@ void ThinDrawer::debug_renderEdges(VkCommandBuffer& cmdBuff)
                     }
                 }
 
-                glm::vec4 gelColor = colorToRender;
-
                 b2Vec2 v1 = body->GetWorldPoint(edgeShape->m_vertex1);
                 b2Vec2 v2 = body->GetWorldPoint(edgeShape->m_vertex2);
 
-                oneTimeRenderLine(glm::vec4(v1.x, v1.y, v2.x, v2.y), gelColor, 0.03f, 0.5f);
+                oneTimeRenderLine(glm::vec4(v1.x, v1.y, v2.x, v2.y), colorToRender, 0.03f, 0.5f);
+
+                if (edgeShape->m_oneSided)
+                {
+                    colorToRender = glm::vec4(1.0f, 0.0f, 1.0f, 0.4f);
+
+                    v1 = body->GetWorldPoint(edgeShape->m_vertex0);
+                    v2 = body->GetWorldPoint(edgeShape->m_vertex1);
+                    oneTimeRenderLine(glm::vec4(v1.x, v1.y, v2.x, v2.y), colorToRender, 0.07f, 0.5f);
+
+                    v1 = body->GetWorldPoint(edgeShape->m_vertex2);
+                    v2 = body->GetWorldPoint(edgeShape->m_vertex3);
+                    oneTimeRenderLine(glm::vec4(v1.x, v1.y, v2.x, v2.y), colorToRender, 0.07f, 0.5f);
+                }
             }
         }
     }
@@ -864,7 +888,7 @@ void ThinDrawer::renderPortals(VkCommandBuffer& cmdBuff)
             b2Vec2 p1 = portal->pos - fmax(pr->scale.x * 0.5 - 2.0, 0.01) * portal->rotDir;
                      
             pr->particlePsh.portalPoints = glm::vec4(p0.x, p0.y, p1.x, p1.y);
-            pr->particlePsh.data0 = glm::vec4(0.6f, 1.0f, pr->particlePsh.data0.z, 3.0f);
+            pr->particlePsh.data0 = glm::vec4(0.6f, 1.0f, pr->particlePsh.data0.z, portal->size * 2.0f + 0.4f);
             pr->particlePsh.data1 = glm::vec4(0.2f, 0.2f, pr->particlePsh.data1.z, 100.0f);
         }
     }

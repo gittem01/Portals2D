@@ -4,7 +4,7 @@
 #include <Camera.h>
 #include "SDL3/SDL_vulkan.h"
 
-#define PREFER_DISCRETE 0
+#define PREFER_DISCRETE 1
 
 void ThinDrawer::createWindow()
 {

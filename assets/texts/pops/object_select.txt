@@ -1,0 +1,20 @@
+<0>
+Standart Küp
+Lazer Küpü
+Küre Top
+<0>
+<1>
+Standard Cube
+Laser Cube
+Sphere Ball
+<1>
+<linked_options>
+-
+-
+-
+<linked_options>
+<signal_options>
+1
+1
+1
+<signal_options>
