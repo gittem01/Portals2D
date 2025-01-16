@@ -333,6 +333,8 @@ void Game::TestState()
         {
             gameTime += deltaTime;
             
+            LightBridge::update();
+
             testCase->onUpdate();
 
             ForceField::update();
@@ -343,7 +345,6 @@ void Game::TestState()
             WallLaserReceiver::update();
             GndLaserReceiver::update();
             Funnel::update();
-            LightBridge::update();
             Dropper::update();
         }
 

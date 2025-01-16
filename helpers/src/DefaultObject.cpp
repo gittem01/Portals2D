@@ -3,6 +3,7 @@
 #include "GameObjects/ForceField.h"
 #include "GameObjects/Catapult.h"
 #include "DefaultObjects/Gel.h"
+#include "GameObjects/LightBridge.h"
 
 std::vector<DefaultObject*> DefaultObject::defaultObjects;
 
@@ -313,9 +314,40 @@ void DefaultObject::reportContact(b2Contact* contact, const b2ContactImpulse* im
 		b2Manifold* manifold = contact->GetManifold();
 		b2WorldManifold wMan;
 		contact->GetWorldManifold(&wMan);
-		if (wMan.separations[0] < -0.2f)
+
+		float sep = wMan.separations[0];
+		if (manifold->pointCount > 1) sep = (sep + wMan.separations[1]) / 2.0f;
+
+		if (sep < -0.15f)
 		{
-			enterForceField(nullptr);
+			fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
+
+			bool pass = false;
+			if (fData && (fData->type & F_LIGHT_BRIDGE))
+			{
+				LightBridge* lb = (LightBridge*)fData->extraData;
+				if (lb->newlyCreated)
+				{
+					pass = true;
+
+					PortalBody* contactingwData = (PortalBody*)((bodyData*)contactingBody->GetUserData().pointer)->data;
+
+					if (lb->seperations.find(contactingwData) == lb->seperations.end())
+					{
+						lb->seperations.insert({ contactingwData, fix2->GetBody() });
+					}
+				}
+			}
+
+			if (fData && (fData->type & F_BRIDGE_CAP))
+			{
+				pass = true;
+			}
+
+			if (!pass)
+			{
+				enterForceField(nullptr);
+			}
 		}
 	}
 }

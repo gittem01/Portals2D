@@ -10,6 +10,7 @@
 #include "GameObjects/Funnel.h"
 #include "GameObjects/Catapult.h"
 #include "GameObjects/Dropper.h"
+#include "GameObjects/LightBridge.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -991,11 +992,16 @@ void TestPlayer::endContact(b2Contact* contact, b2Fixture* otherFix)
 		contactBody = nullptr;
 		platformBody = nullptr;
         l_platformBody = nullptr;
+        l_contactBody = nullptr;
 		leftCollisionType = b2_staticBody;
 		rightCollisionType = b2_staticBody;
 		numNormals = 0;
 		avgNormalX = 0.0f;
 	}
+    else if (otherFix->GetBody() == l_platformBody)
+    {
+        l_platformBody = nullptr;
+    }
 
     if (!contact->IsEnabled()) return;
 }
@@ -1038,10 +1044,39 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 
     contact->SetRestitution(0.0f);
 
-    if (fix2->GetBody()->GetType() != b2_dynamicBody && wManifold.separations[0] < -0.1f && contact->IsEnabled() && wData->pbIndices.size() == 1)
+    float sep = wManifold.separations[0];
+    if (contact->GetManifold()->pointCount > 1) sep = (sep + wManifold.separations[1]) / 2.0f;
+
+    if (health != 0 && fix2->GetBody()->GetType() != b2_dynamicBody && sep < -0.1f && contact->IsEnabled() && wData->pbIndices.size() == 1)
     {
-        health = 0;
-        healthCheck();
+        fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
+
+        bool pass = false;
+        if (fData && (fData->type & F_LIGHT_BRIDGE))
+        {
+            LightBridge* lb = (LightBridge*)fData->extraData;
+            if (lb->newlyCreated)
+            {
+                pass = true;
+
+                if (lb->seperations.find(contactingwData) == lb->seperations.end())
+                {
+                    lb->seperations.insert({ contactingwData, fix2->GetBody() });
+                }
+            }
+        }
+
+        if (fData && (fData->type & F_BRIDGE_CAP))
+        {
+            pass = true;
+            contact->SetEnabled(false);
+        }
+
+        if (!pass)
+        {
+            health = 0;
+            healthCheck();
+        }
     }
 }
 
@@ -1410,6 +1445,21 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
     return checkFixture;
 }
 
+void TestPlayer::gunToBody(b2Body* playerBody, b2Body* gunBody)
+{
+    gunBody->SetTransform(playerBody->GetPosition(), b2_pi + playerBody->GetAngle());
+
+    b2RevoluteJointDef jDef;
+    jDef.bodyA = playerBody;
+    jDef.bodyB = gunBody;
+    jDef.collideConnected = false;
+    jDef.localAnchorA = b2Vec2(0.0f, +0.35f);
+    jDef.localAnchorB = b2Vec2(0.0f, -0.35f);
+    jDef.calculateAnchorHelpers();
+
+    pWorld->CreateJoint(&jDef);
+}
+
 void TestPlayer::getBodyOut()
 {
     PortalBody::getBodyOut(wData->pbIndices[0]->worldIndex);
@@ -1430,17 +1480,7 @@ void TestPlayer::getBodyOut()
 
     if (!jointFound)
     {
-        gunBody->SetTransform(playerBody->GetPosition(), b2_pi + playerBody->GetAngle());
-
-        b2RevoluteJointDef jDef;
-        jDef.bodyA = playerBody;
-        jDef.bodyB = gunBody;
-        jDef.collideConnected = false;
-        jDef.localAnchorA = b2Vec2(0.0f, +0.35f);
-        jDef.localAnchorB = b2Vec2(0.0f, -0.35f);
-        jDef.calculateAnchorHelpers();
-
-        pWorld->CreateJoint(&jDef);
+        gunToBody(playerBody, gunBody);
     }
 }
 

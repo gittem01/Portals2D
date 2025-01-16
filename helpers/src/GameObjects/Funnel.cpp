@@ -739,7 +739,6 @@ void FunnelRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, uint32_
 	ThinDrawer::object->registerDebugLine(glm::vec4(rayStart.x, rayStart.y, endPos.x, endPos.y), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.02f, 0.5f);
 }
 
-
 float FunnelRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction)
 {
     fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;

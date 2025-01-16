@@ -180,6 +180,7 @@ friend class Funnel;
 friend class Platform;
 friend class Turret;
 friend class Button;
+friend class LightBridge;
 
 public:
     std::vector<pbWorldData*> bodyIndices;

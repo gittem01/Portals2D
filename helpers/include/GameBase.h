@@ -43,7 +43,7 @@ typedef enum GameDataType
 enum FixtureDataType
 {
     F_OTHER         = 0x1 << 0,
-    F_PORTAL        = 0x1 << 1, 
+    F_PORTAL        = 0x1 << 1,
     F_PORTAL_BODY   = 0x1 << 2,
     F_EDGE          = 0x1 << 3,
     F_GEDGE         = 0x1 << 4,
@@ -58,7 +58,8 @@ enum FixtureDataType
     F_GND_RECEIVER  = 0x1 << 13,
     F_FUNNEL		= 0x1 << 14,
     F_LIGHT_BRIDGE  = 0x1 << 15,
-    F_CATAPULT      = 0x1 << 16,
+    F_BRIDGE_CAP    = 0x1 << 16,
+    F_CATAPULT      = 0x1 << 17,
 
     F_END           = 0x1 << 30,
 };

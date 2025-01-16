@@ -137,6 +137,7 @@ public:
     b2Fixture* canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float size, Portal* oldPortal);
 
     void portalClosingRitual();
+    void gunToBody(b2Body* playerBody, b2Body* gunBody);
     void getBodyOut();
     PortalBody* getOuterGun();
 

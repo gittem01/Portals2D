@@ -6,6 +6,7 @@
 #include "Leveler.h"
 #include "LightBridge.h"
 #include "GameObjects/Receiver.h"
+#include <map>
 
 class LightRay;
 
@@ -36,6 +37,7 @@ public:
 	s_bridgeUbo data;
 	std::vector<s_lightRay> renderLightPositions;
 	std::vector<b2Body*> bodies;
+	std::map<PortalBody*, b2Body*> seperations;
 	portalFrames frames;
 	s_edgeGlobalData eDatas[2];
 	b2Body* bridgeBody;
@@ -59,6 +61,7 @@ public:
 	int effectiveGelOffset1;
 	int effectiveGelOffset2;
 	bool reversed;
+	int newlyCreated;
 
 	LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	LightBridge() {};

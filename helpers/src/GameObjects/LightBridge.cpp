@@ -6,6 +6,8 @@
 
 #define LIGHT_FILTER_MASK ~(uint32_t)(F_EDGE | F_GEDGE | F_PORTAL)
 
+#define NEW_COUNT 4
+
 std::vector<LightBridge> LightBridge::lightBridges;
 std::vector<LightBridge*> LightBridge::perTickChecks;
 int LightBridge::numLightBridges = 0;
@@ -67,6 +69,7 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		bridgeBody->CreateFixture(&shape, 0.0f);
 	}
 
+	bDef.position += b2Vec2(2.0f, 2.0f);
 	bDef.angle += -b2_pi * 0.5f;
 	bDef.type = b2_kinematicBody;
 	capBody = portalWorld->CreateBody(&bDef);
@@ -74,17 +77,30 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	b2Vec2 p1 = b2Vec2(-0.3f, lightThick * 0.5f);
 	b2Vec2 p2 = b2Vec2(-0.01f, p1.y);
 
+	fixtureData* fData = new fixtureData();
+	fData->type = F_BRIDGE_CAP;
+	fData->data = nullptr;
+	fData->extraData = this;
+
 	shape.SetTwoSided(p1, p2);
-	capBody->CreateFixture(&shape, 0.0f);
+	b2Fixture* fix = capBody->CreateFixture(&shape, 0.0f);
+
+	fix->GetUserData().pointer = (uintptr_t)fData;
 
 	p1 = b2Vec2(p1.x, -p1.y);
 	p2 = b2Vec2(p2.x, -p2.y);
 	shape.SetTwoSided(p1, p2);
-	capBody->CreateFixture(&shape, 0.0f);
+	fix = capBody->CreateFixture(&shape, 0.0f);
+
+	fix->GetUserData().pointer = (uintptr_t)fData;
 
 	p1 = b2Vec2(p2.x, -p2.y);
 	shape.SetTwoSided(p2, p1);
-	capBody->CreateFixture(&shape, 0.0f);
+	fix = capBody->CreateFixture(&shape, 0.0f);
+
+	fix->GetUserData().pointer = (uintptr_t)fData;
+
+	newlyCreated = NEW_COUNT;
 
 	s_bridgeUbo* bridgeUbo;
 	vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->lightBridge->uniformBuffers[0].memory,
@@ -126,13 +142,6 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		eDatas[i].unitWalls.clear();
 		eDatas[i].unitWalls.resize(wallGelSize);
 	}
-
-	//fixtureData* fData = new fixtureData();
-	//fData->type = F_LIGHT_BRIDGE;
-	//fData->data = (void*)this;
-	//fData->extraData = nullptr;
-
-	//fix->GetUserData().pointer = (uintptr_t)fData;
 }
 
 void LightBridge::enable()
@@ -464,8 +473,8 @@ void LightBridge::update()
 			fixtureData* fData = (fixtureData*)malloc(sizeof(fixtureData) * 2 + sizeof(s_edgeLocalData) * 2);
 			s_edgeLocalData* eData = (s_edgeLocalData*)&fData[2];
 
-			fData[0].extraData = nullptr;
-			fData[1].extraData = nullptr;
+			fData[0].extraData = lb;
+			fData[1].extraData = lb;
 
 			eData[0].prevNextFixtures[0] = nullptr; eData[0].prevNextFixtures[1] = nullptr;
 			eData[1].prevNextFixtures[0] = nullptr; eData[1].prevNextFixtures[1] = nullptr;
@@ -498,6 +507,7 @@ void LightBridge::update()
 			b2BodyDef bDef;
 			bDef.type = b2_staticBody;
 			b2Body* body = Game::object->pWorld->CreateBody(&bDef);
+			lb->newlyCreated = NEW_COUNT;
 
 			b2EdgeShape shape;
 			shape.SetTwoSided(start1, end1);
@@ -554,6 +564,8 @@ void LightBridge::update()
 				shape.SetTwoSided(start2, end2);
 				fix = body->CreateFixture(&shape, 0.0f);
 				fix->GetUserData().pointer = (uintptr_t)&fData[1];
+
+				lb->newlyCreated = NEW_COUNT;
 			}
 		}
 
@@ -616,7 +628,7 @@ void LightBridge::update()
 			s_wallPerGelData* gelData;
 			vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
 				lb->effectiveGelOffset1 * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * lb->eDatas[0].unitWalls.size(), 0, (void**)&gelData);
-			for (int i = 0; i < size; i++)
+			for (int i = 0; i < std::min(size, (int)lb->eDatas[0].unitWalls.size()); i++)
 			{
 				gelData[i].data.x = gelTypeToIndex(lb->eDatas[0].unitWalls[i].gelType);
 				gelData[i].data.y = lb->eDatas[0].unitWalls[i].gelAmount;
@@ -625,13 +637,12 @@ void LightBridge::update()
 
 			vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory,
 				lb->effectiveGelOffset2 * sizeof(s_wallPerGelData), sizeof(s_wallPerGelData) * lb->eDatas[1].unitWalls.size(), 0, (void**)&gelData);
-			for (int i = 0; i < size; i++)
+			for (int i = 0; i < std::min(size, (int)lb->eDatas[1].unitWalls.size()); i++)
 			{
 				gelData[i].data.x = gelTypeToIndex(lb->eDatas[1].unitWalls[i].gelType);
 				gelData[i].data.y = lb->eDatas[1].unitWalls[i].gelAmount;
 			}
 			vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[1].memory);
-
 		}
 
 		portalConnection* conn;
@@ -711,7 +722,7 @@ void LightBridge::update()
 		if (lightRay.closestFixture)
 		{
 			b2Vec2 endPos = raySendPos + minLen * rayDir;
-			if ((lb->capBody->GetPosition() - endPos).LengthSquared() > 0.001f)
+			if ((lb->capBody->GetPosition() - endPos).LengthSquared() > 0.00001f)
 			{
 				float angle = atan2(rayDir.y, rayDir.x);
 				lb->capBody->SetTransform(endPos, angle);
@@ -719,7 +730,7 @@ void LightBridge::update()
 
 			lb->capBody->SetLinearVelocity(lightRay.closestFixture->GetBody()->GetLinearVelocity());
 		}
-		else if ((lb->capBody->GetPosition() - lb->lightPos).LengthSquared() > 0.001f)
+		else if ((lb->capBody->GetPosition() - lb->lightPos).LengthSquared() > 0.00001f)
 		{
 			lb->capBody->SetTransform(lb->lightPos, -b2_pi * 0.5f);
 			lb->capBody->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
@@ -738,6 +749,54 @@ void LightBridge::perTickUpdate()
 	{
 		LightBridge* lb = perTickChecks[i];
 
+		for (auto& iter : lb->seperations)
+		{
+			PortalBody* pb = iter.first;
+			b2Body* thisBody = iter.second;
+
+			if (pb->worldIndex == TestPlayer::object->wData && pb->worldIndex->pbIndices.size() != 1)
+			{
+				continue;
+			}
+
+			b2Fixture* f0 = thisBody->GetFixtureList();
+			if (!f0 || !f0->GetNext()) continue;
+			b2Fixture* f1 = f0->GetNext();
+
+			b2EdgeShape* s0 = (b2EdgeShape*)f0->GetShape();
+			b2EdgeShape* s1 = (b2EdgeShape*)f1->GetShape();
+
+			b2Vec2 p0 = thisBody->GetWorldPoint(0.5f * (s0->m_vertex1 + s1->m_vertex1));
+			b2Vec2 p1 = thisBody->GetWorldPoint(0.5f * (s0->m_vertex2 + s1->m_vertex2));
+			b2Vec2 norm = p0 - p1;
+			norm.Normalize();
+			norm = b2Vec2(-norm.y, norm.x);
+
+			float sep0 = PortalWorld::getDistanceFromVec(p1, p0, pb) + 0.2f;
+			float sep1 = PortalWorld::getDistanceFromVec(p0, p1, pb) + 0.2f;
+
+			b2Vec2 newPos;
+			if (sep0 < sep1)
+			{
+				newPos = pb->body->GetPosition() + sep0 * norm;
+			}
+			else
+			{
+				newPos = pb->body->GetPosition() - sep1 * norm;
+			}
+
+			pb->body->SetTransform(newPos, pb->body->GetAngle());
+
+			if (pb->worldIndex == TestPlayer::object->wData && TestPlayer::object->gun->size() == 1)
+			{
+				TestPlayer::object->gunToBody(pb->body, TestPlayer::object->gun->at(0)->body);
+			}
+		}
+
+		lb->seperations.clear();
+
+		lb->newlyCreated = std::max(lb->newlyCreated - 1, 0);
+
 		if (lb->renderLightPositions.size() >= lb->bodies.size())
 		{
 			float offset = lb->lastLen;
@@ -752,7 +811,7 @@ void LightBridge::perTickUpdate()
 				fixtureData* fData = (fixtureData*)malloc(sizeof(fixtureData) * 2 + sizeof(s_edgeLocalData) * 2);
 				s_edgeLocalData* eData = (s_edgeLocalData*)&fData[2];
 
-				fData[0].extraData = nullptr; fData[1].extraData = nullptr;
+				fData[0].extraData = lb; fData[1].extraData = lb;
 				eData[0].prevNextFixtures[0] = nullptr; eData[0].prevNextFixtures[1] = nullptr;
 				eData[1].prevNextFixtures[0] = nullptr; eData[1].prevNextFixtures[1] = nullptr;
 
@@ -799,6 +858,8 @@ void LightBridge::perTickUpdate()
 				shape.SetTwoSided(p1, p2);
 				fix = body->CreateFixture(&shape, 0.0f);
 				fix->GetUserData().pointer = (uintptr_t)&fData[1];
+
+				lb->newlyCreated = NEW_COUNT;
 
 				offset += len;
 			}
@@ -879,6 +940,8 @@ void LightBridge::perTickUpdate()
 				shape.SetTwoSided(p1, p2);
 				fix = body->CreateFixture(&shape, 0.0f);
 				fix->GetUserData().pointer = (uintptr_t)&fData[1];
+
+				lb->newlyCreated = NEW_COUNT;
 			}
 
 			offset += (lRay.p1 - lRay.p0).Length();
@@ -910,6 +973,8 @@ float LightRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 {
 	fixtureData* fData = (fixtureData*)fixture->GetUserData().pointer;
 	if (!fData) return minFraction;
+
+	fixture->GetBody()->SetAwake(true);
 
 	if ((uint32_t)fData->type & filterMask)
 	{
