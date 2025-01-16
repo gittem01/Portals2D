@@ -70,7 +70,7 @@ bool DefaultObject::enterForceField(ForceField* forceField)
 		TestPlayer::object->releaseB();
 	}
 
-	ForceField::destroyCList.push(npBody[0]->worldIndex);
+	ForceField::destroyCList.push_back({ npBody[0]->worldIndex, 0.0f });
 	npBody[0]->worldIndex->destrTime = ThinDrawer::object->gameTime - 0.5;
 	npBody[0]->worldIndex->gravityScale = 0.0f;
 

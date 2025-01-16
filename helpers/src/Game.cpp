@@ -337,7 +337,6 @@ void Game::TestState()
 
             testCase->onUpdate();
 
-            ForceField::update();
             Geller::update();
             Gel::perFrameUpdate();
             UseButton::update();
@@ -345,8 +344,10 @@ void Game::TestState()
             WallLaserReceiver::update();
             GndLaserReceiver::update();
             Funnel::update();
-            Dropper::update();
         }
+
+        ForceField::update();
+        Dropper::update();
 
         runSingleTaskRegistry();
 

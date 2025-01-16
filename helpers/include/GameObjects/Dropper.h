@@ -12,11 +12,17 @@ class Dropper : public Receiver
 public:
 	static std::vector<Dropper> droppers;
 	static std::set<Dropper*> createList;
+	static std::set<Dropper*> pushList;
+
 	static s_perTextureData* ptData;
 	static s_texture* tex;
 
 	DefaultObject* linkedObject;
+	b2Body* pushBody;
 	b2Vec2 dropCreationPos;
+	float pushBegin;
+	float pushEnd;
+	float createAddition;
 	bool startActive;
 	bool autoRespawn;
 
@@ -26,7 +32,7 @@ public:
 
 	void enable();
 	void disable();
-
+	void pushStart();
 
 	static Dropper* createDropper(PortalWorld* portalWorld, s_objectDataGrid* objData);
 	static void destrFunc(PortalBody* pb, void* ptr);

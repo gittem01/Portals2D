@@ -372,7 +372,7 @@ void TestPlayer::restartWorld()
 
     init();
 
-    ForceField::destroyCList = std::queue<pbWorldData*>();
+    ForceField::destroyCList = {};
 
     UseButton::toDeath();
     ForceField::toDeath();

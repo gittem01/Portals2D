@@ -8,7 +8,7 @@ std::vector<ForceField*> ForceField::fields;
 ALuint ForceField::emancipationBuffer;
 s_perTextureData* ForceField::ptData;
 s_texture* ForceField::tex;
-std::queue<pbWorldData*> ForceField::destroyCList;
+std::vector<std::pair<pbWorldData*, float>> ForceField::destroyCList;
 
 static b2Vec2 dirs[4] = { { 0.0, 1.0 }, { -1.0, 0.0 }, { 0.0, -1.0 }, { 1.0, 0.0 } };
 static b2Vec2 perpDirs[4] = { { 1.0, 0.0 }, { 0.0, 1.0 }, { 1.0, 0.0 }, { 0.0, 1.0 } };
@@ -189,7 +189,7 @@ void ForceField::toLeveler()
 	}
 
 	fields.clear();
-	destroyCList = std::queue<pbWorldData*>();
+	destroyCList = {};
 }
 
 void ForceField::staticInit()
@@ -233,18 +233,25 @@ void ForceField::render(VkCommandBuffer cmdBuff, void* ptr)
 
 void ForceField::update()
 {
-	while (!destroyCList.empty())
+	for (int i = 0; i < destroyCList.size(); i++)
 	{	
-		pbWorldData* data = destroyCList.front();
-		if (data->destrTime + 2.0f < ThinDrawer::object->gameTime)
-		{
-			Game::object->pWorld->fullDestroys.push_back(data);
+		auto data = &destroyCList[i];
+		auto pbwData = data->first;
 
-			destroyCList.pop();
-		}
-		else
+		if (!Game::object->isPaused)
 		{
-			break;
+			data->second += Game::object->deltaTime;
+		}
+
+		pbwData->destrTime = ThinDrawer::object->gameTime - data->second;
+
+		if (data->second >= 2.0f)
+		{
+			Game::object->pWorld->fullDestroys.push_back(pbwData);
+
+			destroyCList[i] = destroyCList.back();
+			destroyCList.pop_back();
+			i--;
 		}
 	}
 }

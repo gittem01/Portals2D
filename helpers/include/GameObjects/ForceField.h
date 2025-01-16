@@ -5,7 +5,7 @@
 #include "GameBase.h"
 #include "Leveler.h"
 #include "BlueField.h"
-#include <queue>
+#include <vector>
 #include "GameObjects/Receiver.h"
 
 class ForceField : public Receiver
@@ -15,7 +15,7 @@ public:
 	static ALuint emancipationBuffer;
 	static s_perTextureData* ptData;
 	static s_texture* tex;
-	static std::queue<pbWorldData*> destroyCList;
+	static std::vector<std::pair<pbWorldData*, float>> destroyCList;
 
 	b2Body* body;
 	int fieldRenderOffset;

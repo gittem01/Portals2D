@@ -7,20 +7,21 @@
 
 std::vector<Dropper> Dropper::droppers;
 std::set<Dropper*> Dropper::createList;
+std::set<Dropper*> Dropper::pushList;
 s_perTextureData* Dropper::ptData;
 s_texture* Dropper::tex;
 
-static b2Vec2 vertices[4] =
+static b2Vec2 vertices[2] =
 {
-	b2Vec2(0.75f, 0.5f),
-	b2Vec2(0.75f, -0.55f),
-	b2Vec2(1.0f, -0.55f),
-	b2Vec2(1.0f, -0.75f),
+	b2Vec2(0.88f, 1.25f),
+	b2Vec2(0.88f, -0.75f),
 };
 
 Dropper::Dropper(PortalWorld* portalWorld, s_objectDataGrid* objData)
 {
-	dropCreationPos = b2Vec2(objData->pos.x + 1.0f, objData->pos.y + 1.5f);
+	dropCreationPos = b2Vec2(objData->pos.x + 1.0f, objData->pos.y + 0.75f);
+	createAddition = -2.0f;
+	pushEnd = dropCreationPos.y + vertices[1].y * 0.9;
 
 	b2BodyDef bDef;
 	bDef.type = b2_staticBody;
@@ -28,23 +29,31 @@ Dropper::Dropper(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	b2Body* body = portalWorld->CreateBody(&bDef);
 
-	for (int i = 0; i < std::size(vertices) - 1; i++)
-	{
-		b2Vec2 v1 = vertices[i];
-		b2Vec2 v2 = vertices[i + 1];
+	b2Vec2 v1 = vertices[0];
+	b2Vec2 v2 = vertices[1];
 
-		b2EdgeShape eShape;
-		eShape.SetTwoSided(v1, v2);
+	b2EdgeShape eShape;
+	eShape.SetTwoSided(v1, v2);
 
-		b2Fixture* fix = body->CreateFixture(&eShape, 0.0f);
+	b2Fixture* fix = body->CreateFixture(&eShape, 0.0f);
 
-		v1.x *= -1.0f;
-		v2.x *= -1.0f;
+	v1.x *= -1.0f;
+	v2.x *= -1.0f;
 
-		eShape.SetTwoSided(v1, v2);
+	eShape.SetTwoSided(v1, v2);
 
-		fix = body->CreateFixture(&eShape, 0.0f);
-	}
+	fix = body->CreateFixture(&eShape, 0.0f);
+
+	bDef.type = b2_kinematicBody;
+	bDef.position.y += v1.y;
+	pushBegin = bDef.position.y;
+	pushBody = portalWorld->CreateBody(&bDef);
+
+	v1.y = 0.0; v1.x *= -1.0f;
+	v2.y = 0.0;
+
+	eShape.SetTwoSided(v1, v2);
+	pushBody->CreateFixture(&eShape, 0.0f);
 
 	startActive = objData->startActive;
 	autoRespawn = objData->startPolarized;
@@ -130,6 +139,16 @@ void Dropper::disable()
 	}
 }
 
+void Dropper::pushStart()
+{
+	pushList.insert(this);
+	b2Vec2 pos = pushBody->GetPosition();
+	pos.y = pushBegin;
+	pushBody->SetTransform(pos, 0.0f);
+
+	pushBody->SetLinearVelocity(b2Vec2(0.0f, -2.5f));
+}
+
 void Dropper::destrFunc(PortalBody* pb, void* ptr)
 {
 	Dropper* drp = (Dropper*)ptr;
@@ -208,13 +227,20 @@ void Dropper::update()
 		{
 			PortalBody* pb = Game::object->pWorld->createCloneBody0(wData, dropper->dropCreationPos, 0.0f, false);
 			
-			wData->destrTime = ThinDrawer::object->gameTime - 2.0f;
+			dropper->createAddition = -2.0f;
+
+			wData->destrTime = ThinDrawer::object->gameTime + dropper->createAddition;
 			wData->gravityScale = 0.0f;
 		}
 		else if ((bData = (bodyData*)wData->pbIndices[0]->body->GetUserData().pointer)->extraData == nullptr)
 		{
-			wData->destrTime += ThinDrawer::object->deltaTime * 2.0;
-			if (wData->destrTime >= ThinDrawer::object->gameTime)
+			if (!Game::object->isPaused)
+			{
+				dropper->createAddition += Game::object->deltaTime;
+			}
+
+			wData->destrTime = ThinDrawer::object->gameTime + dropper->createAddition;
+			if (dropper->createAddition >= 0.0f)
 			{
 				wData->destrTime = -20.0f;
 				wData->gravityScale = 1.0f;
@@ -225,10 +251,32 @@ void Dropper::update()
 
 				iter = createList.erase(iter);
 
+				dropper->pushStart();
+
 				continue;
 			}
 		}
 
 		++iter;
+	}
+
+	for (auto iter = pushList.begin(); iter != pushList.end(); )
+	{
+		Dropper* dropper = *iter;
+
+		b2Vec2 pbPos = dropper->pushBody->GetPosition();
+
+		if (pbPos.y < dropper->pushEnd)
+		{
+			iter = pushList.erase(iter);
+
+			pbPos.y = dropper->pushEnd;
+			dropper->pushBody->SetTransform(pbPos, 0.0f);
+			dropper->pushBody->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+		}
+		else
+		{
+			iter++;
+		}
 	}
 }

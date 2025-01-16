@@ -110,7 +110,7 @@ Overlayer::Overlayer(Game* game)
 
     addItem("", "platform.png", PLATFORM, "platform", { 0.5, +0.0 }, 1, { 1, 1 }, 1.0, true, 0);
 
-    addItem("", "spawner.png", CUBE_SPAWNER, "spawner", { 0.5, -0.37 }, 1, { 2, 2 }, 2.0, false, 2);
+    addItem("", "spawner.png", CUBE_SPAWNER, "spawner", { 0.5, 0.0 }, 1, { 2, 2 }, 2.0, false, 2);
 
     addItem("", "x.png", ERASER);
 
