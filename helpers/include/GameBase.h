@@ -60,6 +60,7 @@ enum FixtureDataType
     F_LIGHT_BRIDGE  = 0x1 << 15,
     F_BRIDGE_CAP    = 0x1 << 16,
     F_CATAPULT      = 0x1 << 17,
+    F_END_CAPSULE   = 0x1 << 18,
 
     F_END           = 0x1 << 30,
 };

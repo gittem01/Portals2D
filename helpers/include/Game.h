@@ -75,6 +75,8 @@ public:
 
 	void timeHandle();
 
+	void stateStarterAnimation(float time = 1.0f);
+
 	void LevelerState();
 	void TestState();
 	void MenuState();

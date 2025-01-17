@@ -374,7 +374,7 @@ void Menu::update()
 	}
 
 	float yNow;
-	if (upCamTime > 0.0)
+	if (upCamTime > 0.0 && activeButton && activeButton->dependentButtons.size() > 0)
 	{
 		double timeDiff = std::min(timeNow - upCamTime, maxVal) / maxVal;
 		upMargin = std::max(upMargin - dt * 100.0, 4.0 - activeButton->baseY);
@@ -728,7 +728,7 @@ void Menu::buttonPressed(Button* button)
 	{
 		activationTime = td->gameTime;
 		activeButton = button;
-
+		
 		float i = 0.0f;
 		for (Button* dependentButton : button->dependentButtons)
 		{
@@ -743,7 +743,15 @@ void Menu::buttonPressed(Button* button)
 	}
 	else if (button == newEditorButton)
 	{
-		Game::object->gameStater = &Game::LevelerState;
+		s_menuButton initialButton = {
+		glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+		glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+		glm::vec4(5.0f, 5.5f, 1.0f, 0.1f) }; // data
+		Game::object->pop.init(initialButton, "darkness", 0.5);
+
+		Game::object->pop.endFunction = [] {
+			Game::object->gameStater = &Game::LevelerState;
+		};
 	}
 	else if (button == loadButton)
 	{

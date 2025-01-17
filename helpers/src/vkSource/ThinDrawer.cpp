@@ -138,6 +138,11 @@ void ThinDrawer::initExtra()
     }
 
     IOHelper::loadTexture("null.png");
+    IOHelper::loadTexture("turretCover.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    IOHelper::loadTexture("turretGun.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    IOHelper::loadTexture("glow.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    IOHelper::loadTexture("turretBody.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    IOHelper::loadTexture("endCapsule.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
     initImgui();
 }
@@ -1787,6 +1792,9 @@ void ThinDrawer::releaseRenderResources()
     drawFuncs.clear();
     lateDrawFuncs.clear();
     renderPortalData.clear();
+
+    Game::object->pop.active = false;
+    Game::object->pop.closeOnEnd = true;
 
     drawData = nullptr;
 

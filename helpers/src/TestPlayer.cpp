@@ -11,6 +11,7 @@
 #include "GameObjects/Catapult.h"
 #include "GameObjects/Dropper.h"
 #include "GameObjects/LightBridge.h"
+#include "GameObjects/EndCapsule.h"
 
 TestPlayer* TestPlayer::object;
 
@@ -55,6 +56,8 @@ void TestPlayer::init()
     angVal = b2_pi * 0.1f;
     shouldRelease = false;
     holdColliding = false;
+
+    won = false;
 
     playerShader = ThinDrawer::object->playerShader;
     gData.positions = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -190,6 +193,11 @@ void TestPlayer::memMap(void* ptr)
 
     TestPlayer* tp = (TestPlayer*)ptr;
 
+    if (tp->won)
+    {
+        tp->winanim();
+    }
+
     write0(tp);
 
     const float maxSpeed = 100.0f;
@@ -314,6 +322,7 @@ void TestPlayer::restartWorld()
     ThinDrawer* thinDrawer = ThinDrawer::object;
 
     health = 100;
+    won = false;
 
     thinDrawer->wh->cam->pos = glm::vec2(initialPos.x, -initialPos.y - bodySize.y * 0.4f);
     thinDrawer->wh->cam->updateOrtho();
@@ -388,6 +397,71 @@ void TestPlayer::restartWorld()
     Dropper::toDeath();
 }
 
+void TestPlayer::winanim()
+{
+    double deltaTime = ThinDrawer::object->deltaTime;
+
+    glm::vec2 camPos = ThinDrawer::object->wh->cam->pos;
+    b2Vec2 headPosb = EndCapsule::object->pos;
+    glm::vec2 headPos = glm::vec2(headPosb.x, -headPosb.y);
+    glm::vec2 diff = headPos - camPos;
+    float lenDiff = glm::length(diff);
+
+    if (lenDiff < 0.05f)
+    {
+        ThinDrawer::object->wh->cam->zoom += 7.5f * deltaTime;
+        ThinDrawer::object->wh->cam->zoom = std::min(ThinDrawer::object->wh->cam->zoom, 2.0f);
+
+        if (pWorld->portals.size() == 2 && ThinDrawer::object->wh->cam->zoom > 1.9f)
+        {
+            Portal* p1 = pWorld->portals[0];
+
+            b2Vec2 linVel = p1->body->GetLinearVelocity();
+
+            if (p1->pos.y < headPosb.y - 0.9f && linVel.y < -0.01f)
+            {
+                p1->body->SetLinearVelocity(b2Vec2(0.0f, 0.5f));
+
+                if (!game->pop.active)
+                {
+                    s_menuButton initialButton = {
+                    glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+                    glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+                    glm::vec4(5.0f, 5.5f, 0.1f, 0.1f) }; // data
+                    game->pop.init(initialButton, "darkness", 2.0);
+
+                    game->pop.endFunction = []
+                    {
+                        Game::object->singleTaskRegistry.push_back([]
+                        {
+                            Game::object->testCase->shouldQuit = true;
+                        });
+                    };
+                }
+            }
+            else if (p1->pos.y > headPosb.y + 0.99f && linVel.y > 0.01f)
+            {
+                p1->body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+            }
+            else if (abs(linVel.y) < 0.01f)
+            {
+                p1->body->SetLinearVelocity(b2Vec2(0.0f, -0.5f));
+            }
+        }
+    }
+    else
+    {
+        diff /= (lenDiff + 0.001);
+
+        glm::vec2 posAdd = (float)deltaTime * diff * lenDiff * 5.0f;
+        camPos += posAdd;
+    }
+
+    ThinDrawer::object->wh->cam->pos = camPos;
+
+    ThinDrawer::object->wh->cam->updateOrtho();
+}
+
 void TestPlayer::memMapDeathByElectrocution(void* ptr)
 {
 	double deltaTime = ThinDrawer::object->deltaTime;
@@ -421,9 +495,10 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
     }
     else
     {
-        diff /= lenDiff;
+        diff /= (lenDiff + 0.001);
 
-        camPos += (float)deltaTime * diff * glm::max(lenDiff, 3.0f) * 5.0f;
+        glm::vec2 posAdd = (float)deltaTime * diff * glm::min(lenDiff, 3.0f) * 15.0f;
+        camPos += posAdd;
     }
 
     ThinDrawer::object->wh->cam->pos = camPos;
@@ -1006,12 +1081,59 @@ void TestPlayer::endContact(b2Contact* contact, b2Fixture* otherFix)
     if (!contact->IsEnabled()) return;
 }
 
+void TestPlayer::winwin()
+{
+    if (won || game->isPaused) return;
+
+    won = true;
+
+    enterForceField(nullptr);
+
+    game->singleTaskRegistry.push_back([this]
+    {
+        b2Vec2 topPos = EndCapsule::object->pos + b2Vec2(0.0f, 0.975f);
+        b2BodyDef bDef;
+        bDef.type = b2_kinematicBody;
+        bDef.position = topPos;
+        b2Body* body = pWorld->CreateBody(&bDef);
+
+        Portal* p1 = pWorld->createPortal(topPos, b2Vec2(0.0f, -1.0f), 0.49f, body);
+        Portal* p2 = pWorld->createPortal(b2Vec2(1453.0f, 1071.0f), b2Vec2(0.0f, -1.0f), 0.49f);
+
+        p1->connect(p2);
+    });
+
+    gData.positions.x = -1881.0f;
+    gData.positions.z = -1938.0f;
+}
+
 void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
+    fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
+
+    if (fData && fData->type & F_END_CAPSULE)
+    {
+        EndCapsule* ec = (EndCapsule*)fData->data;
+        float collFixSide = ((b2EdgeShape*)fix2->GetShape())->m_vertex1.x > 0.1f ? 1.0f : -1.0f;
+        float posXDiff = thisBody->GetPosition().x - ec->pos.x;
+        float res = posXDiff * collFixSide;
+        float normAngle = PortalWorld::normalizeAngle(thisBody->GetAngle());
+
+        if (res > 0.15f && !won)
+        {
+            contact->SetEnabled(false);
+            return;
+        }
+        else
+        {
+            winwin();
+        }
+    }
+
     if (holdBody)
     {
         bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
-        if (bData && bData->type == B_PORTAL_BODY)
+        if (bData && bData->type & B_PORTAL_BODY)
         {
             PortalBody* pb = (PortalBody*)bData->data;
             if (pb->worldIndex == holdBody->worldIndex)
@@ -1049,8 +1171,6 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 
     if (health != 0 && fix2->GetBody()->GetType() != b2_dynamicBody && sep < -0.1f && contact->IsEnabled() && wData->pbIndices.size() == 1)
     {
-        fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
-
         bool pass = false;
         if (fData && (fData->type & F_LIGHT_BRIDGE))
         {
@@ -2224,7 +2344,7 @@ void TestPlayer::healthCheck()
 {
     ThinDrawer* thinDrawer = ThinDrawer::object;
 
-    if (health < 1)
+    if (health < 1 && !won)
     {
         for (auto iter = thinDrawer->memMapFuncs.begin(); iter != thinDrawer->memMapFuncs.end(); iter++)
 		{
@@ -2585,13 +2705,18 @@ void TestPlayer::update(float dt, int totalIter)
     }
 
     handleBodyRotation();
-
-    handleGunRotation();
     
-    handlePortalCD(dt);
+    if (!won)
+    {
+        handleGunRotation();
+
+        handlePortalCD(dt);
+    }
 
     if (health <= 0)
+    {
         healthCheck();
+    }
 
     updateReset();
 }

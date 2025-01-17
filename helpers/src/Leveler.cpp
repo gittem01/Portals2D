@@ -1791,7 +1791,20 @@ void Leveler::update()
 
 	if (ol->clickedPlay)
 	{
-		createLevel();
+		s_menuButton initialButton = {
+		glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+		glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+		glm::vec4(5.0f, 5.5f, 0.1f, 0.1f) }; // data
+		game->pop.init(initialButton, "darkness", 0.5);
+
+		game->pop.endFunction = [this]
+		{
+			Game::object->singleTaskRegistry2.push_back([this]
+			{
+				createLevel();
+			});
+		};
+
 		return;
 	}
 

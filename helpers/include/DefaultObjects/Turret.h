@@ -69,6 +69,7 @@ public:
 
 	void recreate(bool unused_mirrored=false) override;
 
+	static void renderInit();
 	static void staticInit();
 	static void draw(VkCommandBuffer cmdBuff, void* ptr);
 	static void perTickUpdate(float dt);

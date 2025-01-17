@@ -28,12 +28,15 @@ void PopUp::construct()
 	renderFunctions["languageRender"] = &PopUp::languageRender;
 	initFunctions["languageRender"] = &PopUp::initLanguage;
 
+	renderFunctions["darkness"] = &PopUp::darknessRender;
+	initFunctions["darkness"] = &PopUp::initDarkness;
+
 	sliderHitSound = Sounder::object->loadSound("sliderHit.wav");
 }
 
 void PopUp::init(s_menuButton initialButton, std::string popName, double animTime)
 {
-	if (initFunctions.find(popName) == initFunctions.end())
+	if (initFunctions.find(popName) == initFunctions.end() || (active && !closeOnEnd))
 	{
 		return;
 	}
@@ -988,4 +991,76 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 	}
 
 	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
+}
+
+void PopUp::initDarkness()
+{
+	float w;
+	float r;
+	if (initialButton.colour.w < 0.01f)
+	{
+		w = 1.0f;
+		r = 1.5f;
+	}
+	else
+	{
+		w = 0.0f;
+		r = 0.0f;
+	}
+
+	finalButton = {
+		glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+		glm::vec4(0.0f, 0.0f, 0.0f, w), // clr
+		glm::vec4(5.0f, 5.5f, r, 0.1f) }; // data
+
+	renderTextDatas.clear();
+}
+
+void PopUp::darknessRender(VkCommandBuffer cmdBuff, void* ptr)
+{
+	ThinDrawer* td = ThinDrawer::object;
+	PopUp* p = (PopUp*)ptr;
+
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		td->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+	float td01 = std::min((td->gameTime - p->startTime) / p->animationTime, 1.0);
+	td01 = (sin(td01 * glm::pi<float>() - glm::pi<float>() * 0.5f) + 1.0f) * 0.5f;
+
+	s_menuButton currentButtonData;
+	currentButtonData.colour = p->initialButton.colour + (p->finalButton.colour - p->initialButton.colour) * td01;
+	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
+	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
+
+	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &currentButtonData);
+
+	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+	if (td01 > 0.999f)
+	{
+		if (currentButtonData.colour.w < 0.01f)
+		{
+			p->active = false;
+
+			Game::object->singleTaskRegistry.push_back([p]
+			{
+				ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+
+				p->endFunction.reset();
+			});
+		}
+
+		if (p->endFunction.has_value())
+		{
+			p->active = false;
+
+			p->endFunction.value()();
+			p->endFunction.reset();
+		}
+	}
 }

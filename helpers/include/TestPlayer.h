@@ -33,6 +33,8 @@ public:
     Portal* destrPortal;
     b2Vec2 lastHoldPos;
     portalConnection* holdConnection;
+    double deathTimer;
+    int health;
     float lastBodyHoldTime;
     float releaseRequestTime;
     float holdERequestTime;
@@ -41,8 +43,7 @@ public:
     bool shouldRelease;
     bool holdColliding;
     bool fastRun;
-    int health;
-    double deathTimer;
+    bool won;
 
     std::vector<PortalBody*>* gun;
     Game* game;
@@ -108,6 +109,7 @@ public:
     static float springMovement(float value, float vel, float springFactor, float dampingFactor, float deltaTime);
 
     void restartWorld();
+    void winanim();
 
     static void memMap(void* ptr);
     static void memMapDeathByElectrocution(void* ptr);
@@ -121,6 +123,8 @@ public:
     void renderInit();
 
     void createBody(b2Vec2 pos);
+
+    void winwin();
 
     void recreate(bool mirrored = false);
     bool enterForceField(ForceField* forceField);

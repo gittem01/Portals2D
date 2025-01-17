@@ -1,5 +1,6 @@
 #include <DefaultObjects/Gun.h>
 #include <ThinDrawer.h>
+#include <TestPlayer.h>
 
 Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(portalWorld)
 {
@@ -52,6 +53,14 @@ void Gun::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisF
 
 void Gun::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
+    fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
+
+    if (fData && fData->type & F_END_CAPSULE)
+    {
+        contact->SetEnabled(false);
+        return;
+    }
+
     if (fix2->GetShape()->GetType() != b2Shape::e_edge)
     {
         contact->SetEnabled(false);

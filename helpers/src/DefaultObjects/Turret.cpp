@@ -180,19 +180,19 @@ void Turret::recreate(bool unused_mirrored)
 	eyeBody = wData->pbIndices[0];
 }
 
-void Turret::staticInit()
+void Turret::renderInit()
 {
 	coverTex = IOHelper::loadTexture("turretCover.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	gunTex = IOHelper::loadTexture("turretGun.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	glowTex = IOHelper::loadTexture("glow.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	IOHelper::loadTexture("turretBody.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
-	std::vector<s_vertex> coverVertices = 
+	std::vector<s_vertex> coverVertices =
 	{
 		{ { -0.5f, +0.5f }, { 0.0f, 0.0f } },
 		{ { -0.5f, -0.5f }, { 0.0f, 1.0f } },
 		{ { +0.5f, -0.5f }, { 1.0f, 1.0f } },
-		
+
 		{ { +0.5f, -0.5f }, { 1.0f, 1.0f } },
 		{ { +0.5f, +0.5f }, { 1.0f, 0.0f } },
 		{ { -0.5f, +0.5f }, { 0.0f, 0.0f } },
@@ -202,10 +202,13 @@ void Turret::staticInit()
 	coverVertexBuffer->count = coverVertices.size();
 	ThinDrawer::object->bufferStage(coverVertices.data(), coverVertices.size() * sizeof(s_vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, coverVertexBuffer);
 
-	ThinDrawer::object->midDrawFuncs.push_back({ draw, nullptr });
-
 	ALuint buffer = Sounder::object->loadSound("firee.wav");
 	soundBuffers.push_back(buffer);
+}
+
+void Turret::staticInit()
+{
+	ThinDrawer::object->midDrawFuncs.push_back({ draw, nullptr });
 }
 
 glm::vec2 rotateArroundPoint(glm::vec2 c, glm::vec2 p, float angle)

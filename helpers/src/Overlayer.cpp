@@ -739,8 +739,17 @@ void Overlayer::topLeftUpdate()
             }
             else if (game->menu->activeButton->strText == "to_menu")
             {
-				game->gameStater = &Game::MenuState;
-				game->shouldQuit = true;
+                s_menuButton initialButton = {
+                    glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+                    glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+                    glm::vec4(5.0f, 5.5f, 1.0f, 0.1f) }; // data
+                game->pop.init(initialButton, "darkness", 0.5);
+
+                game->pop.endFunction = [this]
+                {
+                    game->gameStater = &Game::MenuState;
+                    game->shouldQuit = true;
+                };
             }
             else
             {

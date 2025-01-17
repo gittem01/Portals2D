@@ -71,6 +71,8 @@ Game::Game()
 
     pop.construct();
 
+    Turret::renderInit();
+
     SteamErrMsg errMsg;
     if (SteamAPI_InitEx(&errMsg) != k_ESteamAPIInitResult_OK)
     {
@@ -214,6 +216,16 @@ void Game::timeHandle()
     lastTime = timeNow;
 }
 
+void Game::stateStarterAnimation(float time)
+{
+    s_menuButton initialButton = {
+        glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+        glm::vec4(0.0f, 0.0f, 0.0f, 1.0), // clr
+        glm::vec4(5.0f, 5.5f, 1.5f, 0.1f) }; // data
+    pop.init(initialButton, "darkness", time);
+    pop.endFunction.reset();
+}
+
 void Game::LevelerState()
 {
     leveler->ol->overlayOverlay = LEVELER;
@@ -232,6 +244,8 @@ void Game::LevelerState()
     }
 
     SDL_ShowWindow(thinDrawer->wh->window);
+
+    stateStarterAnimation();
 
     ALuint levelerMusic = sounder->playLoopingSound(sounder->loadSound("leveler.wav"), 0.0);
     sounder->addFader(levelerMusic, 0.0f, 0.15f, 1.0f);
@@ -315,6 +329,8 @@ void Game::TestState()
     }
 
     SDL_ShowWindow(thinDrawer->wh->window);
+
+    stateStarterAnimation();
 
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && (testCase && !testCase->shouldQuit || !testCase))
@@ -463,6 +479,8 @@ void Game::MenuState()
 
     ALuint menuMusic = sounder->playLoopingSound(sounder->loadSound("Menu.wav"), 0.0);
     sounder->addFader(menuMusic, 0.0f, 0.15f, 1.0f);
+
+    stateStarterAnimation(0.5f);
 
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && gameStater == &Game::MenuState)

@@ -17,6 +17,7 @@
 #include "GameObjects/Transmitter.h"
 #include "GameObjects/Catapult.h"
 #include "GameObjects/Dropper.h"
+#include "GameObjects/EndCapsule.h"
 #include "Menu.h"
 #include "Leveler.h"
 
@@ -908,6 +909,8 @@ void LevelerTestCase::createDynamics()
             break;
         }
     }
+
+    new EndCapsule(g->pWorld, b2Vec2(g->leveler->endSquare.x, g->leveler->endSquare.y));
 
     //createHammerTest(g->pWorld, td);
 

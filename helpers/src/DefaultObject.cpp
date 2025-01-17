@@ -270,6 +270,8 @@ void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fi
 
 		s_edgeGlobalData* eGlobal = Gel::getEdgeData(fData);
 
+		if (!eGlobal) return;
+
 		b2Vec2 v1;
 		b2Vec2 dirVec;
 		int extraOffset;
