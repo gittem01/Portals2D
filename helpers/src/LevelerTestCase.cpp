@@ -987,19 +987,51 @@ void LevelerTestCase::perFrameUpdate()
         {
             if (g->menu->activeButton->strText == "resume")
             {
+                g->dtMult = 1.0;
                 goto stopMenuUpdate;
             }
             else if (g->menu->activeButton->strText == "to_editor" || g->menu->activeButton->strText == "to_menu")
             {
-                shouldQuit = true;
+                s_menuButton initialButton = {
+                    glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+                    glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+                    glm::vec4(5.0f, 5.5f, 0.1f, 0.1f) }; // data
+                g->pop.init(initialButton, "darkness", 0.5);
+
+                g->pop.endFunction = [this]
+                {
+                    shouldQuit = true;
+                    g->dtMult = 1.0;
+                };
+
                 goto stopMenuUpdate;
             }
             else if (g->menu->activeButton->strText == "restart")
             {
-                g->singleTaskRegistry.push_back([]() {
-                    TestPlayer::object->restartWorld();
-                    Game::object->dtMult = 1.0f;
-                });
+                s_menuButton initialButton = {
+                    glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+                    glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+                    glm::vec4(5.0f, 5.5f, 0.1f, 0.1f) }; // data
+                g->pop.init(initialButton, "darkness", 0.5);
+
+                g->pop.endFunction = []
+                {
+                    Game::object->singleTaskRegistry.push_back([]() {
+
+                        s_menuButton initialButton = {
+                        glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+                        glm::vec4(0.0f, 0.0f, 0.0f, 1.0), // clr
+                        glm::vec4(5.0f, 5.5f, 1.5f, 0.1f) }; // data
+
+                        Game::object->pop.init(initialButton, "darkness", 0.5f);
+
+                        Game::object->pop.endFunction = [] {
+                            Game::object->dtMult = 1.0f;
+                        };
+
+                        TestPlayer::object->restartWorld();
+                    });
+                };
 
                 goto stopMenuUpdate;
             }
@@ -1012,7 +1044,6 @@ void LevelerTestCase::perFrameUpdate()
 
 stopMenuUpdate:
     menuUpdate = false;
-    g->dtMult = 1.0;
     g->menu->setNewState(false);
 }
 

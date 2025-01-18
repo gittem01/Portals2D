@@ -250,6 +250,8 @@ void Game::LevelerState()
     ALuint levelerMusic = sounder->playLoopingSound(sounder->loadSound("leveler.wav"), 0.0);
     sounder->addFader(levelerMusic, 0.0f, 0.15f, 1.0f);
 
+    runSingleTaskRegistry();
+
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && !leveler->shouldQuit)
     {

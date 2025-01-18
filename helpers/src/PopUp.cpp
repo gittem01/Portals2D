@@ -123,27 +123,30 @@ void saveDialogCallBack(void* userdata, const char* const* filelist, int filter)
 
 void openLevel(std::string fileName, PopUp* pop)
 {
-	Game::object->taskRegistryMutex.lock();
+	setClose(pop);
 
-	Game::object->singleTaskRegistry2.push_back([pop, fileName]
+	pop->endFunction = [pop, fileName]
 	{
 		Game::object->singleTaskRegistry.push_back([pop, fileName]
 		{
 			int res = Leveler::object->openLevel(fileName);
+
 			if (res == 0)
 			{
-				setClose(pop);
+				s_menuButton initialButton = {
+				glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+				glm::vec4(0.0f, 0.0f, 0.0f, 1.0), // clr
+				glm::vec4(5.0f, 5.5f, 1.5f, 0.1f) }; // data
+				pop->init(initialButton, "darkness", 0.5f);
+				pop->endFunction.reset();
 			}
 		});
 
 		if (Game::object->gameStater == &Game::MenuState)
 		{
 			Game::object->gameStater = &Game::LevelerState;
-			setClose(pop);
 		}
-	});
-
-	Game::object->taskRegistryMutex.unlock();
+	};
 }
 
 void openDialogCallBack(void* userdata, const char* const* filelist, int filter)
@@ -525,6 +528,8 @@ void PopUp::initLoad()
 	renderTexts.resize(1); renderTexts[0] = "";
 	textSizes.clear();
 
+	endFunction.reset();
+
 	finalButton = {
 		glm::vec4(0.0f, 0.0f, 120.0f, 70.0f), // posSize
 		glm::vec4(0.04, 0.04, 0.05, 1.0), // clr
@@ -630,6 +635,12 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
 	bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 0.1f);
 
+	if (p->endFunction.has_value())
+	{
+		bgView.colour.w = 1.0;
+		bgView.data.z = 1.6f - sizedt * 0.5f;
+	}
+
 	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
 
@@ -644,8 +655,14 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	if (td01 > 0.999f && p->closeOnEnd)
 	{
-		Game::object->singleTaskRegistry.push_back([p]
+		Game::object->singleTaskRegistry2.push_back([p]
 		{
+			if (p->endFunction.has_value())
+			{
+				p->endFunction.value()();
+				p->endFunction.reset();
+			}
+
 			ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
 		});
 	}

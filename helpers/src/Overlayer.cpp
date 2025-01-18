@@ -793,7 +793,7 @@ void Overlayer::topLeftUpdate()
             { topLeftButtons[i].posSize.x - texSize * 1.5f, topLeftButtons[i].posSize.y, 3.0, 0.0 }, { 1.0, 1.0, 1.0, 1.0 } });
     }
 
-    if (hoverIndex >= 0 && wh->mouseData[2] == 2)
+    if (hoverIndex >= 0 && wh->mouseData[2] == 2 && !game->pop.active)
     {
         overlayOverlay = (overlayType)(LOAD_LEVEL + hoverIndex);
 

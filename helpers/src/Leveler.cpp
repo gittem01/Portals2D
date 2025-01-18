@@ -190,6 +190,8 @@ int Leveler::saveLevel(std::string fileName, bool overwrite)
 
 int Leveler::openLevel(std::string fileName)
 {
+	ol->overlayOverlay = LEVELER;
+
 #ifdef WIN32
 	int wlen = MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, nullptr, 0);
 	if (wlen == 0)
@@ -315,8 +317,6 @@ int Leveler::openLevel(std::string fileName)
 			connectObjects(transmitter, receiver, connection);
 			updateConnectionRenderData(connection);
 		}
-
-		ol->overlayOverlay = LEVELER;
 
 		size_t pos = fileName.find_last_of("/", fileName.size() - 1);
 
@@ -1789,7 +1789,7 @@ void Leveler::update()
 
 	ol->update();
 
-	if (ol->clickedPlay)
+	if (ol->clickedPlay && !game->pop.active)
 	{
 		s_menuButton initialButton = {
 		glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
