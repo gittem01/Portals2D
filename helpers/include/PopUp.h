@@ -52,12 +52,14 @@ public:
 	void initSave();
 	void initLoad();
 	void initLanguage();
+	void initGpu();
 	void initDarkness();
 
 	void renderAt(VkCommandBuffer cmdBuff, glm::vec4 posSize, glm::vec2 pos, levelSelectData data);
 
 	static void saveRender(VkCommandBuffer cmdBuff, void* ptr);
 	static void loadRender(VkCommandBuffer cmdBuff, void* ptr);
+	static void gpuRender(VkCommandBuffer cmdBuff, void* ptr);
 	static void languageRender(VkCommandBuffer cmdBuff, void* ptr);
 	static void darknessRender(VkCommandBuffer cmdBuff, void* ptr);
 };

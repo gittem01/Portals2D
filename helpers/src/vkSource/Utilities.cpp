@@ -90,11 +90,11 @@ void ThinDrawer::flushCommandBuffer(VkCommandBuffer commandBuffer)
 
 uint32_t ThinDrawer::getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties)
 {
-    for (uint32_t i = 0; i < vulkanInfo->deviceMemoryProperties.memoryTypeCount; i++)
+    for (uint32_t i = 0; i < vulkanInfo.deviceMemoryProperties.memoryTypeCount; i++)
     {
         if ((typeBits & 1) == 1)
         {
-            if ((vulkanInfo->deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            if ((vulkanInfo.deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
             {
                 return i;
             }
@@ -604,7 +604,7 @@ void ThinDrawer::updateImageDescriptors(s_texture* tex, VkDescriptorSetLayout& s
 int ThinDrawer::pad_uniform_buffer_size(int originalSize)
 {
     // calculate required alignment based on minimum device offset alignment
-    int minUboAlignment = vulkanInfo->deviceProperties.limits.minUniformBufferOffsetAlignment;
+    int minUboAlignment = vulkanInfo.deviceProperties.limits.minUniformBufferOffsetAlignment;
     int alignedSize_body = originalSize;
     if (minUboAlignment > 0)
     {
@@ -616,7 +616,7 @@ int ThinDrawer::pad_uniform_buffer_size(int originalSize)
 int ThinDrawer::pad_storage_buffer_size(int originalSize)
 {
     // calculate required alignment based on minimum device offset alignment
-    int minStorageAlignment = vulkanInfo->deviceProperties.limits.minStorageBufferOffsetAlignment;
+    int minStorageAlignment = vulkanInfo.deviceProperties.limits.minStorageBufferOffsetAlignment;
     int alignedSize_body = originalSize;
     if (minStorageAlignment > 0)
     {

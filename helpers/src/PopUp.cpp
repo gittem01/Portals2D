@@ -28,6 +28,9 @@ void PopUp::construct()
 	renderFunctions["languageRender"] = &PopUp::languageRender;
 	initFunctions["languageRender"] = &PopUp::initLanguage;
 
+	renderFunctions["gpuRender"] = &PopUp::gpuRender;
+	initFunctions["gpuRender"] = &PopUp::initGpu;
+
 	renderFunctions["darkness"] = &PopUp::darknessRender;
 	initFunctions["darkness"] = &PopUp::initDarkness;
 
@@ -984,7 +987,7 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 
 		button.data = glm::vec4(2.5f, 3.0f, 1.1f, 0.0f) * size01;
 		button.data.w = 1.0;
-		button.posSize = glm::vec4(0.0f, lrd.posScale.y, 47.5f, 3.5f * size01);
+		button.posSize = glm::vec4(0.0f, lrd.posScale.y, 47.5f * size01, 3.5f * size01);
 
 		
 		if (button.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && p->active)
@@ -994,6 +997,195 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 			if (ThinDrawer::object->wh->mouseData[2] == 2)
 			{
 				CharDrawer::selectedLanguageIndex = i;
+			}
+		}
+
+		button.colour.w *= size01;
+
+		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &button);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+		i++;
+	}
+
+	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
+}
+
+glm::vec4 vendorIdToColor(uint32_t vendorId)
+{
+	switch (vendorId)
+	{
+	case 0x1002: // AMD
+		return glm::vec4(0.5f, 0.05f, 0.0f, 0.5f);
+	case 0x10DE: // NVIDIA
+		return glm::vec4(0.0f, 0.5f, 0.0f, 0.5f);
+	case 0x8086: // INTEL
+		return glm::vec4(0.0f, 0.4f, 0.9f, 0.5f);
+	case 0x106B: // APPLE
+		return glm::vec4(0.0f, 0.0f, 0.0f, 0.5f);
+	default:
+		return glm::vec4(0.0f, 1.0f, 1.0f, 0.5f);
+	}
+}
+
+static std::vector<int> actualIndices;
+
+void PopUp::initGpu()
+{
+	finalSize = std::min(ThinDrawer::object->deviceProperties.size() * 7.0f + 3.0f, 70.0f);
+
+	finalButton = {
+		glm::vec4(0.0f, 0.0f, 100.0f, finalSize), // posSize
+		glm::vec4(0.04, 0.04, 0.08, 1.0), // clr
+		glm::vec4(5.0f, 5.5f, 1.1f, 1.0f) }; // data
+
+	renderTextDatas.clear();
+
+	for (int i = 0; i < ThinDrawer::object->deviceProperties.size(); i++)
+	{
+		auto& prop = ThinDrawer::object->deviceProperties[i].prop;
+		bool ignore = ThinDrawer::object->deviceProperties[i].ignore;
+
+		if (ignore)
+		{
+			continue;
+		}
+
+		s_lineRenderData lrd;
+		lrd.charDatas = Leveler::object->ol->cd->getRenderData(prop.deviceName, Leveler::object->ol->popHeight * 2, lrd.posScale.w);
+		lrd.color = glm::vec4(1.0f);
+		lrd.posScale = glm::vec4(-lrd.posScale.w * 2.5f, 0.0f, 5.0f, lrd.posScale.w);
+		renderTextDatas.push_back(lrd);
+		actualIndices.push_back(i);
+	}
+}
+
+void PopUp::gpuRender(VkCommandBuffer cmdBuff, void* ptr)
+{
+	ThinDrawer* td = ThinDrawer::object;
+	PopUp* p = (PopUp*)ptr;
+
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
+
+	double leftTime = glm::mod(ThinDrawer::object->gameTime, 3.0);
+	int index = std::clamp((int)leftTime, 0, 2);
+	int nextIndex = (index + 1) % 3;
+	int nextNextIndex = (index + 2) % 3;
+
+	float nextClr = glm::fract(leftTime);
+	float thisClr = 1.0 - nextClr;
+
+	p->finalButton.colour[index] = thisClr * 0.02;
+	p->finalButton.colour[nextIndex] = nextClr * 0.02;
+	p->finalButton.colour[nextNextIndex] = 0.0f;
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		td->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+	float td01 = std::min((td->gameTime - p->startTime) / p->animationTime, 1.0);
+	td01 = (sin(td01 * glm::pi<float>() - glm::pi<float>() * 0.5f) + 1.0f) * 0.5f;
+
+	s_menuButton currentButtonData;
+	currentButtonData.colour = p->initialButton.colour + (p->finalButton.colour - p->initialButton.colour) * td01;
+	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
+	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
+
+	float size01 = currentButtonData.posSize.w / finalSize;
+
+	if (Game::object->gameStater == &Game::MenuState)
+	{
+		s_menuButton bgView;
+		bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, size01);
+		bgView.posSize = glm::vec4(0.0f, 0.0f, Leveler::object->ol->cam.xSides.y * 2.0f, Leveler::object->ol->cam.ySides.y * 2.0f);
+		bgView.data = glm::vec4(0.0f, 0.0f, 1.1f, 1.0f);
+
+		vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &bgView);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+	}
+
+	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &currentButtonData);
+
+	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+	if (td01 > 0.999f && p->closeOnEnd)
+	{
+		Game::object->singleTaskRegistry.push_back([p]
+		{
+			ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+		});
+	}
+
+	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 ||
+		!currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && td->wh->mouseData[2] == 2)
+	{
+		setClose(p, &currentButtonData);
+	}
+
+	std::string topText = Game::object->menu->buttonTexts["<gpuset_" + std::to_string(Leveler::object->ol->cd->selectedLanguageIndex) + ">"][0];
+
+	float topStart = currentButtonData.posSize.y + currentButtonData.posSize.w * 0.5f;
+
+	s_lineRenderData lrd;
+	lrd.charDatas = Leveler::object->ol->cd->getRenderData(topText, Leveler::object->ol->popHeight, lrd.posScale.w);
+	lrd.color = glm::vec4(0.3f, 0.0f, 0.0f, size01);
+	lrd.posScale = glm::vec4(-lrd.posScale.w * 1.25f * size01, topStart, 2.5f * size01, 0.0f);
+
+	Leveler::object->ol->cd->renderDatas.push_back(lrd);
+
+	topStart -= 6.0f;
+
+	int i = 0;
+	for (auto& lrd : renderTextDatas)
+	{
+		float sizeRatio = std::min(19.0f / lrd.posScale.w, 1.0f);
+
+		lrd.posScale.x = -lrd.posScale.w * 2.5f * size01 * sizeRatio;
+		lrd.posScale.y = topStart;
+		lrd.posScale.z = size01 * 5.0f * sizeRatio;
+		lrd.color.w = size01;
+		topStart -= 7.0f * size01;
+
+		int index = actualIndices[i];
+		auto& prop = ThinDrawer::object->deviceProperties[i].prop;
+
+		Leveler::object->ol->cd->renderDatas.push_back(lrd);
+
+		s_menuButton button;
+		if (index == ThinDrawer::object->selectedPhysicalDeviceIndex && ThinDrawer::object->selectedVendorAndDeviceId != 0)
+		{
+			button.colour = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
+		}
+		else
+		{
+			button.colour = vendorIdToColor(prop.vendorID);
+		}
+
+		button.data = glm::vec4(2.5f, 3.0f, 1.1f, 0.0f) * size01;
+		button.data.w = 1.0;
+		button.posSize = glm::vec4(0.0f, lrd.posScale.y, 97.5f * size01, 3.5f * size01);
+
+		if (button.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && p->active)
+		{
+			button.colour.w = 1.0f;
+
+			if (ThinDrawer::object->wh->mouseData[2] == 2)
+			{
+				if (ThinDrawer::object->selectedPhysicalDeviceIndex != index || ThinDrawer::object->selectedVendorAndDeviceId == 0)
+				{
+					ThinDrawer::object->selectedPhysicalDeviceIndex = index;
+					ThinDrawer::object->selectedVendorAndDeviceId = (uint64_t)prop.deviceID | ((uint64_t)prop.vendorID << 32);
+				}
+				else
+				{
+					ThinDrawer::object->selectedVendorAndDeviceId = 0;
+				}
 			}
 		}
 

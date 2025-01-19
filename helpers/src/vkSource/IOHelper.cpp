@@ -52,6 +52,8 @@ void IOHelper::getAssetsFolder()
 
 std::vector<std::string> IOHelper::loadLines(std::string fileName)
 {
+    std::vector<std::string> lines;
+
     fileName = assetsFolder + "texts/" + fileName;
     std::ifstream file(fileName);
 
@@ -59,10 +61,9 @@ std::vector<std::string> IOHelper::loadLines(std::string fileName)
     if (!file.is_open())
     {
         std::cerr << "Failed to open the file: " << fileName << std::endl;
-        exit(-1);
+        return lines;
     }
 
-    std::vector<std::string> lines;
     std::string line;
 
     while (std::getline(file, line))

@@ -409,7 +409,7 @@ void TestPlayer::winanim()
 
     if (lenDiff < 0.05f)
     {
-        ThinDrawer::object->wh->cam->zoom += 7.5f * deltaTime;
+        ThinDrawer::object->wh->cam->zoom += 1.5f * deltaTime;
         ThinDrawer::object->wh->cam->zoom = std::min(ThinDrawer::object->wh->cam->zoom, 2.0f);
 
         if (pWorld->portals.size() == 2 && ThinDrawer::object->wh->cam->zoom > 1.9f)
@@ -492,6 +492,27 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
     if (lenDiff < 0.05f)
     {
         ThinDrawer::object->wh->cam->zoom += 7.5f * deltaTime;
+
+        if (!Game::object->pop.active)
+        {
+            s_menuButton initialButton = {
+            glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+            glm::vec4(5.0f, 5.5f, 0.1f, 0.1f) }; // data
+            Game::object->pop.init(initialButton, "darkness", 1.0);
+
+            Game::object->pop.endFunction = []
+            {
+                Game::object->singleTaskRegistry.push_back([]
+                {
+                    TestPlayer::object->restartWorld();
+
+                    Game::object->pop.active = false;
+                    Game::object->pop.closeOnEnd = true;
+                    ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, &Game::object->pop);
+                });
+            };
+        }
     }
     else
     {
@@ -502,14 +523,6 @@ void TestPlayer::memMapDeathByElectrocution(void* ptr)
     }
 
     ThinDrawer::object->wh->cam->pos = camPos;
-
-    if (lenDiff < 0.05f && ThinDrawer::object->wh->cam->zoom > 9.0f)
-    {
-        Game::object->singleTaskRegistry.push_back([tp]()
-		{
-            tp->restartWorld();
-		});
-    }
 
     ThinDrawer::object->wh->cam->updateOrtho();
 }

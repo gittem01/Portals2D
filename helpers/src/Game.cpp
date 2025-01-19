@@ -148,11 +148,19 @@ void Game::loadGameData()
         Game::limitFramerate = arr[11];
 		SwapChain::enableVsync = arr[12];
 		CharDrawer::selectedLanguageIndex = arr[13];
+
+        ThinDrawer::selectedVendorAndDeviceId = arr[14];
 	}
 	else
 	{
 		saveGameData();
 	}
+
+    auto cards = IOHelper::loadLines("../gamedata/forceSelectCard.txt");
+    if (cards.size() > 0)
+    {
+        ThinDrawer::selectedPhysicalDeviceName = cards[0];
+    }
 }
 
 void Game::saveGameData()
@@ -189,6 +197,8 @@ void Game::saveGameData()
             arr[11] = Game::limitFramerate;
 			arr[12] = SwapChain::enableVsync;
 			arr[13] = CharDrawer::selectedLanguageIndex;
+
+            arr[14] = ThinDrawer::selectedVendorAndDeviceId;
 
 			file.write((char*)arr, sizeof(arr));
 			file.close();

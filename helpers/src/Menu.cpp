@@ -270,7 +270,15 @@ void Menu::initSettings(glm::vec4 clr)
 	languageButton = b;
 	optionsButton->dependentButtons.push_back(b);
 
-	optionsButton->openYMult = 64.5f;
+	b = addButton(glm::vec2(0.0f, -39.5f - 5 * 5.0f),
+		glm::vec2(50.0f - 0.75f, 3.0f), "", glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.5f));
+	addTextToButton(*b, allTexts[texIndex++], 1.5f);
+	b->bools.set(INTERACTABLE);
+	b->alphaMult = 0.0; b->baseAlpha = clr.w * 0.6;
+	gpuButton = b;
+	optionsButton->dependentButtons.push_back(b);
+
+	optionsButton->openYMult = 69.5f;
 	optionsButton->openYAdder = 0.05f;
 }
 
@@ -660,6 +668,11 @@ void Menu::buttonPressed(Button* button)
 	if (button == languageButton)
 	{
 		Game::object->pop.init(languageButton->data, "languageRender", 0.5);
+		return;
+	}
+	else if (button == gpuButton)
+	{
+		Game::object->pop.init(gpuButton->data, "gpuRender", 0.5);
 		return;
 	}
 

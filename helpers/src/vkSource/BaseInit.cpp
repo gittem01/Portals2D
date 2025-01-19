@@ -17,8 +17,6 @@ void ThinDrawer::initBase()
 {
     IOHelper::thinDrawer = this;
 
-    vulkanInfo = new s_vulkanInfo;
-
     swapChain = new SwapChain(this);
 
     createWindow();
@@ -88,6 +86,40 @@ void ThinDrawer::createInstance()
     free(requiredExtensions);
 }
 
+float getSimilarity(std::string deviceName, std::string s2)
+{
+    std::string smallString;
+    std::string bigString;
+    if (deviceName.size() < s2.size())
+    {
+        smallString = deviceName;
+        bigString = s2;
+    }
+    else
+    {
+        smallString = s2;
+        bigString = deviceName;
+    }
+
+    int maxHits = 0;
+
+    for (int i = 0; i < bigString.size() - smallString.size() + 1; i++)
+    {
+        int numHits = 0;
+        for (int j = 0; j < smallString.size(); j++)
+        {
+            if (smallString[j] == bigString[i + j])
+            {
+                numHits++;
+            }
+        }
+
+        maxHits = std::max(maxHits, numHits);
+    }
+
+    return (float)maxHits / deviceName.size();
+}
+
 void ThinDrawer::selectPhysicalDevice()
 {
     uint32_t deviceCount = 0;
@@ -105,35 +137,99 @@ void ThinDrawer::selectPhysicalDevice()
 
     bool gpuFound = false;
 
+    deviceProperties.resize(deviceCount);
+
+    std::ofstream oFile;
+    oFile.open(IOHelper::assetsFolder + "gameData/availableCards.txt");
+
     for (uint32_t i = 0; i < deviceCount; i++)
     {
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
+        vkGetPhysicalDeviceProperties(devices[i], &deviceProperties[i].prop);
+
+        if (!isDeviceSuitable(devices[i], swapChain->surface) || deviceProperties[i].prop.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
+        {
+            deviceProperties[i].ignore = true;
+
+            continue;
+        }
+
+        deviceProperties[i].ignore = false;
+
+        std::string deviceName = deviceProperties[i].prop.deviceName;
+        
+        deviceName += "\n";
+        oFile.write(deviceName.c_str(), deviceName.length());
+    }
+
+    oFile.close();
+
+    bool forceSelect = selectedPhysicalDeviceName.size() > 1;
+    float maxSimilarity = -1.0f;
+
+    for (uint32_t i = 0; i < deviceCount; i++)
+    {
+        if (deviceProperties[i].ignore)
+        {
+            continue;
+        }
+
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(devices[i], &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(devices[i], &queueFamilyCount, queueFamilies.data());
 
-        if (isDeviceSuitable(devices[i], swapChain->surface))
+        for (uint32_t j = 0; j < queueFamilyCount; j++)
         {
-            for (uint32_t j = 0; j < queueFamilyCount; j++)
+            VkBool32 presentSupported;
+            vkGetPhysicalDeviceSurfaceSupportKHR(devices[i], j, swapChain->surface, &presentSupported);
+            if (queueFamilies[j].queueFlags & VK_QUEUE_GRAPHICS_BIT && presentSupported)
             {
-                VkBool32 presentSupported;
-                vkGetPhysicalDeviceSurfaceSupportKHR(devices[i], j, swapChain->surface, &presentSupported);
-                if (queueFamilies[j].queueFlags & VK_QUEUE_GRAPHICS_BIT && presentSupported)
+                if (forceSelect)
                 {
-                    vkGetPhysicalDeviceProperties(devices[i], &vulkanInfo->deviceProperties);
-                    if (vulkanInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
+                    float similarity = getSimilarity(deviceProperties[i].prop.deviceName, selectedPhysicalDeviceName);
+                    if (similarity >= maxSimilarity)
                     {
-                        continue;
+                        physicalDevice = devices[i];
+                        selectedPhysicalDeviceIndex = i;
+                        queues.graphicsQueueFamilyIndex = j;
+                        gpuFound = true;
+
+                        maxSimilarity = similarity;
+
+                        vkGetPhysicalDeviceMemoryProperties(devices[i], &vulkanInfo.deviceMemoryProperties);
+                        vulkanInfo.deviceProperties = deviceProperties[i].prop;
                     }
+                }
+                else if (selectedVendorAndDeviceId != 0)
+                {
+                    uint32_t physicalDeviceId = selectedVendorAndDeviceId & 0xFFFFFFFF;
+                    uint32_t vendorId = (selectedVendorAndDeviceId >> 32) & 0xFFFFFFFF;
 
-                    vkGetPhysicalDeviceMemoryProperties(devices[i], &vulkanInfo->deviceMemoryProperties);
+                    if (!gpuFound || (physicalDeviceId == deviceProperties[i].prop.deviceID && vendorId == deviceProperties[i].prop.vendorID))
+                    {
+                        vkGetPhysicalDeviceMemoryProperties(devices[i], &vulkanInfo.deviceMemoryProperties);
+                        vulkanInfo.deviceProperties = deviceProperties[i].prop;
 
-                    printf("Selected GPU : %s\n", vulkanInfo->deviceProperties.deviceName);
+                        physicalDevice = devices[i];
+                        selectedPhysicalDeviceIndex = i;
+                        queues.graphicsQueueFamilyIndex = j;
+
+                        if (gpuFound)
+                        {
+                            i = deviceCount;
+                            break;
+                        }
+
+                        gpuFound = true;                        
+                    }
+                }
+                else
+                {
+                    vkGetPhysicalDeviceMemoryProperties(devices[i], &vulkanInfo.deviceMemoryProperties);
+                    vulkanInfo.deviceProperties = deviceProperties[i].prop;
 
                     physicalDevice = devices[i];
-
+                    selectedPhysicalDeviceIndex = i;
                     queues.graphicsQueueFamilyIndex = j;
                     gpuFound = true;
 
@@ -143,7 +239,7 @@ void ThinDrawer::selectPhysicalDevice()
                         break;
                     }
 
-                    if (vulkanInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && PREFER_DISCRETE)
+                    if (vulkanInfo.deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && PREFER_DISCRETE)
                     {
                         i = deviceCount;
                         break;
@@ -158,6 +254,10 @@ void ThinDrawer::selectPhysicalDevice()
         printf("failed to find a suitable GPU!");
         exit(1);
     }
+    else
+    {
+        printf("Selected GPU : %s\n", vulkanInfo.deviceProperties.deviceName);
+    }
 }
 
 void ThinDrawer::createLogicalDevice()
@@ -169,7 +269,7 @@ void ThinDrawer::createLogicalDevice()
     float queuePriority = 1.0f;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
-    vkGetPhysicalDeviceFeatures(physicalDevice, &vulkanInfo->features);
+    vkGetPhysicalDeviceFeatures(physicalDevice, &vulkanInfo.features);
 
     uint32_t extensionPropertyCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionPropertyCount, nullptr);
@@ -207,7 +307,7 @@ void ThinDrawer::createLogicalDevice()
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
     deviceCreateInfo.queueCreateInfoCount = 1;
-    deviceCreateInfo.pEnabledFeatures = &vulkanInfo->features;
+    deviceCreateInfo.pEnabledFeatures = &vulkanInfo.features;
     deviceCreateInfo.enabledExtensionCount = extensionCount;
     deviceCreateInfo.ppEnabledExtensionNames = enabledExtensions;
 
@@ -221,8 +321,8 @@ void ThinDrawer::createLogicalDevice()
 void ThinDrawer::setSamples()
 {
 
-    VkSampleCountFlags counts = vulkanInfo->deviceProperties.limits.framebufferColorSampleCounts &
-                                vulkanInfo->deviceProperties.limits.framebufferDepthSampleCounts;
+    VkSampleCountFlags counts = vulkanInfo.deviceProperties.limits.framebufferColorSampleCounts &
+                                vulkanInfo.deviceProperties.limits.framebufferDepthSampleCounts;
 
     for (uint32_t flags = desiredSamples; flags >= VK_SAMPLE_COUNT_1_BIT; flags >>= 1)
     {

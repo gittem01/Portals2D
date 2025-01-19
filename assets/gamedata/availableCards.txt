@@ -1,0 +1,2 @@
+Intel(R) Iris(R) Xe Graphics
+NVIDIA GeForce RTX 3050 Ti Laptop GPU

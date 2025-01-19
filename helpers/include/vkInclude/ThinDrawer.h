@@ -79,6 +79,12 @@ typedef struct
 
 typedef struct
 {
+    VkPhysicalDeviceProperties prop;
+    bool ignore;
+} s_deviceProps;
+
+typedef struct
+{
     VkDeviceMemory memory;
     VkBuffer buffer;
 } s_stagingBuffer;
@@ -106,6 +112,9 @@ class ThinDrawer
 {
 public:
     static ThinDrawer* object;
+    static uint64_t selectedVendorAndDeviceId;
+    static int selectedPhysicalDeviceIndex;
+    static std::string selectedPhysicalDeviceName;
 
     PortalWorld* pWorld;
     VkDescriptorPool imguiPool;
@@ -132,7 +141,8 @@ public:
     VkSampleCountFlagBits samples;
     VkSampleCountFlagBits desiredSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    s_vulkanInfo* vulkanInfo;
+    std::vector<s_deviceProps> deviceProperties;
+    s_vulkanInfo vulkanInfo;
     VkInstance instance;
     VkPhysicalDevice physicalDevice;
     VkDevice logicalDevice;

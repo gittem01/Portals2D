@@ -16,6 +16,9 @@
 #include "Menu.h"
 
 ThinDrawer* ThinDrawer::object = nullptr;
+uint64_t ThinDrawer::selectedVendorAndDeviceId = 0;
+int ThinDrawer::selectedPhysicalDeviceIndex = 0;
+std::string ThinDrawer::selectedPhysicalDeviceName = "";
 
 ThinDrawer::ThinDrawer(PortalWorld* pWorld)
 {

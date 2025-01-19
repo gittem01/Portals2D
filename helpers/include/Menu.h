@@ -88,6 +88,7 @@ public:
 	Button* vsyncButton;
 	Button* maxFramerateButton;
 	Button* languageButton;
+	Button* gpuButton;
 
 	Menu();
 
