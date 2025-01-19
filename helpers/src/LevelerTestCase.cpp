@@ -954,6 +954,7 @@ void LevelerTestCase::perFrameUpdate()
     {
         if (menuUpdate)
         {
+            g->dtMult = 1.0;
             goto stopMenuUpdate;
         }
         else

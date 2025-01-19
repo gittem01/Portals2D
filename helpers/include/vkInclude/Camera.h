@@ -33,7 +33,7 @@ public:
 	float zoom = 0.5;
 	float zoomInc = 0.15;
 	float dragSmth = 0.2f;
-	float neededZoom = 0;
+	float neededZoom = 0.0f;
 	double lastMouseUpdateTime = 0.0;
 	glm::vec2 mousePos;
 	glm::vec2 zoomPoint;
@@ -56,5 +56,6 @@ public:
 	void changeZoom(float inc);
 	float limitZoom(float inZoom);
 	void dragFunc(int width, int height);
+	void camReset(glm::vec2 pos, float zoom);
 };
 

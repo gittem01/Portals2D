@@ -253,6 +253,8 @@ void Game::LevelerState()
         leveler->renderInit();
     }
 
+    thinDrawer->wh->cam->camReset(glm::vec2(0.0f, 0.0f), thinDrawer->wh->cam->zoomLimits.x);
+
     SDL_ShowWindow(thinDrawer->wh->window);
 
     stateStarterAnimation();
@@ -351,7 +353,10 @@ void Game::TestState()
 
         shouldQuit = thinDrawer->wh->looper();
         
-        if (dtMult > 0.0000000001) thinDrawer->wh->cam->update();
+        if (dtMult > 0.0000000001 && !TestPlayer::object->won && TestPlayer::object->health > 0)
+        {
+            thinDrawer->wh->cam->update();
+        }
 
         frame++;
 
@@ -486,6 +491,8 @@ void Game::MenuState()
     menu->initSettings();
     menu->initCredits();
     menu->exitButton = menu->initWithName("exit", glm::vec4(1.0, 0.0, 0.0, 0.2));
+
+    thinDrawer->blackWallShader->testFill();
 
     SDL_ShowWindow(thinDrawer->wh->window);
 

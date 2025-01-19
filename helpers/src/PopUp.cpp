@@ -133,7 +133,6 @@ void openLevel(std::string fileName, PopUp* pop)
 		Game::object->singleTaskRegistry.push_back([pop, fileName]
 		{
 			int res = Leveler::object->openLevel(fileName);
-
 			if (res == 0)
 			{
 				s_menuButton initialButton = {
@@ -461,7 +460,7 @@ void loadbgThread()
 		}
 	}
 
-	for (int i = 0; i < 2025; i++)
+	for (int i = 0; i < 225; i++)
 	{
 		std::string randStr = std::to_string(i);
 
@@ -658,6 +657,8 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	if (td01 > 0.999f && p->closeOnEnd)
 	{
+		ThinDrawer::object->addPopText("loading", glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+
 		Game::object->singleTaskRegistry2.push_back([p]
 		{
 			if (p->endFunction.has_value())
@@ -739,13 +740,13 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 				float maxDiff = p->scrollAmount - maxScroll;
 				p->scrollAmount = maxScroll - maxDiff;
 				scrollSpeed *= -1.0f;
-				Sounder::object->playSound(p->sliderHitSound, std::clamp(abs(scrollSpeed), 0.1f, 5.0f));
+				Sounder::object->playSound(p->sliderHitSound, std::clamp(40.0f * abs(scrollSpeed) / maxScroll, 0.1f, 5.0f));
 			}
 			else if (p->scrollAmount < 0.0f)
 			{
 				p->scrollAmount = -p->scrollAmount;
 				scrollSpeed *= -1.0f;
-				Sounder::object->playSound(p->sliderHitSound, std::clamp(abs(scrollSpeed), 0.1f, 5.0f));
+				Sounder::object->playSound(p->sliderHitSound, std::clamp(40.0f * abs(scrollSpeed) / maxScroll, 0.1f, 5.0f));
 			}
 
 			p->targetScroll = p->scrollAmount;
@@ -1254,10 +1255,9 @@ void PopUp::darknessRender(VkCommandBuffer cmdBuff, void* ptr)
 	{
 		if (currentButtonData.colour.w < 0.01f)
 		{
-			p->active = false;
-
 			Game::object->singleTaskRegistry.push_back([p]
 			{
+				p->active = false;
 				ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
 
 				p->endFunction.reset();

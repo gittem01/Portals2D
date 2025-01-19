@@ -418,17 +418,21 @@ void TestPlayer::winanim()
 
             b2Vec2 linVel = p1->body->GetLinearVelocity();
 
-            if (p1->pos.y < headPosb.y - 0.9f && linVel.y < -0.01f)
-            {
-                p1->body->SetLinearVelocity(b2Vec2(0.0f, 0.5f));
+            b2Vec2 playerPos = TestPlayer::object->wData->pbIndices[0]->body->GetPosition();
 
-                if (!game->pop.active)
+            bool out = playerPos.x > 1000.0f && playerPos.y > 1000.0f && TestPlayer::object->wData->pbIndices.size() == 1;
+
+            if (p1->pos.y < headPosb.y - 0.9f && linVel.y < -0.01f || out)
+            {
+                p1->body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+
+                if (!game->pop.active && !Game::object->testCase->shouldQuit)
                 {
                     s_menuButton initialButton = {
                     glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
                     glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
                     glm::vec4(5.0f, 5.5f, 0.1f, 0.1f) }; // data
-                    game->pop.init(initialButton, "darkness", 2.0);
+                    game->pop.init(initialButton, "darkness", 0.5);
 
                     game->pop.endFunction = []
                     {
@@ -438,10 +442,6 @@ void TestPlayer::winanim()
                         });
                     };
                 }
-            }
-            else if (p1->pos.y > headPosb.y + 0.99f && linVel.y > 0.01f)
-            {
-                p1->body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
             }
             else if (abs(linVel.y) < 0.01f)
             {
@@ -1137,10 +1137,12 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
             contact->SetEnabled(false);
             return;
         }
-        else
+        else if (abs(normAngle) < 0.2f)
         {
             winwin();
         }
+
+        return;
     }
 
     if (holdBody)
@@ -2719,10 +2721,10 @@ void TestPlayer::update(float dt, int totalIter)
 
     handleBodyRotation();
     
+    handleGunRotation();
+
     if (!won)
     {
-        handleGunRotation();
-
         handlePortalCD(dt);
     }
 

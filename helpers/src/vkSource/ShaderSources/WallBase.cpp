@@ -38,7 +38,7 @@ void WallBase::prepareVertexData()
 
 void WallBase::render(VkCommandBuffer cmdBuff, int layer, float camX, float camY)
 {
-    if (renderGridUp.size() == 0) return;
+    if (renderGridUp.size() <= layer) return;
 
     VkDeviceSize offsets = 0;
     const uint32_t camOffset = ShaderBase::alignedSharedSize * thinDrawer->frameIndex;

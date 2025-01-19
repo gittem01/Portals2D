@@ -140,6 +140,11 @@ Kaydetme Başarılı
 Save Successful
 <saveSuccess>
 
+<loading>
+Yükleniyor
+Loading
+<loading>
+
 <saveFailure>
 Kaydetme Başarısız
 Save Failed

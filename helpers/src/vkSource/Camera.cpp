@@ -160,6 +160,18 @@ void Camera::dragFunc(int width, int height)
 	}
 }
 
+void Camera::camReset(glm::vec2 pos, float zoom)
+{
+	this->zoom = zoom;
+	this->pos = pos;
+
+	updateOrtho();
+	neededZoom = 0.0f;
+	dragTo = pos;
+	lastPos = pos;
+	zoomPoint = pos;
+}
+
 glm::vec2 Camera::getMouseCoords_i()
 {
 	int width, height;
