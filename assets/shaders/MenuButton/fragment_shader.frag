@@ -71,7 +71,7 @@ void main()
         float noiseVal = pc.data.z - voronoi(worldPos * pc.data.w) * 0.5;
         colour.w *= noiseVal;
     }
-    
+
     if (d < 0.0)
     {
         FragColour = colour;

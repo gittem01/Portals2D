@@ -657,8 +657,11 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	if (td01 > 0.999f && p->closeOnEnd)
 	{
-		ThinDrawer::object->addPopText("loading", glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-
+		if (p->endFunction.has_value())
+		{
+			ThinDrawer::object->addPopText("loading", glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+		}
+		
 		Game::object->singleTaskRegistry2.push_back([p]
 		{
 			if (p->endFunction.has_value())

@@ -41,10 +41,10 @@ void BlackWall::testFill()
 
     int alignedSizeFS = sizeof(s_wallUbo_b);
 
-    const float sz = 1.5f;
-    for (int i = -60; i < 60; i++)
+    const float sz = 2.0f;
+    for (int i = -5; i < 6; i++)
     {
-        for (int j = -60; j < 60; j++)
+        for (int j = -15; j < 16; j++)
         {
             s_gridPositionShader gridPos = getGridSquare(i * sz, j * sz);
             s_shaderGridData* gData = &renderGridUp[0][gridPos.y][gridPos.x];
@@ -55,7 +55,7 @@ void BlackWall::testFill()
             vkMapMemory(logicalDevice, uniformBuffers[0].memory, gData->offsetEnd * alignedSizeFS, alignedSizeFS, 0, (void**)&wallUbo);
             wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
             wallUbo->colour = glm::vec4(0.03, 0.03, 0.03, 1.0) * rndVal;
-            wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.04, 0.8, 0.0);
+            wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.8, 0.0);
             vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
             gData->offsetEnd++;
         }

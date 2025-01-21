@@ -7,7 +7,7 @@ public:
     {
         testCaseItem = 5;
         
-        beforeCreate();
+        beforeCreate(false);
         onCreate();
         afterCreate();
     }

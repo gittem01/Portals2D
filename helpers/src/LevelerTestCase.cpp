@@ -914,9 +914,9 @@ void LevelerTestCase::createDynamics()
 
     //createHammerTest(g->pWorld, td);
 
-    /*Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0f, 4.0f));
+    //Cyber* cyb = new Cyber(g->pWorld, b2Vec2(0.0f, 4.0f));
 
-    createRagDoll(g->pWorld, td);*/
+    //createRagDoll(g->pWorld, td);
 }
 
 void LevelerTestCase::onCreate()

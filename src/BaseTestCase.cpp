@@ -152,6 +152,11 @@ void BaseTestCase::beforeCreate(bool createTP)
     {
         tp = new TestPlayer(g);
     }
+    else
+    {
+        tp = nullptr;
+        TestPlayer::object = nullptr;
+    }
 }
 
 void BaseTestCase::afterCreate()
@@ -183,7 +188,10 @@ void BaseTestCase::onUpdate()
 
             Platform::perTickUpdate(dt);
 
-            tp->update(dt, requiredIters);
+            if (tp)
+            {
+                tp->update(dt, requiredIters);
+            }
 
             LightBridge::perTickUpdate();
 
@@ -197,7 +205,7 @@ void BaseTestCase::onUpdate()
         }
     }
    
-    if (followPlayer) tp->camHandle();
+    if (followPlayer && tp) tp->camHandle();
 }
 
 void BaseTestCase::keyHandler(WindowHandler* wh)

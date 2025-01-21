@@ -163,15 +163,21 @@ void Game::loadGameData()
     }
 }
 
+static std::mutex saveMutex;
+
 void Game::saveGameData()
 {
-    static std::mutex saveMutex;
-
 	std::thread saveThread([this]()
 	{
         if (!saveMutex.try_lock())
         {
 			return;
+        }
+
+        if (shouldQuit)
+        {
+            saveMutex.unlock();
+            return;
         }
 
 		std::string fileName = IOHelper::assetsFolder + "gamedata/basicdata.bin";
@@ -484,6 +490,7 @@ void Game::MenuState()
 {
     menu->initDefaults();
 
+    thinDrawer->earlyDrawFuncs.push_back({ Leveler::renderParticles, this });
     menu->renderInit();
 
     menu->initPlay();
@@ -499,6 +506,8 @@ void Game::MenuState()
     ALuint menuMusic = sounder->playLoopingSound(sounder->loadSound("Menu.wav"), 0.0);
     sounder->addFader(menuMusic, 0.0f, 0.15f, 1.0f);
 
+    testCase = newTest(this, 6);
+
     stateStarterAnimation(0.5f);
 
     lastTime = SDL_GetTicksSec();
@@ -513,6 +522,8 @@ void Game::MenuState()
         sounder->update();
 
         menu->update();
+
+        testCase->onUpdate();
 
         runSingleTaskRegistry();
 
@@ -581,6 +592,9 @@ void Game::loop()
     {
         (this->*gameStater)();
     }
+
+    saveMutex.lock();
+    saveMutex.unlock();
 }
 
 double SDL_GetTicksSec()

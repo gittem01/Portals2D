@@ -643,6 +643,9 @@ void Turret::perTickUpdate(float dt)
 	float bodyAngle;
 	b2Vec2 pos;
 
+	if (!TestPlayer::object)
+		goto for_end;
+
 	for (int i = TestPlayer::object->wData->pbIndices.size() - 1; i > -1; i--)
 	{
 		pb = TestPlayer::object->wData->pbIndices[i];
@@ -685,6 +688,8 @@ void Turret::perTickUpdate(float dt)
 		}
 	}
 
+	for_end:
+	
 	for (size_t i = lastTurretUpdateIndex; i < numTurretUpdates + lastTurretUpdateIndex; i++)
 	{
 		Turret* trt = turrets.at(i % turrets.size());

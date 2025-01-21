@@ -8,6 +8,7 @@
 #include "WindowHandler.h"
 #include "Camera.h"
 #include "Portal.h"
+#include "Game.h"
 
 class mouseJointHandler;
 
@@ -40,7 +41,7 @@ public:
 
 	float frequencyHz = 5.0f;
 	float dampingRatio = 1.0f;
-    float bodyRadius = 0.0f;
+    float bodyRadius = 0.5f;
     float radiusLimits[2] = { 0.0f, 2.5f };
 
     int lastFrame = INT_MIN;
@@ -135,7 +136,7 @@ public:
         b2AABB aabb = { lowerBound, upperBound };
         world->QueryAABB(queryCallback, aabb);
 
-        if (wh->keyData[SDL_SCANCODE_LCTRL] && wh->mouseData[4] == 2 && !wh->mouseData[2] && frame != lastFrame){
+        if ((wh->keyData[SDL_SCANCODE_LCTRL] || Game::object->gameStater == &Game::MenuState) && wh->mouseData[4] == 2 && !wh->mouseData[2] && frame != lastFrame){
             clicks[1] = clicks[0];
             clicks[0] = new glm::vec2(mp.x, mp.y);
         }
@@ -180,7 +181,7 @@ public:
             jointDiffs.erase(mouseJoint);
         }
 
-        if (wh->keyData[SDL_SCANCODE_LCTRL] && wh->mouseData[2] == 2) {
+        if ((wh->keyData[SDL_SCANCODE_LCTRL] || Game::object->gameStater == &Game::MenuState) && wh->mouseData[2] == 2) {
             jointHandler(mp, world);
         }
         else if (wh->mouseData[2] == 0 && mouseJoints.size() > 0) {
@@ -197,7 +198,7 @@ public:
             mouseBodies.clear();
             selectedBodies.clear();
         }
-        else if (wh->keyData[SDL_SCANCODE_LCTRL] && wh->mouseData[2] == 1 && (wh->mouseData[4] == 2 || wh->keyData[SDL_SCANCODE_F])) {
+        else if ((wh->keyData[SDL_SCANCODE_LCTRL] || Game::object->gameStater == &Game::MenuState) && wh->mouseData[2] == 1 && (wh->mouseData[4] == 2 || wh->keyData[SDL_SCANCODE_F])) {
             mouseJoints.clear();
             jointDiffs.clear();
             mouseBodies.clear();

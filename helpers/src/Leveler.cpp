@@ -3462,34 +3462,41 @@ void Leveler::afterRemoveObject(const s_gridItemData& item, s_objectDataGrid* ob
 
 	if (hazBlShader)
 	{
-		if (objectData->extraPos != objectData->pos)
+		glm::i16vec2 inc;
+		glm::i16vec2 startPos = objectData->pos;
+		switch (objectData->rotation % 4)
 		{
-			glm::i16vec2 inc;
-			glm::i16vec2 startPos = objectData->pos;
-			switch (objectData->rotation % 4)
-			{
-			case 0: inc.x = 0; inc.y = 1; break;
-			case 1: inc.x = -1; inc.y = 0; break;
-			case 2: inc.x = 0; inc.y = -1; break;
-			case 3: inc.x = 1; inc.y = 0; break;
-			}
+		case 0: inc.x = 0; inc.y = 1; break;
+		case 1: inc.x = -1; inc.y = 0; break;
+		case 2: inc.x = 0; inc.y = -1; break;
+		case 3: inc.x = 1; inc.y = 0; break;
+		}
 
-			while (1)
+		bool smoll = objectData->extraPos == objectData->pos;
+
+		while (1)
+		{
+			if (!smoll)
 			{
 				startPos += inc;
-				const s_levelGridData& lgd = getSquare(startPos.x, startPos.y);
-				if ((s_objectDataGrid*)lgd.data.ptr == objectData)
+			}
+
+			const s_levelGridData& lgd = getSquare(startPos.x, startPos.y);
+			if ((s_objectDataGrid*)lgd.data.ptr == objectData || smoll)
+			{
+				if (!smoll)
 				{
 					setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & (objectData->objectType ^ -1ll)), 0 });
-					startPos += inc;
-					const s_levelGridData& lgd2 = getSquare(startPos.x, startPos.y);
-					setSquare(startPos.x, startPos.y, { (LevelObject)(lgd2.objectType & ((DOWN_DEPENDENT << ((objectData->rotation + 2) % 4)) ^ -1ll)), lgd2.data });
-					break;
 				}
 
-				levelObject midMask = (levelObject)((objectData->objectType << (37 + (objectData->rotation % 2) * 2)) ^ -1ll);
-				setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & midMask), lgd.data });
+				startPos += inc;
+				const s_levelGridData& lgd2 = getSquare(startPos.x, startPos.y);
+				setSquare(startPos.x, startPos.y, { (LevelObject)(lgd2.objectType & ((DOWN_DEPENDENT << ((objectData->rotation + 2) % 4)) ^ -1ll)), lgd2.data });
+				break;
 			}
+
+			levelObject midMask = (levelObject)((objectData->objectType << (37 + (objectData->rotation % 2) * 2)) ^ -1ll);
+			setSquare(startPos.x, startPos.y, { (LevelObject)(lgd.objectType & midMask), lgd.data });
 		}
 
 		s_gridSquare lastOffsetSquare = lastOffsetVec->back();

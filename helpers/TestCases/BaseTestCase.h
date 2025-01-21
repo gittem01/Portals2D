@@ -38,7 +38,7 @@ public:
     bool shouldGetNewTest;
     int testCaseItem;
     
-    double requestedDtPerStep = 0.0015;
+    double requestedDtPerStep = 0.001;
 
     void destroy();
 

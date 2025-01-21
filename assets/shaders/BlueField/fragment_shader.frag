@@ -65,12 +65,12 @@ void main()
 
     float fullMult = min(max(splitX - (size.x * 0.5 - abs(localPos.x)), 0.0), smoothSize) / smoothSize;
 
-    float currentRadius = max((sharedUboData.data.y - shootData.z), 0.01) * 10.0;
+    float currentRadius = max((sharedUboData.data.y - shootData.z), 0.0) * 10.0;
     vec2 worldDiff = worldPos - shootData.xy;
     float wl = length(worldDiff);
 
     float add = max((currentRadius - abs(currentRadius - wl)) * 4.0, 0.0) / pow(currentRadius, 3.0);
-    c2 = add;
+    c2 = clamp(add, 0.0, 5.0);
     
     FragColour = (colour * v + pow(c2, 2.0) * colour2 * sideMult * 0.5) * fullMult;
 }
