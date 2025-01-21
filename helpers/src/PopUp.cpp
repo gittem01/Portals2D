@@ -1035,10 +1035,11 @@ glm::vec4 vendorIdToColor(uint32_t vendorId)
 }
 
 static std::vector<int> actualIndices;
+static s_lineRenderData bottomText;
 
 void PopUp::initGpu()
 {
-	finalSize = std::min(ThinDrawer::object->deviceProperties.size() * 7.0f + 3.0f, 70.0f);
+	finalSize = std::min(ThinDrawer::object->deviceProperties.size() * 7.0f + 7.0f, 70.0f);
 
 	finalButton = {
 		glm::vec4(0.0f, 0.0f, 100.0f, finalSize), // posSize
@@ -1062,8 +1063,15 @@ void PopUp::initGpu()
 		lrd.color = glm::vec4(1.0f);
 		lrd.posScale = glm::vec4(-lrd.posScale.w * 2.5f, 0.0f, 5.0f, lrd.posScale.w);
 		renderTextDatas.push_back(lrd);
+
 		actualIndices.push_back(i);
 	}
+
+	std::string preText = Game::object->menu->buttonTexts["<currentGpu_" + std::to_string(Leveler::object->ol->cd->selectedLanguageIndex) + ">"][0];
+	std::string fullText = preText + ": " + ThinDrawer::object->selectedPhysicalDeviceName;
+	bottomText.charDatas = Leveler::object->ol->cd->getRenderData(fullText, Leveler::object->ol->popHeight * 2, bottomText.posScale.w);
+	bottomText.color = glm::vec4(1.0f);
+	bottomText.posScale = glm::vec4(-bottomText.posScale.w * 2.5f, 0.0f, 5.0f, bottomText.posScale.w);
 }
 
 void PopUp::gpuRender(VkCommandBuffer cmdBuff, void* ptr)
@@ -1202,6 +1210,13 @@ void PopUp::gpuRender(VkCommandBuffer cmdBuff, void* ptr)
 
 		i++;
 	}
+
+	float sizeRatio = std::min(24.0f / bottomText.posScale.w, 1.0f);
+	bottomText.posScale.x = -bottomText.posScale.w * 2.0f * size01 * sizeRatio;
+	bottomText.posScale.y = topStart;
+	bottomText.posScale.z = size01 * 4.0f * sizeRatio;
+	bottomText.color.w = size01;
+	Leveler::object->ol->cd->renderDatas.push_back(bottomText);
 
 	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
 }

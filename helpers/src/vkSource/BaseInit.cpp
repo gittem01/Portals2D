@@ -256,7 +256,8 @@ void ThinDrawer::selectPhysicalDevice()
     }
     else
     {
-        printf("Selected GPU : %s\n", vulkanInfo.deviceProperties.deviceName);
+        selectedPhysicalDeviceName = std::string(vulkanInfo.deviceProperties.deviceName);
+        printf("Selected GPU : %s\n", selectedPhysicalDeviceName);
     }
 }
 

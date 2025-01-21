@@ -74,6 +74,14 @@ EKRAN KARTI DEĞİŞTİRMEK YENİDEN BAŞLATMA GEREKTİRİR
 GRAPHICS CARD CHANGE REQUIRES RESTART
 <gpuset_1>
 
+<currentGpu_0>
+Çalışan Kart
+<currentGpu_0>
+
+<currentGpu_1>
+Running Card
+<currentGpu_1>
+
 <credits_0>
 KATKILAR
 <credits_0>
