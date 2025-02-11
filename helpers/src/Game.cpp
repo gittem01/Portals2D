@@ -76,15 +76,18 @@ Game::Game()
     SteamErrMsg errMsg;
     if (SteamAPI_InitEx(&errMsg) != k_ESteamAPIInitResult_OK)
     {
-        printf("Failed to init Steam.  %s", errMsg);
-        exit(1);
+        printf("Failed to init Steam.  %s\n", errMsg);
+        appid = 0;
+        //exit(1);
     }
+    else
+    {
+        appid = SteamUtils()->GetAppID();
 
-    appid = SteamUtils()->GetAppID();
+        /*SteamAPICall_t call = SteamUGC()->CreateItem(appid, k_EWorkshopFileTypeCommunity);
 
-    /*SteamAPICall_t call = SteamUGC()->CreateItem(appid, k_EWorkshopFileTypeCommunity);
-
-    createItemResult.Set(call, this, &Game::onItemCreated);*/
+        createItemResult.Set(call, this, &Game::onItemCreated);*/
+    }  
 }
 
 void Game::onItemCreated(CreateItemResult_t* pCallback, bool bIOFailure)
@@ -352,6 +355,9 @@ void Game::TestState()
 
     stateStarterAnimation();
 
+    ALuint gameMusic = sounder->playLoopingSound(sounder->loadSound("inGame.wav"), 0.0);
+    sounder->addFader(gameMusic, 0.0f, 0.01f, 1.0f);
+
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && (testCase && !testCase->shouldQuit || !testCase))
     {
@@ -426,6 +432,8 @@ void Game::TestState()
             }
         }
     }
+
+    sounder->addFader(gameMusic, 0.01f, 0.0f, 1.0f, true);
 
     if (testCase)
     {

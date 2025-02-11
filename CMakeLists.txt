@@ -4,9 +4,6 @@ project(Teleporter VERSION 2.0.0)
 set(APP_NAME PhysicsTeleport)
 set(CMAKE_CXX_STANDARD 20)
 
-message("lololo")
-message(${CMAKE_GENERATOR})
-
 if (MSVC AND NOT (CMAKE_GENERATOR STREQUAL "Ninja"))
     add_definitions(/MP)
     add_definitions(/ZI)

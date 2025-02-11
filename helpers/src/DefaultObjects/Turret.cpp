@@ -15,6 +15,8 @@ const b2Vec2 tEyePos = b2Vec2(-0.23f, 0.11f);
 const float minCosX = 0.7;
 size_t lastTurretUpdateIndex = 0;
 
+static uint32_t rayFilter = (uint32_t)(F_FEDGE);
+
 Turret::Turret(PortalWorld* portalWorld, b2Vec2 pos, bool mirrored) : DefaultObject(portalWorld)
 {
 	this->mirrored = mirrored;
@@ -260,7 +262,7 @@ void Turret::shoot()
 			}
 		}
 
-		pWorld->rayHandler->sendRay(bPos, dir, 120.0f, wData);
+		pWorld->rayHandler->sendRay(bPos, dir, 120.0f, wData, rayFilter);
 
 		for (rayData& rd : pWorld->rayHandler->rayResult)
 		{
@@ -304,6 +306,10 @@ void Turret::draw(VkCommandBuffer cmdBuff, void* ptr)
 
 	for (auto trt : turrets)
 	{
+		if (trt->wData->pbIndices.size() == 0) continue;
+
+		trt->eyeBody = trt->wData->pbIndices[0];
+
 		for (int i = 0; i < 2; i++)
 		{
 			double td = timeNow - trt->shootTimes[i];
@@ -625,7 +631,7 @@ void Turret::perTickUpdate(float dt)
 		}
 
 		trt->laserPoints.clear();
-		trt->pWorld->rayHandler->sendRay(trt->eyePos, trt->laserDir, 400.0f);
+		trt->pWorld->rayHandler->sendRay(trt->eyePos, trt->laserDir, 400.0f, nullptr, rayFilter);
 		for (rayData& rd : trt->pWorld->rayHandler->rayResult)
 		{
 			trt->laserPoints.push_back({ rd.startPos, rd.endPos });
@@ -672,7 +678,7 @@ void Turret::perTickUpdate(float dt)
 			if (cosX > minCosX)
 			{
 				lookPos.x += upVec.y; lookPos.y += -upVec.x;
-				trt->pWorld->rayHandler->sendRay(trt->eyePos, lookPos - trt->eyePos, 100.0f);
+				trt->pWorld->rayHandler->sendRay(trt->eyePos, lookPos - trt->eyePos, 100.0f, nullptr, rayFilter);
 				if (trt->pWorld->rayHandler->closestFixture)
 				{
 					bodyData* bData = (bodyData*)trt->pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
@@ -723,7 +729,7 @@ void Turret::perTickUpdate(float dt)
 				if (cosX > minCosX)
 				{
 					pos2.x += upVec.y; pos2.y += -upVec.x;
-					trt->pWorld->rayHandler->sendRay(trt->eyePos, pos2 - trt->eyePos, 100.0f);
+					trt->pWorld->rayHandler->sendRay(trt->eyePos, pos2 - trt->eyePos, 100.0f, nullptr, rayFilter);
 					if (trt->pWorld->rayHandler->closestFixture)
 					{
 						bodyData* bData = (bodyData*)trt->pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;

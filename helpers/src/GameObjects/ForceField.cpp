@@ -238,6 +238,18 @@ void ForceField::update()
 		auto data = &destroyCList[i];
 		auto pbwData = data->first;
 
+		for (auto pb : pbwData->pbIndices)
+		{
+			b2Body* body = pb->body;
+			b2Vec2 linVel = body->GetLinearVelocity();
+			float len = linVel.Normalize();
+			if (len > 0.4f)
+			{
+				linVel *= 0.4f;
+				body->SetLinearVelocity(linVel);
+			}
+		}
+
 		if (!Game::object->isPaused)
 		{
 			data->second += Game::object->deltaTime;

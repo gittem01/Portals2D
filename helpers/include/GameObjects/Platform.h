@@ -12,8 +12,8 @@ class Platform : public Receiver
 public:
 	static int numPlatforms;
 	static std::vector<Platform> platforms;
-	static std::vector<uint8_t> loopingPlatforms;
-	static std::vector<uint8_t> oneTimeMovePlatforms;
+	static std::vector<uint16_t> loopingPlatforms;
+	static std::vector<uint16_t> oneTimeMovePlatforms;
 
 	b2Body* body;
 	glm::ivec2 size;
@@ -25,7 +25,7 @@ public:
 
 	int platformRenderOffset;
 	int edgeRenderIndex;
-	uint8_t platformIndex;
+	uint16_t platformIndex;
 	bool looping;
 	bool startEnabled;
 

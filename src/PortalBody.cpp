@@ -177,6 +177,12 @@ bool PortalBody::shouldCollide(b2Contact* contact, b2Fixture* fix1, b2Fixture* f
         }
 
         Portal* portal = (Portal*)fData->data;
+
+        if (worldIndex->destrTime >= 0.0f && portal->body->GetType() != b2_staticBody)
+        {
+            return false;
+        }
+
         if (fix2 != portal->yFix[0] && fix2 != portal->yFix[1])
         {
             //if (portal->connections->size() > 0)

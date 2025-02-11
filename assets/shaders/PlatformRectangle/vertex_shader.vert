@@ -33,7 +33,7 @@ layout (std140, set = 1, binding = 0) readonly buffer UBO
 void main()
 {
     outInstanceIndex = gl_InstanceIndex % 64;
-    storageData data = ubo.sData[outInstanceIndex];
+    storageData data = ubo.sData[gl_InstanceIndex];
 
     size = data.posSize.zw;
     inColour = data.inColour;

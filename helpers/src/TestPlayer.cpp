@@ -1929,32 +1929,32 @@ void TestPlayer::handlePortalCD(float dt)
         gData.positions.z = -1938.0f;
     }
 
-    if (Game::object->pWorld->portals.size() < 2)
+    if (!portalA || !portalB)
     {
         return;
     }
 
-    Portal* portal1 = Game::object->pWorld->portals[0];
-    Portal* portal2 = Game::object->pWorld->portals[1];
-
-    float lenVH = abs(portal1->pos.x - portal2->pos.x) + abs(portal1->pos.y - portal2->pos.y);
-    if (lenVH < 2.599f && portal1->isParallel(portal2->points[0], portal2->points[1]))
+    float lenVH = abs(portalA->pos.x - portalB->pos.x) + abs(portalA->pos.y - portalB->pos.y);
+    b2Vec2 posDiff = portalB->pos - portalA->pos;
+    float dotVal = b2Dot(posDiff, portalA->dir);
+    bool myParallel = dotVal <= 0.0f && dotVal > -0.2f;
+    if (lenVH < 2.599f && myParallel)
     {
         portalClosingRitual();
     }
-    else if ((portal1->body->GetType() != b2_staticBody || portal2->body->GetType() != b2_staticBody) &&
-            abs(b2Dot(portal1->dir, portal2->dir)) < 0.1f)
+    else if ((portalA->body->GetType() != b2_staticBody || portalB->body->GetType() != b2_staticBody) &&
+            abs(b2Dot(portalA->dir, portalB->dir)) < 0.1f)
     {
         Portal* hPortal, *vPortal;
-        if (abs(portal1->points[0].x - portal1->points[1].x) > 0.1f)
+        if (abs(portalA->points[0].x - portalA->points[1].x) > 0.1f)
         {
-            hPortal = portal1;
-            vPortal = portal2;
+            hPortal = portalA;
+            vPortal = portalB;
         }
         else
         {
-            hPortal = portal2;
-            vPortal = portal1;
+            hPortal = portalB;
+            vPortal = portalA;
         }
         
         float minX = std::min(hPortal->points[0].x, hPortal->points[1].x);

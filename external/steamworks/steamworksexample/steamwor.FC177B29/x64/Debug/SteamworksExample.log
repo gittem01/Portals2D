@@ -1,0 +1,129 @@
+﻿  Main.cpp
+  stdafx.cpp
+  gameenginewin32.cpp
+  VectorEntity.cpp
+  BaseMenu.cpp
+  clanchatroom.cpp
+  connectingmenu.cpp
+  Friends.cpp
+  htmlsurface.cpp
+  Inventory.cpp
+  ItemStore.cpp
+  Leaderboards.cpp
+  Lobby.cpp
+  MainMenu.cpp
+  musicplayer.cpp
+  OverlayExamples.cpp
+  p2pauth.cpp
+  PhotonBeam.cpp
+  QuitMenu.cpp
+  RemotePlay.cpp
+  RemoteStorage.cpp
+  remotestoragesync.cpp
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'clanchatroom.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'BaseMenu.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'Friends.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'Inventory.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'Main.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'htmlsurface.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'stdafx.cpp')
+  
+  ServerBrowser.cpp
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'musicplayer.cpp')
+  
+  Ship.cpp
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'ItemStore.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'VectorEntity.cpp')
+  
+  SimpleProtobuf.cpp
+  SpaceWarClient.cpp
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'gameenginewin32.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'Lobby.cpp')
+  
+  SpaceWarEntity.cpp
+  SpaceWarServer.cpp
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'Leaderboards.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'OverlayExamples.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'connectingmenu.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'MainMenu.cpp')
+  
+  StarField.cpp
+  StatsAndAchievements.cpp
+  Sun.cpp
+  timeline.cpp
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'p2pauth.cpp')
+  
+  voicechat.cpp
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'RemotePlay.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'remotestoragesync.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'PhotonBeam.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'QuitMenu.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'RemoteStorage.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'ServerBrowser.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'Sun.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'SpaceWarClient.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'StarField.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'SpaceWarServer.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'Ship.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'StatsAndAchievements.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'SpaceWarEntity.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'timeline.cpp')
+  
+C:\Users\eight\Desktop\sdk\steamworksexample\stdafx.h(60,10): error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+  (compiling source file 'voicechat.cpp')
+  

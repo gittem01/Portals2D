@@ -79,10 +79,13 @@ bool DefaultObject::enterForceField(ForceField* forceField)
 		for (PortalBody* pb : wData->pbIndices)
 		{
 			b2Vec2 velocity = pb->body->GetLinearVelocity();
-			velocity.Normalize();
-			velocity *= 0.4;
-			pb->body->SetLinearVelocity(velocity);
-
+			float len = velocity.Normalize();
+			if (len > 0.4f)
+			{
+				velocity *= 0.4;
+				pb->body->SetLinearVelocity(velocity);
+			}
+			
 			float angularVelocity = pb->body->GetAngularVelocity();
 			angularVelocity = std::max(std::min(angularVelocity, 1.0f), -1.0f);
 			pb->body->SetAngularVelocity(angularVelocity);
@@ -263,6 +266,28 @@ void DefaultObject::endContact(b2Contact* contact, b2Fixture* otherFix)
 
 void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
 {
+	if (wData->destrTime >= 0.0f)
+	{
+		bool coll = false;
+		
+		bodyData* bData = (bodyData*)fix2->GetBody()->GetUserData().pointer;
+		if (bData && bData->type == B_PORTAL_BODY)
+		{
+			PortalBody* pb = (PortalBody*)bData->data;
+			coll = pb->worldIndex != wData;
+		}
+		else
+		{
+			coll = fix2->GetBody()->GetType() == b2_dynamicBody;
+		}
+
+		if (!coll)
+		{
+			contact->SetEnabled(false);
+			return;
+		}
+	}
+
 	fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
 	if (fData && fData->type & (F_EDGE | F_LIGHT_BRIDGE | F_PORTAL))
 	{
@@ -311,8 +336,18 @@ void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fi
 
 void DefaultObject::reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2)
 {
-	if (fix2->GetBody()->GetType() != b2_dynamicBody && wData->destrTime < -10.0f && wData->pbIndices.size() == 1)
+	if (wData->destrTime < -10.0f)
 	{
+		const float tol = -0.15f;
+		//if (fix2->GetBody()->GetType() != b2_dynamicBody)
+		//{
+		//	tol = -0.15f;
+		//}
+		//else
+		//{
+		//	tol = -0.2f;
+		//}
+
 		b2Manifold* manifold = contact->GetManifold();
 		b2WorldManifold wMan;
 		contact->GetWorldManifold(&wMan);
@@ -320,7 +355,7 @@ void DefaultObject::reportContact(b2Contact* contact, const b2ContactImpulse* im
 		float sep = wMan.separations[0];
 		if (manifold->pointCount > 1) sep = (sep + wMan.separations[1]) / 2.0f;
 
-		if (sep < -0.15f)
+		if (sep < tol)
 		{
 			fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
 

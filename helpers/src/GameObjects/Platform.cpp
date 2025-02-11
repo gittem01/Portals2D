@@ -5,8 +5,8 @@
 
 int Platform::numPlatforms = 0;
 std::vector<Platform> Platform::platforms;
-std::vector<uint8_t> Platform::loopingPlatforms;
-std::vector<uint8_t> Platform::oneTimeMovePlatforms;
+std::vector<uint16_t> Platform::loopingPlatforms;
+std::vector<uint16_t> Platform::oneTimeMovePlatforms;
 
 glm::vec2 vertexMults[4][2] =
 {
@@ -230,19 +230,33 @@ void Platform::enable()
 
 void Platform::disable()
 {
-	for (uint8_t thisIndex = 0; thisIndex < loopingPlatforms.size(); thisIndex++)
-	{
-		if (loopingPlatforms[thisIndex] == platformIndex)
-		{
-			loopingPlatforms[thisIndex] = loopingPlatforms[loopingPlatforms.size() - 1];
-			loopingPlatforms.pop_back();
-
-			break;
-		}
-	}
-
 	if (looping)
 	{
+		// bitmaps ?, use a flag index?, no this is fine
+		for (uint8_t thisIndex = 0; thisIndex < loopingPlatforms.size(); thisIndex++)
+		{
+			if (loopingPlatforms[thisIndex] == platformIndex)
+			{
+				loopingPlatforms[thisIndex] = loopingPlatforms[loopingPlatforms.size() - 1];
+				loopingPlatforms.pop_back();
+
+				break;
+			}
+		}
+
+		float posDiff = b2Dot(body->GetPosition() - basePos, fwdDir);
+
+		if (posDiff >= limitDist)
+		{
+			b2Vec2 setPos = basePos + limitDist * fwdDir;
+			body->SetTransform(setPos, 0.0f);
+		}
+		else if (posDiff <= 0.0f)
+		{
+			body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+			body->SetTransform(basePos, 0.0f);
+		}
+
 		body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
 	}
 	else
@@ -260,8 +274,8 @@ Platform* Platform::createPlatform(PortalWorld* portalWorld, s_objectDataGrid* o
 
 void Platform::toDeath()
 {
-	loopingPlatforms = std::vector<uint8_t>();
-	oneTimeMovePlatforms = std::vector<uint8_t>();
+	loopingPlatforms = {};
+	oneTimeMovePlatforms = {};
 
 	for (int i = 0; i < platforms.size(); i++)
 	{
@@ -306,8 +320,8 @@ void Platform::toLeveler()
 
 	numPlatforms = 0;
 	platforms = std::vector<Platform>();
-	loopingPlatforms = std::vector<uint8_t>();
-	oneTimeMovePlatforms = std::vector<uint8_t>();
+	loopingPlatforms = {};
+	oneTimeMovePlatforms = {};
 }
 
 void Platform::staticInit()
@@ -397,6 +411,10 @@ void Platform::perTickUpdate(float dt)
 
 		float speed = b2Dot(velocity, platform->fwdDir);
 		float moveAmnt = abs(speed) * dt + 0.001f;
+		if (velocity.y < -2.5f)
+		{
+			moveAmnt -= 0.075f;
+		}
 
 		if (speed > 0.0f && posDiff + moveAmnt >= platform->limitDist)
 		{
@@ -418,7 +436,13 @@ void Platform::perTickUpdate(float dt)
 
 		b2Vec2 velocity = platform->body->GetLinearVelocity();
 		float speed = b2Dot(velocity, platform->fwdDir);
-		float moveAmnt = speed * dt + 0.001f * (speed > 0.0 ? 1.0f : -1.0f);
+		float moveAmnt = abs(speed) * dt + 0.001f;
+
+		if (velocity.y < -2.5f)
+		{
+			moveAmnt -= 0.075f;
+		}
+
 		float posDiff = b2Dot(body->GetPosition() - platform->basePos, platform->fwdDir) + moveAmnt;
 
 		if (platform->enabled && posDiff >= platform->limitDist)
