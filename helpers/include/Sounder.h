@@ -8,9 +8,11 @@
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
+#include "GameObjects/Receiver.h"
 
 #define NUM_LOOPING_SOURCES 32
 #define NUM_ONETIME_SOURCES 256 - NUM_LOOPING_SOURCES
+#define SQUARE_SIZE 4
 
 typedef struct s_sourceInUse
 {
@@ -49,9 +51,10 @@ public:
 	s_sourceInUse* sourceToCheck;
 
 	std::vector<fader> faderData;
-	void addFader(ALuint source, float initialVolume, float finalVolume, double reachTime, bool stopOnEnd=false);
 
-public:
+	std::vector<std::vector<std::vector<gridSoundData*>>> statGrid;
+	std::vector<gridSoundData*> statPlays;
+
 	static Sounder* object;
 
 	static float generalVolume;
@@ -63,11 +66,18 @@ public:
 	std::map<std::string, ALuint> bufferMap;
 
 	glm::vec3 listenerPos = glm::vec3(0.0, 0.0, 0.0);
+	float soundRadius = 10.0f;
 
 	Sounder();
 	~Sounder();
 
+	void updateStationaries();
 	void update();
+
+	void gridClear();
+	void putStatOnGrid(gridSoundData* soundData, std::string fileName, float volume, bool enabled, bool isPoint);
+	void putStatOnGrid(gridSoundData* data);
+	glm::ivec2 getSoundGridPos(glm::vec2 pos);
 
 	ALuint loadSound(std::string fileName);
 	ALuint playSound(ALuint buffer, float volume);
@@ -76,4 +86,8 @@ public:
 	ALuint playLoopingSound(ALuint buffer, float volume);
 	void stopSound(ALuint source);
 	void stopLoopingSound(ALuint source);
+
+	void addFader(ALuint source, float initialVolume, float finalVolume, double reachTime, bool stopOnEnd = false);
+
+	static glm::vec2 getSoundPlayPosition(glm::vec2 linePoint1, glm::vec2 linePoint2, glm::vec2 point);
 };

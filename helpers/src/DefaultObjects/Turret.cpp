@@ -180,6 +180,8 @@ void Turret::recreate(bool unused_mirrored)
 	lastLaserIndex = 0;
 
 	eyeBody = wData->pbIndices[0];
+	laserDir = mirrored ? b2Vec2(1.0f, 0.0f) : b2Vec2(-1.0f, 0.0f);
+	laserPoints.clear();
 }
 
 void Turret::renderInit()
@@ -204,8 +206,13 @@ void Turret::renderInit()
 	coverVertexBuffer->count = coverVertices.size();
 	ThinDrawer::object->bufferStage(coverVertices.data(), coverVertices.size() * sizeof(s_vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, coverVertexBuffer);
 
-	ALuint buffer = Sounder::object->loadSound("firee.wav");
-	soundBuffers.push_back(buffer);
+	for (int i = 0; i < 6; i++)
+	{
+		int index = i + 1;
+		std::string shotName = "turretShots/shot" + std::to_string(index) + ".wav";
+		ALuint buffer = Sounder::object->loadSound(shotName);
+		soundBuffers.push_back(buffer);
+	}
 }
 
 void Turret::staticInit()
@@ -225,7 +232,7 @@ void Turret::shoot()
 {
 	if (Game::object->gameTime - lastShootTime > shootTimer && openAmount > 0.999f)
 	{
-		ALuint source = Sounder::object->playSound(soundBuffers[0], 0.2 + 0.1 * rand() / (float)RAND_MAX);
+		ALuint source = Sounder::object->playSound(soundBuffers[rand() % 6], 2.0);
 		Sounder::object->setSoundPosition(source, glm::vec3(wData->pbIndices[0]->body->GetPosition().x, wData->pbIndices[0]->body->GetPosition().y, 0.0));
 
 		lastShootTime = Game::object->gameTime;

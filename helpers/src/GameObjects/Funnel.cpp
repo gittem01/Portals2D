@@ -50,6 +50,8 @@ Funnel::Funnel(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	b2Vec2 offset = bodyOffsets[objData->rotation % 4];
 	funnelPos = b2Vec2(objData->pos.x + offset.x, objData->pos.y + offset.y);
 
+	soundData.pos0 = glm::vec2(funnelPos.x, funnelPos.y);
+
 	b2BodyDef bDef;
 	bDef.type = b2_staticBody;
 	bDef.position = funnelPos;
@@ -109,6 +111,8 @@ Funnel::Funnel(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		memcpy(funnelUbo, &data, sizeof(s_funnelUbo));
 		vkUnmapMemory(ThinDrawer::object->funnelShader->logicalDevice, ThinDrawer::object->funnelShader->uniformBuffers[0].memory);
 	}
+
+	Sounder::object->putStatOnGrid(&soundData, "funnelloop.wav", 1.0f, objData->startActive, true);
 }
 
 void Funnel::enable()

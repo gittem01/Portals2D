@@ -7,6 +7,7 @@ int Platform::numPlatforms = 0;
 std::vector<Platform> Platform::platforms;
 std::vector<uint16_t> Platform::loopingPlatforms;
 std::vector<uint16_t> Platform::oneTimeMovePlatforms;
+std::vector<uint16_t> Platform::soundMakingPlatforms;
 
 glm::vec2 vertexMults[4][2] =
 {
@@ -40,6 +41,15 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	platformIndex = numPlatforms - 1;
 	platformSpeed = platformSpeeds[std::clamp((int)objData->speed, 0, (int)std::size(platformSpeeds))];
 	setMovementData(objData);
+
+	soundData.baseVolume = 10.0f;
+	soundData.buffer = Sounder::object->loadSound("platformloop.wav");
+	soundData.currentVolume = 0.0f;
+	soundData.enabled = startEnabled;
+	soundData.playing = false;
+	soundData.pos0 = glm::vec2(basePos.x, basePos.y);
+	soundData.source = 0;
+	soundData.isPoint = true;
 
 	glm::vec2 halfSize = glm::vec2(size) / 2.0f;
 
@@ -193,6 +203,15 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	}
 }
 
+void Platform::startMakingSound()
+{
+	soundMakingPlatforms.push_back(platformIndex);
+	soundData.playing = true;
+
+	soundData.source = Sounder::object->playSound(soundData.buffer, soundData.currentVolume + 0.001);
+	alSourcei(soundData.source, AL_LOOPING, AL_TRUE);
+}
+
 void Platform::setMovementData(s_objectDataGrid* objData)
 {
 	int rotation = objData->rotation % 4;
@@ -276,6 +295,17 @@ void Platform::toDeath()
 {
 	loopingPlatforms = {};
 	oneTimeMovePlatforms = {};
+	for (int platformIndex : soundMakingPlatforms)
+	{
+		Platform* platform = &platforms[platformIndex];
+		platform->soundData.playing = false;
+		platform->soundData.currentVolume = 0.0f;
+
+		alSourcei(platform->soundData.source, AL_LOOPING, AL_FALSE);
+		alSourceStop(platform->soundData.source);
+	}
+
+	soundMakingPlatforms = {};
 
 	for (int i = 0; i < platforms.size(); i++)
 	{
@@ -317,6 +347,18 @@ void Platform::toLeveler()
 		platformUbo->posSize.y = platform->basePos.y;
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
 	}
+
+	for (int platformIndex : soundMakingPlatforms)
+	{
+		Platform* platform = &platforms[platformIndex];
+		platform->soundData.playing = false;
+		platform->soundData.currentVolume = 0.0f;
+
+		alSourcei(platform->soundData.source, AL_LOOPING, AL_FALSE);
+		alSourceStop(platform->soundData.source);
+	}
+
+	soundMakingPlatforms = {};
 
 	numPlatforms = 0;
 	platforms = std::vector<Platform>();
@@ -395,19 +437,111 @@ void Platform::memMapFunc(void* ptr)
 		platformUbo->posSize.y = bodyPos.y;
 		vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->platformRectangle->uniformBuffers[0].memory);
 	}
+
+	for (int i = 0; i < soundMakingPlatforms.size(); i++)
+	{
+		uint16_t platformIndex = soundMakingPlatforms[i];
+
+		Platform* platform = &platforms[platformIndex];
+		bool enabled = platform->body->GetLinearVelocity().LengthSquared() > 0.001f;
+
+		b2Vec2 platformPosb2 = platform->body->GetPosition();
+		glm::vec2 platformPos = glm::vec2(platformPosb2.x, platformPosb2.y);
+		glm::vec2 camPos = glm::vec2(Sounder::object->listenerPos.x, -Sounder::object->listenerPos.y);
+
+		float len = glm::length(platformPos - camPos);
+
+		gridSoundData* soundData = &platform->soundData;
+
+		float soundAdd = soundData->baseVolume * ThinDrawer::object->deltaTime;
+
+		if (len > Sounder::object->soundRadius || !enabled)
+		{
+			if (!enabled)
+			{
+				soundData->currentVolume = glm::max(0.0f, soundData->currentVolume - soundAdd * 2.0f);
+
+				if (soundData->currentVolume > 0.001f)
+				{
+					goto ifOut;
+				}
+			}
+
+			alSourcei(soundData->source, AL_LOOPING, AL_FALSE);
+			Sounder::object->stopSound(soundData->source);
+
+			soundData->playing = false;
+			soundData->currentVolume = 0.0f;
+
+			soundMakingPlatforms[i] = soundMakingPlatforms.back();
+			soundMakingPlatforms.pop_back();
+
+			i--;
+
+			continue;
+		}
+
+	ifOut:
+
+		if (enabled)
+		{
+			soundData->currentVolume += soundAdd;
+			soundData->currentVolume = glm::min(soundData->currentVolume, soundData->baseVolume);
+		}
+
+		float soundMult = glm::clamp(1.0f - len / Sounder::object->soundRadius, 0.0f, 1.0f);
+
+		Sounder::object->setSoundVolume(soundData->source, soundData->currentVolume * soundMult);
+		Sounder::object->setSoundPosition(soundData->source, glm::vec3(platformPos.x, platformPos.y, 0.0));
+
+		ThinDrawer::object->registerDebugLine(glm::vec4(platformPos.x, platformPos.y, platformPos.x, platformPos.y), glm::vec4(1.0f), 0.2f, 0.5f);
+	}
 }
 
 void Platform::perTickUpdate(float dt)
 {
+	static double timeSinceSoundExec = 0.0f;
+
+	bool exec;
+	if (timeSinceSoundExec >= 0.1f)
+	{
+		exec = true;
+		timeSinceSoundExec = 0.0f;
+	}
+	else
+	{
+		exec = false;
+		timeSinceSoundExec += dt;
+	}
+
+	float squaredRadius;
+	b2Vec2 camPos;
+	if (exec)
+	{
+		camPos = b2Vec2(Sounder::object->listenerPos.x, -Sounder::object->listenerPos.y);
+		squaredRadius = Sounder::object->soundRadius * Sounder::object->soundRadius;
+	}
+
 	for (int i = 0; i < loopingPlatforms.size(); i++)
 	{
 		Platform* platform = &platforms[loopingPlatforms[i]];
 
 		b2Body* body = platform->body;
+		b2Vec2 bodyPos = body->GetPosition();
+
+		if (exec && !platform->soundData.playing)
+		{
+			float len = b2DistanceSquared(bodyPos, camPos);
+
+			if (len < squaredRadius)
+			{
+				platform->startMakingSound();
+			}
+		}
 
 		b2Vec2 velocity = platform->dirMult * platform->fwdDir;
 
-		float posDiff = b2Dot(body->GetPosition() - platform->basePos, platform->fwdDir);
+		float posDiff = b2Dot(bodyPos - platform->basePos, platform->fwdDir);
 
 		float speed = b2Dot(velocity, platform->fwdDir);
 		float moveAmnt = abs(speed) * dt + 0.001f;
@@ -434,6 +568,18 @@ void Platform::perTickUpdate(float dt)
 
 		b2Body* body = platform->body;
 
+		b2Vec2 bodyPos = body->GetPosition();
+
+		if (exec && !platform->soundData.playing)
+		{
+			float len = b2DistanceSquared(bodyPos, camPos);
+
+			if (len < squaredRadius)
+			{
+				platform->startMakingSound();
+			}
+		}
+
 		b2Vec2 velocity = platform->body->GetLinearVelocity();
 		float speed = b2Dot(velocity, platform->fwdDir);
 		float moveAmnt = abs(speed) * dt + 0.001f;
@@ -443,7 +589,7 @@ void Platform::perTickUpdate(float dt)
 			moveAmnt -= 0.075f;
 		}
 
-		float posDiff = b2Dot(body->GetPosition() - platform->basePos, platform->fwdDir) + moveAmnt;
+		float posDiff = b2Dot(bodyPos - platform->basePos, platform->fwdDir) + moveAmnt;
 
 		if (platform->enabled && posDiff >= platform->limitDist)
 		{

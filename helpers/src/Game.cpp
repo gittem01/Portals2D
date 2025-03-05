@@ -437,6 +437,8 @@ void Game::TestState()
 
     if (testCase)
     {
+        Sounder::object->gridClear();
+
         if (lastState == &Game::LevelerState)
         {
             ForceField::toLeveler();
@@ -455,6 +457,8 @@ void Game::TestState()
 
         testCase->shouldQuit = false;
 
+        UseButton::toDeath();
+
         testCase->destroy();
         Turret::turrets.clear();
         Platform::numPlatforms = 0;
@@ -464,7 +468,6 @@ void Game::TestState()
         Geller::numGellers = 0;
         Gel::gelCount = 0;
         Gel::splashCount = 0;
-        UseButton::checkButtons.clear();
         LaserEmitter::numLaserEmitters = 0;
         WallLaserReceiver::disableChecks.clear();
         WallLaserReceiver::enableChecks.clear();
@@ -507,14 +510,14 @@ void Game::MenuState()
     menu->initCredits();
     menu->exitButton = menu->initWithName("exit", glm::vec4(1.0, 0.0, 0.0, 0.2));
 
-    thinDrawer->blackWallShader->testFill();
+    //thinDrawer->blackWallShader->testFill();
 
     SDL_ShowWindow(thinDrawer->wh->window);
 
     ALuint menuMusic = sounder->playLoopingSound(sounder->loadSound("Menu.wav"), 0.0);
     sounder->addFader(menuMusic, 0.0f, 0.15f, 1.0f);
 
-    testCase = newTest(this, 6);
+    //testCase = newTest(this, 6);
 
     stateStarterAnimation(0.5f);
 
@@ -531,7 +534,7 @@ void Game::MenuState()
 
         menu->update();
 
-        testCase->onUpdate();
+        //testCase->onUpdate();
 
         runSingleTaskRegistry();
 

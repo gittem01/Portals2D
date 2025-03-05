@@ -33,14 +33,6 @@ typedef enum SideData
 	ALL_SIDES =		0x1FF,
 } sideData;
 
-typedef enum SideData_FG
-{
-	BOTTOM_LINE_FG =	0x1 << 0,
-	RIGHT_LINE_FG =		0x1 << 1,
-	UP_LINE_FG =		0x1 << 2,
-	LEFT_LINE_FG =		0x1 << 3,
-} sideData_fg;
-
 typedef enum LevelObject : long long
 {
 	NONE_LO			= 0x0,

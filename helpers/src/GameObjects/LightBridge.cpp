@@ -49,6 +49,8 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	b2Vec2 offset = bodyOffsets[objData->rotation % 4];
 	lightPos = b2Vec2(objData->pos.x + offset.x, objData->pos.y + offset.y);
 
+	soundData.pos0 = glm::vec2(lightPos.x, lightPos.y);
+
 	b2BodyDef bDef;
 	bDef.type = b2_staticBody;
 	bDef.position = lightPos;
@@ -69,7 +71,7 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		bridgeBody->CreateFixture(&shape, 0.0f);
 	}
 
-	bDef.position += b2Vec2(2.0f, 2.0f);
+	//bDef.position += b2Vec2(2.0f, 2.0f);
 	bDef.angle += -b2_pi * 0.5f;
 	bDef.type = b2_kinematicBody;
 	capBody = portalWorld->CreateBody(&bDef);
@@ -142,6 +144,8 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		eDatas[i].unitWalls.clear();
 		eDatas[i].unitWalls.resize(wallGelSize);
 	}
+
+	Sounder::object->putStatOnGrid(&soundData, "bridgeloop.wav", 1.0f, objData->startActive, true);
 }
 
 void LightBridge::enable()

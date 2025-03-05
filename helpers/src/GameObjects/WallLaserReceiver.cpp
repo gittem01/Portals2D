@@ -152,6 +152,9 @@ void WallLaserReceiver::update()
 		{
 			wlr->disableTime = -10.0;
 			wlr->Transmitter::disable();
+
+			Transmitter::disableSound(wlr->body->GetPosition());
+
 			iter = disableChecks.erase(iter);
 		}
 		else
@@ -168,6 +171,9 @@ void WallLaserReceiver::update()
 		{
 			wlr->enableTime = -10.0;
 			wlr->Transmitter::enable();
+
+			Transmitter::enableSound(wlr->body->GetPosition());
+
 			iter = enableChecks.erase(iter);
 		}
 		else

@@ -974,11 +974,11 @@ void LevelerTestCase::perFrameUpdate()
 
             g->menu->initWithName("resume", glm::vec4(1.0, 0.3, 0.0, 0.4f));
             g->menu->initWithName("restart", glm::vec4(1.0, 0.3, 0.0, 0.4f));
-            g->menu->initSettings(glm::vec4(0.3, 0.3, 0.3, 0.9));
+            g->menu->initSettings();
             if (g->lastState == &Game::LevelerState)
-                g->menu->initWithName("to_editor", glm::vec4(0.3, 0.3, 0.3, 0.9));
+                g->menu->initWithName("to_editor", glm::vec4(0.3, 0.3, 0.3, 0.4));
             else if (g->lastState == &Game::MenuState)
-                g->menu->initWithName("to_menu", glm::vec4(0.3, 0.3, 0.3, 0.9));
+                g->menu->initWithName("to_menu", glm::vec4(0.3, 0.3, 0.3, 0.4));
         }
     }
 

@@ -169,6 +169,9 @@ int Leveler::saveLevel(std::string fileName, bool overwrite)
 			writeConnectionData(connectionPairs, file, pair.first);
 		}
 
+		file.write((const char*)&startSquare, sizeof(startSquare));
+		file.write((const char*)&endSquare, sizeof(endSquare));
+
 		file.close();
 
 		ThinDrawer::object->addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -317,6 +320,9 @@ int Leveler::openLevel(std::string fileName)
 			connectObjects(transmitter, receiver, connection);
 			updateConnectionRenderData(connection);
 		}
+
+		file.read((char*)&startSquare, sizeof(startSquare));
+		file.read((char*)&endSquare, sizeof(endSquare));
 
 		size_t pos = fileName.find_last_of("/", fileName.size() - 1);
 

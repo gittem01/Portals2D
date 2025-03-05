@@ -130,6 +130,11 @@ void CircleButton::update(double dt)
 			if (abs(b2Dot(posDiff, cb->rightDir)) > 0.5f) continue;
 
 			down = true;
+			if (!cb->enabled)
+			{
+				Transmitter::enableSound(body->GetPosition());
+			}
+
 			cb->enable();
 			
 			float angVel = otherBody->GetAngularVelocity();
@@ -146,6 +151,11 @@ void CircleButton::update(double dt)
 
 		if (!down && Game::object->gameTime - cb->contactReportTime > 0.3)
 		{
+			if (cb->enabled)
+			{
+				Transmitter::disableSound(body->GetPosition());
+			}
+
 			cb->disable();
 
 			cb->lastEnabledSphere = nullptr;

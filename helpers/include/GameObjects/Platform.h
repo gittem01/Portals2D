@@ -14,6 +14,7 @@ public:
 	static std::vector<Platform> platforms;
 	static std::vector<uint16_t> loopingPlatforms;
 	static std::vector<uint16_t> oneTimeMovePlatforms;
+	static std::vector<uint16_t> soundMakingPlatforms;
 
 	b2Body* body;
 	glm::ivec2 size;
@@ -33,6 +34,7 @@ public:
 	Platform() {}
 
 	void setMovementData(s_objectDataGrid* objData);
+	void startMakingSound();
 
 	void enable();
 	void disable();

@@ -5,6 +5,10 @@ s_perTextureData* UseButton::ptData;
 s_texture* UseButton::tex;
 std::list<UseButton*> UseButton::checkButtons;
 
+ALuint Transmitter::enablerSound;
+ALuint Transmitter::disablerSound;
+ALuint UseButton::tiktakBuffer;
+
 const float ySize = 1.35f;
 
 b2Vec2 offsets[4] =
@@ -34,7 +38,7 @@ UseButton::UseButton(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	bDef.position = b2Vec2(objData->pos.x, objData->pos.y) + offsets[objData->rotation % 4];
 	bDef.angle = objData->rotation * 0.5f * b2_pi;
 
-	b2Body* body = portalWorld->CreateBody(&bDef);
+	body = portalWorld->CreateBody(&bDef);
 
 	fixtureData* fData = new fixtureData();
 	fData->type = F_USE_BUTTON;
@@ -62,6 +66,13 @@ void UseButton::enable()
 	checkButtons.push_back(this);
 
 	Transmitter::enable();
+	Transmitter::enableSound(body->GetPosition());
+
+	b2Vec2 pos = body->GetPosition();
+
+	tiktakSound = Sounder::object->playSound(tiktakBuffer, 1.0f);
+	alSourcei(tiktakSound, AL_LOOPING, AL_TRUE);
+	Sounder::object->setSoundPosition(tiktakSound, glm::vec3(pos.x, pos.y, 0.0));
 }
 
 void UseButton::toDeath()
@@ -69,7 +80,12 @@ void UseButton::toDeath()
 	for (UseButton* button : checkButtons)
 	{
 		button->disable();
-	}	
+
+		alSourcei(button->tiktakSound, AL_LOOPING, AL_FALSE);
+		alSourceStop(button->tiktakSound);
+	}
+
+	checkButtons.clear();
 }
 
 void UseButton::toLeveler()
@@ -98,6 +114,10 @@ void UseButton::staticInit()
 	tex = Leveler::object->ol->items[index + 4].tex;
 
 	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
+
+	Transmitter::enablerSound = Sounder::object->loadSound("enabler.wav");
+	Transmitter::disablerSound = Sounder::object->loadSound("disabler.wav");
+	tiktakBuffer = Sounder::object->loadSound("tiktak.wav");
 }
 
 void UseButton::update()
@@ -110,6 +130,12 @@ void UseButton::update()
 		{
 			button->signalTime = Game::object->gameTime;
 			button->disable();
+
+			Transmitter::disableSound(button->body->GetPosition());
+
+			alSourcei(button->tiktakSound, AL_LOOPING, AL_FALSE);
+			alSourceStop(button->tiktakSound);
+
 			iter = checkButtons.erase(iter);
 		}
 		else

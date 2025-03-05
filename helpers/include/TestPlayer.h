@@ -100,6 +100,9 @@ public:
     ALuint blueShootBufferJ;
     ALuint orangeShootBufferJ;
     ALuint fizzleBuffer;
+    ALuint walkBuffer;
+    ALuint walkSound;
+    bool walkPlaying;
 
     TestPlayer(Game* game, b2Vec2 pos = b2Vec2(0, 0), b2Vec2 size = b2Vec2(0.75f, 1.5f));
 

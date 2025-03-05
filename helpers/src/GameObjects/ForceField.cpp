@@ -34,16 +34,34 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		size = b2Vec2(0.3f, abs(objData->extraPos.y - objData->pos.y) * 0.5f + 0.5f);
 		len = size.y;
 
-		pShapes[0].SetAsBox(hWidth, height, b2Vec2(0.0f, -size.y + height * 0.5), 0.0f);
-		pShapes[1].SetAsBox(hWidth, height, b2Vec2(0.0f, +size.y - height * 0.5), 0.0f);
+		b2Vec2 p0 = b2Vec2(0.0f, -size.y + height * 0.5);
+		b2Vec2 p1 = b2Vec2(0.0f, +size.y - height * 0.5);
+
+		pShapes[0].SetAsBox(hWidth, height, p0, 0.0f);
+		pShapes[1].SetAsBox(hWidth, height, p1, 0.0f);
+
+		p0 += midPos;
+		p1 += midPos;
+
+		soundData.pos0 = glm::vec2(p0.x, p0.y);
+		soundData.pos1 = glm::vec2(p1.x, p1.y);
 	}
 	else
 	{
 		size = b2Vec2(abs(objData->extraPos.x - objData->pos.x) * 0.5f + 0.5f, 0.3f);
 		len = size.x;
 
-		pShapes[0].SetAsBox(height, hWidth, b2Vec2(-size.x + height * 0.5, 0.0f), 0.0f);
-		pShapes[1].SetAsBox(height, hWidth, b2Vec2(+size.x - height * 0.5, 0.0f), 0.0f);
+		b2Vec2 p0 = b2Vec2(-size.x + height * 0.5, 0.0f);
+		b2Vec2 p1 = b2Vec2(+size.x - height * 0.5, 0.0f);
+
+		pShapes[0].SetAsBox(height, hWidth, p0, 0.0f);
+		pShapes[1].SetAsBox(height, hWidth, p1, 0.0f);
+
+		p0 += midPos;
+		p1 += midPos;
+
+		soundData.pos0 = glm::vec2(p0.x, p0.y);
+		soundData.pos1 = glm::vec2(p1.x, p1.y);
 	}
 
 	b2BodyDef bDef;
@@ -95,6 +113,8 @@ ForceField::ForceField(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	blueUbo->colour.w = 1.0f;
 
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->blueField->uniformBuffers[0].memory);
+
+	Sounder::object->putStatOnGrid(&soundData, "bluefield.wav", 1.0f, startEnabled, false);
 }
 
 ForceField::~ForceField()

@@ -1,6 +1,7 @@
 #include <Sounder.h>
 #include <IOHelper.h>
 #include "ThinDrawer.h"
+#include <Camera.h>
 
 Sounder* Sounder::object;
 
@@ -44,18 +45,22 @@ Sounder::Sounder()
     alListenerf(AL_GAIN, 20.0);
 
     // load default
-    ALuint src = loadSound("portalRadio.wav");
     loadSound("jumpTest.wav");
     loadSound("blueGelJump.wav");
-    src = loadSound("wav_stereo.wav");
     loadSound("blueShoot.wav");
     loadSound("orangeShoot.wav");
     loadSound("blueShootJ.wav");
     loadSound("orangeShootJ.wav");
     loadSound("portalFizzle.wav");
     loadSound("leveler.wav");
+    loadSound("inGame.wav");
+    loadSound("walkloop.wav");
 
-    //playLoopingSound(src);
+    statGrid.resize(400 / SQUARE_SIZE);
+    for (int i = 0; i < statGrid.size(); i++)
+    {
+        statGrid[i].resize(400 / SQUARE_SIZE);
+    }
 
     // device switch
     /*bool hasReopenDeviceExtension = alcIsExtensionPresent(device, "ALC_SOFT_reopen_device");
@@ -68,6 +73,212 @@ Sounder::~Sounder()
     alcMakeContextCurrent(nullptr);
     alcDestroyContext(context);
     alcCloseDevice(device);
+}
+
+inline glm::ivec2 Sounder::getSoundGridPos(glm::vec2 pos)
+{
+    glm::ivec2 newPos = glm::ivec2((pos + 200.0f) / (float)SQUARE_SIZE);
+    newPos = glm::clamp(newPos, 0, 400 / SQUARE_SIZE - 1);
+
+    return newPos;
+}
+
+void Sounder::gridClear()
+{
+	for (int i = 0; i < statPlays.size(); i++)
+	{
+		stopSound(statPlays[i]->source);
+        alSourcei(statPlays[i]->source, AL_LOOPING, AL_FALSE);
+	}
+
+    statPlays.clear();
+
+    for (int i = 0; i < statGrid.size(); i++)
+    {
+        for (int j = 0; j < statGrid[i].size(); j++)
+        {
+            statGrid[i][j].clear();
+        }
+    }
+}
+
+void Sounder::putStatOnGrid(gridSoundData* soundData, std::string fileName, float volume, bool enabled, bool isPoint)
+{
+    soundData->enabled = enabled;
+    soundData->isPoint = isPoint;
+    soundData->playing = false;
+    soundData->source = 0;
+    soundData->buffer = Sounder::object->loadSound(fileName);
+    soundData->baseVolume = volume;
+    soundData->currentVolume = 0.0f;
+
+    putStatOnGrid(soundData);
+}
+
+void Sounder::putStatOnGrid(gridSoundData* data)
+{
+    glm::ivec2 pos0 = getSoundGridPos(data->pos0);
+
+    if (data->isPoint)
+    {
+		statGrid[pos0.y][pos0.x].push_back(data);
+	}
+    else
+    {
+        glm::ivec2 pos1 = getSoundGridPos(data->pos1);
+
+        if (pos0.x != pos1.x && pos1.y != pos1.y)
+        {
+            if (abs(pos0.x - pos1.x) > abs(pos0.y - pos1.y))
+            {
+                pos0.y = pos1.y;
+            }
+            else
+            {
+                pos0.x = pos1.x;
+            }
+        }
+
+		int incX = pos0.x < pos1.x ? 1 : -1;
+		int incY = pos0.y < pos1.y ? 1 : -1;
+
+		for (int x = pos0.x; x != pos1.x + incX; x += incX)
+		{
+			for (int y = pos0.y; y != pos1.y + incY; y += incY)
+			{
+				statGrid[y][x].push_back(data);
+			}
+		}
+    }
+}
+
+static const float checkSizeMult = 1.5f;
+static const float checkSizeAdd = 12.0f;
+
+void Sounder::updateStationaries()
+{
+    uint64_t timeStart = SDL_GetTicksNS();
+
+    glm::ivec2 gridSquare = getSoundGridPos(listenerPos);
+
+	float camXSize = ThinDrawer::object->wh->cam->xSides.y - ThinDrawer::object->wh->cam->xSides.x;
+	float camYSize = ThinDrawer::object->wh->cam->ySides.y - ThinDrawer::object->wh->cam->ySides.x;
+
+	soundRadius = 0.5f * glm::max(camXSize, camYSize) * checkSizeMult + checkSizeAdd;
+
+	glm::ivec2 gridStart = gridSquare - (int)(soundRadius / SQUARE_SIZE);
+	glm::ivec2 gridEnd = gridSquare + (int)(soundRadius / SQUARE_SIZE);
+
+    glm::ivec2 scanStart = glm::clamp(gridStart, 0, 400 / SQUARE_SIZE - 1);
+	glm::ivec2 scanEnd = glm::clamp(gridEnd, 0, 400 / SQUARE_SIZE - 1);
+
+    glm::vec2 camPos = glm::vec2(listenerPos.x, -listenerPos.y);
+
+	for (int x = scanStart.x; x <= scanEnd.x; x++)
+	{
+		for (int y = scanStart.y; y <= scanEnd.y; y++)
+		{
+			auto& vec = statGrid[y][x];
+
+            for (int i = 0; i < vec.size(); i++)
+            {
+                gridSoundData* soundData = vec[i];
+
+                if (!soundData->enabled || soundData->playing)
+                {
+					continue;
+                }
+
+                glm::vec2 closestPos;
+                if (!soundData->isPoint)
+                {
+                    closestPos = getSoundPlayPosition(soundData->pos0, soundData->pos1, camPos);
+                }
+                else
+                {
+                    closestPos = soundData->pos0;
+                }
+
+				float len = glm::length(closestPos - camPos);
+
+                if (len > soundRadius)
+                {
+                    continue;
+                }
+
+                soundData->playing = true;
+
+                soundData->source = playSound(soundData->buffer, soundData->currentVolume + 0.001);
+                alSourcei(soundData->source, AL_LOOPING, AL_TRUE);
+
+                statPlays.push_back(soundData);
+            }
+		}
+	}
+
+    for (int i = 0; i < statPlays.size(); i++)
+    {
+        gridSoundData* soundData = statPlays[i];
+
+        glm::vec2 closestPos;
+        if (!soundData->isPoint)
+        {
+            closestPos = getSoundPlayPosition(soundData->pos0, soundData->pos1, camPos);
+        }
+        else
+        {
+			closestPos = soundData->pos0;
+        }
+
+        float len = glm::length(closestPos - camPos);
+
+        float soundAdd = soundData->baseVolume * ThinDrawer::object->deltaTime;
+
+        if (len > soundRadius || !soundData->enabled)
+        {
+            if (!soundData->enabled)
+            {
+				soundData->currentVolume = glm::max(0.0f, soundData->currentVolume - soundAdd);
+
+                if (soundData->currentVolume > 0.001f)
+                {
+                    goto ifOut;
+                }
+            }
+
+            alSourcei(soundData->source, AL_LOOPING, AL_FALSE);
+            stopSound(soundData->source);
+
+            soundData->currentVolume = 0.0f;
+            statPlays[i] = statPlays.back();
+            statPlays.pop_back();
+
+            soundData->playing = false;
+
+            i--;
+
+            continue;
+        }
+
+ifOut:
+
+        if (soundData->enabled)
+        {
+			soundData->currentVolume += soundAdd;
+			soundData->currentVolume = glm::min(soundData->currentVolume, soundData->baseVolume);
+        }
+
+        float soundMult = glm::clamp(1.0f - len / soundRadius, 0.0f, 1.0f);
+
+        setSoundVolume(soundData->source, soundData->currentVolume * soundMult);
+        setSoundPosition(soundData->source, glm::vec3(closestPos.x, closestPos.y, 0.0));
+
+        ThinDrawer::object->registerDebugLine(glm::vec4(closestPos.x, closestPos.y, closestPos.x, closestPos.y), glm::vec4(1.0f), 0.2f, 0.5f);
+    }
+
+    uint64_t timeEnd = SDL_GetTicksNS();
+
+    //printf("Time ms: %f\n", (timeEnd - timeStart) / 1000000.0);
 }
 
 void Sounder::update()
@@ -167,6 +378,8 @@ void Sounder::update()
             alSourcef(f.source, AL_GAIN, finalVolume);
         }
     }
+
+    updateStationaries();
 }
 
 void Sounder::addFader(ALuint source, float initialVolume, float finalVolume, double reachTime, bool stopOnEnd)
@@ -287,4 +500,20 @@ void Sounder::stopLoopingSound(ALuint source)
             return;
         }
     }
+}
+
+glm::vec2 Sounder::getSoundPlayPosition(glm::vec2 linePoint1, glm::vec2 linePoint2, glm::vec2 point)
+{
+    glm::vec2 pl1 = linePoint1 - point;
+	glm::vec2 pl2 = linePoint2 - point;
+    glm::vec2 p12 = linePoint2 - linePoint1;
+
+	float length1 = glm::length(pl1);
+	float length2 = glm::length(pl2);
+
+	float ratio = length1 / (length1 + length2);
+
+	glm::vec2 result = linePoint1 + p12 * ratio;
+
+	return result;
 }

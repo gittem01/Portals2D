@@ -6,3 +6,16 @@ fizzle - https://opengameart.org/content/9-sci-fi-computer-sounds-and-beeps
 sdliderHit - https://opengameart.org/content/impact
 levelermusic - The Cynic Project / cynicmusic.com / pixelsphere.org
 gamemusic - https://opengameart.org/content/soul-star
+funnel https://opengameart.org/content/reversing-time-stuck-in-time
+laserloop https://freesound.org/people/shimsewn/sounds/35191/?
+bridgeloop https://opengameart.org/content/50-cc0-sci-fi-sfx
+platform loop:
+https://opengameart.org/content/hovermobile-sfx
+https://opengameart.org/content/warp-engine-engage-sound
+will use https://opengameart.org/content/electricity-game-sound-pack
+https://freesound.org/people/ironcross32/sounds/582663/
+https://opengameart.org/content/the-free-firearm-sound-library
+
+news
+
+effects, not used yet https://opengameart.org/content/50-rpg-sound-effects

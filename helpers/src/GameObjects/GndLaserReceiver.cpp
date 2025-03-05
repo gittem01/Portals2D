@@ -153,6 +153,9 @@ void GndLaserReceiver::update()
 		{
 			glr->disableTime = -10.0;
 			glr->Transmitter::disable();
+
+			Transmitter::disableSound(glr->body->GetPosition());
+
 			iter = disableChecks.erase(iter);
 		}
 		else
@@ -169,6 +172,9 @@ void GndLaserReceiver::update()
 		{
 			glr->enableTime = -10.0;
 			glr->Transmitter::enable();
+
+			Transmitter::enableSound(glr->body->GetPosition());
+
 			iter = enableChecks.erase(iter);
 		}
 		else

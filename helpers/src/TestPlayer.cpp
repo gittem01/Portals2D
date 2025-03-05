@@ -39,6 +39,7 @@ TestPlayer::TestPlayer(Game* game, b2Vec2 pos, b2Vec2 size) : DefaultObject(game
     blueShootBufferJ = Sounder::object->bufferMap["blueShootJ.wav"];
     orangeShootBufferJ = Sounder::object->bufferMap["orangeShootJ.wav"];
     fizzleBuffer = Sounder::object->bufferMap["portalFizzle.wav"];
+    walkBuffer = Sounder::object->bufferMap["walkloop.wav"];
 
     pWorld->portalDestroyCallbacks.push_back(portalDestrCallBack);
 }
@@ -58,6 +59,7 @@ void TestPlayer::init()
     holdColliding = false;
 
     won = false;
+    walkPlaying = false;
 
     playerShader = ThinDrawer::object->playerShader;
     gData.positions = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -309,6 +311,25 @@ void TestPlayer::memMap(void* ptr)
     tp->renderData.ld.legLen = tp->renderData.legRatio * 0.5;
     tp->renderData.ld.legOuterCircAng = tp->legAng;
     tp->renderData.ld.legAngle = tp->legAng;
+
+    const float soundAngle = 0.67f;
+    const float soundEndAngle = b2_pi - soundAngle;
+    const float currentAngle = fmod(tp->legAng, b2_pi);
+
+    if (currentAngle > soundAngle && currentAngle < soundEndAngle)
+    {
+        if (!tp->walkPlaying)
+        {
+            tp->walkSound = Sounder::object->playSound(tp->walkBuffer, 1.0f);
+            tp->walkPlaying = true;
+            b2Vec2 pos = body->GetPosition();
+            Sounder::object->setSoundPosition(tp->walkSound, glm::vec3(pos.x, pos.y, 0.0f));
+        }
+    }
+    else if (tp->walkPlaying)
+    {
+        tp->walkPlaying = false;
+    }
 
     s_renderPlayerUbo* ru;
     vkMapMemory(tp->playerShader->logicalDevice, tp->playerShader->uniformBuffers[1].memory, tp->playerShader->alignedSize2 * ThinDrawer::object->frameIndex,

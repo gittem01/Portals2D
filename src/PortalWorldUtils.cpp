@@ -546,6 +546,21 @@ b2Vec2 PortalWorld::project(b2Vec2 a, b2Vec2 b)
     return (b2Dot(a, b) / b2Dot(b, b)) * b;
 }
 
+b2Vec2 PortalWorld::closestPointToLine(b2Vec2 linePoint1, b2Vec2 linePoint2, b2Vec2 point)
+{
+    b2Vec2 lineVec = linePoint2 - linePoint1;
+
+    b2Vec2 perpLineVec = b2Vec2(lineVec.y, -lineVec.x);
+
+    b2Vec2 pointToLine1 = linePoint1 - point;
+
+    b2Vec2 toResult = project(pointToLine1, perpLineVec);
+
+    b2Vec2 resPos = point + toResult;
+
+    return resPos;
+}
+
 float PortalWorld::calcAngle2(b2Vec2 vec) {
     float angle = atan2(vec.y, vec.x);
     if (angle < 0) angle += b2_pi * 2.0f;

@@ -1,12 +1,29 @@
 #pragma once
 
 #include "LevelerTestCase.h"
+#include <box2d/box2d.h>
+#include <AL/al.h>
 
 class Transmitter
 {
 public:
-	bool enabled = false;
+	static ALuint enablerSound;
+	static ALuint disablerSound;
+
 	std::vector<connectionSignaller> connections;
+	bool enabled = false;
+
+	static void enableSound(b2Vec2 pos)
+	{
+		ALuint sound = Sounder::object->playSound(enablerSound, 1.0f);
+		Sounder::object->setSoundPosition(sound, glm::vec3(pos.x, pos.y, 0.0));
+	}
+
+	static void disableSound(b2Vec2 pos)
+	{
+		ALuint sound = Sounder::object->playSound(disablerSound, 1.0f);
+		Sounder::object->setSoundPosition(sound, glm::vec3(pos.x, pos.y, 0.0));
+	}
 
 	void enable()
 	{
@@ -32,7 +49,7 @@ public:
 				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 			}
 		}
-	};
+	}
 
 	void disable()
 	{
@@ -58,5 +75,5 @@ public:
 				vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->lineZ->uniformBuffers[0].memory);
 			}
 		}
-	};
+	}
 };

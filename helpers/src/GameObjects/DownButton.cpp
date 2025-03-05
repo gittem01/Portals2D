@@ -158,10 +158,20 @@ void DownButton::update()
 
 		if (posAmnt > 0.08)
 		{
+			if (!db->enabled)
+			{
+				Transmitter::enableSound(body->GetPosition());
+			}
+
 			db->enable();
 		}
 		else if (posAmnt < 0.001f)
 		{
+			if (db->enabled)
+			{
+				Transmitter::disableSound(body->GetPosition());
+			}
+
 			db->disable();
 		}
 	}

@@ -33,6 +33,8 @@ LaserEmitter::LaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	b2Vec2 offset = bodyOffsets[objData->rotation % 4];
 	laserPos = b2Vec2(objData->pos.x + offset.x, objData->pos.y + offset.y);
 
+	soundData.pos0 = glm::vec2(laserPos.x, laserPos.y);
+
 	b2BodyDef bDef;
 	bDef.type = b2_staticBody;
 	bDef.position = laserPos;
@@ -55,6 +57,8 @@ LaserEmitter::LaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
 	//fData->extraData = nullptr;
 
 	//fix->GetUserData().pointer = (uintptr_t)fData;
+
+	Sounder::object->putStatOnGrid(&soundData, "laserloop.wav", 0.25f, objData->startActive, true);
 }
 
 LaserEmitter* LaserEmitter::createLaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
@@ -194,7 +198,7 @@ void LaserEmitter::handleGroundReceivers()
 
 			if (!gndLaserMasks[pair.first])
 			{
-				GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[pair.first];
+				GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[pair.first];				
 				glr.enable(this);
 			}
 		}

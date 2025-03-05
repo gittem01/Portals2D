@@ -12,9 +12,12 @@ public:
 	static s_perTextureData* ptData;
 	static s_texture* tex;
 	static std::list<UseButton*> checkButtons;
+	static ALuint tiktakBuffer;
 
+	b2Body* body;
 	double signalTime;
 	float disableAfter;
+	ALuint tiktakSound;
 
 	UseButton(PortalWorld* portalWorld, s_objectDataGrid* objData);
 

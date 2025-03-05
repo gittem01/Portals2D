@@ -159,7 +159,7 @@ private:
 
 class PortalWorld : public b2World
 {
-
+friend class Game;
 friend class TestPlayer;
 friend class PortalBody;
 friend class Portal;
@@ -223,6 +223,7 @@ private:
     static float getDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
     static float getRealDist(b2Vec2 a, b2Vec2 b, b2Vec2 c);
     static b2Vec2 project(b2Vec2 a, b2Vec2 b);
+    static b2Vec2 closestPointToLine(b2Vec2 linePoint1, b2Vec2 linePoint2, b2Vec2 point);
 
     static float calcAngle2(b2Vec2 vec);
     static void normalize(b2Vec2* vec);
