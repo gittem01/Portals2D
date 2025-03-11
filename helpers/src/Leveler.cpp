@@ -40,6 +40,9 @@ Leveler::Leveler(Game* game)
 
 	pushRenderFunctions();
 
+	auto itemNames = IOHelper::loadLines("items.txt");
+	itemNameMap = IOHelper::mapVector(itemNames);
+
 	ol = new Overlayer(game);
 }
 
@@ -1816,13 +1819,34 @@ void Leveler::update()
 
 	handleRightClickClick();
 
-	std::ostringstream oss;
-	oss << "(" << mouseGrid.x << ", " << mouseGrid.y << ")";
-	std::string result = oss.str();
+	if (ol->itemRatio <= 0.0001f)
+	{
+		std::ostringstream oss;
+		oss << "(" << mouseGrid.x << ", " << mouseGrid.y << ")";
+		std::string result = oss.str();
 
-	float x;
-	auto rd = ol->cd->getRenderData(result, ol->cd->creationHeight * 0.04, x);
-	ol->cd->renderDatas.push_back({ rd, { ol->cam.xSides.x + 0.25, ol->cam.ySides.x + 1.25, 2.0, 0.0 }, { 1.0, 1.0, 1.0, 0.5 } });
+		float x;
+		auto rd = ol->cd->getRenderData(result, ol->cd->creationHeight * 0.05, x);
+
+		float xPos = ol->cam.xSides.x + 0.5;
+		float wa = std::clamp(1.0f - ol->itemRatio, 0.0f, 1.0f);
+
+		ol->cd->renderDatas.push_back({ rd, { xPos, ol->cam.ySides.x + 2.0f, 3.0, 0.0 }, { wa, wa, wa, 0.5 } });
+	}
+	else if (ol->lastHoverIndex >= 0 && ol->lastHoverIndex < itemNameMap.size())
+	{
+		std::string itemIndexString = "<" + std::to_string(ol->lastHoverIndex) + ">";
+		std::string hoverItemName = itemNameMap[itemIndexString][CharDrawer::selectedLanguageIndex];
+
+		float x;
+		auto rd = ol->cd->getRenderData(hoverItemName, ol->cd->creationHeight * 0.05, x);
+
+		float xPos = ol->cam.xSides.x + 0.5;
+		
+		float wa = ol->itemRatio;
+		
+		ol->cd->renderDatas.push_back({ rd, { xPos, ol->cam.ySides.x + 2.0f, 3.0, 0.0 }, { wa, wa, wa, 0.5 } });
+	}
 
 	s_gridItemData* item = ol->selectedItemIndex >= 0 ? &ol->items[ol->selectedItemIndex] : nullptr;
 

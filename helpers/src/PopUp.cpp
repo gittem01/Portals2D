@@ -214,6 +214,7 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 		Game::object->singleTaskRegistry.push_back([p]
 		{
 			ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+			p->active = false;
 		});
 	}
 
@@ -671,6 +672,7 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 			}
 
 			ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+			p->active = false;
 		});
 	}
 
@@ -946,6 +948,7 @@ void PopUp::languageRender(VkCommandBuffer cmdBuff, void* ptr)
 		Game::object->singleTaskRegistry.push_back([p]
 		{
 			ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+			p->active = false;
 		});
 	}
 
@@ -1131,6 +1134,7 @@ void PopUp::gpuRender(VkCommandBuffer cmdBuff, void* ptr)
 		Game::object->singleTaskRegistry.push_back([p]
 		{
 			ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+			p->active = false;
 		});
 	}
 

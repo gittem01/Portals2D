@@ -70,9 +70,17 @@ void UseButton::enable()
 
 	b2Vec2 pos = body->GetPosition();
 
-	tiktakSound = Sounder::object->playSound(tiktakBuffer, 1.0f);
-	alSourcei(tiktakSound, AL_LOOPING, AL_TRUE);
-	Sounder::object->setSoundPosition(tiktakSound, glm::vec3(pos.x, pos.y, 0.0));
+	if (disableAfter > 2.5f && disableAfter < 128.0f)
+	{
+		tiktakSound = Sounder::object->playSound(tiktakBuffer, 1.0f);
+		Sounder::object->setSoundPosition(tiktakSound, glm::vec3(pos.x, pos.y, 0.0));
+
+		alSourcei(tiktakSound, AL_LOOPING, AL_TRUE);
+	}
+	else
+	{
+		tiktakSound = 0;
+	}
 }
 
 void UseButton::toDeath()
@@ -81,8 +89,11 @@ void UseButton::toDeath()
 	{
 		button->disable();
 
-		alSourcei(button->tiktakSound, AL_LOOPING, AL_FALSE);
-		alSourceStop(button->tiktakSound);
+		if (button->tiktakSound != 0)
+		{
+			alSourcei(button->tiktakSound, AL_LOOPING, AL_FALSE);
+			alSourceStop(button->tiktakSound);
+		}
 	}
 
 	checkButtons.clear();
@@ -132,10 +143,12 @@ void UseButton::update()
 			button->disable();
 
 			Transmitter::disableSound(button->body->GetPosition());
-
-			alSourcei(button->tiktakSound, AL_LOOPING, AL_FALSE);
-			alSourceStop(button->tiktakSound);
-
+			if (button->tiktakSound != 0)
+			{
+				alSourcei(button->tiktakSound, AL_LOOPING, AL_FALSE);
+				alSourceStop(button->tiktakSound);
+			}
+			
 			iter = checkButtons.erase(iter);
 		}
 		else

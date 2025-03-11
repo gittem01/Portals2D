@@ -1,84 +1,108 @@
 <0>
-Zamanlı Düğme
-Timed Button
+Beyaz Duvar
+White Wall
 <0>
 <1>
-Zemin Düğmesi
-Ground Button
+Siyah Duvar
+Black Wall
 <1>
 <2>
-Küp Butonu
-Cube Button
+Cam
+Glass
 <2>
 <3>
-Küre Butonu
-Sphere Button
+Çit
+Fence
 <3>
 <4>
-Standart Küp
-Standard Cube
+Zamanlı Düğme
+Timed Button
 <4>
 <5>
-Lazer Küpü
-Laser Cube
+Zemin Düğmesi
+Ground Button
 <5>
 <6>
-Küre Top
-Sphere Ball
+Küp Butonu
+Cube Button
 <6>
 <7>
-Taret
-Turret
+Küre Butonu
+Sphere Button
 <7>
 <8>
-Laser Yayıcı
-Laser Emitter
+Standart Küp
+Standard Cube
 <8>
 <9>
-Lazer Alıcı Duvar
-Laser Receiver Wall
+Lazer Küpü
+Laser Cube
 <9>
 <10>
-Lazer Alıcı Yer
-Laser Receiver Ground
+Küre Top
+Sphere Ball
 <10>
 <11>
-Güven Plakası
-Aerial Faith Plate
+Taret
+Turret
 <11>
 <12>
-Gezinim Borusu
-Excursion Funnel
+Laser Yayıcı
+Laser Emitter
 <12>
 <13>
-Işık Köprüsü
-Light Bridge
+Lazer Alıcı Duvar
+Laser Receiver Wall
 <13>
 <14>
-Cesaret Kırıcı Işın
-Thermal Discouragement Beam
+Lazer Alıcı Yer
+Laser Receiver Ground
 <14>
 <15>
-Elektrik Alanı
-Electricity Field
+Zıplangaç Plakası
+Jumper Plate
 <15>
 <16>
-Mavi Jel
-Blue Gel
+Kütleçekim Sıfırlayıcı
+Gravity Nullifier
 <16>
 <17>
-Turuncu Jel
-Orange Gel
+Işık Köprüsü
+Light Bridge
 <17>
 <18>
-Beyaz Jel
-White Gel
+Ölümcül Güç Alanı
+Deadly Force Field
 <18>
 <19>
-Su Jel
-Water Gel
+Elektrik Alanı
+Electricity Field
 <19>
 <20>
-Platform
-Platform
+Mavi Jel
+Blue Gel
 <20>
+<21>
+Turuncu Jel
+Orange Gel
+<21>
+<22>
+Beyaz Jel
+White Gel
+<22>
+<23>
+Su Jel
+Water Gel
+<23>
+<24>
+Obje Düşürücü
+Object Dropper
+<24>
+<25>
+Platform
+Platform
+<25>
+<26>
+Silgi
+Eraser
+<26>

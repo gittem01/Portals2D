@@ -14,7 +14,7 @@ static b2Vec2 bodyOffsets[4] =
 
 static b2Vec2 bodyVertices[7] =
 {
-	b2Vec2(0.75f,	-0.08f),
+	b2Vec2(0.775f,	-0.08f),
 	b2Vec2(0.65f,	+0.09f),
 	b2Vec2(0.6f,	+0.09f),
 
@@ -138,9 +138,16 @@ void CircleButton::update(double dt)
 			cb->enable();
 			
 			float angVel = otherBody->GetAngularVelocity();
-			angVel -= angVel * dt * 10.0f;
+			angVel -= angVel * dt * 20.0f;
 			otherBody->SetAngularVelocity(angVel);
 			
+			b2Vec2 linVel = otherBody->GetLinearVelocity();
+			float speed = linVel.Normalize();
+			speed -= speed * dt * 20.0f;
+			linVel = speed * linVel;
+			//otherBody->SetLinearVelocity(linVel);
+			
+
 			cb->contactReportTime = Game::object->gameTime;
 
 			cb->lastEnabledSphere = (Sphere*)pData->data;

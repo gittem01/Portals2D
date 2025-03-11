@@ -340,7 +340,9 @@ public:
 	s_gridSquare endSquare = { 10, 1 };
 
 	std::string openLevelName = "";
-	std::vector<char> textSizes;	
+	std::vector<char> textSizes;
+
+	std::map<std::string, std::vector<std::string>> itemNameMap;
 
 	Leveler(Game* game);
 	

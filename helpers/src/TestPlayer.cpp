@@ -1205,7 +1205,7 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
     float sep = wManifold.separations[0];
     if (contact->GetManifold()->pointCount > 1) sep = (sep + wManifold.separations[1]) / 2.0f;
 
-    if (health != 0 && fix2->GetBody()->GetType() != b2_dynamicBody && sep < -0.1f && contact->IsEnabled() && wData->pbIndices.size() == 1)
+    if (health != 0 && sep < -0.1f && contact->IsEnabled())
     {
         bool pass = false;
         if (fData && (fData->type & F_LIGHT_BRIDGE))

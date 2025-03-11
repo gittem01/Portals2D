@@ -116,13 +116,10 @@ Overlayer::Overlayer(Game* game)
 
     getPops();
 
-    auto lines = IOHelper::loadLines("items.txt");
-    auto res = IOHelper::mapVector(lines);
-
-    for (int i = 0; i < 21; i++)
+    for (int i = 0; i < items.size(); i++)
     {
         std::string s = "<" + std::to_string(i) + ">";
-        items[i + 4].name = res[s][cd->selectedLanguageIndex];
+        items[i].name = Leveler::object->itemNameMap[s][cd->selectedLanguageIndex];
     }
 
     auto polarizations = IOHelper::loadLines("pops/polarization_language.txt");
@@ -526,6 +523,11 @@ void Overlayer::popUpdate()
         {
             const s_gridItemData& gid = items[itemIndex];
             popShowName = gid.popName;
+        }
+
+        if (popShowName == "none")
+        {
+            rightClickItem.ptr = nullptr;
         }
         
         lastPopName = popShowName;

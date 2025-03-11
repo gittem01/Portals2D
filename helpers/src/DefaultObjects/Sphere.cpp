@@ -19,7 +19,7 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : D
     b2CircleShape cShape;
     cShape.m_radius = 0.5f;
     b2Fixture* fix = body->CreateFixture(&cShape, 1.0f);
-    fix->SetRestitution(0.2);
+    fix->SetRestitution(0.1);
 
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
 	

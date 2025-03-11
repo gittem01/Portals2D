@@ -439,6 +439,8 @@ void Game::TestState()
     {
         Sounder::object->gridClear();
 
+        UseButton::toDeath();
+
         if (lastState == &Game::LevelerState)
         {
             ForceField::toLeveler();
@@ -456,8 +458,6 @@ void Game::TestState()
         }
 
         testCase->shouldQuit = false;
-
-        UseButton::toDeath();
 
         testCase->destroy();
         Turret::turrets.clear();
