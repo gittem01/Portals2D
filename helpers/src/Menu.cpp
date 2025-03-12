@@ -52,6 +52,11 @@ void Menu::initDefaults()
 
 void Menu::renderInit()
 {
+	td->whiteWallShader->renderGridUp.clear();
+	td->blackWallShader->renderGridUp.clear();
+	td->wallLight->renderGridUp.clear();
+	td->diagonalLiner->renderGridUp.clear();
+
 	td->lateDrawFuncs.push_back({ draw, this });
 	td->memMapFuncs.push_back({ Overlayer::camMap, this });
 
