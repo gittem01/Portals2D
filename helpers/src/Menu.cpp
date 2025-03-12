@@ -18,6 +18,9 @@ Menu::Menu()
 	auto lines = IOHelper::loadLines("menu.txt");
 	buttonTexts = IOHelper::mapVector(lines);
 
+	lines = IOHelper::loadLines("credits.txt");
+	creditsTexts = IOHelper::mapVector(lines);
+
 	buttons.reserve(200);
 
 	openCloseSpeed = 3.0f;
@@ -301,10 +304,10 @@ void Menu::initCredits(glm::vec4 clr)
 {
 	std::vector<std::string> allTexts = buttonTexts["<credits_" + std::to_string(ol->cd->selectedLanguageIndex) + ">"];
 
-	Button* b = addButton(glm::vec2(0.0f, currentY), glm::vec2(50.0f, 6.0f), allTexts[0], clr);
-	b->bools.set(INTERACTABLE); b->bools.set(RENDER_ENABLED); b->bools.set(MOVE_NEXT);
-	b->openYMult = 10.0f;
-	b->baseAlpha = clr.w;
+	creditsButton = addButton(glm::vec2(0.0f, currentY), glm::vec2(50.0f, 6.0f), allTexts[0], clr);
+	creditsButton->bools.set(INTERACTABLE); creditsButton->bools.set(RENDER_ENABLED); creditsButton->bools.set(MOVE_NEXT);
+	creditsButton->openYMult = 0.0f;
+	creditsButton->baseAlpha = clr.w;
 	
 	currentY += 8.0f;
 }
@@ -673,6 +676,11 @@ void Menu::buttonPressed(Button* button)
 	else if (button == gpuButton)
 	{
 		Game::object->pop.init(gpuButton->data, "gpuRender", 0.5);
+		return;
+	}
+	else if (button == creditsButton)
+	{
+		Game::object->pop.init(creditsButton->data, "creditsRender", 1.0);
 		return;
 	}
 

@@ -34,6 +34,9 @@ void PopUp::construct()
 	renderFunctions["darkness"] = &PopUp::darknessRender;
 	initFunctions["darkness"] = &PopUp::initDarkness;
 
+	renderFunctions["creditsRender"] = &PopUp::creditsRender;
+	initFunctions["creditsRender"] = &PopUp::initCredits;
+
 	sliderHitSound = Sounder::object->loadSound("sliderHit.wav");
 }
 
@@ -181,22 +184,6 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 	ThinDrawer* td = ThinDrawer::object;
 	PopUp* p = (PopUp*)ptr;
 
-	if (td->wh->keyData[SDL_SCANCODE_RETURN] == 2 && p->renderTexts[0].size() != 0 && !p->noAction)
-	{
-		int res = Leveler::object->saveLevel(IOHelper::assetsFolder + "levelfiles/" + p->renderTexts[0]);
-
-		if (res == 0) setClose(p);
-	}
-
-	if (td->wh->repeatKeys[SDL_SCANCODE_BACKSPACE] || td->wh->keyData[SDL_SCANCODE_BACKSPACE] == 2)
-	{
-		if (p->renderTexts[0].size() > 0 && !p->noAction)
-		{
-			p->renderTexts[0].resize(p->renderTexts[0].size() - p->textSizes.back());
-			p->textSizes.pop_back();
-		}
-	}
-
 	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
@@ -239,6 +226,22 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &currentButtonData);
 
 	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+	if (td->wh->keyData[SDL_SCANCODE_RETURN] == 2 && p->renderTexts[0].size() != 0 && !p->noAction)
+	{
+		int res = Leveler::object->saveLevel(IOHelper::assetsFolder + "levelfiles/" + p->renderTexts[0]);
+
+		if (res == 0) setClose(p, &currentButtonData);
+	}
+
+	if (td->wh->repeatKeys[SDL_SCANCODE_BACKSPACE] || td->wh->keyData[SDL_SCANCODE_BACKSPACE] == 2)
+	{
+		if (p->renderTexts[0].size() > 0 && !p->noAction)
+		{
+			p->renderTexts[0].resize(p->renderTexts[0].size() - p->textSizes.back());
+			p->textSizes.pop_back();
+		}
+	}
 
 	if ((td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 || 
 		!currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && td->wh->mouseData[2] == 2)
@@ -1294,4 +1297,181 @@ void PopUp::darknessRender(VkCommandBuffer cmdBuff, void* ptr)
 			p->endFunction.reset();
 		}
 	}
+}
+
+static float maxScroll = 0.0f;
+static bool canCloseOnEnd = true;
+
+void PopUp::initCredits()
+{
+	finalButton = {
+		glm::vec4(0.0f, 0.0f, 100.0f, 100.0f), // posSize
+		glm::vec4(0.0f, 0.0f, 0.0f, 0.9f), // clr
+		glm::vec4(200.0f, 250.0f, 1.5f, 0.2f) }; // data
+
+	scrollAmount = -50.0f;
+	targetScroll = -50.0f;
+
+	canCloseOnEnd = true;
+
+	maxScroll = 0.0f;
+	Menu* m = Game::object->menu;
+	for (int i = 0; ; i++)
+	{
+		std::string stri = std::to_string(i);
+		std::string searchText = "<" + stri + "_" + std::to_string(CharDrawer::selectedLanguageIndex) + ">";
+
+		auto iter = m->creditsTexts.find(searchText);
+
+		if (iter == m->creditsTexts.end())
+		{
+			break;
+		}
+
+		auto vec = iter->second;
+
+		if (vec.size() < 2) continue;
+
+		maxScroll += 8.0f;
+		maxScroll += (vec.size() - 1) * 6.0f;
+
+		maxScroll += 5.0f;
+	}
+
+	renderTextDatas.clear();
+}
+
+void PopUp::creditsRender(VkCommandBuffer cmdBuff, void* ptr)
+{
+	ThinDrawer* td = ThinDrawer::object;
+	PopUp* p = (PopUp*)ptr;
+	Menu* m = Game::object->menu;
+
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		td->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+	float td01 = std::min((td->gameTime - p->startTime) / p->animationTime, 1.0);
+	td01 = (sin(td01 * glm::pi<float>() - glm::pi<float>() * 0.5f) + 1.0f) * 0.5f;
+
+	s_menuButton currentButtonData;
+	currentButtonData.colour = p->initialButton.colour + (p->finalButton.colour - p->initialButton.colour) * td01;
+	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
+	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
+
+	vkCmdPushConstants(cmdBuff, td->menuButton->pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &currentButtonData);
+
+	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+	if (p->closeOnEnd && td01 > 0.999f)
+	{
+		Game::object->singleTaskRegistry.push_back([p]
+			{
+				p->active = false;
+				ThinDrawer::object->eraseFromRenderFunctions(ThinDrawer::object->lateDrawFuncs, p);
+			});
+	}
+
+	if (td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 || (canCloseOnEnd && p->scrollAmount + 0.01f > maxScroll))
+	{
+		setClose(p, &currentButtonData);
+	}
+	
+	const float camUp = Leveler::object->ol->cam.ySides.y;
+	const float sizeMult = std::max(currentButtonData.posSize.z - 50.0f, 0.0f) / 50.0f;
+
+	const float yLimitUp = camUp - 10.0f;
+	const float yLimitDown = -camUp;
+
+	float currentY = camUp - 5.0f;
+
+	std::string creditsText = m->creditsTexts["<title>"][CharDrawer::selectedLanguageIndex];
+
+	s_lineRenderData lrd;
+	lrd.charDatas = Leveler::object->ol->cd->getRenderData(creditsText, Leveler::object->ol->popHeight * 2, lrd.posScale.w);
+	lrd.color = glm::vec4(sizeMult);
+	lrd.posScale = glm::vec4(-lrd.posScale.w * 2.5f * sizeMult, currentY, 5.0f * sizeMult, lrd.posScale.w);
+	currentY -= 10.0f;
+
+	Leveler::object->ol->cd->renderDatas.push_back(lrd);
+
+	std::string selectedLangString = std::to_string(CharDrawer::selectedLanguageIndex);
+
+	if (td->wh->mouseData[5] != 0.0f)
+	{
+		canCloseOnEnd = false;
+		p->targetScroll -= td->wh->mouseData[5] * 10.0;
+	}
+
+	p->targetScroll += td->deltaTime * 10.0f;
+
+	p->scrollAmount += (p->targetScroll - p->scrollAmount) * td->deltaTime * 10.0f;
+
+	p->targetScroll = std::clamp(p->targetScroll, -50.0f, maxScroll);
+	p->scrollAmount = std::clamp(p->scrollAmount, -50.0f, maxScroll);
+
+	currentY += p->scrollAmount;
+
+	for (int i = 0; ; i++)
+	{
+		std::string stri = std::to_string(i);
+		std::string searchText = "<" + stri + "_" + selectedLangString + ">";
+
+		auto iter = m->creditsTexts.find(searchText);
+
+		if (iter == m->creditsTexts.end())
+		{
+			break;
+		}
+
+		auto vec = iter->second;
+
+		if (vec.size() < 2) continue;
+
+		std::string clrsSearch = "<colour_" + stri + ">";
+		glm::vec4 clr;
+		
+		iter = m->creditsTexts.find(clrsSearch);
+
+		if (iter != m->creditsTexts.end() && iter->second.size() == 4)
+		{
+			auto clrVec = iter->second;
+			for (int j = 0; j < 4; j++)
+			{
+				clr[j] = std::stof(clrVec[j]) / 2048.0f;
+			}
+		}
+		else
+		{
+			clr = glm::vec4(1.0f);
+		}
+
+		for (int j = 0; j < vec.size(); j++)
+		{
+			float m2 = j == 0 ? 2.0f : 1.5f;
+
+			if (currentY > yLimitUp || currentY < yLimitDown)
+			{
+				currentY -= 4.0f * m2;
+				continue;
+			}
+
+			float upDownMult = std::min(std::min(std::abs(yLimitUp - currentY), std::abs(yLimitDown - currentY)) * 0.1f, 1.0f);
+
+			lrd.color = clr * upDownMult;
+			upDownMult = std::min(upDownMult + 0.3f, 1.0f);
+			lrd.charDatas = Leveler::object->ol->cd->getRenderData(vec[j], Leveler::object->ol->popHeight * m2, lrd.posScale.w);
+			lrd.posScale = glm::vec4(-lrd.posScale.w * 1.25f * sizeMult * m2 * upDownMult, currentY, 2.5f * sizeMult * m2 * upDownMult, lrd.posScale.w);
+			Leveler::object->ol->cd->renderDatas.push_back(lrd);
+			currentY -= 4.0f * m2;
+		}
+
+		currentY -= 5.0f;
+	}
+
+	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
 }

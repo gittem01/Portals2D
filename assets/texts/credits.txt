@@ -1,0 +1,64 @@
+<colour_0>
+2048
+1024
+0
+2048
+<colour_0>
+
+<colour_1>
+0
+1024
+2048
+2048
+<colour_1>
+
+<title>
+Katkılar
+Credits
+<title>
+
+<0_0>
+Müzik
+FoxSynergy - Oyun İçi Müzik
+pixelsphere.org - Level Düzenleyici Müziği
+opengameart.org, remaxim - Ana Menü Müziği
+<0_0>
+
+<0_1>
+Music
+FoxSynergy - In Game Music
+pixelsphere.org - Level Editor Music
+opengameart.org, remaxim - Main Menu Music
+<0_1>
+
+<1_0>
+Ses Efekti
+opengameart.org, Michel Baradari - Portal Silah Efekti
+opengameart.org, Michel Baradari - Portal Kapanma Efekti
+opengameart.org, OptimusDu - Obje Parçalanma Efekti
+opengameart.org, qubodup - Level Seçici Kaydıraç Çarpma Efekti
+opengameart.org, isaiah658 - Kütleçekim Sıfırlayıcı Döngü Efekti
+opengameart.org, rubberduck - Işık Köprüsü Döngü Efekti
+opengameart.org, Umplix - Platform Döngü Efekti
+opengameart.org, Bart - Platform Döngü Efekti
+opengameart.org, faxcorp - Elektrik Ses Efektleri
+freesound.org, ironcross32 - Aktivasyon Efekti
+freesound.org, shimsewn - Lazer Döngü Efekti
+Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Taret Silah Efekti
+<1_0>
+
+<1_1>
+Sound Effect
+opengameart.org, Michel Baradari - Portal Gun Effect
+opengameart.org, Michel Baradari - Portal Deactivation Effect
+opengameart.org, OptimusDu - Object Destruction Effect
+opengameart.org, qubodup - Level Editor Slider Hit Effect
+opengameart.org, isaiah658 - Gravity Nullifier Loop Effect
+opengameart.org, rubberduck - Light Bridge Loop Effect
+opengameart.org, Umplix - Platform Loop Effect
+opengameart.org, Bart - Platform Loop Effect
+opengameart.org, faxcorp - Electric Sound Effects
+freesound.org, ironcross32 - Activation Effect
+freesound.org, shimsewn - Laser Loop Effect
+Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Turret Gun Effect
+<1_1>

@@ -54,6 +54,7 @@ public:
 	void initLanguage();
 	void initGpu();
 	void initDarkness();
+	void initCredits();
 
 	void renderAt(VkCommandBuffer cmdBuff, glm::vec4 posSize, glm::vec2 pos, levelSelectData data);
 
@@ -62,4 +63,5 @@ public:
 	static void gpuRender(VkCommandBuffer cmdBuff, void* ptr);
 	static void languageRender(VkCommandBuffer cmdBuff, void* ptr);
 	static void darknessRender(VkCommandBuffer cmdBuff, void* ptr);
+	static void creditsRender(VkCommandBuffer cmdBuff, void* ptr);
 };

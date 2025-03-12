@@ -59,6 +59,7 @@ public:
 	std::vector<s_lineRenderData> renderDatas;
 	std::vector<Button> buttons;
 	std::map<std::string, std::vector<std::string>> buttonTexts;
+	std::map<std::string, std::vector<std::string>> creditsTexts;
 
 	double lastMouseTime;
 	double activationTime;
@@ -89,6 +90,7 @@ public:
 	Button* maxFramerateButton;
 	Button* languageButton;
 	Button* gpuButton;
+	Button* creditsButton;
 
 	Menu();
 
