@@ -308,7 +308,7 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
             filter = VK_FILTER_NEAREST;
         }
     }
-	
+
     VkFormat format;
     if (texData->numChannels == 4)
     {

@@ -195,10 +195,15 @@ void LaserEmitter::handleGroundReceivers()
 		if (pair.second <= Game::object->pWorld->rayHandler->minFraction)
 		{
 			enableSet[pair.first] = true;
+			GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[pair.first];
+
+			b2Vec2 bodyPos = glr.body->GetPosition();
+			b2Vec2 upVec = 0.2f * glr.body->GetTransform().q.GetXAxis();
+
+			laserEmitters[0].laserRays.push_back({ bodyPos - upVec, bodyPos + upVec });
 
 			if (!gndLaserMasks[pair.first])
 			{
-				GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[pair.first];				
 				glr.enable(this);
 			}
 		}
@@ -264,37 +269,49 @@ void LaserEmitter::update()
 			bodyData* bData = (bodyData*)collBody->GetUserData().pointer;
 			if (bData && bData->extraData)
 			{
+				PortalBody* pb = (PortalBody*)bData->data;
 				g_PhysicsData* pData = (g_PhysicsData*)bData->extraData;
 				if (pData->type & LASER_CUBE_O)
 				{
+					b2Vec2 lastLaserPos = pWorld->rayHandler->rayResult[0].endPos;
+					b2Vec2 bodyCenter = collBody->GetPosition();
+					laserEmitters[0].laserRays.push_back({lastLaserPos, bodyCenter});
+
 					LaserCube* lc = (LaserCube*)pData->data;
 					if (lsr.collidedLaserCubes.find(lc->wData) == lsr.collidedLaserCubes.end())
 					{
 						lsr.collidedLaserCubes.insert(lc->wData);
-						
-						pbData = lc->wData;
 
 						if (lc->wData->pbIndices.size() <= 1)
 						{
 							laserPos = collBody->GetPosition();
 							laserDir = collBody->GetTransform().q.GetXAxis();
+							if (pb->isMirrored) laserDir = -laserDir;
 						}
 						else
 						{
-							PortalBody* pb = lc->wData->pbIndices[0];
+							pbData = lc->wData;
+
+							//PortalBody* pb = lc->wData->pbIndices[0];
 							for (bodyCollisionStatus bcs : pb->bodyMaps)
 							{
+								b2Vec2 p2 = PortalWorld::getRelativePortalPosition_W(lastLaserPos, bcs.connection);
+								bodyCenter = bcs.body->body->GetPosition();
+								laserEmitters[0].laserRays.push_back({p2, bodyCenter});
+
 								if (bcs.connection->portal1->getPointSide(pb->body->GetPosition()) != bcs.connection->side1)
 								{
 									b2Body* body2 = bcs.body->body;
 									laserPos = body2->GetPosition() + 0.001f * bcs.connection->portal2->dir;
 									laserDir = body2->GetTransform().q.GetXAxis();
+									if (bcs.body->isMirrored) laserDir = -laserDir;
 								}
 								else
 								{
 									b2Body* body = pb->body;
 									laserPos = body->GetPosition() + 0.001f * bcs.connection->portal1->dir;
 									laserDir = body->GetTransform().q.GetXAxis();
+									if (pb->isMirrored) laserDir = -laserDir;
 								}
 							}
 						}
@@ -334,6 +351,13 @@ void LaserEmitter::update()
 				wlr = (WallLaserReceiver*)fData->data;
 				wlr->enable(&lsr);
 				lsr.lastLaserCube = true;
+
+				b2Vec2 lastPos = pWorld->rayHandler->rayResult[0].endPos;
+				b2Vec2 recCenter = wlr->body->GetPosition();
+
+				s_simpleRay toCenterRay = { lastPos, recCenter };
+
+				laserEmitters[0].laserRays.push_back(toCenterRay);
 			}
 			else
 			{

@@ -14,13 +14,13 @@ s_texture* WallLaserReceiver::tex;
 
 static b2Vec2 bodyOffsets[4] =
 {
-						b2Vec2(0.5f, 0.1f),
-						b2Vec2(0.9f, 0.5f),
-						b2Vec2(0.5f, 0.9f),
-						b2Vec2(0.1f, 0.5f),
+						b2Vec2(0.5f, 0.05f),
+						b2Vec2(0.95f, 0.5f),
+						b2Vec2(0.5f, 0.95f),
+						b2Vec2(0.05f, 0.5f),
 };
 
-static b2Vec2 boxSize = b2Vec2(0.4f, 0.1f);
+static b2Vec2 boxSize = b2Vec2(0.4f, 0.05f);
 static b2Vec2 points[4] =
 {
 	b2Vec2(+boxSize.x, -boxSize.y),
@@ -43,7 +43,7 @@ WallLaserReceiver::WallLaserReceiver(PortalWorld* portalWorld, s_objectDataGrid*
 	bDef.angle = objData->rotation * 0.5 * b2_pi;
 
 	body = portalWorld->CreateBody(&bDef);
-
+	
 	fixtureData* fData = new fixtureData();
 	fData->type = F_WALL_RECEIVER;
 	fData->data = (void*)this;
@@ -55,10 +55,34 @@ WallLaserReceiver::WallLaserReceiver(PortalWorld* portalWorld, s_objectDataGrid*
 
 		b2FixtureDef fDef;
 		fDef.shape = &eShape;
+		fDef.userData.pointer = (uintptr_t)fData;
 
-		b2Fixture* fix = body->CreateFixture(&fDef);
+		body->CreateFixture(&fDef);
+	}
 
-		fix->GetUserData().pointer = (uintptr_t)fData;
+
+	const float domeHeight = 0.3f;
+	const int numEdges = 10;
+	b2Vec2 prevPos = domeHeight * b2Vec2(1.0f, 0.0f);
+	prevPos.y += boxSize.y;
+	for (int i = 1; i <= numEdges; i++)
+	{
+		float angle = (i / (float)numEdges) * b2_pi;
+		float x = cos(angle);
+		float y = sin(angle);
+		b2Vec2 pos = domeHeight * b2Vec2(x, y);
+		pos.y += boxSize.y;
+
+		b2EdgeShape eShape;
+		eShape.SetTwoSided(prevPos, pos);
+
+		prevPos = pos;
+
+		b2FixtureDef fDef;
+		fDef.shape = &eShape;
+		fDef.userData.pointer = (uintptr_t)fData;
+
+		body->CreateFixture(&fDef);
 	}
 }
 

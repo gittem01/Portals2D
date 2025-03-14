@@ -41,6 +41,8 @@ Menu::Menu()
 
 		Game::maxLevel++;
 	}
+
+	logoTex = IOHelper::loadTexture("logo.png");
 }
 
 void Menu::initDefaults()
@@ -879,6 +881,43 @@ void Menu::draw(VkCommandBuffer cmdBuff, void* ptr)
 	Overlayer* ol = Leveler::object->ol;
 
 	const uint32_t camOffset = ShaderBase::alignedSharedSize * (td->frameIndex + 8);
+
+	if (Game::object->gameStater == &Game::MenuState)
+	{
+		VkDeviceSize offsets = 0;
+
+		const float xSize = ol->cam.xSides.y - ol->cam.xSides.x;
+		const float texRatio = menu->logoTex->width / (float)menu->logoTex->height;
+
+		s_renderBodyPsh buttonRenderData;
+		
+		buttonRenderData.movScale = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		buttonRenderData.movScale.z = xSize * 0.1f * texRatio;
+		buttonRenderData.movScale.w = xSize * 0.1f;
+
+		buttonRenderData.posRot.x = 0.0f;
+		buttonRenderData.posRot.y = ol->cam.ySides.y - xSize * 0.05f + 30.0f - menu->getDt01() * 30.0f;
+		buttonRenderData.posRot.y = menu->playButton->data.posSize.y + 12.0f;
+		buttonRenderData.posRot.z = 0.0f;
+		buttonRenderData.posRot.w = 1.0f;
+
+		buttonRenderData.data = glm::vec4(0.0f, -20.0f, -10.0f, 0.0f);
+
+		vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->bodyShader->pipeline);
+
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->bodyShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &Turret::coverVertexBuffer->buffer, &offsets);
+
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			td->bodyShader->pipelineLayout, 1, 1, &menu->logoTex->set, 0, VK_NULL_HANDLE);
+
+		vkCmdPushConstants(cmdBuff, td->bodyShader->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &buttonRenderData);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+	}
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
 

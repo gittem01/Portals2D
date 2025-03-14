@@ -61,6 +61,8 @@ public:
 	std::map<std::string, std::vector<std::string>> buttonTexts;
 	std::map<std::string, std::vector<std::string>> creditsTexts;
 
+	s_texture* logoTex;
+
 	double lastMouseTime;
 	double activationTime;
 	double upCamTime;
