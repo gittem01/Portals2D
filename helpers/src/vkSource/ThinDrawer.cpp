@@ -1787,6 +1787,8 @@ void ThinDrawer::eraseFromRenderFunctions(std::vector<std::pair<void (*) (VkComm
 void ThinDrawer::releaseRenderResources()
 {
 	wh->cam->pos = glm::vec2(0.0f, 0.0f);
+    wh->cam->zoom = wh->cam->zoomLimits.x;
+    wh->cam->updateOrtho();
 
     memMapFuncs.clear();
 

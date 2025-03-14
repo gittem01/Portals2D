@@ -835,7 +835,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
 
     int leftCount = 0;
     int rightCount = 0;
-
+        
     for (int i = 0; i < 30; i++)
     {
         if (startIndex + leftCount + 1 <= eLocalData->globalRange[1])
@@ -845,7 +845,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
             {
                 leftCount++;
 
-                if (leftCount + rightCount == requiredRangeSize)
+                if (leftCount + rightCount == requiredRangeSize - 1)
                 {
                     break;
                 }
@@ -859,7 +859,7 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
             {
 				rightCount++;
 
-                if (leftCount + rightCount == requiredRangeSize)
+                if (leftCount + rightCount == requiredRangeSize - 1)
                 {
                     break;
                 }
@@ -870,6 +870,28 @@ Portal* PortalWorld::createPortalWithChecks(b2Fixture* edgeFix, b2Vec2 pos, floa
     int range[2] = { startIndex - rightCount, startIndex + leftCount };
 
     int prevRange[2] = { eLocalData->globalRange[0], eLocalData->globalRange[1] };
+
+    if (abs(eGlobalData->perpDir.y) > 0.99f)
+    {
+        if (range[1] == prevRange[1])
+        {
+            // remove this chcek for concave corners
+            b2Vec2 v3Vec = eShape->m_vertex2 - eShape->m_vertex3;
+            if (b2Dot(eGlobalData->perpDir, v3Vec) > 0.95f)
+            {
+                range[0]--; range[1]--;
+            }
+        }
+        else if (range[0] == prevRange[0])
+        {
+            b2Vec2 v3Vec = eShape->m_vertex2 - eShape->m_vertex3;
+            if (b2Dot(eGlobalData->perpDir, v3Vec) > 0.95f)
+            {
+                range[0]++; range[1]++;
+            }
+        }
+    }
+
     b2Fixture* prevPNFixs[2] = { eLocalData->prevNextFixtures[0], eLocalData->prevNextFixtures[1] };
 
     b2Vec2 portalCreatePos;

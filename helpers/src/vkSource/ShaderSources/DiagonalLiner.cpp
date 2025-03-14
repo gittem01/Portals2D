@@ -36,28 +36,6 @@ void DiagonalLiner::testFill()
     }
 
     recreateUniforms(2000000);
-
-    const float sz = 1.0;
-    for (int i = -1; i < 1; i++)
-    {
-        for (int j = -1; j < 1; j++)
-        {
-            s_gridPositionShader gridPos = getGridSquare(i * sz, j * sz);
-            s_shaderGridData* gData = &renderGridUp[1][gridPos.y][gridPos.x];
-            gData->numElements++;
-
-            float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
-            s_wallUbo_l* wallUbo;
-            vkMapMemory(logicalDevice, uniformBuffers[0].memory, gData->offsetEnd * sizeof(s_wallUbo_l), sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
-            wallUbo->posSize = glm::vec4(i * sz, j * sz, sz, sz);
-            wallUbo->colour = glm::vec4(0.0, 0.0, 0.0, 1.0);
-            wallUbo->bgColour = glm::vec4(0.02, 0.02, 0.02, 0.5);
-            wallUbo->data = glm::vec4(0.5, 1.5, 1.0, 1.0);
-
-            vkUnmapMemory(logicalDevice, uniformBuffers[0].memory);
-            gData->offsetEnd++;
-        }
-    }
 }
 
 void DiagonalLiner::setupDescriptorSetLayout()

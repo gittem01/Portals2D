@@ -5,9 +5,9 @@
 
 Sounder* Sounder::object;
 
-float Sounder::generalVolume = 1.0f;
-float Sounder::musicVolume = 1.0f;
-float Sounder::effectVolume = 1.0f;
+float Sounder::generalVolume = 0.5f;
+float Sounder::musicVolume = 0.5f;
+float Sounder::effectVolume = 0.5f;
 
 Sounder::Sounder()
 {

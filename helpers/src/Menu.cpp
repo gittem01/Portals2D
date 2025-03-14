@@ -2,6 +2,7 @@
 #include "ThinDrawer.h"
 #include "Leveler.h"
 #include "Overlayer.h"
+#include "LevelerTestCase.h"
 
 #define INFINITY_CHAR "\xE2\x88\x9E"
 
@@ -21,13 +22,31 @@ Menu::Menu()
 	lines = IOHelper::loadLines("credits.txt");
 	creditsTexts = IOHelper::mapVector(lines);
 
-	buttons.reserve(200);
+	buttons.reserve(256);
 
 	openCloseSpeed = 3.0f;
+
+	Game::maxLevel = 0;
+
+	for (int i = 1; ; i++)
+	{
+		std::string fileName = IOHelper::assetsFolder + "levelfiles/menulevels/" + std::to_string(i) + ".pld";
+
+		// if file exists
+		std::ifstream fCheck(fileName, std::ios::in);
+		if (!fCheck.good())
+		{
+			break;
+		}
+
+		Game::maxLevel++;
+	}
 }
 
 void Menu::initDefaults()
 {
+	SDL_SetWindowMouseGrab(td->wh->window, false);
+
 	buttons.clear();
 
 	lastMouseTime = -100.0;
@@ -52,11 +71,14 @@ void Menu::initDefaults()
 
 void Menu::renderInit()
 {
-	td->whiteWallShader->renderGridUp.clear();
-	td->blackWallShader->renderGridUp.clear();
-	td->wallLight->renderGridUp.clear();
-	td->diagonalLiner->renderGridUp.clear();
-
+	if (Game::object->gameStater == &Game::MenuState)
+	{
+		td->whiteWallShader->renderGridUp.clear();
+		td->blackWallShader->renderGridUp.clear();
+		td->wallLight->renderGridUp.clear();
+		td->diagonalLiner->renderGridUp.clear();
+	}
+	
 	td->lateDrawFuncs.push_back({ draw, this });
 	td->memMapFuncs.push_back({ Overlayer::camMap, this });
 
@@ -88,14 +110,14 @@ void Menu::initPlay(glm::vec4 clr)
 	float yMult = (float)lastX / (numX - 1);
 	bool done = false;
 	int y;
-	Button* playButton = b;
+	playButton = b;
 	for (y = 0; !done; y++)
 	{
 		for (int x = 0; x < numX; x++)
 		{
 			int level = x + y * numX + 1;
 
-			if (level >= Game::maxLevel)
+			if (level > Game::maxLevel)
 			{
 				done = true;
 				break;
@@ -544,7 +566,6 @@ void Menu::update()
 		{
 			SDL_SetWindowRelativeMouseMode(td->wh->window, false);
 			SDL_WarpMouseInWindow(td->wh->window, windowClickPos.x, windowClickPos.y);
-			SDL_SetWindowMouseGrab(td->wh->window, false);
 			SDL_CaptureMouse(false);
 			SDL_ShowCursor();
 		}
@@ -667,13 +688,12 @@ void Menu::buttonPressed(Button* button)
 	if (button->type == BUTTON_CIRCLE) return;
 	if ((button + 1) < buttons.data() + buttons.size() && (button + 1)->type == BUTTON_CIRCLE) return;
 
-	if (button >= qButton && button <= qButton + 15)
+	if (Game::object->gameStater == &Game::MenuState && button >= qButton && button <= qButton + 15)
 	{
 		keyAssignmentButton = button;
 		return;
 	}
-
-	if (button == languageButton)
+	else if (button == languageButton)
 	{
 		Game::object->pop.init(languageButton->data, "languageRender", 0.5);
 		return;
@@ -686,6 +706,31 @@ void Menu::buttonPressed(Button* button)
 	else if (button == creditsButton)
 	{
 		Game::object->pop.init(creditsButton->data, "creditsRender", 1.0);
+		return;
+	}
+	else if (Game::object->gameStater == &Game::MenuState && button > playButton && button <= playButton + Game::maxLevel)
+	{
+		s_menuButton initialButton = {
+			glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
+			glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
+			glm::vec4(5.0f, 5.5f, 1.0f, 0.1f) }; // data
+		Game::object->pop.init(initialButton, "darkness", 0.5);
+
+		int index = button - playButton;
+		std::string fileName = IOHelper::assetsFolder + "levelfiles/menulevels/" + std::to_string(index) + ".pld";
+
+		Game::object->pop.endFunction = [fileName, index]
+		{
+			Game::object->singleTaskRegistry2.push_back([fileName, index]
+			{
+				Game::object->leveler->openLevel(fileName, true);
+				Game::object->testCase = new LevelerTestCase(Game::object, index);
+
+				Game::object->shouldQuit = true;
+				Game::object->gameStater = &Game::TestState;
+			});
+		};
+
 		return;
 	}
 
@@ -819,7 +864,6 @@ void Menu::setNewState(bool newState)
 	{
 		SDL_SetWindowRelativeMouseMode(td->wh->window, false);
 		SDL_WarpMouseInWindow(td->wh->window, windowClickPos.x, windowClickPos.y);
-		SDL_SetWindowMouseGrab(td->wh->window, false);
 		SDL_CaptureMouse(false);
 		SDL_ShowCursor();
 	}
@@ -847,6 +891,7 @@ void Menu::draw(VkCommandBuffer cmdBuff, void* ptr)
 		Game::object->singleTaskRegistry.push_back([menu]
 		{
 			menu->renderDestroy();
+			SDL_SetWindowMouseGrab(ThinDrawer::object->wh->window, true);
 		});
 	}
 

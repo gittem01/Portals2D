@@ -308,7 +308,7 @@ public:
 	std::vector<s_connection*> lastOffsetPos_Connection;
 
 	//////////////////
-	glm::ivec2 mouseGrid;
+	glm::ivec2 mouseGrid = glm::ivec2(0, 0);
 	std::vector<std::vector<s_levelGridData>> gridMap;
 	std::vector<std::vector<cableDir>> cableMap;
 	glm::ivec2 clickStart;
@@ -347,6 +347,7 @@ public:
 	Leveler(Game* game);
 	
 	void renderInit();
+	void initGrid();
 	void initOffsets();
 
 	void setSquare(short x, short y, s_levelGridData data);
@@ -408,7 +409,7 @@ public:
 	void handleRightClickClick();
 
 	int saveLevel(std::string fileName, bool overwrite=false); // 0 = success, 1 = can't open file, 2 = file exists
-	int openLevel(std::string fileName); // 0 = success, 1 = can't open file, 2 = file exists
+	int openLevel(std::string fileName, bool directOpen=false, bool externalOpen=false); // 0 = success, 1 = can't open file, 2 = file exists
 	void renderClear();
 	void quitLeveler();
 

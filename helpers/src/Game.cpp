@@ -145,7 +145,7 @@ void Game::loadGameData()
 		Sounder::musicVolume = arr[7] / 1024.0;
 		Sounder::effectVolume = arr[8] / 1024.0;
 
-		lastLevel = arr[9];
+        Game::lastLevel = arr[9];
         
         WindowHandler::windowCreateFlags = arr[10];
         Game::limitFramerate = arr[11];
@@ -221,7 +221,7 @@ void Game::saveGameData()
 		saveMutex.unlock();
 	});
     
-	saveThread.detach();
+    saveThread.detach();
 }
 
 void Game::timeHandle()
@@ -320,7 +320,7 @@ void Game::LevelerState()
 void Game::TestState()
 {
     dtMult = 1.0;
-    if (lastState == &Game::LevelerState)
+    if (lastState == &Game::LevelerState || lastState == &Game::MenuState)
     {
         LightBridge::staticInit();
         Turret::staticInit();
@@ -441,7 +441,7 @@ void Game::TestState()
 
         UseButton::toDeath();
 
-        if (lastState == &Game::LevelerState)
+        if (lastState == &Game::LevelerState || lastState == &Game::MenuState)
         {
             ForceField::toLeveler();
             HazardField::toLeveler();
@@ -493,6 +493,13 @@ void Game::TestState()
         leveler->pushRenderFunctions();
         leveler->ol->pushRenderFunctions();
     }
+	else if (lastState == &Game::MenuState)
+	{
+        leveler->renderClear();
+        leveler->quitLeveler();
+		gameStater = &Game::MenuState;
+		shouldQuit = false;
+	}
 
 	lastState = &Game::TestState;
 }
@@ -550,6 +557,8 @@ void Game::MenuState()
     else
     {
         shouldQuit = false;
+
+        SDL_SetWindowMouseGrab(thinDrawer->wh->window, true);
     }
 
     menu->buttons.clear();

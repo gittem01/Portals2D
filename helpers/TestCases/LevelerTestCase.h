@@ -70,7 +70,7 @@ public:
     std::map<s_objectDataGrid*, void*> connMap;
     bool menuUpdate = false;
 
-    LevelerTestCase(Game* game);
+    LevelerTestCase(Game* game, int levelIndex=8);
 
     static void wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, int size, int prevIndex, bool initial=false);
 

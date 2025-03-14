@@ -91,6 +91,7 @@ public:
 	Button* languageButton;
 	Button* gpuButton;
 	Button* creditsButton;
+	Button* playButton;
 
 	Menu();
 

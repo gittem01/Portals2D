@@ -25,9 +25,9 @@ s_gridSquare dirs[4] = { { 0, -1 }, { +1, 0 }, { 0, +1 }, { -1, 0 } };
 b2Vec2 dirAdditionsStart[4] =   { { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f } };
 b2Vec2 dirAdditionsEnd[4] =     { { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f } };
 
-LevelerTestCase::LevelerTestCase(Game* game) : BaseTestCase(game)
+LevelerTestCase::LevelerTestCase(Game* game, int levelIndex) : BaseTestCase(game)
 {
-    testCaseItem = 8;
+    testCaseItem = levelIndex;
 
     beforeCreate(false);
 
@@ -954,6 +954,7 @@ void LevelerTestCase::perFrameUpdate()
     {
         if (menuUpdate)
         {
+            SDL_SetWindowMouseGrab(td->wh->window, true);
             g->dtMult = 1.0;
             goto stopMenuUpdate;
         }
@@ -988,6 +989,7 @@ void LevelerTestCase::perFrameUpdate()
         {
             if (g->menu->activeButton->strText == "resume")
             {
+                SDL_SetWindowMouseGrab(td->wh->window, true);
                 g->dtMult = 1.0;
                 goto stopMenuUpdate;
             }

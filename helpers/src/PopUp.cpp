@@ -127,15 +127,15 @@ void saveDialogCallBack(void* userdata, const char* const* filelist, int filter)
 	}
 }
 
-void openLevel(std::string fileName, PopUp* pop)
+void openLevel(std::string fileName, PopUp* pop, bool externalOpen=false)
 {
 	setClose(pop);
 
-	pop->endFunction = [pop, fileName]
+	pop->endFunction = [pop, fileName, externalOpen]
 	{
-		Game::object->singleTaskRegistry.push_back([pop, fileName]
+		Game::object->singleTaskRegistry.push_back([pop, fileName, externalOpen]
 		{
-			int res = Leveler::object->openLevel(fileName);
+			int res = Leveler::object->openLevel(fileName, false, externalOpen);
 			if (res == 0)
 			{
 				s_menuButton initialButton = {
@@ -166,7 +166,7 @@ void openDialogCallBack(void* userdata, const char* const* filelist, int filter)
 	if (strlen(*filelist) > 0)
 	{
 		std::string fileName(*filelist);
-		openLevel(fileName, p);
+		openLevel(fileName, p, true);
 	}
 }
 
@@ -210,7 +210,7 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 	currentButtonData.data = p->initialButton.data + (p->finalButton.data - p->initialButton.data) * td01;
 	currentButtonData.posSize = p->initialButton.posSize + (p->finalButton.posSize - p->initialButton.posSize) * td01;
 
-	float sizedt = currentButtonData.posSize.z / 60.0f;
+	float sizedt = currentButtonData.posSize.w / 15.0f;
 
 	s_menuButton bgView;
 	bgView.colour = glm::vec4(0.0f, 0.0f, 0.0f, sizedt);
@@ -464,7 +464,7 @@ void loadbgThread()
 		}
 	}
 
-	for (int i = 0; i < 225; i++)
+	for (int i = 0; i < 0; i++)
 	{
 		std::string randStr = std::to_string(i);
 
@@ -1460,7 +1460,7 @@ void PopUp::creditsRender(VkCommandBuffer cmdBuff, void* ptr)
 				continue;
 			}
 
-			float upDownMult = std::min(std::min(std::abs(yLimitUp - currentY), std::abs(yLimitDown - currentY)) * 0.1f, 1.0f);
+			float upDownMult = sqrt(std::min(std::min(std::abs(yLimitUp - currentY), std::abs(yLimitDown - currentY)) * 0.1f, 1.0f));
 
 			lrd.color = clr * upDownMult;
 			upDownMult = std::min(upDownMult + 0.3f, 1.0f);

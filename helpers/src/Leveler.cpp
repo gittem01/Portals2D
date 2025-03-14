@@ -194,7 +194,7 @@ int Leveler::saveLevel(std::string fileName, bool overwrite)
 	}
 }
 
-int Leveler::openLevel(std::string fileName)
+int Leveler::openLevel(std::string fileName, bool directOpen, bool externalOpen)
 {
 	ol->overlayOverlay = LEVELER;
 
@@ -215,16 +215,23 @@ int Leveler::openLevel(std::string fileName)
 
 	if (file.is_open())
 	{
-		ThinDrawer::object->addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		if (!directOpen)
+		{
+			ThinDrawer::object->addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		}
 
 		renderClear();
 		thinDrawer->releaseRenderResources();
 		quitLeveler();
 
-		pushRenderFunctions();
-		ol->pushRenderFunctions();
-		renderInit();
+		if (!directOpen)
+		{
+			pushRenderFunctions();
+			ol->pushRenderFunctions();
+		}
 
+		renderInit();
+		
 		size_t numObjects;
 
 		file.read((char*)&numObjects, sizeof(size_t));
@@ -327,17 +334,25 @@ int Leveler::openLevel(std::string fileName)
 		file.read((char*)&startSquare, sizeof(startSquare));
 		file.read((char*)&endSquare, sizeof(endSquare));
 
-		size_t pos = fileName.find_last_of("/", fileName.size() - 1);
-
-		openLevelName = fileName.substr(pos + 1, fileName.size() - pos - 5);
-		
-		for (int i = 0; i < openLevelName.size();)
+		if (!externalOpen)
 		{
-			char charSize = CharDrawer::calculateCharBytes(openLevelName[i]);
-			textSizes.push_back(charSize);
-			i += charSize;
-		}
+			size_t pos = fileName.find_last_of("/", fileName.size() - 1);
 
+			openLevelName = fileName.substr(pos + 1, fileName.size() - pos - 5);
+
+			for (int i = 0; i < openLevelName.size();)
+			{
+				char charSize = CharDrawer::calculateCharBytes(openLevelName[i]);
+				textSizes.push_back(charSize);
+				i += charSize;
+			}
+		}
+		else
+		{
+			openLevelName = "";
+			textSizes.clear();
+		}
+		
 		return 0;
 	}
 	else
@@ -456,6 +471,9 @@ void rupFiller(std::vector<std::vector<std::vector<s_shaderGridData>>>& renderGr
 
 void Leveler::renderInit()
 {
+	startSquare =	{ -10, 1 };
+	endSquare =		{ +10, 1 };
+
 	thinDrawer->whiteWallShader->recreateUniforms(numWhiteWall * 2);
 	thinDrawer->blackWallShader->recreateUniforms(numBlackWall * 2);
 	thinDrawer->wallLight->recreateUniforms(numWhiteWall * 2);
@@ -468,7 +486,7 @@ void Leveler::renderInit()
 	initOffsets();
 }
 
-void Leveler::initOffsets()
+void Leveler::initGrid()
 {
 	gridMap.resize(ySize);
 	for (int i = 0; i < ySize; i++)
@@ -487,8 +505,13 @@ void Leveler::initOffsets()
 		for (int j = 0; j < cableMap[i].size(); j++)
 		{
 			cableMap[i][j] = (cableDir)0x0;
-		}	
+		}
 	}
+}
+
+void Leveler::initOffsets()
+{
+	initGrid();
 
 	lastOffsetPos_W.resize(WallBase::gridCount);
 	lastOffsetPos_B.resize(WallBase::gridCount);

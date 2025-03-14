@@ -460,6 +460,9 @@ void TestPlayer::winanim()
                         Game::object->singleTaskRegistry.push_back([]
                         {
                             Game::object->testCase->shouldQuit = true;
+                            Game::object->dtMult = 1.0;
+                            Game::lastLevel = std::max(Game::object->testCase->testCaseItem + 1, Game::lastLevel);
+                            Game::object->saveGameData();
                         });
                     };
                 }
@@ -1123,6 +1126,11 @@ void TestPlayer::winwin()
 
     enterForceField(nullptr);
 
+    if (holdBody)
+    {
+        releaseB();
+    }
+
     game->singleTaskRegistry.push_back([this]
     {
         b2Vec2 topPos = EndCapsule::object->pos + b2Vec2(0.0f, 0.975f);
@@ -1205,7 +1213,7 @@ void TestPlayer::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fix2)
     float sep = wManifold.separations[0];
     if (contact->GetManifold()->pointCount > 1) sep = (sep + wManifold.separations[1]) / 2.0f;
 
-    if (health != 0 && sep < -0.1f && contact->IsEnabled())
+    if (health != 0 && sep < -0.1f && contact->IsEnabled() && (contactingwData->bodyMaps.size() == 0 || fix2->GetBody()->GetType() == b2_dynamicBody))
     {
         bool pass = false;
         if (fData && (fData->type & F_LIGHT_BRIDGE))
@@ -1516,9 +1524,8 @@ b2Fixture* TestPlayer::canCreatePortal(b2Fixture* edgeFix, b2Vec2 pos, float siz
     s_edgeLocalData* eLocalData = (s_edgeLocalData*)fixData->data;
 
     s_edgeGlobalData* eGlobalData = eLocalData->globalData;
-    int rangeSize = eLocalData->globalRange[1] - eLocalData->globalRange[0];
 
-    int requiredRangeSize = std::ceil(size * 10.0f);
+    int requiredRangeSize = std::ceil(size * 10.0f) + 2;
 
     b2EdgeShape* eShape = (b2EdgeShape*)checkFixture->GetShape();
     pos = checkFixture->GetBody()->GetLocalPoint(pos);
@@ -2087,6 +2094,8 @@ void TestPlayer::holdB(PortalBody* pb, PortalBody* gunBody)
 
 void TestPlayer::releaseB()
 {
+    if (!holdGun || !holdBody) return;
+
     pbWorldData* indx = holdBody->worldIndex;
     
     bodyData* bData = (bodyData*)holdBody->body->GetUserData().pointer;
@@ -2112,6 +2121,9 @@ void TestPlayer::releaseB()
             pb->body->SetLinearVelocity(10.0f * vel);
         }
     }
+
+    float angVel = holdGun->body->GetAngularVelocity();
+    holdBody->body->SetAngularVelocity(angVel * 0.25f);
 
     indx = holdGun->worldIndex;
     for (auto iter = indx->destroyCallbacks.rbegin(); iter != indx->destroyCallbacks.rend(); iter++)

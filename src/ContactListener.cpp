@@ -121,7 +121,7 @@ void ContactListener::EndContact(b2Contact* contact)
         p->collisionEnd(contact, contact->GetFixtureB(), contact->GetFixtureA());
     }
 
-    if (!contact->IsEnabled())
+    if (!contact->IsEnabled() && contact->GetFixtureA()->GetBody()->GetWorld()->IsLocked())
     {
         return;
     }

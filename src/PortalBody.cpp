@@ -728,28 +728,35 @@ void PortalBody::getBodyOut(pbWorldData* worldData)
     PortalBody* leftOutBody;
     Portal* outPortal;
     int side;
+    b2Vec2 posChangeDir;
+    float d;
 
     PortalBody* pb = worldData->pbIndices[0];
 
-    if (pb->bodyMaps.size() == 0) return;
-
-    bodyCollisionStatus bcs = pb->bodyMaps[0];
-
-    b2Vec2 center = pb->getWorldCenterOfMass();
-    if (bcs.connection->portal1->getPointSide(center) == bcs.connection->side1)
+    if (pb->bodyMaps.size() != 0)
     {
-        leftOutBody = pb;
-        outPortal = bcs.connection->portal1;
-        side = bcs.connection->side1;
+        bodyCollisionStatus bcs = pb->bodyMaps[0];
+
+        b2Vec2 center = pb->getWorldCenterOfMass();
+        if (bcs.connection->portal1->getPointSide(center) == bcs.connection->side1)
+        {
+            leftOutBody = pb;
+            outPortal = bcs.connection->portal1;
+            side = bcs.connection->side1;
+        }
+        else
+        {
+            leftOutBody = bcs.body;
+            outPortal = bcs.connection->portal2;
+            side = bcs.connection->side2;
+        }
     }
     else
     {
-        leftOutBody = bcs.body;
-        outPortal = bcs.connection->portal2;
-        side = bcs.connection->side2;
+        leftOutBody = pb;
+        goto destr;
     }
 
-    b2Vec2 posChangeDir;
     if (side == 0)
     {
         posChangeDir = outPortal->dir;
@@ -759,7 +766,7 @@ void PortalBody::getBodyOut(pbWorldData* worldData)
         posChangeDir = -outPortal->dir;
     }
 
-    float d = PortalWorld::getDistanceFromPortal(outPortal, leftOutBody);
+    d = PortalWorld::getDistanceFromPortal(outPortal, leftOutBody);
 
     if (d > 0.0)
     {
@@ -771,6 +778,8 @@ void PortalBody::getBodyOut(pbWorldData* worldData)
         velocity = speed * velocity;
         leftOutBody->body->SetLinearVelocity(velocity);
     }
+
+destr:
 
     for (b2Fixture* fix : leftOutBody->fixtures)
     {
