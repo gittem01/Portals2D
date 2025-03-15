@@ -145,7 +145,7 @@ LightBridge::LightBridge(PortalWorld* portalWorld, s_objectDataGrid* objData)
 		eDatas[i].unitWalls.resize(wallGelSize);
 	}
 
-	Sounder::object->putStatOnGrid(&soundData, "bridgeloop.wav", 1.0f, objData->startActive, true);
+	Sounder::object->putStatOnGrid(&soundData, "bridgeloop.wav", 0.25f, objData->startActive, true);
 }
 
 void LightBridge::enable()

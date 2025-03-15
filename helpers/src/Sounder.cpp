@@ -283,7 +283,7 @@ ifOut:
 
 void Sounder::update()
 {
-    //const ALCchar* defaultDeviceSpecifier = alcGetString(device2, ALC_ALL_DEVICES_SPECIFIER);
+    //const ALCchar* defaultDeviceSpecifier = alcGetString(device, ALC_ALL_DEVICES_SPECIFIER);
     //printf("%s\n", defaultDeviceSpecifier);
 
     static float lastMusicVolume = 0.0;

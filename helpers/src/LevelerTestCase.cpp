@@ -121,12 +121,26 @@ void LevelerTestCase::createDefaultEdges()
         edgeUsedMap[i].resize(g->leveler->gridMap[0].size());
     }
 
+    int minX = +100000;
+	int minY = +100000;
+	int maxX = -100000;
+	int maxY = -100000;
+
     for (int y = g->leveler->ySize_H - 1; y >= -g->leveler->ySize_H; y--)
     {
         for (int x = -g->leveler->xSize_H; x < g->leveler->xSize_H; x++)
         {
             int gridX = x + g->leveler->xSize_H;
             int gridY = y + g->leveler->ySize_H;
+
+			if (g->leveler->getSquare(x, y).objectType != NONE_LO)
+			{
+				minX = std::min(minX, x);
+				minY = std::min(minY, y);
+
+				maxX = std::max(maxX, x);
+				maxY = std::max(maxY, y);
+			}
 
             if (!(edgeUsedMap[gridY][gridX] & RIGHT_W) && g->leveler->getSquare(x, y).objectType & (BLACK_WALL | WHITE_WALL))
             {
@@ -200,6 +214,55 @@ void LevelerTestCase::createDefaultEdges()
                     walkArndAndCreateEdgeGF(x, y, FENCE_WALL);
                 }
             }
+        }
+    }
+
+    minX = glm::min((int)g->leveler->startSquare.x, minX);
+    minX = glm::min((int)g->leveler->endSquare.x, minX);
+
+    maxX = glm::max((int)g->leveler->startSquare.x, maxX);
+    maxX = glm::max((int)g->leveler->endSquare.x, maxX);
+
+    minY = glm::min((int)g->leveler->startSquare.y, minY);
+    minY = glm::min((int)g->leveler->endSquare.y, minY);
+
+    maxY = glm::max((int)g->leveler->startSquare.y + 1, maxY);
+    maxY = glm::max((int)g->leveler->endSquare.y + 1, maxY);
+
+    minX -= 9; minY -= 9;
+    maxX += 10; maxY += 10;
+
+    b2Vec2 vecs[4] =
+    {
+        b2Vec2(maxX, maxY),
+        b2Vec2(minX, maxY),
+        b2Vec2(minX, minY),
+        b2Vec2(maxX, minY),
+    };
+
+    outerFixDatas[0].type = F_FORCE_FIELD;
+    outerFixDatas[1].type = F_HAZARD_FIELD;
+
+	b2BodyDef outerBodyDef;
+	outerBodyDef.type = b2_staticBody;
+
+    b2Body* outerBody = g->pWorld->CreateBody(&outerBodyDef);
+
+    for (int i = 0; i < 2; i++)
+    {
+        outerFixDatas[i].data = nullptr;
+	    outerFixDatas[i].extraData = nullptr;
+
+        for (int j = 0; j < 4; j++)
+        {
+			b2Vec2 v1 = vecs[j];
+			b2Vec2 v2 = vecs[(j + 1) % 4];
+
+			b2EdgeShape eShape;
+			eShape.SetTwoSided(v1, v2);
+            
+			b2Fixture* fix = outerBody->CreateFixture(&eShape, 0.0f);
+			fix->GetUserData().pointer = (uintptr_t)&outerFixDatas[i];
         }
     }
 }

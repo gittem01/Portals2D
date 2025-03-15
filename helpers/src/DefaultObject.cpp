@@ -228,11 +228,7 @@ void DefaultObject::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixt
 		{
 		case F_FORCE_FIELD:
 		{
-			ForceField* forceField = (ForceField*)fData->data;
-			if (forceField->enabled)
-			{
-				enterForceField((ForceField*)fData->data);
-			}
+			enterForceField((ForceField*)fData->data);
 		}
 		break;
 		case F_CATAPULT:

@@ -969,6 +969,7 @@ void TestPlayer::createBody(b2Vec2 pos)
     fDef.shape = &boxShape;
     fDef.friction = 0.0f;
     fDef.restitution = 0.0f;
+	fDef.filter.groupIndex = -1;
 
     body->CreateFixture(&fDef);
 
@@ -1053,11 +1054,7 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture
         {
         case F_FORCE_FIELD:
         {
-            ForceField* forceField = (ForceField*)fixData->data;
-            if (forceField->enabled)
-            {
-                enterForceField((ForceField*)fixData->data);
-            }
+            enterForceField((ForceField*)fixData->data);
         }
         break;
         case F_HAZARD_FIELD:
@@ -1764,7 +1761,7 @@ void TestPlayer::handlePortalCD(float dt)
         if (wh->mouseData[2] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
             fixtureData* fData = (fixtureData*)rayCaster.edgeFix->GetUserData().pointer;
-            if (fData && fData->type == F_FORCE_FIELD)
+            if (fData && fData->type == F_FORCE_FIELD && fData->data)
             {
                 ForceField* ff = (ForceField*)fData->data;
 
@@ -1859,7 +1856,7 @@ void TestPlayer::handlePortalCD(float dt)
         else if (wh->mouseData[4] > 0 && gameTime - lastPortalCreationTime > 0.4f)
         {
             fixtureData* fData = (fixtureData*)rayCaster.edgeFix->GetUserData().pointer;
-            if (fData && fData->type == F_FORCE_FIELD)
+            if (fData && fData->type == F_FORCE_FIELD && fData->data)
             {
                 ForceField* ff = (ForceField*)fData->data;
 

@@ -205,7 +205,7 @@ void WindowHandler::massInit()
 
     setWindowSizes(0.8f);
 
-    window = SDL_CreateWindow("Portal2D", windowSizes.x, windowSizes.y, windowCreateFlags | SDL_WINDOW_HIDDEN);
+    window = SDL_CreateWindow("Stringate", windowSizes.x, windowSizes.y, windowCreateFlags | SDL_WINDOW_HIDDEN);
     if (!window)
     {
         printf("Could not create window\n");

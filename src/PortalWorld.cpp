@@ -104,6 +104,7 @@ PortalBody* PortalWorld::createCloneBody0(pbWorldData* wData, b2Vec2 pos, float 
         fDef.density = wData->baseDensities[i];
         fDef.restitution = wData->baseRestitutions[i];
         fDef.friction = wData->baseFrictions[i];
+        fDef.filter.groupIndex = wData->collisionGroup;
         fDef.shape = shapes[i];
 		fDef.isSensor = sensor;
         body->CreateFixture(&fDef, false);
@@ -149,6 +150,7 @@ void PortalWorld::createNewPortalBody_i(PortalBody* pBody)
     pbData->baseLinearDamping = pBody->body->GetLinearDamping();
     pbData->baseAngularDamping = pBody->body->GetAngularDamping();
     pbData->gravityScale = 1.0f;
+    pbData->collisionGroup = pBody->body->GetFixtureList()->GetFilterData().groupIndex;
 
     for (b2Fixture* fix = pBody->body->GetFixtureList(); fix; fix = fix->GetNext())
     {
@@ -521,6 +523,8 @@ bool PortalWorld::createCloneBody(Portal* collPortal, int side, PortalBody* pBod
             fDef.restitution = fix->GetRestitution();
             fDef.friction = fix->GetFriction();
             fDef.isSensor = fix->IsSensor();
+            fDef.filter = fix->GetFilterData();
+
             if (c->isReversed ^ pBody->isMirrored)
             {
                 fDef.shape = pBodyData->mirroredShapes[i];

@@ -69,6 +69,7 @@ public:
     std::vector<std::vector<EdgeUse>> edgeUsedMap;
     std::map<s_objectDataGrid*, void*> connMap;
     bool menuUpdate = false;
+    fixtureData outerFixDatas[2];
 
     LevelerTestCase(Game* game, int levelIndex=8);
 

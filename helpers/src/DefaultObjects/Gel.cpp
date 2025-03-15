@@ -21,7 +21,6 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
     
     b2BodyDef bDef;
     bDef.type = b2_dynamicBody;
-    //bDef.type = b2_kinematicBody;
     bDef.position.Set(pos.x, pos.y);
     bDef.linearDamping = 0.75;
 
@@ -219,6 +218,20 @@ void setFrictions(PbWorldData* wData, float friction)
 	}
 }
 
+void Gel::erase()
+{
+    if (gelIndex == -1) return;
+
+    Gel* lastGel = gels[--gelCount];
+    lastGel->gelIndex = gelIndex;
+    gels[gelIndex] = lastGel;
+    gelIndex = -1;
+
+    pWorld->fullDestroys.push_back(wData);
+
+    freeGels.push_back(this);
+}
+
 void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 {
     if (gelIndex == -1) return;
@@ -357,14 +370,7 @@ out:
         splashEffects[splashCount++] = sData;
     }
 
-    Gel* lastGel = gels[--gelCount];
-    lastGel->gelIndex = gelIndex;
-    gels[gelIndex] = lastGel;
-    gelIndex = -1;
-
-    pWorld->fullDestroys.push_back(wData);
-
-    freeGels.push_back(this);
+    erase();
 }
 
 void Gel::update()
@@ -699,7 +705,7 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisF
     {
         splash(contact, otherFix);
     }
-    else if (numNearGels < MAX_NEAR_GELS)
+    else if (numNearGels <= MAX_NEAR_GELS) // might make gels pop for random sensor fixtures
     {
         bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
         if (bData && bData->extraData)
@@ -713,6 +719,6 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisF
     }
     else
     {
-        splash(contact, otherFix);
+        erase();
     }
 }

@@ -36,6 +36,7 @@ void ThinDrawer::surfaceRecreate()
 
     bool setFullScreen = (WindowHandler::windowCreateFlags & SDL_WINDOW_FULLSCREEN) != 0;
 	bool setBorderless = (WindowHandler::windowCreateFlags & SDL_WINDOW_BORDERLESS) != 0;
+    bool setResizable = (WindowHandler::windowCreateFlags & SDL_WINDOW_RESIZABLE) != 0;
 
 #ifndef WIN32
 	if (setFullScreen)
@@ -65,6 +66,7 @@ void ThinDrawer::surfaceRecreate()
     }
 
     SDL_SetWindowBordered(wh->window, !setBorderless);
+    SDL_SetWindowResizable(wh->window, setResizable);
 #endif
 
     for (ShaderBase* shader : shaders)

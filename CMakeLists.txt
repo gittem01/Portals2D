@@ -21,7 +21,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/SDL3/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/tiny_gltf)
 include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
 include_directories(${CMAKE_SOURCE_DIR}/external/vulkan/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/OpenAlSoft/include)
+include_directories(${CMAKE_SOURCE_DIR}/external/openal-soft/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/AudioFile)
 include_directories(${CMAKE_SOURCE_DIR}/external/stb_truetype)
 include_directories(${CMAKE_SOURCE_DIR}/external/SPIRV-Reflect)
@@ -30,7 +30,6 @@ include_directories(${CMAKE_SOURCE_DIR}/external/steamworks/public/steam)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/box2d/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/SDL3)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/imgui)
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/OpenALSoft)
 
 file(GLOB HELPER_SOURCES    ${CMAKE_SOURCE_DIR}/helpers/src/*.cpp
                             ${CMAKE_SOURCE_DIR}/helpers/src/vkSource/*.cpp
@@ -52,6 +51,7 @@ set(
 # put this before add_executable else get linker error
 link_directories(${CMAKE_SOURCE_DIR}/external/vulkan/lib)
 link_directories(${CMAKE_SOURCE_DIR}/external/steamworks/redistributable_bin/win64)
+link_directories(${CMAKE_SOURCE_DIR}/external/openal-soft/lib)
 
 if(APPLE)
     # set(MACOSX_BUNDLE_ICON_FILE portal.ico)
@@ -62,9 +62,9 @@ if(APPLE)
 
     add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
 elseif(MSVC)
-    #add_executable(${APP_NAME} WIN32 Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS} ${CMAKE_CURRENT_SOURCE_DIR}/icon/portal.rc)
-    add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
-    #add_definitions(-DENABLE_WINMAIN)
+    add_executable(${APP_NAME} WIN32 Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS} ${CMAKE_CURRENT_SOURCE_DIR}/icon/portal.rc)
+    #add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
+    add_definitions(-DENABLE_WINMAIN)
 else()
     add_executable(${APP_NAME} Source.cpp ${HELPER_SOURCES} ${HELPER_HEADERS} ${IMGUI_BACKENDS})
 endif()
@@ -80,7 +80,7 @@ target_link_libraries(${APP_NAME} PORTAL2D)
 target_link_libraries(${APP_NAME} box2d)
 target_link_libraries(${APP_NAME} SDL3::SDL3)
 target_link_libraries(${APP_NAME} imgui)
-target_link_libraries(${APP_NAME} OpenAL)
+target_link_libraries(${APP_NAME} OpenAL32)
 target_link_libraries(${APP_NAME} spirv-reflect)
 
 

@@ -33,6 +33,7 @@ public:
 	Gel() {}
 
 	static void getRangeData(b2Vec2 thisPos, b2Fixture* fix, int range[2], s_edgeGlobalData** data);
+	void erase();
 	void splash(b2Contact* contact, b2Fixture* otherFix);
 	void recreate(bool mirrored=false) override;
 

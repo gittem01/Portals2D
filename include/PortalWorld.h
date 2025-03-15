@@ -76,6 +76,7 @@ typedef struct PbWorldData
     float baseLinearDamping;
     float baseAngularDamping;
     float gravityScale;
+	int16_t collisionGroup = 0;
 
     std::vector<b2Shape*> shapes;
     std::vector<b2Shape*> mirroredShapes;

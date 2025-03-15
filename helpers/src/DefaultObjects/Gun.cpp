@@ -15,6 +15,7 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
     fDef.shape = &boxShape;
     fDef.friction = 0.0f;
     fDef.restitution = 0.0f;
+    fDef.filter.groupIndex = -1;
 
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
