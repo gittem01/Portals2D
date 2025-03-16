@@ -328,7 +328,7 @@ public:
 	const int numWhiteWall = xSize * ySize;
 	const int numBlackWall = xSize * ySize;
 
-	const int perTextureSpace = 200;
+	const int perTextureSpace = 512;
 	int textureRenderOffset;
 	std::vector<s_perTextureData> perTextureData;
 

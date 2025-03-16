@@ -1319,6 +1319,46 @@ void TestPlayer::camHandle()
     wh->cam->updateOrtho();
 }
 
+void TestPlayer::camHandle2()
+{
+    WindowHandler* wh = game->thinDrawer->wh;
+
+    glm::vec2 mousePos = glm::vec2(wh->mouseData[0], wh->mouseData[1]);
+    glm::vec2 winSize = glm::vec2(wh->windowSizes.x, wh->windowSizes.y);
+
+    const float edgeSize = 5.0f;
+    const float speed = 10.0f;
+
+    glm::vec2 posAdd = glm::vec2(0.0f, 0.0f);
+
+    if (mousePos.x < edgeSize)
+    {
+        posAdd.x -= 1.0f;
+    }
+    else if (mousePos.x > winSize.x - edgeSize)
+    {
+        posAdd.x += 1.0f;
+    }
+
+    if (mousePos.y < edgeSize)
+    {
+        posAdd.y -= 1.0f;
+    }
+    else if (mousePos.y > winSize.y - edgeSize)
+    {
+        posAdd.y += 1.0f;
+	}
+
+    if (posAdd.x == 0.0f && posAdd.y == 0.0f) return;
+
+    posAdd = glm::normalize(posAdd);
+    posAdd *= ThinDrawer::object->deltaTime * speed / (wh->cam->zoom * wh->cam->zoom);
+
+    wh->cam->pos += posAdd;
+
+    wh->cam->updateOrtho();
+}
+
 void TestPlayer::handleBodyRotation()
 {
     if (effectiveFunnel) return;

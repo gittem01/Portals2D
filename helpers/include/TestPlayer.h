@@ -137,6 +137,7 @@ public:
     void reportContact(b2Contact* contact, const b2ContactImpulse* impulse, b2Body* contactingBody, b2Fixture* fix2);
     
     void camHandle();
+    void camHandle2();
     void handleBodyRotation();
 
     void handleGunRotation();

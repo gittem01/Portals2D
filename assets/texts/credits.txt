@@ -12,6 +12,14 @@
 2048
 <colour_1>
 
+<colour_2>
+2048
+2048
+0
+2048
+<colour_2>
+
+
 <title>
 Katkılar
 Credits
@@ -62,3 +70,13 @@ freesound.org, ironcross32 - Activation Effect
 freesound.org, shimsewn - Laser Loop Effect
 Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Turret Gun Effect
 <1_1>
+
+<2_0>
+Oynanış Testi Yapanlar
+Ege Ömerca
+<2_0>
+
+<2_1>
+Play Testers
+Ege Ömerca
+<2_1>

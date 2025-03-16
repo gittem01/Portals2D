@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(Teleporter VERSION 2.0.0)
 
-set(APP_NAME PhysicsTeleport)
+set(APP_NAME Stringate)
 set(CMAKE_CXX_STANDARD 20)
 
 if (MSVC AND NOT (CMAKE_GENERATOR STREQUAL "Ninja"))

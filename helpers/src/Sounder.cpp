@@ -63,9 +63,9 @@ Sounder::Sounder()
     }
 
     // device switch
-    /*bool hasReopenDeviceExtension = alcIsExtensionPresent(device, "ALC_SOFT_reopen_device");
+    bool hasReopenDeviceExtension = alcIsExtensionPresent(device, "ALC_SOFT_reopen_device");
     LPALCREOPENDEVICESOFT alcReopenDeviceSOFT = reinterpret_cast<LPALCREOPENDEVICESOFT>(alcGetProcAddress(device, "alcReopenDeviceSOFT"));
-    alcReopenDeviceSOFT(device, nullptr, nullptr);*/
+    alcReopenDeviceSOFT(device, nullptr, nullptr);
 }
 
 Sounder::~Sounder()

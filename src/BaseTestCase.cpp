@@ -206,6 +206,8 @@ void BaseTestCase::onUpdate()
     }
    
     if (followPlayer && tp) tp->camHandle();
+
+    tp->camHandle2();
 }
 
 void BaseTestCase::keyHandler(WindowHandler* wh)

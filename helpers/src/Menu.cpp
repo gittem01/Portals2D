@@ -690,7 +690,7 @@ void Menu::buttonPressed(Button* button)
 	if (button->type == BUTTON_CIRCLE) return;
 	if ((button + 1) < buttons.data() + buttons.size() && (button + 1)->type == BUTTON_CIRCLE) return;
 
-	if (Game::object->gameStater == &Game::MenuState && button >= qButton && button <= qButton + 15)
+	if (button >= qButton && button <= qButton + 15)
 	{
 		keyAssignmentButton = button;
 		return;

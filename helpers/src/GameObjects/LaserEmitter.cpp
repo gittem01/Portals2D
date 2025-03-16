@@ -5,7 +5,7 @@
 #include "Gel.h"
 #include "Overlayer.h"
 
-std::vector<LaserEmitter> LaserEmitter::laserEmitters(64);
+std::vector<LaserEmitter> LaserEmitter::laserEmitters(128);
 int LaserEmitter::numLaserEmitters = 0;
 s_perTextureData* LaserEmitter::ptData;
 s_texture* LaserEmitter::tex;
