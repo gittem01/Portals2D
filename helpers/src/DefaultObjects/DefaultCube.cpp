@@ -55,15 +55,17 @@ b2Body* createPortalCube2(b2Vec2 pos, b2Vec2 size, b2World* world, b2BodyType ty
     return body;
 }
 
-DefaultCube::DefaultCube(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : DefaultObject(portalWorld)
+DefaultCube::DefaultCube(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper, bool mirrored) : DefaultObject(portalWorld)
 {
-	this->pWorld = portalWorld;
+    startMirrored = mirrored;
+	pWorld = portalWorld;
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
 	onHitSoundBuffers.push_back(onHitSoundBuffer);
 
 	b2Body* body = createPortalCube2(pos, b2Vec2(0.4, 0.4), pWorld, b2_dynamicBody);
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
-	
+    portalBody->isMirrored = mirrored;
+
     initialPos = pos;
 
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
@@ -98,7 +100,7 @@ void DefaultCube::recreate(bool mirrored)
     }
     else
     {
-        DefaultObject::recreate(mirrored);
+        DefaultObject::recreate(startMirrored);
     }
 }
 

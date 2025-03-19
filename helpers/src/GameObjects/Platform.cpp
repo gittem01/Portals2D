@@ -149,7 +149,7 @@ Platform::Platform(PortalWorld* portalWorld, s_objectDataGrid* objData)
 				vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory);
 
 				vkMapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory,
-					sizeof(s_wallGelData) * (edgeRenderIndex + j + MAX_PLATFORMS * i), sizeof(s_wallGelData), 0, (void**)&mapMem);
+					sizeof(s_wallGelData) * (edgeRenderIndex + j + MAX_PLATFORMS * i * 4), sizeof(s_wallGelData), 0, (void**)&mapMem);
 				*mapMem = wgData;
 				vkUnmapMemory(ThinDrawer::object->logicalDevice, ThinDrawer::object->wallGel->uniformBuffers[0].memory);
 			}
@@ -422,7 +422,7 @@ void Platform::memMapFunc(void* ptr)
 
 			s_wallGelData* mapMem;
 			vkMapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory,
-				sizeof(s_wallGelData) * (platform->edgeRenderIndex + i + MAX_PLATFORMS * td->frameIndex), sizeof(s_wallGelData), 0, (void**)&mapMem);
+				sizeof(s_wallGelData) * (platform->edgeRenderIndex + i + MAX_PLATFORMS * td->frameIndex * 4), sizeof(s_wallGelData), 0, (void**)&mapMem);
 			mapMem->positions = glm::vec4(p1.x, p1.y, p0.x, p0.y);
 			vkUnmapMemory(td->logicalDevice, td->wallGel->uniformBuffers[0].memory);
 		}

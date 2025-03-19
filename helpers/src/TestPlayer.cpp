@@ -1321,6 +1321,8 @@ void TestPlayer::camHandle()
 
 void TestPlayer::camHandle2()
 {
+    if (game->dtMult < 0.0001f) return;
+
     WindowHandler* wh = game->thinDrawer->wh;
 
     glm::vec2 mousePos = glm::vec2(wh->mouseData[0], wh->mouseData[1]);
@@ -2605,9 +2607,9 @@ void TestPlayer::update(float dt, int totalIter)
 
     if (!effectiveFunnel && (left || right))
     {
-        const float groundMult = 40.0f;
-        const float airMult = 10.0f;
-        const float fwdGrndSlw = 5.0f;
+        const float groundMult = 20.0f;
+        const float airMult = 5.0f;
+        const float fwdGrndSlw = 2.0f;
         if (right)
         {
             float addition;

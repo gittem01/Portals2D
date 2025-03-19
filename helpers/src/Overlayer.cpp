@@ -721,7 +721,7 @@ void Overlayer::topLeftUpdate()
             
             game->menu->setNewState(true);
         }
-        else if (!(overlayOverlay == LEVELER_MENU && game->pop.active))
+        else if ((overlayOverlay != LEVELER_MENU || !game->pop.active) && game->menu->activeButton == nullptr)
         {
 			overlayOverlay = LEVELER;
 

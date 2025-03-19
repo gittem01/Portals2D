@@ -14,7 +14,7 @@ void HazardShader::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(sizeof(s_hazardUbo) * 2000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_hazardUbo) * 512, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_hazardUbo* hazardUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_hazardUbo), 0, (void**)&hazardUbo);

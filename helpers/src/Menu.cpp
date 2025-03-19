@@ -575,6 +575,22 @@ void Menu::update()
 		clickButton = nullptr;
 	}
 
+	if (activeButton != nullptr && td->wh->keyData[SDL_SCANCODE_ESCAPE] == 2 && !Game::object->pop.active && clickButton != maxFramerateButton)
+	{
+		upCamTime = -td->gameTime;
+		activeButton->text.color = glm::vec4(1.0f, 1.0, 1.0, std::clamp(activeButton->alphaMult, 0.0f, 1.0f));
+
+		float i = 1.0f;
+		for (int j = activeButton->dependentButtons.size() - 1; j >= 0; j--)
+		{
+			activeButton->dependentButtons[j]->alphaMult = std::min(i, activeButton->dependentButtons[j]->alphaMult);
+			i += 0.05f;
+		}
+
+		activeButton = nullptr;
+		clickButton = nullptr;
+	}
+
 	if ((clickButton == hoverButton || clickButton && clickButton->type == BUTTON_CIRCLE) && clickButton)
 	{
 		clickButton->data.colour.w = std::clamp(clickButton->alphaMult, 0.0f, 1.0f);

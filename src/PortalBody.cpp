@@ -863,8 +863,11 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
             area = findPolygonArea(pShape->m_vertices, pShape->m_count);
         }
 
-        b2Vec2 force = area * fixture->GetDensity() * pWorld->GetGravity();
+        b2Vec2 force = area * fixture->GetDensity() * ((float)bodyMaps.size() + 1) * pWorld->GetGravity();
         body->ApplyForce(worldIndex->gravityScale * force, center, false);
+
+        b2Vec2 p2 = center + 0.5f * force;
+        ThinDrawer::object->registerDebugLine(glm::vec4(center.x, center.y, p2.x, p2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.04f, 0.5f);
 
         return;
     }
@@ -961,7 +964,10 @@ void PortalBody::applyPartialGravity(b2Fixture* fixture){
         // validity check for loopCenterOfMass is probably extra
         // just to be sure program does not crash
         if (loopArea > 0.0f && b2IsValid(loopCenterOfMass.x) && b2IsValid(loopCenterOfMass.y)){
-            body->ApplyForce(worldIndex->gravityScale* ((float)bodyMaps.size() + 1) * force, loopCenterOfMass, false);
+            b2Vec2 appliedForce = worldIndex->gravityScale * ((float)bodyMaps.size() + 1) * force;
+            body->ApplyForce(appliedForce, loopCenterOfMass, false);
+            b2Vec2 p2 = loopCenterOfMass + 0.5f * appliedForce;
+            ThinDrawer::object->registerDebugLine(glm::vec4(loopCenterOfMass.x, loopCenterOfMass.y, p2.x, p2.y), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.04f, 0.5f);
         }
     }
     else{

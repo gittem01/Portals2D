@@ -3,9 +3,10 @@
 #include <ThinDrawer.h>
 
 
-Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : DefaultObject(portalWorld)
+Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper, bool mirrored) : DefaultObject(portalWorld)
 {
-	this->pWorld = portalWorld;
+    startMirrored = mirrored;
+	pWorld = portalWorld;
 	ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
 	onHitSoundBuffers.push_back(onHitSoundBuffer);
 
@@ -22,7 +23,8 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : D
     fix->SetRestitution(0.1);
 
 	PortalBody* portalBody = portalWorld->createPortalBody(body);
-	
+    portalBody->isMirrored = mirrored;
+
     bodyData* bData = (bodyData*)body->GetUserData().pointer;
     pData.type = (g_DataType)(DEFAULT_OBJECT_O | SPHERE_CUBE_O);
     pData.data = this;
@@ -55,7 +57,7 @@ void Sphere::recreate(bool mirrored)
     }
     else
     {
-        DefaultObject::recreate(mirrored);
+        DefaultObject::recreate(startMirrored);
     }
 }
 

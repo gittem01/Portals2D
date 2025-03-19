@@ -307,6 +307,9 @@ public:
 	std::vector<s_gridSquare> lastOffsetPos_Platform;
 	std::vector<s_connection*> lastOffsetPos_Connection;
 
+	static const std::map<levelObject, int> objectLimits;
+	std::map<levelObject, int> objectCounts;
+
 	//////////////////
 	glm::ivec2 mouseGrid = glm::ivec2(0, 0);
 	std::vector<std::vector<s_levelGridData>> gridMap;
@@ -414,6 +417,7 @@ public:
 	void quitLeveler();
 
 	void pushRenderFunctions();
+	bool startEndCheck();
 	void createLevel();
 
 	static void renderParticles(VkCommandBuffer cmdBuff, void* ptr);

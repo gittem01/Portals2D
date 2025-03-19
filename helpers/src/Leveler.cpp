@@ -7,6 +7,7 @@
 #include <SwapChain.h>
 #include <LevelerTestCase.h>
 #include "Menu.h"
+#include <bitset>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -22,6 +23,32 @@ glm::i16vec2 connectionDirs[2] = { { +1, 0 }, { 0, +1 } };
 glm::i16vec2 connectionAdditions[4] = { { 0, 0 }, { +1, 0 }, { 0, +1 }, { 0, 0 } };
 char cableIndices[8] = { 3, 4, 2, 5, 1, 6, 0, 7 };
 const int maxPlatformDiff = 4;
+
+const std::map<levelObject, int> Leveler::objectLimits =
+{
+	{ CLICK_BUTTON,		256	},
+	{ DOWN_BUTTON,		256	},
+	{ CUBE_BUTTON,		256	},
+	{ SPHERE_BUTTON,	256	},
+	{ DEFAULT_CUBE,		256	},
+	{ LASER_CUBE,		256	},
+	{ SPHERE_CUBE,		256	},
+	{ TURRET,			64	},
+	{ LASERER,			128	},
+	{ LASER_REC_GND,	64	},
+	{ LASER_REC_WALL,	64	},
+	{ CATAPULT,			256	},
+	{ FUNNEL,			MAX_FUNNELS	},
+	{ LIGHT_BRIDGE,		MAX_BRIDGES	},
+	{ HAZARDER,			256	},
+	{ FORCE_FIELD,		256	},
+	{ BLUE_GELLER,		16	},
+	{ ORANGE_GELLER,	16	},
+	{ WHITE_GELLER,		16	},
+	{ WATER_GELLER,		16	},
+	{ CUBE_SPAWNER,		256	},
+	{ PLATFORM,			MAX_PLATFORMS },
+};
 
 Leveler::Leveler(Game* game)
 {
@@ -509,6 +536,89 @@ void Leveler::initGrid()
 	}
 }
 
+void putBlackSquare(glm::vec2 centerPos, glm::vec2 size)
+{
+	ThinDrawer* thinDrawer = ThinDrawer::object;
+
+	float randVal22 = (((float)rand() / RAND_MAX)) * 0.5f + 0.25f;
+	s_gridPositionShader gridPos = thinDrawer->blackWallShader->getGridSquare(centerPos.x, centerPos.y);
+	s_shaderGridData* gData = &thinDrawer->blackWallShader->renderGridUp[0][gridPos.y][gridPos.x];
+	gData->numElements++;
+
+	float maxSize = std::max(size.x, size.y);
+
+	s_wallUbo_b* wallUbo;
+	vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory,
+		gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
+	wallUbo->posSize = glm::vec4(centerPos, size);
+	wallUbo->colour = glm::vec4(0.01, 0.01, 0.01, 1.0) * randVal22;
+	wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1 + maxSize * 0.01f, 0.8, 0.0);
+	wallUbo->sideData.x = SIDE_DISABLE;
+	vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory);
+	gData->offsetEnd++;
+}
+
+void putWhiteSquare(glm::vec2 centerPos, glm::vec2 size)
+{
+	ThinDrawer* thinDrawer = ThinDrawer::object;
+
+	float randVal11 = (((float)rand() / RAND_MAX) - 0.3f) * 0.01f;
+	float randVal22 = (((float)rand() / RAND_MAX)) * 0.05f;
+	s_wallUbo_w wallUbo;
+	wallUbo.posSize = glm::vec4(centerPos, size);
+	wallUbo.bgColour = glm::vec4(0.075f + randVal11, 0.075f + randVal11, 0.075f + randVal11, 1.0f);
+	wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	wallUbo.dotColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
+	wallUbo.data = glm::vec4(0.1f + randVal22, 0.01f, 2.0f, 1.0f);
+	wallUbo.data2 = glm::vec4(0.0, 0.0, 0.8f, 0.0f);
+	wallUbo.sideData.x = SIDE_DISABLE;
+
+	s_gridPositionShader gridPos = thinDrawer->whiteWallShader->getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
+	s_shaderGridData* gData = &thinDrawer->whiteWallShader->renderGridUp[0][gridPos.y][gridPos.x];
+	gData->numElements++;
+
+	void* pData;
+	CHECK_RESULT_VK(vkMapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory,
+		gData->offsetEnd * sizeof(s_wallUbo_w), sizeof(s_wallUbo_w), 0, (void**)&pData));
+	memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
+	vkUnmapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory);
+	gData->offsetEnd++;
+}
+
+void putWallLight(glm::vec2 centerPos, glm::vec2 size)
+{
+	ThinDrawer* thinDrawer = ThinDrawer::object;
+
+	float ang = size.x > size.y ? 0.0 : b2_pi * 0.5;
+	float ang2 = rand() > RAND_MAX / 7 ? 0.0 : b2_pi * 0.5;
+
+	float r0 = (((float)rand() / RAND_MAX) - 0.5f) * 0.3f;
+	float g0 = (((float)rand() / RAND_MAX) - 0.5f) * 0.3f;
+	float b0 = (((float)rand() / RAND_MAX) - 0.5f) * 0.3f;
+
+	if (size.y > size.x)
+	{
+		ang = b2_pi * 0.5f;
+		float temp = size.x;
+		size.x = size.y;
+		size.y = temp;
+	}
+
+	s_gridPositionShader gridPos = thinDrawer->wallLight->getGridSquare(centerPos.x, centerPos.y);
+	s_shaderGridData* gData = &thinDrawer->wallLight->renderGridUp[0][gridPos.y][gridPos.x];
+	gData->numElements++;
+
+	s_walLightlUbo* pData;
+	vkMapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0].memory,
+		gData->offsetEnd * sizeof(s_walLightlUbo), sizeof(s_walLightlUbo), 0, (void**)&pData);
+	pData->color = glm::vec4(1.0 + r0, 1.0 + g0, 1.0 + b0, 1.0);
+	pData->posSize = glm::vec4(centerPos, size);
+	pData->data = glm::vec4(size.x * 0.6f, size.y * 0.6f, 0.3f, -1.5f);
+	pData->data2 = glm::vec4(ang, ang2, 0.8, 1.0);
+	vkUnmapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0].memory);
+	gData->offsetEnd++;
+}
+
 void Leveler::initOffsets()
 {
 	initGrid();
@@ -541,80 +651,116 @@ void Leveler::initOffsets()
 	lastOffsetPos_M.resize(perTextureData.size());
 	for (int i = 0; i < perTextureData.size(); i++)
 	{
+		levelObject obj = (levelObject)(1 << (i + 4));
+		objectCounts[obj] = 0;
+		int maxObjNum = objectLimits.find(obj)->second;
 		perTextureData[i].offsetStart = mt->lastAvailablePos;
 		perTextureData[i].currentOffset = mt->lastAvailablePos;
-		mt->lastAvailablePos += perTextureSpace * numSwapChainImages;
+		mt->lastAvailablePos += maxObjNum + 16 * ThinDrawer::object->swapChain->imageCount;
 	}
 
+	objectCounts[PLATFORM] = 0;
+
+	openLevelName = "";
+
+	std::vector<std::bitset<240>> fillMap(240);
+
 	const float sz = 1.6f;
-	for (int i = -120; i < 120; i++)
+
+	for (int i = 0; i < 1000; i++)
 	{
-		for (int j = -120; j < 120; j++)
+		int randPos0 = rand() % 240;
+		int randPos1 = rand() % 240;
+
+		int randSizeX = rand() % 4 + 1;
+		int randSizeY = rand() % 4 + 1;
+
+		if (randSizeX == 1 && randSizeY == 1)
 		{
-			float rndVal = ((double)rand() / RAND_MAX + 2.0) / 3.0;
-			if (rndVal > 0.9f)
+			if (rand() > RAND_MAX / 2) randSizeX = 2;
+			else randSizeY = 2;
+		}
+
+		bool occupied = false;
+		for (int j = 0; j < randSizeX; j++)
+		{
+			for (int k = 0; k < randSizeY; k++)
 			{
-				float randVal11 = (((float)rand() / RAND_MAX) - 0.3f) * 0.01f;
-				float randVal22 = (((float)rand() / RAND_MAX)) * 0.0f;
-				s_wallUbo_w wallUbo;
-				wallUbo.posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
-				wallUbo.bgColour = glm::vec4(0.1f + randVal11, 0.1f + randVal11, 0.1f + randVal11, 1.0f);
-				wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-				wallUbo.dotColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
-				wallUbo.data = glm::vec4(0.2f + randVal22, 0.01f, 2.0f, 1.0f);
-				wallUbo.data2 = glm::vec4(0.0, 0.0, 0.8f, 0.0f);
-                wallUbo.sideData.x = SIDE_DISABLE;
-
-				s_gridPositionShader gridPos = thinDrawer->whiteWallShader->getGridSquare(wallUbo.posSize.x, wallUbo.posSize.y);
-				s_shaderGridData* gData = &thinDrawer->whiteWallShader->renderGridUp[0][gridPos.y][gridPos.x];
-				gData->numElements++;
-
-				void* pData;
-				CHECK_RESULT_VK(vkMapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory,
-					gData->offsetEnd * sizeof(s_wallUbo_w), sizeof(s_wallUbo_w), 0, (void**)&pData));
-				memcpy(pData, &wallUbo, sizeof(s_wallUbo_w));
-				vkUnmapMemory(thinDrawer->whiteWallShader->logicalDevice, thinDrawer->whiteWallShader->uniformBuffers[0].memory);
-				gData->offsetEnd++;
-
-				continue;
+				if (randPos0 + j >= 240 || randPos1 + k >= 240 || fillMap[randPos0 + j][randPos1 + k])
+				{
+					occupied = true;
+					break;
+				}
 			}
-			else if (rndVal > 0.89f)
+			if (occupied) break;
+		}
+
+		if (occupied) continue;
+
+		glm::vec2 centerPos = glm::vec2((randPos0 + randSizeX * 0.5 - 120) * sz, (randPos1 + randSizeY * 0.5 - 120) * sz);
+		glm::vec2 size = glm::vec2(randSizeX * 1.6f, randSizeY * 1.6f);
+
+		float sizeRatio = size.x / size.y;
+		if (sizeRatio < 1.0f) sizeRatio = 1.0f / sizeRatio;
+
+		if (sizeRatio < 1.9f)
+		{
+			continue;
+		}
+
+		bool put = true;
+
+		for (int j = -1; j < randSizeX + 1; j++)
+		{
+			for (int k = -1; k < randSizeY + 1; k++)
 			{
-				float ang = rand() > RAND_MAX / 2 ? 0.0 : b2_pi * 0.5;
-				float ang2 = rand() > RAND_MAX / 2 ? 0.0 : b2_pi * 0.5;
+				int x = randPos0 + j;
+				int y = randPos1 + k;
 
-				float r0 = (((float)rand() / RAND_MAX) - 0.5f);
-				float g0 = (((float)rand() / RAND_MAX) - 0.5f);
-				float b0 = (((float)rand() / RAND_MAX) - 0.5f);
-
-				s_gridPositionShader gridPos = thinDrawer->wallLight->getGridSquare(i * sz, j * sz);
-				s_shaderGridData* gData = &thinDrawer->wallLight->renderGridUp[0][gridPos.y][gridPos.x];
-				gData->numElements++;
-
-				s_walLightlUbo* pData;
-				vkMapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0].memory,
-					gData->offsetEnd * sizeof(s_walLightlUbo), sizeof(s_walLightlUbo), 0, (void**)&pData);
-				pData->color = glm::vec4(1.0 + r0, 1.0 + g0, 1.0 + b0, 1.0);
-				pData->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
-				pData->data = glm::vec4(sz * 0.6, sz * 0.3, 0.3, -1.5);
-				pData->data2 = glm::vec4(ang, ang2, 0.8, 1.0);
-				vkUnmapMemory(thinDrawer->wallLight->logicalDevice, thinDrawer->wallLight->uniformBuffers[0].memory);
-				gData->offsetEnd++;
-				continue;
+				if (x < 0 || x > 239 || y < 0 || y > 239 || fillMap[x][y])
+				{
+					put = false;
+					j = randSizeX + 1;
+					break;
+				}
 			}
+		}
 
-			s_gridPositionShader gridPos = thinDrawer->blackWallShader->getGridSquare(i * sz, j * sz);
-			s_shaderGridData* gData = &thinDrawer->blackWallShader->renderGridUp[0][gridPos.y][gridPos.x];
-			gData->numElements++;
+		if (put)
+		{
+			putWallLight(centerPos, size);
+		}
+		else
+		{
+			continue;
+		}
 
-			s_wallUbo_b* wallUbo;
-			vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory,
-				gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
-			wallUbo->posSize = glm::vec4(i * sz - sz * 0.5, j * sz - sz * 0.5, sz, sz);
-			wallUbo->colour = glm::vec4(0.015, 0.015, 0.015, 1.0) * rndVal;
-			wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1, 0.8, 0.0);
-			vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory);
-			gData->offsetEnd++;
+		for (int j = 0; j < randSizeX; j++)
+		{
+			for (int k = 0; k < randSizeY; k++)
+			{
+				fillMap[randPos0 + j][randPos1 + k] = true;
+			}
+		}
+	}
+
+	for (int i = 0; i < 240; i++)
+	{
+		for (int j = 0; j < 240; j++)
+		{
+			if (fillMap[i][j]) continue;
+
+			glm::vec2 centerPos = glm::vec2((i + 0.5f - 120) * sz, (j + 0.5 - 120) * sz);
+			glm::vec2 size = glm::vec2(1.6f, 1.6f);
+
+			if (rand() > RAND_MAX / 3)
+			{
+				putBlackSquare(centerPos, size);
+			}
+			else
+			{
+				putWhiteSquare(centerPos, size);
+			}
 		}
 	}
 
@@ -1823,6 +1969,12 @@ void Leveler::update()
 
 	if (ol->clickedPlay && !game->pop.active)
 	{
+		if (!startEndCheck())
+		{
+			thinDrawer->addPopText("startend", glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			goto cont;
+		}
+
 		s_menuButton initialButton = {
 		glm::vec4(0.0f, 0.0f, 300.0f, 300.0f), // posSize
 		glm::vec4(0.0f, 0.0f, 0.0f, 0.0), // clr
@@ -1839,6 +1991,8 @@ void Leveler::update()
 
 		return;
 	}
+
+cont:
 
 	handleRightClickClick();
 
@@ -2157,6 +2311,18 @@ void Leveler::putCatapult(std::vector<glm::i16vec2> positions, glm::vec4 oData)
 
 void Leveler::putPlatformOnClick()
 {
+	auto iter1 = objectCounts.find(PLATFORM);
+	auto iter2 = objectLimits.find(PLATFORM);
+
+	if (iter2 != objectLimits.end())
+	{
+		if (iter1->second >= iter2->second)
+		{
+			thinDrawer->addPopText("objectlimit", glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			return;
+		}
+	}
+
 	glm::ivec2 mp = getMouseGrid();
 
 	if (consqClickVec.size() == 0)
@@ -2267,6 +2433,8 @@ void Leveler::putPlatformOnClick()
 
 void Leveler::putPlatform(s_objectDataGrid* inData)
 {
+	objectCounts.find(PLATFORM)->second++;
+
 	int rotation = inData->rotation;
 	glm::i16vec2 pos = inData->pos;
 	glm::i16vec2 size = inData->scale;
@@ -2412,6 +2580,18 @@ void Leveler::removePlatform(short x, short y)
 
 bool Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
 {
+	auto iter1 = objectCounts.find(item.objectType);
+	auto iter2 = objectLimits.find(item.objectType);
+
+	if (iter2 != objectLimits.end())
+	{
+		if (iter1->second >= iter2->second)
+		{
+			thinDrawer->addPopText("objectlimit", glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			return false;
+		}
+	}
+
 	short startX = inData->pos.x;
 	short startY = inData->pos.y;
 	short scaleX = inData->scale.x;
@@ -2547,6 +2727,11 @@ bool Leveler::putObject(const s_gridItemData& item, s_objectDataGrid* inData)
 
 	levelObjects.insert(inData);
 	pdData->currentOffset += item.numTextureObjects;
+
+	if (iter1 != objectCounts.end())
+	{
+		iter1->second++;
+	}
 
 	return true;
 }
@@ -3305,6 +3490,12 @@ void Leveler::removeObject(short x, short y)
 
 	if (lgd.objectType & PLATFORM)
 	{
+		auto iter = objectCounts.find(lgd.objectType);
+		if (iter != objectCounts.end())
+		{
+			iter->second--;
+		}
+
 		removePlatform(x, y);
 		return;
 	}
@@ -3312,6 +3503,12 @@ void Leveler::removeObject(short x, short y)
 	if (!(lgd.objectType & SINGLE_DRAWS))
 	{
 		return;
+	}
+
+	auto iter = objectCounts.find(lgd.objectType);
+	if (iter != objectCounts.end())
+	{
+		iter->second--;
 	}
 
 	putBarrierOnMemories({ thinDrawer->manyTexture });
@@ -4126,9 +4323,9 @@ void Leveler::addGridSquare_F(short x, short y)
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory,
 		offset, sizeof(s_wallUbo_l), 0, (void**)&wallUbo);
 	wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
-	wallUbo->colour = glm::vec4(0.1, 0.1, 0.1, 1.0);
-	wallUbo->bgColour = glm::vec4(0.1, 0.1, 0.1, 0.0);
-	wallUbo->data = glm::vec4(2.0, 0.3, 1.0, 0.5);
+	wallUbo->colour = glm::vec4(0.12, 0.1, 0.1, 1.0);
+	wallUbo->bgColour = glm::vec4(0.12, 0.1, 0.1, 0.0);
+	wallUbo->data = glm::vec4(2.0, 0.2, 1.0, 0.5);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory);
 
 	const s_levelGridData& currentGridData = getSquare(x, y);
@@ -4518,7 +4715,7 @@ void Leveler::handleRightClickClick()
 	}
 }
 
-void Leveler::createLevel()
+bool Leveler::startEndCheck()
 {
 	const s_levelGridData& lgd1 = getSquare(startSquare.x, startSquare.y);
 	const s_levelGridData& lgd2 = getSquare(startSquare.x, startSquare.y + 1);
@@ -4529,9 +4726,16 @@ void Leveler::createLevel()
 	if (lgd1.objectType & START_END_CHECKER || lgd2.objectType & START_END_CHECKER ||
 		lgd3.objectType & START_END_CHECKER || lgd4.objectType & START_END_CHECKER)
 	{
-		return;
+		return false;
 	}
+	else
+	{
+		return true;
+	}
+}
 
+void Leveler::createLevel()
+{
 	shouldQuit = true;
 
 	thinDrawer->eraseFromRenderFunctions(thinDrawer->earlyDrawFuncs, (void*)this);

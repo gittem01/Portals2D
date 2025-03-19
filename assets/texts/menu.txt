@@ -172,3 +172,18 @@ Level Opening Failed
 Dosya Zaten Var
 File Already Exists
 <alreadyExists>
+
+<startend>
+Level başlangıç ve bitiş noktaları boş olmalıdır
+Level start and end locations must be empty
+<startend>
+
+<notreachable>
+Level bitiş noktası erişilebilir olmalıdır
+Level ending location must be reachable
+<notreachable>
+
+<objectlimit>
+Obje sayı limitine ulaşıldı
+Object count reached to limit
+<objectlimit>

@@ -753,7 +753,25 @@ float FunnelRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
 		bodyData* bData = (bodyData*)fixture->GetBody()->GetUserData().pointer;
 		if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & DEFAULT_OBJECT_O)
 		{
-			objMap.push_back({ fraction * rayLen, (DefaultObject*)((g_PhysicsData*)bData->extraData)->data });
+			bool portalSideCheck = false;
+			PBFixtureData* pbfData = (PBFixtureData*)fData->data;
+
+			if (pbfData && pbfData->pCollisions.size() > 0)
+			{
+				for (auto pair : pbfData->pCollisions)
+				{
+					if (pair.portal->getPointSide(point) != pair.side)
+					{
+						portalSideCheck = true;
+						break;
+					}
+				}
+			}
+
+			if (!portalSideCheck)
+			{
+				objMap.push_back({ fraction * rayLen, (DefaultObject*)((g_PhysicsData*)bData->extraData)->data });
+			}
 		}
 
 		return minFraction;

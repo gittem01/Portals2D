@@ -2,7 +2,7 @@
 
 #include <ShaderBase.h>
 
-#define MAX_PLATFORMS 64
+#define MAX_PLATFORMS 32
 
 typedef struct
 {

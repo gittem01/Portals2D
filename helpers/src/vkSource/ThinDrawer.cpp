@@ -258,11 +258,6 @@ void ThinDrawer::buildCommandBuffers(VkCommandBuffer cmdBuff)
     VkDeviceSize offsets = 0;
     camOffset = ShaderBase::alignedSharedSize * frameIndex;
 
-    for (auto& f : earlyDrawFuncs)
-    {
-        f.first(cmdBuff, f.second);
-    }
-
     renderWalls(cmdBuff);
 
     for (auto& f : drawFuncs)
@@ -572,6 +567,11 @@ void ThinDrawer::renderWalls(VkCommandBuffer& cmdBuff)
         lineZ->pipelineLayout, 1, 1, &lineZ->descriptorSets[1], 0, VK_NULL_HANDLE);
 
     vkCmdDraw(cmdBuff, wallLight->buffers[0].count, lineZ->numZs, 0, 0);
+
+    for (auto& f : earlyDrawFuncs)
+    {
+        f.first(cmdBuff, f.second);
+    }
 
     renderPortalBodies(cmdBuff);
 
@@ -1068,12 +1068,16 @@ void ThinDrawer::portalDestroyCallback_3d(Portal* portal)
 
 void ThinDrawer::registerDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
 {
+#ifndef DEBUG
     debugLineRegistry.push_back({ positions, color, { 0.0, thickness, smoothness, 0.0 } });
+#endif
 }
 
 void ThinDrawer::oneTimeRenderLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
 {
+#ifndef DEBUG
     oneTimeRenderLines.push_back({ positions, color, { 0.0, thickness, smoothness, 0.0 } });
+#endif
 }
 
 void ThinDrawer::addPortalBody_3d(PortalBody* portalBody, std::vector<std::pair<std::string, std::string>> meshNames)

@@ -14,7 +14,7 @@ void BlueField::prepareUniforms()
 {
     uniformBuffers.resize(1);
 
-    thinDrawer->uniformHelper(sizeof(s_blueFieldUbo) * 2000, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    thinDrawer->uniformHelper(sizeof(s_blueFieldUbo) * 512, &uniformBuffers[0], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     s_blueFieldUbo* blueFieldUbo;
     vkMapMemory(logicalDevice, uniformBuffers[0].memory, 0, sizeof(s_blueFieldUbo), 0, (void**)&blueFieldUbo);

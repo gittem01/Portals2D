@@ -88,7 +88,7 @@ void LaserEmitter::staticInit()
 	ptData = &Leveler::object->perTextureData[index];
 	tex = Leveler::object->ol->items[index + 4].tex;
 
-	ThinDrawer::object->midDrawFuncs.push_back({ render, nullptr });
+	ThinDrawer::object->earlyDrawFuncs.push_back({ render, nullptr });
 
 	sData.posSpeed.x = 0.0;
 	sData.posSpeed.y = 0.0;

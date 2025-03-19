@@ -96,7 +96,7 @@ void main()
         {
             dist = min(dist, abs(reachFrag.y));
         }
-        float v = data.data2.w;
+        float v = data.data2.w + sin(sharedUboData.data.y * (fract(instanceIndex * 4.2153) + 1.3) * 2.0) * 0.2;
         float dist2 = dist - ySize * 0.5;
         dist /= ySize;
         dist2 = max((v - dist2) / v, 0.0);

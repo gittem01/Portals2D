@@ -3,14 +3,16 @@
 #include "GameObjects/Dropper.h"
 #include <ThinDrawer.h>
 
-LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper) : DefaultObject(portalWorld)
+LaserCube::LaserCube(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper, bool mirrored) : DefaultObject(portalWorld)
 {
-    this->pWorld = portalWorld;
+    startMirrored = mirrored;
+    pWorld = portalWorld;
     ALuint onHitSoundBuffer = Sounder::object->loadSound("cubeImpact.wav");
     onHitSoundBuffers.push_back(onHitSoundBuffer);
 
     b2Body* body = createPortalCube2(pos, b2Vec2(0.4, 0.4), pWorld, b2_dynamicBody);
     PortalBody* portalBody = portalWorld->createPortalBody(body);
+    portalBody->isMirrored = mirrored;
 
     initialPos = pos;
 
@@ -46,7 +48,7 @@ void LaserCube::recreate(bool mirrored)
     }
     else
     {
-        DefaultObject::recreate(mirrored);
+        DefaultObject::recreate(startMirrored);
     }
 }
 

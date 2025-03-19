@@ -68,6 +68,8 @@ void LevelerTestCase::fillReachableMap()
     s_gridSquare es = g->leveler->endSquare;
     if (!reachableMap[es.y + g->leveler->ySize_H][es.x + g->leveler->xSize_H] || !reachableMap[es.y + g->leveler->ySize_H + 1][es.x + g->leveler->xSize_H])
     {
+        td->addPopText("notreachable", glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
 		shouldQuit = true;
         return;
 	}
@@ -230,7 +232,7 @@ void LevelerTestCase::createDefaultEdges()
     maxY = glm::max((int)g->leveler->endSquare.y + 1, maxY);
 
     minX -= 9; minY -= 9;
-    maxX += 10; maxY += 10;
+    maxX += 10; maxY += 31;
 
     b2Vec2 vecs[4] =
     {
@@ -848,7 +850,7 @@ void LevelerTestCase::createDynamics()
     LightBridge::lightBridges.resize(ThinDrawer::object->lightBridge->numbridges);
     Platform::platforms.resize(ThinDrawer::object->platformRectangle->numPlatforms);
     Geller::gellers.resize(64);
-    Dropper::droppers.reserve(64);
+    Dropper::droppers.reserve(256);
 
     for (s_objectDataGrid* objectData : g->leveler->levelObjects)
     {
@@ -858,17 +860,17 @@ void LevelerTestCase::createDynamics()
         {
         case DEFAULT_CUBE:
         {
-            DefaultCube* dc = new DefaultCube(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f));
+            DefaultCube* dc = new DefaultCube(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f), nullptr, objectData->mirrored);
         }
         break;
         case LASER_CUBE:
         {
-			LaserCube* lc = new LaserCube(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f));
+			LaserCube* lc = new LaserCube(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f), nullptr, objectData->mirrored);
 		}
         break;
         case SPHERE_CUBE:
         {
-            Sphere* sp = new Sphere(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f));
+            Sphere* sp = new Sphere(g->pWorld, b2Vec2(pos.x + 0.5f, pos.y + 0.5f), nullptr, objectData->mirrored);
         }
         break;
         case TURRET:
@@ -1017,11 +1019,14 @@ void LevelerTestCase::perFrameUpdate()
     {
         if (menuUpdate)
         {
-            SDL_SetWindowMouseGrab(td->wh->window, true);
-            g->dtMult = 1.0;
-            goto stopMenuUpdate;
+            if (g->menu->activeButton == nullptr)
+            {
+                SDL_SetWindowMouseGrab(td->wh->window, true);
+                g->dtMult = 1.0;
+                goto stopMenuUpdate;
+            }
         }
-        else
+        else if (g->dtMult > 0.0001f)
         {
 			g->dtMult = 0.0;
             menuUpdate = true;
