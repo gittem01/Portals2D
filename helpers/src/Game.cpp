@@ -38,6 +38,22 @@ int Game::maxLevel = 27;
 
 Game::Game()
 {
+    SteamErrMsg errMsg;
+    if (SteamAPI_InitEx(&errMsg) != k_ESteamAPIInitResult_OK)
+    {
+        printf("Failed to init Steam.  %s\n", errMsg);
+        appid = 0;
+        //exit(1);
+    }
+    else
+    {
+        appid = SteamUtils()->GetAppID();
+
+        /*SteamAPICall_t call = SteamUGC()->CreateItem(appid, k_EWorkshopFileTypeCommunity);
+
+        createItemResult.Set(call, this, &Game::onItemCreated);*/
+    }
+
     Game::object = this;
 
 	isPaused = false;
@@ -72,22 +88,6 @@ Game::Game()
     pop.construct();
 
     Turret::renderInit();
-
-    SteamErrMsg errMsg;
-    if (SteamAPI_InitEx(&errMsg) != k_ESteamAPIInitResult_OK)
-    {
-        printf("Failed to init Steam.  %s\n", errMsg);
-        appid = 0;
-        //exit(1);
-    }
-    else
-    {
-        appid = SteamUtils()->GetAppID();
-
-        /*SteamAPICall_t call = SteamUGC()->CreateItem(appid, k_EWorkshopFileTypeCommunity);
-
-        createItemResult.Set(call, this, &Game::onItemCreated);*/
-    }  
 }
 
 void Game::onItemCreated(CreateItemResult_t* pCallback, bool bIOFailure)
@@ -156,6 +156,41 @@ void Game::loadGameData()
 	}
 	else
 	{
+        auto languages = IOHelper::loadLines("languages.txt");
+        auto langMap = IOHelper::mapVector(languages);
+
+        auto iter = langMap.find("<local_1>");
+
+        if (appid != 0)
+        {
+            auto currentLang = SteamApps()->GetCurrentGameLanguage();
+            int currentLangSize = strlen(currentLang);
+
+            int i = 0;
+            for (std::string lang : langMap["<local_1>"])
+            {
+                if (lang.size() != currentLangSize) continue;
+
+                bool match = true;
+                for (int j = 0; j < lang.size(); j++)
+                {
+                    if (std::tolower(lang[j]) != currentLang[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    CharDrawer::selectedLanguageIndex = i;
+                    break;
+                }
+
+                i++;
+            }
+        }
+
 		saveGameData();
 	}
 
