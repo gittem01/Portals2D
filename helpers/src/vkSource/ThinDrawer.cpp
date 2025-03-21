@@ -299,7 +299,7 @@ void ThinDrawer::buildCommandBuffers(VkCommandBuffer cmdBuff)
 
     if (drawData)
     {
-        ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
+        //ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
     }
 
     VkClearValue clrVal = {};

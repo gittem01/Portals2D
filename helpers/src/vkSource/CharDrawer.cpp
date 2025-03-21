@@ -5,7 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vkInit.h>
 
-int CharDrawer::selectedLanguageIndex = 0;
+int CharDrawer::selectedLanguageIndex = 1;
 
 char CharDrawer::calculateCharBytes(char ch)
 {

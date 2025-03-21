@@ -198,7 +198,7 @@ void LaserEmitter::handleGroundReceivers()
 			GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[pair.first];
 
 			b2Vec2 bodyPos = glr.body->GetPosition();
-			b2Vec2 upVec = 0.2f * glr.body->GetTransform().q.GetXAxis();
+			b2Vec2 upVec = 0.2f * glr.body->GetTransform().q.GetYAxis();
 
 			laserEmitters[0].laserRays.push_back({ bodyPos - upVec, bodyPos + upVec });
 

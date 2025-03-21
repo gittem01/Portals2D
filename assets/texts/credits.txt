@@ -19,6 +19,12 @@
 2048
 <colour_2>
 
+<colour_3>
+0
+0
+2048
+2048
+<colour_3>
 
 <title>
 Katkılar
@@ -72,7 +78,7 @@ Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Turret Gun Effect
 <1_1>
 
 <2_0>
-Oynanış Testi Yapanlar
+Oynanış Testi
 Ege Ömerca
 <2_0>
 
@@ -80,3 +86,27 @@ Ege Ömerca
 Play Testers
 Ege Ömerca
 <2_1>
+
+<3_0>
+Yazılım Kütüphaneleri (C++)
+Box2D (v2)
+Vulkan
+AudioFile
+GLM
+ImGui
+OpenAL
+SDL3
+stb_truetype
+<3_0>
+
+<3_1>
+Software Libraries (C++)
+Box2D (v2)
+Vulkan
+AudioFile
+GLM
+ImGui
+OpenAL
+SDL3
+stb_truetype
+<3_1>
