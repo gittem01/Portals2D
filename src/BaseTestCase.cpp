@@ -39,6 +39,10 @@ void BaseTestCase::destroy()
 
 void BaseTestCase::imguiRender()
 {
+#ifdef NDEBUG
+    return;
+#endif // DEBUG
+
     const ImGuiIO io = ImGui::GetIO();
 
     ImGui_ImplVulkan_NewFrame();
@@ -215,6 +219,7 @@ void BaseTestCase::keyHandler(WindowHandler* wh)
     extern BaseTestCase* testCase;
 
     g->tick = false;
+#ifndef NDEBUG
     if (wh->keyData[SDL_SCANCODE_P] == 2)
     {
         g->isPaused = !g->isPaused;
@@ -228,6 +233,7 @@ void BaseTestCase::keyHandler(WindowHandler* wh)
     {
         td->drawReleases ^= 1;
     }
+#endif
 }
 
 // helpers

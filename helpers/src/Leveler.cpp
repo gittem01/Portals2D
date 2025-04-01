@@ -551,7 +551,7 @@ void putBlackSquare(glm::vec2 centerPos, glm::vec2 size)
 	vkMapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory,
 		gData->offsetEnd * sizeof(s_wallUbo_b), sizeof(s_wallUbo_b), 0, (void**)&wallUbo);
 	wallUbo->posSize = glm::vec4(centerPos, size);
-	wallUbo->colour = glm::vec4(0.01, 0.01, 0.01, 1.0) * randVal22;
+	wallUbo->colour = glm::vec4(0.025, 0.025, 0.025, 1.0) * randVal22;
 	wallUbo->data = glm::vec4(rand() > RAND_MAX / 2, 0.1 + maxSize * 0.01f, 0.8, 0.0);
 	wallUbo->sideData.x = SIDE_DISABLE;
 	vkUnmapMemory(thinDrawer->blackWallShader->logicalDevice, thinDrawer->blackWallShader->uniformBuffers[0].memory);
@@ -562,13 +562,13 @@ void putWhiteSquare(glm::vec2 centerPos, glm::vec2 size)
 {
 	ThinDrawer* thinDrawer = ThinDrawer::object;
 
-	float randVal11 = (((float)rand() / RAND_MAX) - 0.3f) * 0.01f;
+	float randVal11 = (((float)rand() / RAND_MAX) - 0.3f) * 0.02f;
 	float randVal22 = (((float)rand() / RAND_MAX)) * 0.05f;
 	s_wallUbo_w wallUbo;
 	wallUbo.posSize = glm::vec4(centerPos, size);
-	wallUbo.bgColour = glm::vec4(0.075f + randVal11, 0.075f + randVal11, 0.075f + randVal11, 1.0f);
+	wallUbo.dotColour = glm::vec4(0.05f + randVal11, 0.05f + randVal11, 0.05f + randVal11, 1.0f);
 	wallUbo.edgeColour = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	wallUbo.dotColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
+	wallUbo.bgColour = glm::vec4(0.01f + randVal11, 0.01f + randVal11, 0.01f + randVal11, 1.0f);
 	wallUbo.data = glm::vec4(0.1f + randVal22, 0.01f, 2.0f, 1.0f);
 	wallUbo.data2 = glm::vec4(0.0, 0.0, 0.8f, 0.0f);
 	wallUbo.sideData.x = SIDE_DISABLE;
@@ -667,7 +667,7 @@ void Leveler::initOffsets()
 
 	const float sz = 1.6f;
 
-	for (int i = 0; i < 1000; i++)
+	for (int i = 0; i < 210000; i++)
 	{
 		int randPos0 = rand() % 240;
 		int randPos1 = rand() % 240;
@@ -703,12 +703,13 @@ void Leveler::initOffsets()
 		float sizeRatio = size.x / size.y;
 		if (sizeRatio < 1.0f) sizeRatio = 1.0f / sizeRatio;
 
-		if (sizeRatio < 1.9f)
-		{
-			continue;
-		}
-
 		bool put = true;
+
+		if (sizeRatio < 2.1f)
+		{
+			putBlackSquare(centerPos, size);
+			goto filler;
+		}
 
 		for (int j = -1; j < randSizeX + 1; j++)
 		{
@@ -735,6 +736,8 @@ void Leveler::initOffsets()
 			continue;
 		}
 
+	filler:
+
 		for (int j = 0; j < randSizeX; j++)
 		{
 			for (int k = 0; k < randSizeY; k++)
@@ -753,7 +756,7 @@ void Leveler::initOffsets()
 			glm::vec2 centerPos = glm::vec2((i + 0.5f - 120) * sz, (j + 0.5 - 120) * sz);
 			glm::vec2 size = glm::vec2(1.6f, 1.6f);
 
-			if (rand() > RAND_MAX / 3)
+			if (rand() > RAND_MAX / 3 && false)
 			{
 				putBlackSquare(centerPos, size);
 			}

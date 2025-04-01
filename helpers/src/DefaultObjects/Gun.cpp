@@ -44,7 +44,7 @@ Gun::Gun(PortalWorld* portalWorld, b2Vec2 pos, b2Vec2 gunSize) : DefaultObject(p
 
 void Gun::recreate(bool mirrored)
 {
-
+    renderGroup->gelIndex = -10;
 }
 
 void Gun::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisFix)

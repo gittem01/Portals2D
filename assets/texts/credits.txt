@@ -80,11 +80,13 @@ Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Turret Gun Effect
 <2_0>
 Oynanış Testi
 Ege Ömerca
+Burak Kukçu
 <2_0>
 
 <2_1>
 Play Testers
 Ege Ömerca
+Burak Kukçu
 <2_1>
 
 <3_0>

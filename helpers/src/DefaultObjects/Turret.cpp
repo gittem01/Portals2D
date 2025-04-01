@@ -162,6 +162,7 @@ void Turret::recreate(bool unused_mirrored)
 		DefaultObject::recreate(mirrored);
 	}
 
+	renderGroup->gelIndex = -10.0f;
 	lastTrackTime = -10.0;
 	lastTrackPtr = nullptr;
 	tracking = false;
@@ -281,13 +282,13 @@ void Turret::shoot()
 			renderLaserDatas[lastLaserIndex % numLasers] = { laserData, shootGundex };
 			lastLaserIndex++;
 		}
-
+		
 		if (pWorld->rayHandler->closestFixture)
 		{
 			bodyData* bData = (bodyData*)pWorld->rayHandler->closestFixture->GetBody()->GetUserData().pointer;
 			if (bData && bData->extraData && ((g_PhysicsData*)bData->extraData)->type & PLAYER_O)
 			{
-				TestPlayer::object->health -= 0;
+				TestPlayer::object->health -= 10;
 				b2Vec2 vel = TestPlayer::object->wData->pbIndices[0]->body->GetLinearVelocity();
 				TestPlayer::object->wData->pbIndices[0]->body->SetLinearVelocity(0.75f * vel);
 			}

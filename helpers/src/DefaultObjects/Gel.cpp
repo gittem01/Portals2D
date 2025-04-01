@@ -44,7 +44,7 @@ Gel::Gel(PortalWorld* portalWorld, glm::vec2 pos, glm::vec2 velocity, float radi
 
     // too slow
     // must be done once in the game initialisation but it is not possible for now
-    //ThinDrawer::object->debug_addPortalBody(portalBody);
+    ThinDrawer::object->debug_addPortalBody(portalBody);
 }
 
 void Gel::generateGel(glm::vec2 pos, glm::vec2 velocity, float radius, int colorIndex)
@@ -704,6 +704,7 @@ void Gel::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture* thisF
     if (!otherFix->IsSensor())
     {
         splash(contact, otherFix);
+        otherFix->GetBody()->SetAwake(true);
     }
     else if (numNearGels <= MAX_NEAR_GELS) // might make gels pop for random sensor fixtures
     {

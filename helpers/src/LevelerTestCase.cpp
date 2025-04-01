@@ -123,10 +123,10 @@ void LevelerTestCase::createDefaultEdges()
         edgeUsedMap[i].resize(g->leveler->gridMap[0].size());
     }
 
-    int minX = +100000;
-	int minY = +100000;
-	int maxX = -100000;
-	int maxY = -100000;
+    minX = +100000;
+	minY = +100000;
+	maxX = -100000;
+	maxY = -100000;
 
     for (int y = g->leveler->ySize_H - 1; y >= -g->leveler->ySize_H; y--)
     {
@@ -221,15 +221,19 @@ void LevelerTestCase::createDefaultEdges()
 
     minX = glm::min((int)g->leveler->startSquare.x, minX);
     minX = glm::min((int)g->leveler->endSquare.x, minX);
+    minX = glm::min(-30, minX);
 
     maxX = glm::max((int)g->leveler->startSquare.x, maxX);
     maxX = glm::max((int)g->leveler->endSquare.x, maxX);
+    maxX = glm::max(+30, maxX);
 
     minY = glm::min((int)g->leveler->startSquare.y, minY);
     minY = glm::min((int)g->leveler->endSquare.y, minY);
+    minY = glm::min(-30, minY);
 
     maxY = glm::max((int)g->leveler->startSquare.y + 1, maxY);
     maxY = glm::max((int)g->leveler->endSquare.y + 1, maxY);
+    maxY = glm::max(+10, maxY);
 
     minX -= 9; minY -= 9;
     maxX += 10; maxY += 31;

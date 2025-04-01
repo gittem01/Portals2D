@@ -13,7 +13,8 @@ Sphere::Sphere(PortalWorld* portalWorld, b2Vec2 pos, Dropper* linkedDropper, boo
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.position = pos;
-    
+	bodyDef.angularDamping = 0.5f;
+
     initialPos = pos;
 
 	b2Body* body = portalWorld->CreateBody(&bodyDef);

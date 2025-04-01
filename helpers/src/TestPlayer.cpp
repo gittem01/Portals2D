@@ -311,7 +311,7 @@ void TestPlayer::memMap(void* ptr)
     tp->renderData.ld.legLen = tp->renderData.legRatio * 0.5;
     tp->renderData.ld.legOuterCircAng = tp->legAng;
     tp->renderData.ld.legAngle = tp->legAng;
-
+    
     const float soundAngle = 0.67f;
     const float soundEndAngle = b2_pi - soundAngle;
     const float currentAngle = fmod(tp->legAng, b2_pi);
@@ -320,7 +320,7 @@ void TestPlayer::memMap(void* ptr)
     {
         if (!tp->walkPlaying)
         {
-            tp->walkSound = Sounder::object->playSound(tp->walkBuffer, 1.0f);
+            tp->walkSound = Sounder::object->playSound(tp->walkBuffer, 3.0f);
             tp->walkPlaying = true;
             b2Vec2 pos = body->GetPosition();
             Sounder::object->setSoundPosition(tp->walkSound, glm::vec3(pos.x, pos.y, 0.0f));
@@ -683,7 +683,7 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
         }
     }
 
-    for (int i = tp->shootDatas.size() - 1; i > -1; i--)
+    for (int i = (int)tp->shootDatas.size() - 1; i > -1; i--)
     {
         s_gunData* shootData = &tp->shootDatas.at(i);
         shootData->color.w -= Game::object->deltaTime * 3.0f;
@@ -713,7 +713,7 @@ void TestPlayer::drawGunEffect(VkCommandBuffer cmdBuff, void* ptr)
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
         splashShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
-    for (int i = tp->endSplashes.size() - 1; i > -1; i--)
+    for (int i = (int)tp->endSplashes.size() - 1; i > -1; i--)
     {
         splashData* splsh = &tp->endSplashes.at(i);
 
@@ -1315,13 +1315,15 @@ void TestPlayer::camHandle()
     diff1.y += diff2.y;
     wh->cam->pos += glm::vec2(diff1.x, -diff1.y);
 
-    //wh->cam->pos = glm::vec2(bp.x, -bp.y);
     wh->cam->updateOrtho();
 }
 
 void TestPlayer::camHandle2()
 {
-    if (game->dtMult < 0.0001f) return;
+    static float smoother = 0.0f;
+    static glm::vec2 addDir = glm::vec2(0.0f, 0.0f);
+
+    if (game->dtMult < 0.0001f || won) return;
 
     WindowHandler* wh = game->thinDrawer->wh;
 
@@ -1351,12 +1353,54 @@ void TestPlayer::camHandle2()
         posAdd.y += 1.0f;
 	}
 
-    if (posAdd.x == 0.0f && posAdd.y == 0.0f) return;
+    LevelerTestCase* ltc = (LevelerTestCase*)game->testCase;
 
-    posAdd = glm::normalize(posAdd);
-    posAdd *= ThinDrawer::object->deltaTime * speed / (wh->cam->zoom * wh->cam->zoom);
+    float camXSize = wh->cam->xSides.y - wh->cam->xSides.x;
+    float camYSize = wh->cam->ySides.y - wh->cam->ySides.x;
 
-    wh->cam->pos += posAdd;
+    if (wh->cam->xSides.y >= ltc->maxX)
+    {
+        posAdd.x = posAdd.x > 0.0f ? 0.0f : posAdd.x;
+        wh->cam->pos.x = ltc->maxX - camXSize * 0.5f + 0.001f;
+    }
+    else if (wh->cam->xSides.x <= ltc->minX)
+    {
+        posAdd.x = posAdd.x < 0.0f ? 0.0f : posAdd.x;
+        wh->cam->pos.x = ltc->minX + camXSize * 0.5f - 0.001f;
+    }
+
+    if (-wh->cam->ySides.y <= ltc->minY)
+    {
+        posAdd.y = posAdd.y > 0.0f ? 0.0f : posAdd.y;
+        wh->cam->pos.y = - ltc->minY - camYSize * 0.5f + 0.001f;
+    }
+    else if (-wh->cam->ySides.x >= ltc->maxY)
+    {
+        posAdd.y = posAdd.y < 0.0f ? 0.0f : posAdd.y;
+        wh->cam->pos.y = -ltc->maxY + camYSize * 0.5f - 0.001f;
+    }
+
+    if (posAdd.x == 0.0f && posAdd.y == 0.0f)
+    {
+        if (smoother <= 0.0f)
+        {
+            return;
+        }
+
+        smoother -= ThinDrawer::object->deltaTime * 10.0f;
+    }
+    else
+    {
+		addDir = posAdd;
+        smoother = 1.0f;
+    }
+
+    smoother = glm::clamp(smoother, 0.0f, 1.0f);
+
+    addDir = glm::normalize(addDir);
+    addDir *= smoother * ThinDrawer::object->deltaTime * speed / (wh->cam->zoom * wh->cam->zoom);
+
+    wh->cam->pos += addDir;
 
     wh->cam->updateOrtho();
 }
@@ -2770,7 +2814,7 @@ void TestPlayer::update(float dt, int totalIter)
     if (effectiveFunnel)
     {
         b2Vec2 rightDir;
-        if (inPortalFunel) rightDir = effectiveFunnel->funnelDir2;
+        if (inPortalFunnel) rightDir = effectiveFunnel->funnelDir2;
         else rightDir = effectiveFunnel->funnelDir;
         rightDir = b2Vec2(abs(rightDir.y), abs(rightDir.x));
 

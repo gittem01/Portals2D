@@ -98,7 +98,7 @@ Overlayer::Overlayer(Game* game)
     addItem("", "laserReceiverGround.png", LASER_REC_GND, "base_connector", { 1.0, +0.235 }, 1, { 1, 1 }, 0.6, true, 0);
     addItem("", "laserReceiverWall.png", LASER_REC_WALL, "base_connector", { 0.5, +0.285 }, 1, { 1.0, 1.0 }, 0.8, true, 0);
     addItem("", "sphere.png", SPHERE_CUBE, "remove", { 0.5, +0.01 }, 1, { 1, 1 }, 1.0, false, 0, true);
-    addItem("", "turret.png", TURRET, "remove", { 0.5, +0.23 }, 1, { 1, 2 }, 1.6, false, 0, true);
+    addItem("", "turret.png", TURRET, "remove", { 0.5, +0.21 }, 1, { 1, 2 }, 1.6, false, 0, true);
     addItem("", "clickButton.png", CLICK_BUTTON, "push_button", { 0.5, +0.32 }, 2, { 1, 2 }, 1.4, true, 0, true);
     addItem("", "cubeButton.png", CUBE_BUTTON, "base_connector", { 0.5, +0.35 }, 1, { 2, 1 }, 1.6, true, 0);
     addItem("", "circleButton.png", SPHERE_BUTTON, "base_connector", { 0.5, +0.37 }, 1, { 2, 1 }, 1.6, true, 0);

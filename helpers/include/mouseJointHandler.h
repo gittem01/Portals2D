@@ -127,6 +127,9 @@ public:
     }
 
     void mouseHandler(int frame, int totalIter) {
+#ifdef NDEBUG
+        return;
+#endif
         glm::vec2 mp = wh->cam->getMouseCoords();
         mouseBody->SetTransform(b2Vec2(mp.x, mp.y), 0.0f);
 

@@ -42,6 +42,8 @@ void DefaultObject::recreate(bool mirrored)
 
 		delete portalBody;
 	}
+	
+	renderGroup->gelIndex = -10.0f;
 
 	PortalBody* portalBody = pWorld->createCloneBody0(wData, initialPos, 0.0f, mirrored);
 
@@ -101,9 +103,25 @@ bool DefaultObject::enterForceField(ForceField* forceField)
 	return true;
 }
 
+void DefaultObject::nonStop(b2Body* body)
+{
+	b2Vec2 speed = body->GetLinearVelocity();
+	float squaredSpeed = speed.LengthSquared();
+
+	if (renderGroup && renderGroup->gelIndex == 0 && squaredSpeed < 9.0f)
+	{
+		float randX = (rand() % 2000 - 1000) * 0.001f;
+		b2Vec2 speedVec = b2Vec2(randX, 10.0f);
+
+		body->SetLinearVelocity(wData->pbIndices.size() * speedVec);
+	}
+}
+
 void DefaultObject::paintedBounce(b2WorldManifold& wManifold, b2Body* body)
 {
-	if (renderGroup && renderGroup->gelIndex == 0)
+	b2Vec2 speed = body->GetLinearVelocity();
+
+	if (renderGroup && renderGroup->gelIndex == 0 && abs(speed.x) < 2.0f && abs(speed.y) < 2.0f)
 	{
 		b2Vec2 normal = wManifold.normal;
 
@@ -114,7 +132,7 @@ void DefaultObject::paintedBounce(b2WorldManifold& wManifold, b2Body* body)
 		b2Vec2 perpLinearVel = body->GetLinearVelocity();
 		perpLinearVel += b2Dot(perpLinearVel, -normal) * normal;
 
-		float randomSpeed = 8.0f + (rand() % 3000) * 0.001f;
+		float randomSpeed = 5.0f + (rand() % 1000) * 0.001f;
 		float randomAngularSpeed = body->GetAngularVelocity() + 0.5f + (rand() % 1000) * 0.001f;
 		randomAngularSpeed = std::clamp(randomAngularSpeed, -2.0f, 2.0f);
 		body->SetLinearVelocity(wData->pbIndices.size() * randomSpeed * b2Vec2(normal.x, normal.y) + perpLinearVel);
@@ -283,6 +301,8 @@ void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fi
 			return;
 		}
 	}
+
+	nonStop(thisBody);
 
 	fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
 	if (fData && fData->type & (F_EDGE | F_LIGHT_BRIDGE | F_PORTAL))

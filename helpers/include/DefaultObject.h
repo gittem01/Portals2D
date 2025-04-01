@@ -21,7 +21,7 @@ public:
 	std::bitset<MAX_FUNNELS * 2> funnelMasks;
 	std::bitset<MAX_FUNNELS * 2> newFunnelMasks;
 	Funnel* effectiveFunnel;
-	bool inPortalFunel;
+	bool inPortalFunnel;
 
 	static std::vector<DefaultObject*> defaultObjects;
 
@@ -30,6 +30,7 @@ public:
 	DefaultObject(PortalWorld* portalWorld, PortalBody* pb);
 
 	void paintedBounce(b2WorldManifold& wManifold, b2Body* body);
+	void nonStop(b2Body* body);
 	b2Vec2 tryBounce(b2Contact* contact, b2Fixture* thisFix, b2Fixture* otherFix);
 	virtual bool enterForceField(ForceField* forceField);
 	virtual void recreate(bool mirrored=false);

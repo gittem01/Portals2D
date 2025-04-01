@@ -5,10 +5,11 @@
 #include <ShaderBase.h>
 #include <LaserShader.h>
 
-const float shootTimer = 0.075f;
+const float shootTimer = 0.175f;
 const float rotationLimit = 0.5f;
 const float fullBackInTime = shootTimer;
 const uint32_t numLasers = 16;
+
 
 typedef struct centerLaser
 {

@@ -149,7 +149,9 @@ void ThinDrawer::initExtra()
     IOHelper::loadTexture("turretBody.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
     IOHelper::loadTexture("endCapsule.png", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
+#ifndef NDEBUG
     initImgui();
+#endif // NDEBUG
 }
 
 void ThinDrawer::uniformFiller()
@@ -297,11 +299,12 @@ void ThinDrawer::buildCommandBuffers(VkCommandBuffer cmdBuff)
 
 	CharDrawer::draw(cmdBuff, Leveler::object->ol->cd);
 
+#ifndef NDEBUG
     if (drawData)
     {
-        //ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
+        ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuff);
     }
-
+#endif
     VkClearValue clrVal = {};
     clrVal.color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
@@ -1068,14 +1071,14 @@ void ThinDrawer::portalDestroyCallback_3d(Portal* portal)
 
 void ThinDrawer::registerDebugLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
 {
-#ifndef DEBUG
+#ifndef NDEBUG
     debugLineRegistry.push_back({ positions, color, { 0.0, thickness, smoothness, 0.0 } });
 #endif
 }
 
 void ThinDrawer::oneTimeRenderLine(const glm::vec4 positions, const glm::vec4 color, const float thickness, const float smoothness)
 {
-#ifndef DEBUG
+#ifndef NDEBUG
     oneTimeRenderLines.push_back({ positions, color, { 0.0, thickness, smoothness, 0.0 } });
 #endif
 }

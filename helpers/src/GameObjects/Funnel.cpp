@@ -404,25 +404,24 @@ void handleObjs()
 				for (int i = 0; i < Funnel::numFunnels; i++)
 				{
 					bool funnelGone1 = !dobj->newFunnelMasks[i] && dobj->funnelMasks[i] &&
-						dobj->effectiveFunnel && dobj->effectiveFunnel->arrIndex == i && !dobj->inPortalFunel;
+						dobj->effectiveFunnel && dobj->effectiveFunnel->arrIndex == i && !dobj->inPortalFunnel;
 					bool funnelGone2 = !dobj->newFunnelMasks[i + MAX_FUNNELS] && dobj->funnelMasks[i + MAX_FUNNELS] &&
-						dobj->effectiveFunnel && dobj->effectiveFunnel->arrIndex == i && dobj->inPortalFunel;
+						dobj->effectiveFunnel && dobj->effectiveFunnel->arrIndex == i && dobj->inPortalFunnel;
 
 					if (funnelGone1 || funnelGone2)
 					{
 						getNext = true;
-						break;
 					}
 
 					if (dobj->newFunnelMasks[i] && !dobj->funnelMasks[i])
 					{
 						dobj->effectiveFunnel = &Funnel::funnels[i];
-						dobj->inPortalFunel = false;
+						dobj->inPortalFunnel = false;
 					}
 					else if (dobj->newFunnelMasks[i + MAX_FUNNELS] && !dobj->funnelMasks[i + MAX_FUNNELS])
 					{
 						dobj->effectiveFunnel = &Funnel::funnels[i];
-						dobj->inPortalFunel = true;
+						dobj->inPortalFunnel = true;
 					}
 				}
 
@@ -433,12 +432,12 @@ void handleObjs()
 						if (dobj->newFunnelMasks[i])
 						{
 							dobj->effectiveFunnel = &Funnel::funnels[i];
-							dobj->inPortalFunel = false;
+							dobj->inPortalFunnel = false;
 						}
 						else if (dobj->funnelMasks[i + MAX_FUNNELS])
 						{
 							dobj->effectiveFunnel = &Funnel::funnels[i];
-							dobj->inPortalFunel = true;
+							dobj->inPortalFunnel = true;
 						}
 					}
 				}
@@ -473,8 +472,8 @@ void Funnel::update()
 		b2Fixture* lastFix = nullptr;
 		for (int i = 0; i < 4; i++)
 		{
-			funnelRay.sendRay(funnel->rayPositions[i], funnel->funnelDir, maxLen + 0.1f, FUNNEL_FILTER_MASK);
-			maxLen = funnelRay.minFraction * (maxLen + 0.1f);
+			funnelRay.sendRay(funnel->rayPositions[i], funnel->funnelDir, maxLen + 1.0f, FUNNEL_FILTER_MASK);
+			maxLen = funnelRay.minFraction * (maxLen + 1.0f);
 			minLen = std::min(minLen, maxLen);
 			if (funnelRay.closestFixture && (lastFix == funnelRay.closestFixture || i == 0))
 			{
@@ -659,8 +658,8 @@ void Funnel::perTickUpdate()
 			}
 			else if (indSize > 1)
 			{
-				b2Vec2 funnelStart = dobj->inPortalFunel ? f->lastStartPos2 : f->funnelPos;
-				b2Vec2 funnelEnd = dobj->inPortalFunel ? f->lastStartPos2 + f->lastLen2 * f->funnelDir2 : f->funnelPos + f->lastLen * f->funnelDir;
+				b2Vec2 funnelStart = dobj->inPortalFunnel ? f->lastStartPos2 : f->funnelPos;
+				b2Vec2 funnelEnd = dobj->inPortalFunnel ? f->lastStartPos2 + f->lastLen2 * f->funnelDir2 : f->funnelPos + f->lastLen * f->funnelDir;
 				
 				Portal* portal1 = dobj->wData->pbIndices[0]->bodyMaps[0].connection->portal1;
 				Portal* portal2 = dobj->wData->pbIndices[0]->bodyMaps[0].connection->portal2;
@@ -683,7 +682,7 @@ void Funnel::perTickUpdate()
 			}
 
 			float reqSpeed = f->enabled2 ? -1.5f : 1.5f;
-			if (dobj->inPortalFunel)
+			if (dobj->inPortalFunnel)
 			{
 				float dist = PortalWorld::getRealDist(f->lastStartPos2,
 					f->lastStartPos2 + f->funnelDir2, body->GetPosition());

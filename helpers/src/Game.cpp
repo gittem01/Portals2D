@@ -48,7 +48,7 @@ Game::Game()
     else
     {
         appid = SteamUtils()->GetAppID();
-
+        //SteamFriends()->SetRichPresence("gamestatus", "Winning");
         /*SteamAPICall_t call = SteamUGC()->CreateItem(appid, k_EWorkshopFileTypeCommunity);
 
         createItemResult.Set(call, this, &Game::onItemCreated);*/
@@ -282,6 +282,8 @@ void Game::stateStarterAnimation(float time)
 
 void Game::LevelerState()
 {
+    bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusLevelEditor");
+
     leveler->ol->overlayOverlay = LEVELER;
 
     if (lastState == &Game::MenuState)
@@ -354,6 +356,10 @@ void Game::LevelerState()
 
 void Game::TestState()
 {
+    bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusLevel");
+
+    int startLevelIndex = testCase->testCaseItem;
+
     dtMult = 1.0;
     if (lastState == &Game::LevelerState || lastState == &Game::MenuState)
     {
@@ -470,6 +476,8 @@ void Game::TestState()
 
     sounder->addFader(gameMusic, 0.01f, 0.0f, 1.0f, true);
 
+    bool won = false;
+
     if (testCase)
     {
         Sounder::object->gridClear();
@@ -493,6 +501,8 @@ void Game::TestState()
         }
 
         testCase->shouldQuit = false;
+
+        if (TestPlayer::object) won = TestPlayer::object->won;
 
         testCase->destroy();
         Turret::turrets.clear();
@@ -532,15 +542,29 @@ void Game::TestState()
 	{
         leveler->renderClear();
         leveler->quitLeveler();
-		gameStater = &Game::MenuState;
 		shouldQuit = false;
+
+        if (startLevelIndex >= maxLevel || !won)
+        {
+		    gameStater = &Game::MenuState;
+        }
+        else
+        {
+            std::string fileName = IOHelper::assetsFolder + "levelfiles/menulevels/" + std::to_string(startLevelIndex + 1) + ".pld";
+            leveler->openLevel(fileName, true);
+            testCase = new LevelerTestCase(this, startLevelIndex + 1);
+			lastState = &Game::MenuState;
+            return;
+        }
 	}
 
-	lastState = &Game::TestState;
+    lastState = &Game::TestState;
 }
 
 void Game::MenuState()
 {
+    bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusMenu");
+
     menu->initDefaults();
 
     thinDrawer->earlyDrawFuncs.push_back({ Leveler::renderParticles, this });

@@ -71,6 +71,11 @@ public:
     bool menuUpdate = false;
     fixtureData outerFixDatas[2];
 
+    int minX = +100000;
+    int minY = +100000;
+    int maxX = -100000;
+    int maxY = -100000;
+
     LevelerTestCase(Game* game, int levelIndex=8);
 
     static void wallMemFill(b2Vec2 p0, b2Vec2 p1, int index, int offset, int size, int prevIndex, bool initial=false);

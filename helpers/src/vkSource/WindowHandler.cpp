@@ -51,7 +51,9 @@ bool WindowHandler::handleEvents()
     SDL_Event evnt;
     while (SDL_WaitEventTimeout(&evnt, 1))
     {
+#ifndef NDEBUG
         if (ImGui::GetDrawData()) ImGui_ImplSDL3_ProcessEvent(&evnt);
+#endif // !DEBUG
 
         switch (evnt.type)
         {

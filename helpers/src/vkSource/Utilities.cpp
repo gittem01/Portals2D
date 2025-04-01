@@ -416,7 +416,7 @@ void ThinDrawer::loadTextureFromMemory(s_textureData* texData, s_texture* textur
 
     VkSamplerCreateInfo sampler = { };
     sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler.magFilter = VK_FILTER_LINEAR;
+    sampler.magFilter = filter;
     sampler.minFilter = filter;
     sampler.mipmapMode = (VkSamplerMipmapMode)filter;
     sampler.addressModeU = addressMode;

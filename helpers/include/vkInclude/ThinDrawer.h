@@ -117,7 +117,10 @@ public:
     static std::string selectedPhysicalDeviceName;
 
     PortalWorld* pWorld;
+
+#ifndef DEBUG
     VkDescriptorPool imguiPool;
+#endif
 
     ThinDrawer(PortalWorld* pWorld);
 
