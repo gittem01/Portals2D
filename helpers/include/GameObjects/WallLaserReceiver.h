@@ -8,6 +8,8 @@
 #include <list>
 #include "GameObjects/Transmitter.h"
 
+#define MAX_WALL_LASER_RECEIVERS 128
+
 class LaserEmitter;
 
 class WallLaserReceiver : public Transmitter

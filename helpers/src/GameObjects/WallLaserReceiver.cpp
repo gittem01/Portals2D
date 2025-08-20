@@ -5,7 +5,7 @@
 #include "Overlayer.h"
 #include "GameObjects/LaserEmitter.h"
 
-std::vector<WallLaserReceiver> WallLaserReceiver::wallLaserReceivers(64);
+std::vector<WallLaserReceiver> WallLaserReceiver::wallLaserReceivers(MAX_WALL_LASER_RECEIVERS);
 int WallLaserReceiver::numWallLaserReceivers = 0;
 std::list<WallLaserReceiver*> WallLaserReceiver::disableChecks;
 std::list<WallLaserReceiver*> WallLaserReceiver::enableChecks;

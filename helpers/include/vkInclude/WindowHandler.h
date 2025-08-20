@@ -1,5 +1,8 @@
 #pragma once
 
+#define MOUSE_X_REL 30
+#define MOUSE_Y_REL 31
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -23,7 +26,7 @@ public:
 
 	int keyData[SDL_SCANCODE_COUNT] = { 0 };
 	int repeatKeys[SDL_SCANCODE_COUNT] = { 0 };
-	double mouseData[9] = {0};
+	double mouseData[32] = {0};
 	double trackpadData[2] = {0};
 	int lastMousePos[2] = {0};
 	glm::vec2 windowSizes = glm::vec2(1600, 900);

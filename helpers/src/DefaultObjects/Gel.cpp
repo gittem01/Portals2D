@@ -270,7 +270,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
         float dist = std::max(b2Dot(distVec, dirVec), 0.0f);
         int startPos = std::min((int)std::round(dist * 10.0f) + extraOffset, (int)eGlobalData->unitWalls.size() - 1);
         
-        float amnt = gelRadius * 10.0;
+        float amnt = gelRadius * 15.0;
 
         if (eGlobalData->unitWalls[startPos].wallType & (PORTALLABLE | NOT_PORTALLABLE))
             amnt -= handleGelPut(&eGlobalData->unitWalls[startPos], gelType, amnt);
@@ -317,7 +317,8 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
     }
     else
     {
-		bodyData* bData = (bodyData*)otherFix->GetBody()->GetUserData().pointer;
+        b2Body* body = otherFix->GetBody();
+		bodyData* bData = (bodyData*)body->GetUserData().pointer;
         if (bData && bData->extraData && bData->type == B_PORTAL_BODY)
         {
 			g_PhysicsData* pData = (g_PhysicsData*)bData->extraData;
@@ -325,7 +326,16 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
             {
                 DefaultObject* defObj = (DefaultObject*)pData->data;
                 int prevGel = defObj->renderGroup->gelIndex;
+                
                 defObj->renderGroup->gelIndex = gelType;
+
+                if (prevGel != 0 && gelType == 0)
+                {
+                    b2WorldManifold wManifold;
+                    contact->GetWorldManifold(&wManifold);
+
+                    defObj->paintedBounce(wManifold, body);
+                }
 
                 if (prevGel == 1 && gelType != 1)
                 {

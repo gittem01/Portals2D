@@ -7,7 +7,7 @@ PLAY
 <play_1>
 
 <leveler_0>
-LEVEL DÜZENLEYİCİ
+BÖLÜM DÜZENLEYİCİ
 YENİ
 YÜKLE
 TOPLULUK
@@ -139,7 +139,7 @@ RETURN TO EDITOR
 <to_editor_1>
 
 <enterName>
-Level Kayıt Adı
+Bölüm Kayıt Adı
 Level Save Name
 <enterName>
 
@@ -159,12 +159,12 @@ Save Failed
 <saveFailure>
 
 <openSuccess>
-Level Açma Başarılı
+Bölüm Açma Başarılı
 Level Opened Successfully
 <openSuccess>
 
 <openFailure>
-Level Açma Başarısız
+Bölüm Açma Başarısız
 Level Opening Failed
 <openFailure>
 
@@ -174,12 +174,12 @@ File Already Exists
 <alreadyExists>
 
 <startend>
-Level başlangıç ve bitiş noktaları boş olmalıdır
+Bölüm başlangıç ve bitiş noktaları boş olmalıdır
 Level start and end locations must be empty
 <startend>
 
 <notreachable>
-Level bitiş noktası erişilebilir olmalıdır
+Bölüm bitiş noktası erişilebilir olmalıdır
 Level ending location must be reachable
 <notreachable>
 

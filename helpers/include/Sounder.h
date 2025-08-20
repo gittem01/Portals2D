@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include "GameObjects/Receiver.h"
 
-#define NUM_LOOPING_SOURCES 32
+#define NUM_LOOPING_SOURCES 64
 #define NUM_ONETIME_SOURCES 256 - NUM_LOOPING_SOURCES
 #define SQUARE_SIZE 4
 
@@ -81,7 +81,7 @@ public:
 
 	ALuint loadSound(std::string fileName);
 	ALuint playSound(ALuint buffer, float volume);
-	void setSoundVolume(const ALuint source, const float volume);
+	float setSoundVolume(const ALuint source, const float volume);
 	void setSoundPosition(const ALuint source, glm::vec3 pos);
 	ALuint playLoopingSound(ALuint buffer, float volume);
 	void stopSound(ALuint source);

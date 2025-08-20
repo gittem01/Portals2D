@@ -131,6 +131,7 @@ constexpr int getRotVal(int rot)
 
 #define WALL_EDGE_OCCUPIERS ((TRANSMITTERS | RECEIVERS | CATAPULT) & ~PLATFORM)
 
+#define PLATFORM_EXTRA 0.01f
 
 typedef enum OperationType																 
 {
@@ -412,7 +413,14 @@ public:
 	void handleRightClickClick();
 
 	int saveLevel(std::string fileName, bool overwrite=false); // 0 = success, 1 = can't open file, 2 = file exists
+	int saveLevelOld(std::ofstream& oFile, bool overwrite=false); // 0 = success, 1 = can't open file, 2 = file exists
+	int saveLevelNew(std::ofstream& oFile, bool overwrite=false); // 0 = success, 1 = can't open file, 2 = file exists
 	int openLevel(std::string fileName, bool directOpen=false, bool externalOpen=false); // 0 = success, 1 = can't open file, 2 = file exists
+	int openLevelOld(std::string fileName, std::ifstream& iFile, bool directOpen=false, bool externalOpen=false); // 0 = success, 1 = can't open file, 2 = file exists
+	int openLevelNew(std::string fileName, std::ifstream& iFile, bool directOpen=false, bool externalOpen=false); // 0 = success, 1 = can't open file, 2 = file exists
+	static void readHeader(std::ifstream& iFile, int& version, size_t& numObjects, std::vector<int32_t>& objectCountVec);
+	static void readHeaderWithFile(std::string fileName, int& version, size_t& numObjects, std::vector<int32_t>& objectCountVec);
+	
 	void renderClear();
 	void quitLeveler();
 

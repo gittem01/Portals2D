@@ -78,6 +78,7 @@ Sounder::~Sounder()
 inline glm::ivec2 Sounder::getSoundGridPos(glm::vec2 pos)
 {
     glm::ivec2 newPos = glm::ivec2((pos + 200.0f) / (float)SQUARE_SIZE);
+    newPos.y = 400 / SQUARE_SIZE - 1 - newPos.y;
     newPos = glm::clamp(newPos, 0, 400 / SQUARE_SIZE - 1);
 
     return newPos;
@@ -152,7 +153,7 @@ void Sounder::putStatOnGrid(gridSoundData* data)
     }
 }
 
-static const float checkSizeMult = 1.5f;
+static const float checkSizeMult = 2.0f;
 static const float checkSizeAdd = 12.0f;
 
 void Sounder::updateStationaries()
@@ -165,9 +166,10 @@ void Sounder::updateStationaries()
 	float camYSize = ThinDrawer::object->wh->cam->ySides.y - ThinDrawer::object->wh->cam->ySides.x;
 
 	soundRadius = 0.5f * glm::max(camXSize, camYSize) * checkSizeMult + checkSizeAdd;
+    auto add_vec = glm::ivec2((int)(soundRadius / SQUARE_SIZE));
 
-	glm::ivec2 gridStart = gridSquare - (int)(soundRadius / SQUARE_SIZE);
-	glm::ivec2 gridEnd = gridSquare + (int)(soundRadius / SQUARE_SIZE);
+	glm::ivec2 gridStart = gridSquare - add_vec;
+	glm::ivec2 gridEnd = gridSquare + add_vec;
 
     glm::ivec2 scanStart = glm::clamp(gridStart, 0, 400 / SQUARE_SIZE - 1);
 	glm::ivec2 scanEnd = glm::clamp(gridEnd, 0, 400 / SQUARE_SIZE - 1);
@@ -206,12 +208,16 @@ void Sounder::updateStationaries()
                     continue;
                 }
 
-                soundData->playing = true;
+                ALuint source = playSound(soundData->buffer, soundData->currentVolume + 0.001);
 
-                soundData->source = playSound(soundData->buffer, soundData->currentVolume + 0.001);
-                alSourcei(soundData->source, AL_LOOPING, AL_TRUE);
+                if (source > 0)
+                {
+                    soundData->source = source;
+                    soundData->playing = true;
+                    alSourcei(soundData->source, AL_LOOPING, AL_TRUE);
 
-                statPlays.push_back(soundData);
+                    statPlays.push_back(soundData);
+                }
             }
 		}
 	}
@@ -270,10 +276,16 @@ ifOut:
 
         float soundMult = glm::clamp(1.0f - len / soundRadius, 0.0f, 1.0f);
 
-        setSoundVolume(soundData->source, soundData->currentVolume * soundMult);
-        setSoundPosition(soundData->source, glm::vec3(closestPos.x, closestPos.y, 0.0));
-
-        ThinDrawer::object->registerDebugLine(glm::vec4(closestPos.x, closestPos.y, closestPos.x, closestPos.y), glm::vec4(1.0f), 0.2f, 0.5f);
+        const float setVolume = setSoundVolume(soundData->source, soundData->currentVolume * soundMult);
+        if (setVolume > 0.0f)
+        {
+            setSoundPosition(soundData->source, glm::vec3(closestPos.x, closestPos.y, 0.0));
+            ThinDrawer::object->registerDebugLine(glm::vec4(closestPos.x, closestPos.y, closestPos.x, closestPos.y), glm::vec4(1.0f), 0.2f, 0.5f);
+        }
+        else
+        {
+            ThinDrawer::object->registerDebugLine(glm::vec4(closestPos.x, closestPos.y, closestPos.x, closestPos.y), glm::vec4(1.0f, 0.0, 0.0, 1.0), 0.2f, 0.5f);
+        }
     }
 
     uint64_t timeEnd = SDL_GetTicksNS();
@@ -460,9 +472,12 @@ ALuint Sounder::playSound(ALuint buffer, float volume)
     return source;
 }
 
-void Sounder::setSoundVolume(ALuint source, float volume)
+float Sounder::setSoundVolume(ALuint source, const float volume)
 {
-    alSourcef(source, AL_GAIN, volume * generalVolume * effectVolume);
+    const float volumeSet = volume * generalVolume * effectVolume;
+    alSourcef(source, AL_GAIN, volumeSet);
+
+    return volumeSet;
 }
 
 void Sounder::setSoundPosition(ALuint source, glm::vec3 pos)

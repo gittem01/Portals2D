@@ -171,8 +171,8 @@ void Funnel::enable2()
 		data2.data2.x = data2.data2.z + 5.0f;
 	}
 
-	data.data.w = 3.0f;
-	data2.data.w = 3.0f;
+	data.data.w = 4.0f;
+	data2.data.w = 4.0f;
 	data.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, enabled ? 1.0f : 0.0f);
 	data2.colour2 = glm::vec4(1.0f, 0.3f, 0.0f, enabled ? 1.0f : 0.0f);
 
@@ -202,8 +202,8 @@ void Funnel::disable2()
 	data2.data2.w = ThinDrawer::object->gameTime;
 	data2.data2.x = -data.data2.z;
 
-	data.data.w = -3.0f;
-	data2.data.w = -3.0f;
+	data.data.w = -4.0f;
+	data2.data.w = -4.0f;
 
 	if (enabled)
 	{
@@ -681,7 +681,7 @@ void Funnel::perTickUpdate()
 				continue;
 			}
 
-			float reqSpeed = f->enabled2 ? -1.5f : 1.5f;
+			float reqSpeed = f->enabled2 ? -2.0f : 2.0f;
 			if (dobj->inPortalFunnel)
 			{
 				float dist = PortalWorld::getRealDist(f->lastStartPos2,

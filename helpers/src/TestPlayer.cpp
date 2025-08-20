@@ -886,7 +886,7 @@ void TestPlayer::jumpEffect()
     {
         jumpPressTime = gameTime;
     }
-    else if (abs(checkXSpeed) > 6.0f && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL])
+    else if (abs(checkXSpeed) > 6.0f && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL] && wh->keyData[Game::downKey])
     {
         noKeyJump = Gel::bounceAt(wData->pbIndices[0]->body, contactFixture, contactPoint);
     }
@@ -896,7 +896,7 @@ void TestPlayer::jumpEffect()
         jumped = true;
         bool extraJump = noKeyJump;
 
-        if (!noKeyJump && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL])
+        if (!noKeyJump && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL] && !wh->keyData[Game::downKey])
         {
             extraJump = Gel::bounceAt(wData->pbIndices[0]->body, contactFixture, contactPoint);
         }
@@ -1016,6 +1016,11 @@ void TestPlayer::recreate(bool mirrored)
 
 bool TestPlayer::enterForceField(ForceField* forceField)
 {
+    if (forceField != nullptr && forceField->enabled == false)
+    {
+        return false;
+    }
+
     game->singleTaskRegistry.push_back(
         [this]()
         {
@@ -1073,7 +1078,7 @@ void TestPlayer::beginContact(b2Contact* contact, b2Fixture* otherFix, b2Fixture
         case F_EDGE:
         case F_PORTAL:
         {
-            if (grounded || wh->keyData[SDL_SCANCODE_LCTRL] || wh->keyData[SDL_SCANCODE_RCTRL])
+            if (grounded || wh->keyData[SDL_SCANCODE_LCTRL] || wh->keyData[SDL_SCANCODE_RCTRL] || wh->keyData[Game::downKey])
 			{
                 break;
 			}
@@ -1358,15 +1363,15 @@ void TestPlayer::camHandle2()
     float camXSize = wh->cam->xSides.y - wh->cam->xSides.x;
     float camYSize = wh->cam->ySides.y - wh->cam->ySides.x;
 
-    if (wh->cam->xSides.y >= ltc->maxX)
+    if (wh->cam->xSides.y >= ltc->maxX + 10.0)
     {
         posAdd.x = posAdd.x > 0.0f ? 0.0f : posAdd.x;
-        wh->cam->pos.x = ltc->maxX - camXSize * 0.5f + 0.001f;
+        wh->cam->pos.x = ltc->maxX - camXSize * 0.5f + 10.001f;
     }
-    else if (wh->cam->xSides.x <= ltc->minX)
+    else if (wh->cam->xSides.x <= ltc->minX - 10.0)
     {
         posAdd.x = posAdd.x < 0.0f ? 0.0f : posAdd.x;
-        wh->cam->pos.x = ltc->minX + camXSize * 0.5f - 0.001f;
+        wh->cam->pos.x = ltc->minX + camXSize * 0.5f - 10.001f;
     }
 
     if (-wh->cam->ySides.y <= ltc->minY)
@@ -1400,7 +1405,10 @@ void TestPlayer::camHandle2()
     addDir = glm::normalize(addDir);
     addDir *= smoother * ThinDrawer::object->deltaTime * speed / (wh->cam->zoom * wh->cam->zoom);
 
-    wh->cam->pos += addDir;
+    if (wh->mouseData[3] == 0)
+    {
+        wh->cam->pos += addDir;
+    }
 
     wh->cam->updateOrtho();
 }
@@ -2460,7 +2468,7 @@ void TestPlayer::handleObjectHold(PortalBody* gunBody, b2Vec2 pos, b2Vec2 dir, f
             holdBody->body->SetLinearVelocity(newVel);
 
             float angAdd = 0.0f;
-            if (wh->mouseData[2]) angAdd = dt * 15.0f;
+            if (wh->mouseData[2] || wh->keyData[Game::rotateKey]) angAdd = dt * 15.0f;
             else if (wh->mouseData[4]) angAdd = -dt * 15.0f;
 
             float rotRatio = 1.0f - dt * 15.0f;

@@ -11,7 +11,7 @@ public:
     static const int maxX = +gridWidth / 2 - 1;
     static const int minY = -gridHeight / 2;
     static const int maxY = +gridHeight / 2 - 1;
-    static const int gridDivider = 40;
+    static const int gridDivider = 50;
     static const int gridCount = gridWidth / gridDivider;
     static const float layerMult;
 

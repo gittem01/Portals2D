@@ -108,7 +108,8 @@ void DefaultObject::nonStop(b2Body* body)
 	b2Vec2 speed = body->GetLinearVelocity();
 	float squaredSpeed = speed.LengthSquared();
 
-	if (renderGroup && renderGroup->gelIndex == 0 && squaredSpeed < 9.0f)
+	if (renderGroup && renderGroup->gelIndex == 0 && squaredSpeed < 9.0f &&
+		(TestPlayer::object->holdBody == nullptr || TestPlayer::object->holdBody->worldIndex != wData))
 	{
 		float randX = (rand() % 2000 - 1000) * 0.001f;
 		b2Vec2 speedVec = b2Vec2(randX, 10.0f);
@@ -121,7 +122,8 @@ void DefaultObject::paintedBounce(b2WorldManifold& wManifold, b2Body* body)
 {
 	b2Vec2 speed = body->GetLinearVelocity();
 
-	if (renderGroup && renderGroup->gelIndex == 0 && abs(speed.x) < 2.0f && abs(speed.y) < 2.0f)
+	if (renderGroup && renderGroup->gelIndex == 0 && abs(speed.x) < 2.0f && abs(speed.y) < 2.0f && 
+		(TestPlayer::object->holdBody == nullptr || TestPlayer::object->holdBody->worldIndex != wData))
 	{
 		b2Vec2 normal = wManifold.normal;
 
@@ -302,7 +304,10 @@ void DefaultObject::preSolve(b2Contact* contact, b2Body* thisBody, b2Fixture* fi
 		}
 	}
 
-	nonStop(thisBody);
+	if (contact->IsEnabled() == true)
+	{
+		nonStop(thisBody);
+	}
 
 	fixtureData* fData = (fixtureData*)fix2->GetUserData().pointer;
 	if (fData && fData->type & (F_EDGE | F_LIGHT_BRIDGE | F_PORTAL))

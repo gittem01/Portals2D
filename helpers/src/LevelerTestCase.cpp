@@ -235,8 +235,8 @@ void LevelerTestCase::createDefaultEdges()
     maxY = glm::max((int)g->leveler->endSquare.y + 1, maxY);
     maxY = glm::max(+10, maxY);
 
-    minX -= 9; minY -= 9;
-    maxX += 10; maxY += 31;
+    minX -= 20; minY -= 20;
+    maxX += 20; maxY += 30;
 
     b2Vec2 vecs[4] =
     {

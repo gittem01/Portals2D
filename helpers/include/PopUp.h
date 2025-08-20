@@ -11,9 +11,11 @@ typedef enum LLoadEnum { L_NONE, L_LOADING, L_LOADED, L_ERROR } lLoadEnum;
 
 typedef struct LevelSelectData
 {
-	std::string text;
-	s_lineRenderData textData;
-	std::vector<uint8_t> usedElements;
+	std::string nameText;
+	std::string timeText;
+	s_lineRenderData nameTextData;
+	s_lineRenderData timeTextData;
+	uint32_t usedElements[12];
 	lLoadEnum status = lLoadEnum::L_NONE;
 } levelSelectData;
 

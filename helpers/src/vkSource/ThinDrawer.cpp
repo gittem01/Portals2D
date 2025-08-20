@@ -216,7 +216,8 @@ void ThinDrawer::renderLoop()
     submit.commandBufferCount = std::size(cmdBuffers);
     submit.pCommandBuffers = cmdBuffers;
 
-    if (Game::object->gameStater != &Game::TestState)
+    const bool lock = (Game::object->gameStater != &Game::TestState) || Game::object->pop.active;
+    if (lock)
     {
         queueMutex.lock();
     }
@@ -235,7 +236,7 @@ void ThinDrawer::renderLoop()
 
     result = vkQueuePresentKHR(queues.graphicsQueue, &presentInfo);
     
-    if (Game::object->gameStater != &Game::TestState)
+    if (lock)
     {
         queueMutex.unlock();
     }

@@ -30,14 +30,15 @@ void main()
 
     float topVal = 0.0;
 
-    ratio = ((-localPos.y - (0.5 - lineThick)) / lineThick) *       ((sideData & 0x2) != 0 ? 1.0 : 0.0);
-    ratio = max(((+localPos.x - (0.5 - lineThick)) / lineThick) *   ((sideData & 0x4) != 0 ? 1.0 : 0.0), ratio);
-    ratio = max(((+localPos.y - (0.5 - lineThick)) / lineThick) *   ((sideData & 0x8) != 0 ? 1.0 : 0.0), ratio);
-    ratio = max(((-localPos.x - (0.5 - lineThick)) / lineThick) *   ((sideData & 0x10) != 0 ? 1.0 : 0.0), ratio);
-    ratio = max(((min(-localPos.x, -localPos.y) - (0.5 - lineThick)) / lineThick) * ((sideData & 0x20) != 0 ? 1.0 : 0.0), ratio);
-    ratio = max(((min(+localPos.x, -localPos.y) - (0.5 - lineThick)) / lineThick) * ((sideData & 0x40) != 0 ? 1.0 : 0.0), ratio);
-    ratio = max(((min(+localPos.x, +localPos.y) - (0.5 - lineThick)) / lineThick) * ((sideData & 0x80) != 0 ? 1.0 : 0.0), ratio);
-    ratio = max(((min(-localPos.x, +localPos.y) - (0.5 - lineThick)) / lineThick) * ((sideData & 0x100) != 0 ? 1.0 : 0.0), ratio);
+    float lineThickEdge = lineThick * 2.0;
+    ratio =     ((-localPos.y - (0.5 - lineThickEdge)) / lineThickEdge) *   ((sideData & 0x2) != 0 ? 1.0 : 0.0);
+    ratio = max(((+localPos.x - (0.5 - lineThickEdge)) / lineThickEdge) *   ((sideData & 0x4) != 0 ? 1.0 : 0.0), ratio);
+    ratio = max(((+localPos.y - (0.5 - lineThickEdge)) / lineThickEdge) *   ((sideData & 0x8) != 0 ? 1.0 : 0.0), ratio);
+    ratio = max(((-localPos.x - (0.5 - lineThickEdge)) / lineThickEdge) *   ((sideData & 0x10) != 0 ? 1.0 : 0.0), ratio);
+    ratio = max(((min(-localPos.x, -localPos.y) - (0.5 - lineThickEdge)) / lineThickEdge) * ((sideData & 0x20) != 0 ? 1.0 : 0.0), ratio);
+    ratio = max(((min(+localPos.x, -localPos.y) - (0.5 - lineThickEdge)) / lineThickEdge) * ((sideData & 0x40) != 0 ? 1.0 : 0.0), ratio);
+    ratio = max(((min(+localPos.x, +localPos.y) - (0.5 - lineThickEdge)) / lineThickEdge) * ((sideData & 0x80) != 0 ? 1.0 : 0.0), ratio);
+    ratio = max(((min(-localPos.x, +localPos.y) - (0.5 - lineThickEdge)) / lineThickEdge) * ((sideData & 0x100) != 0 ? 1.0 : 0.0), ratio);
 
     topVal = smoothstep(0.1, 1.0, ratio);
 

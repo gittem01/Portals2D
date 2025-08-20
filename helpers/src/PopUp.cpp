@@ -2,13 +2,21 @@
 #include "ThinDrawer.h"
 #include "Game.h"
 #include "Overlayer.h"
+#include "DefaultObjects/Turret.h"
 #include "Menu.h"
 #include <filesystem>
 #include <thread>
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 static const std::string bans = "/\\*:?\"<>|";
 static const std::string spacedBans = " / \\ * : ? \" < > |";
 static double lastStatusTextShowTime = 0.0;
+
+static int indices[] = { 8, 11, 12, 15, 14, 13, 20, 21, 16 };
+static glm::vec4 gelColors[] = { glm::vec4(0.0, 0.3, 1.0, 1.0), glm::vec4(1.0, 0.3, 0.0, 1.0), glm::vec4(1.0), glm::vec4(0.5, 0.5, 1.0, 0.4) };
 
 PopUp::PopUp()
 {
@@ -364,7 +372,9 @@ noAdd:
 	currentButtonData.posSize.w += 1.5f;
 	currentButtonData.data = glm::vec4(1.0f, 1.25f, 1.2f, 1.0f);
 
-	if (p->textSizes.size() > 0)
+	const bool enableSaving = false;
+
+	if (p->textSizes.size() > 0 && enableSaving)
 	{
 		bool hovered = currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords());
 
@@ -402,7 +412,7 @@ noAdd:
 
 	currentButtonData.posSize.x -= 24.0f;
 
-	if (currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()))
+	if (currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && enableSaving)
 	{
 		hoverTimes[1] = td->gameTime;
 		if (td->wh->mouseData[2] == 2 && p->active)
@@ -442,7 +452,7 @@ noAdd:
 }
 
 static std::vector<levelSelectData> levelSelects;
-static const glm::vec2 size = glm::vec2(115.0f, 6.0f);
+static const glm::vec2 size = glm::vec2(115.0f, 9.0f);
 static s_lineRenderData loadRenderData;
 static float scrollSpeed = 0.0f;
 
@@ -464,6 +474,29 @@ void loadbgThread()
 		}
 	}
 
+	std::map<std::string, std::filesystem::file_time_type> fileTimes;
+	for (auto& file : levelFiles)
+	{
+		std::string fullPath = path + file + ".pld";
+
+#ifdef WIN32
+		int wlen = MultiByteToWideChar(CP_UTF8, 0, fullPath.c_str(), -1, nullptr, 0);
+		std::wstring finalName(wlen, L'\0');
+		MultiByteToWideChar(CP_UTF8, 0, fullPath.c_str(), -1, &finalName[0], wlen);
+
+#else
+		std::string finalName = fullPath;
+#endif
+		fileTimes[file] = std::filesystem::last_write_time(finalName);
+	}
+
+	std::sort(levelFiles.begin(), levelFiles.end(),
+		[&] (const std::string& lhs, const std::string& rhs)
+		{
+			return fileTimes[lhs] > fileTimes[rhs];
+		}
+	);
+
 	for (int i = 0; i < 0; i++)
 	{
 		std::string randStr = std::to_string(i);
@@ -478,6 +511,9 @@ void loadbgThread()
 	}
 
 	levelSelects.resize(levelFiles.size());
+
+	float ref_x;
+	Leveler::object->ol->cd->getRenderData("0123456789", Leveler::object->ol->popHeight, ref_x);
 
 	PopUp* p = &Game::object->pop;
 	while (!p->closeOnEnd)
@@ -502,15 +538,42 @@ void loadbgThread()
 		for (int i = renderBegin; i < renderEnd; i++)
 		{
 			LevelSelectData& lsd = levelSelects[i];
+
 			if (lsd.status == lLoadEnum::L_NONE)
 			{
 				lsd.status = L_LOADING;
-				lsd.textData.posScale = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			
+				lsd.nameTextData.posScale = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-				lsd.text = levelFiles[i];
-				lsd.textData.charDatas = Leveler::object->ol->cd->getRenderData(lsd.text, Leveler::object->ol->popHeight * 2, lsd.textData.posScale.w);
+				lsd.nameText = levelFiles[i];
+				lsd.timeText = std::format("{:%c}", fileTimes[lsd.nameText]);
+				lsd.nameTextData.charDatas = Leveler::object->ol->cd->getRenderData(lsd.nameText, Leveler::object->ol->popHeight * 2, lsd.nameTextData.posScale.w);
+				lsd.timeTextData.charDatas = Leveler::object->ol->cd->getRenderData(lsd.timeText, Leveler::object->ol->popHeight, lsd.timeTextData.posScale.w);
 
-				lsd.textData.color = glm::vec4(1.0f);
+				lsd.nameTextData.color = glm::vec4(1.0f);
+				lsd.timeTextData.color = glm::vec4(1.0f, 0.75, 0.2, 1.0);
+
+				int version = -1;
+				size_t numObjects = 0;
+				std::vector<int> objectCounts;
+				Leveler::readHeaderWithFile(path + lsd.nameText + ".pld", version, numObjects, objectCounts);
+
+				int inc = 0;
+				for (int j = 0; j < std::size(lsd.usedElements); j++)
+				{
+					int ind;
+					if (j < std::size(indices) - 1)
+					{
+						ind = indices[j];
+					}
+					else
+					{
+						ind = indices[std::size(indices) - 1] + inc++;
+					}
+
+					lsd.usedElements[j] = objectCounts[ind];
+				}
+
 				lsd.status = L_LOADED;
 			}
 		}
@@ -586,10 +649,17 @@ void PopUp::renderAt(VkCommandBuffer cmdBuff, glm::vec4 posSize, glm::vec2 pos, 
 
 		if (ThinDrawer::object->wh->mouseData[2] == 2 && active && data.status == lLoadEnum::L_LOADED)
 		{
-			std::string fileName = IOHelper::assetsFolder + "levelfiles/" + data.text + ".pld";
+			std::string fileName = IOHelper::assetsFolder + "levelfiles/" + data.nameText + ".pld";
 			openLevel(fileName, this);
 		}
 	}
+
+	const uint32_t camOffset = ShaderBase::alignedSharedSize * (ThinDrawer::object->frameIndex + 8);
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ThinDrawer::object->menuButton->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		ThinDrawer::object->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
 	vkCmdPushConstants(cmdBuff, ThinDrawer::object->menuButton->pipelineLayout,
 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_menuButton), &buttonData);
@@ -600,17 +670,132 @@ void PopUp::renderAt(VkCommandBuffer cmdBuff, glm::vec4 posSize, glm::vec2 pos, 
 
 	if (data.status == lLoadEnum::L_LOADED)
 	{
-		float xSize = data.textData.posScale.w;
+		float xSize = data.nameTextData.posScale.w;
 		float xMult = (1.0f - overlapPerct) * sizedt * std::min(12.5f / xSize, 1.0f);
-		data.textData.posScale = glm::vec4(textX, buttonData.posSize.y, 5.0f * xMult, data.textData.posScale.w);
-		data.textData.color.w = (0.5f - overlapPerct) * sizedt * 2.0f;
-		Leveler::object->ol->cd->renderDatas.push_back(data.textData);
+		data.nameTextData.posScale = glm::vec4(textX, buttonData.posSize.y + 2.0f * sizedt * (1.0 - overlapPerct), 5.0f * xMult, data.nameTextData.posScale.w);
+		data.nameTextData.color.w = (0.5f - overlapPerct) * sizedt * 2.0f;
+		Leveler::object->ol->cd->renderDatas.push_back(data.nameTextData);
+
+		data.timeTextData.posScale = glm::vec4(textX, buttonData.posSize.y - 2.5f * sizedt * (1.0 - overlapPerct),
+			2.5f * (1.0f - overlapPerct) * sizedt, data.nameTextData.posScale.w);
+		data.timeTextData.color.w = (0.5f - overlapPerct) * sizedt * 2.0f;
+		Leveler::object->ol->cd->renderDatas.push_back(data.timeTextData);
 	}
 	else
 	{
 		loadRenderData.posScale = glm::vec4(textX, buttonData.posSize.y, (5.0f - overlapPerct * 5.0f) * sizedt, 0.0f);
 		loadRenderData.color.w = (0.5f - overlapPerct) * sizedt * 2.0f;
 		Leveler::object->ol->cd->renderDatas.push_back(loadRenderData);
+	}
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ThinDrawer::object->bodyShader->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		ThinDrawer::object->bodyShader->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
+
+	VkDeviceSize offsets = 0;
+	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &Turret::coverVertexBuffer->buffer, &offsets);
+
+	s_renderBodyPsh pushData;
+	pushData.movScale = glm::vec4(buttonData.posSize.x + 12.0 * sizedt, buttonData.posSize.y + 1.5 * (1.0 - overlapPerct),
+		sizedt * 1.5 * (1.0 - overlapPerct), sizedt * 1.5 * (1.0 - overlapPerct));
+	pushData.data = glm::vec4(0.0, -20.0, -10.0, 0.0);
+	pushData.posRot = glm::vec4(0.0, 0.0, 0.0, 0.0);
+
+	float fixedOverlapPerct = (0.75f - std::min(overlapPerct, 0.75f)) / 0.75f;
+
+	s_lineRenderData lrd;
+	lrd.color = glm::vec4(1.0);
+
+	int minus = 0;
+
+	for (int i = 0; i < std::size(indices); i++)
+	{
+		const int topCount = std::size(indices) / 2 + 1;
+		
+		if (data.usedElements[i] == 0)
+		{
+			if (i == std::size(indices) - 1)
+			{
+				if (data.usedElements[i] == 0 && data.usedElements[i + 1] == 0 && data.usedElements[i + 2] == 0 && data.usedElements[i + 3] == 0)
+				{
+					minus++;
+					continue;
+				}
+			}
+			else
+			{
+				minus++;
+				continue;
+			}
+		}
+		
+		int x = (i - minus) % topCount;
+		int y = (i - minus) / topCount;
+		pushData.movScale.y = sizedt * (buttonData.posSize.y - (y * 2.0 - 1.0) * 2.25 * (1.0 - overlapPerct));
+
+		if (x == 0)
+		{
+			pushData.movScale.x = (buttonData.posSize.x + 12.0) * sizedt;
+		}
+
+		const float maxRatio = 1.5;
+
+		auto tex = Leveler::object->ol->items[indices[i] + 4].tex;
+		float ratio = (float)tex->width / tex->height;
+		if (ratio > maxRatio)
+		{
+			pushData.movScale.w = sizedt * 3.0f * fixedOverlapPerct * maxRatio / ratio;
+			pushData.movScale.z = sizedt * 3.0f * maxRatio * fixedOverlapPerct;
+		}
+		else
+		{
+			pushData.movScale.w = sizedt * 3.0f * fixedOverlapPerct;
+			pushData.movScale.z = sizedt * 3.0f * ratio * fixedOverlapPerct;
+		}
+
+		vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			ThinDrawer::object->bodyShader->pipelineLayout, 1, 1, &tex->set, 0, VK_NULL_HANDLE);
+
+		vkCmdPushConstants(cmdBuff, ThinDrawer::object->bodyShader->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_renderBodyPsh), &pushData);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+
+		float ref_x = 0.0;
+		lrd.posScale = pushData.movScale;
+		lrd.posScale.z = (2.5f - overlapPerct * 2.5f) * sizedt;
+		lrd.posScale.x += 2.5;
+
+		if (i != std::size(indices) - 1)
+		{
+			lrd.charDatas = Leveler::object->ol->cd->getRenderData(std::to_string(data.usedElements[i]), Leveler::object->ol->popHeight, ref_x);
+			pushData.movScale += ref_x * sizedt;
+
+			if (data.usedElements[i] == 0)
+			{
+				lrd.color = glm::vec4(1.0, 0.0, 0.0, fixedOverlapPerct);
+			}
+			else
+			{
+				lrd.color = glm::vec4(0.2, 1.0, 0.2, fixedOverlapPerct);
+			}
+
+			Leveler::object->ol->cd->renderDatas.push_back(lrd);
+		}
+		else
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				lrd.color = gelColors[j];
+				lrd.color.w = fixedOverlapPerct;
+				lrd.charDatas = Leveler::object->ol->cd->getRenderData(std::to_string(data.usedElements[i + j]), Leveler::object->ol->popHeight, ref_x);
+				Leveler::object->ol->cd->renderDatas.push_back(lrd);
+				lrd.posScale.x += ref_x * lrd.posScale.z + 1.0;
+			}
+		}
+
+		pushData.movScale.x += 6.5 * sizedt;
 	}
 }
 
@@ -692,7 +877,7 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	float sizep1 = size.y + 1.0f;
 
-	float maxScroll = std::max(levelSelects.size() * sizep1 - sizep1 * 7.0f, 0.0f);
+	float maxScroll = std::max(levelSelects.size() * sizep1 - 30.0f, 0.0f);
 	float leftX = currentButtonData.posSize.x - (currentButtonData.posSize.z + currentButtonData.data.y) * 0.5f;
 	float rightX = currentButtonData.posSize.x + (currentButtonData.posSize.z + currentButtonData.data.y) * 0.5f;
 	s_menuButton buttonData;
@@ -844,8 +1029,13 @@ void PopUp::loadRender(VkCommandBuffer cmdBuff, void* ptr)
 	for (int i = renderBegin; i < renderEnd; i++)
 	{
 		p->renderAt(cmdBuff, currentButtonData.posSize,
-			glm::vec2(currentButtonData.posSize.x, -i * sizep1 + 23.5f + p->scrollAmount + pos.y), levelSelects[i]);
+			glm::vec2(currentButtonData.posSize.x, -i * sizep1 + 27.0f - size.y * 0.5 + p->scrollAmount + pos.y), levelSelects[i]);
 	}
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->menuButton->pipeline);
+
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		td->menuButton->pipelineLayout, 0, 1, &ShaderBase::sharedSet, 1, &camOffset);
 
 	buttonData.posSize = glm::vec4(-currentButtonData.posSize.z * 0.5f + 12.0f, currentButtonData.posSize.w * 0.5f - 3.0f, 18.0f * sizedt, 4.0f * sizedt);
 	buttonData.posSize.x += currentButtonData.posSize.x;

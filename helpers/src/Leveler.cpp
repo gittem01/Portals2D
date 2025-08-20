@@ -6,6 +6,9 @@
 #include <Sounder.h>
 #include <SwapChain.h>
 #include <LevelerTestCase.h>
+#include "GameObjects/GndLaserReceiver.h"
+#include "GameObjects/WallLaserReceiver.h"
+#include "GameObjects/LaserEmitter.h"
 #include "Menu.h"
 #include <bitset>
 
@@ -30,13 +33,13 @@ const std::map<levelObject, int> Leveler::objectLimits =
 	{ DOWN_BUTTON,		256	},
 	{ CUBE_BUTTON,		256	},
 	{ SPHERE_BUTTON,	256	},
-	{ DEFAULT_CUBE,		256	},
-	{ LASER_CUBE,		256	},
-	{ SPHERE_CUBE,		256	},
-	{ TURRET,			64	},
-	{ LASERER,			128	},
-	{ LASER_REC_GND,	64	},
-	{ LASER_REC_WALL,	64	},
+	{ DEFAULT_CUBE,		32	},
+	{ LASER_CUBE,		32	},
+	{ SPHERE_CUBE,		32	},
+	{ TURRET,			0	}, // :)
+	{ LASERER,			MAX_LASER_EMITTERS			},
+	{ LASER_REC_GND,	MAX_GND_LASER_RECEIVERS		},
+	{ LASER_REC_WALL,	MAX_WALL_LASER_RECEIVERS	},
 	{ CATAPULT,			256	},
 	{ FUNNEL,			MAX_FUNNELS	},
 	{ LIGHT_BRIDGE,		MAX_BRIDGES	},
@@ -126,6 +129,146 @@ void updateConnectionMap(std::map<s_connection*, std::pair<int, int>>& connectio
 	}
 }
 
+int Leveler::saveLevelOld(std::ofstream& oFile, bool overwrite)
+{
+	size_t numObjects = levelObjects.size();
+
+	oFile.write((const char*)&numObjects, sizeof(size_t));
+
+	for (int i = 0; i < ySize; i++)
+	{
+		for (int j = 0; j < xSize; j++)
+		{
+			s_levelGridData& lgd = gridMap[i][j];
+
+			uint8_t writeData = (lgd.objectType & GRID_DRAWS) ? lgd.objectType : 0;
+
+			oFile.write((const char*)&writeData, sizeof(uint8_t));
+		}
+	}
+
+	std::map<s_connection*, std::pair<int, int>> connectionPairs;
+	std::map<s_objectDataGrid*, int> objectIndices;
+
+	int i = 0;
+	for (s_objectDataGrid* objectData : levelObjects)
+	{
+		writeObjectData(oFile, objectData);
+
+		updateConnectionMap(connectionPairs, objectData, i);
+
+		objectIndices[objectData] = i;
+
+		i++;
+	}
+
+	size_t numConnections = connectionPairs.size();
+	oFile.write((const char*)&numConnections, sizeof(numConnections));
+
+	for (auto& pair : connectionPairs)
+	{
+		writeConnectionData(connectionPairs, oFile, pair.first);
+	}
+
+	oFile.write((const char*)&startSquare, sizeof(startSquare));
+	oFile.write((const char*)&endSquare, sizeof(endSquare));
+
+	oFile.close();
+
+	ThinDrawer::object->addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+	ol->overlayOverlay = LEVELER;
+
+	openLevelName = Game::object->pop.renderTexts[0];
+	textSizes.assign(Game::object->pop.textSizes.begin(), Game::object->pop.textSizes.end());
+
+	return 0;
+}
+
+int Leveler::saveLevelNew(std::ofstream& oFile, bool overwrite)
+{
+	const int version = 1;
+	oFile.write((const char*)&version, 3);
+
+	size_t numObjects = levelObjects.size();
+
+	oFile.write((const char*)&numObjects, sizeof(size_t));
+
+	std::vector<int32_t> objectCountVec(getLevelObjectIndex(PLATFORM) - 3);
+
+	for (auto pair : objectCounts)
+	{
+		objectCountVec[getLevelObjectIndex(pair.first) - 4] = pair.second;
+	}
+
+	oFile.write((const char*)&objectCountVec[0], objectCountVec.size() * sizeof(objectCountVec[0]));
+
+	std::string maker = "Leveler v1.0";
+	char makerSize = (char)maker.size(); // first byte tells if it is a workshop level or not (1 is workshop level)
+
+	bool workshopLevel = false;
+	makerSize = workshopLevel ? (makerSize | 0x8f) : (makerSize & 0x7F);
+
+	oFile.write((const char*)&makerSize, sizeof(makerSize));
+	oFile.write((const char*)&maker[0], maker.size() * sizeof(maker[0]));
+
+	uint32_t rating = 1 << 30; // out of 2^32
+	uint64_t ratingCount = 132;
+
+	oFile.write((const char*)&rating, sizeof(rating));
+	oFile.write((const char*)&ratingCount, sizeof(ratingCount));
+
+	for (int i = 0; i < ySize; i++)
+	{
+		for (int j = 0; j < xSize; j++)
+		{
+			s_levelGridData& lgd = gridMap[i][j];
+
+			uint8_t writeData = (lgd.objectType & GRID_DRAWS) ? lgd.objectType : 0;
+
+			oFile.write((const char*)&writeData, sizeof(uint8_t));
+		}
+	}
+
+	std::map<s_connection*, std::pair<int, int>> connectionPairs;
+	std::map<s_objectDataGrid*, int> objectIndices;
+
+	int i = 0;
+	for (s_objectDataGrid* objectData : levelObjects)
+	{
+		writeObjectData(oFile, objectData);
+
+		updateConnectionMap(connectionPairs, objectData, i);
+
+		objectIndices[objectData] = i;
+
+		i++;
+	}
+
+	size_t numConnections = connectionPairs.size();
+	oFile.write((const char*)&numConnections, sizeof(numConnections));
+
+	for (auto& pair : connectionPairs)
+	{
+		writeConnectionData(connectionPairs, oFile, pair.first);
+	}
+
+	oFile.write((const char*)&startSquare, sizeof(startSquare));
+	oFile.write((const char*)&endSquare, sizeof(endSquare));
+
+	oFile.close();
+
+	ThinDrawer::object->addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+	ol->overlayOverlay = LEVELER;
+
+	openLevelName = Game::object->pop.renderTexts[0];
+	textSizes.assign(Game::object->pop.textSizes.begin(), Game::object->pop.textSizes.end());
+
+	return 0;
+}
+
+
 int Leveler::saveLevel(std::string fileName, bool overwrite)
 {
 	if (fileName.size() < 5 || fileName.compare(fileName.size() - 4, 4, ".pld") != 0)
@@ -160,65 +303,368 @@ int Leveler::saveLevel(std::string fileName, bool overwrite)
 
 	if (file.is_open())
 	{
-		size_t numObjects = levelObjects.size();
-
-		file.write((const char*)&numObjects, sizeof(size_t));
-
-		for (int i = 0; i < ySize; i++)
-		{
-			for (int j = 0; j < xSize; j++)
-			{
-				s_levelGridData& lgd = gridMap[i][j];
-				
-				uint8_t writeData = (lgd.objectType & GRID_DRAWS) ? lgd.objectType : 0;
-
-				file.write((const char*)&writeData, sizeof(uint8_t));
-			}
-		}
-
-		std::map<s_connection*, std::pair<int, int>> connectionPairs;
-		std::map<s_objectDataGrid*, int> objectIndices;
-
-		int i = 0;
-		for (s_objectDataGrid* objectData : levelObjects)
-		{
-			writeObjectData(file, objectData);
-
-			updateConnectionMap(connectionPairs, objectData, i);
-
-			objectIndices[objectData] = i;
-
-			i++;
-		}
-
-		size_t numConnections = connectionPairs.size();
-		file.write((const char*)&numConnections, sizeof(numConnections));
-
-		for (auto& pair: connectionPairs)
-		{
-			writeConnectionData(connectionPairs, file, pair.first);
-		}
-
-		file.write((const char*)&startSquare, sizeof(startSquare));
-		file.write((const char*)&endSquare, sizeof(endSquare));
-
-		file.close();
-
-		ThinDrawer::object->addPopText("saveSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-		ol->overlayOverlay = LEVELER;
-
-		openLevelName = Game::object->pop.renderTexts[0];
-		textSizes.assign(Game::object->pop.textSizes.begin(), Game::object->pop.textSizes.end());
-
-		return 0;
+		return saveLevelNew(file, overwrite);
 	}
 	else
 	{
-		ThinDrawer::object->addPopText("saveFailure", glm::vec2(0.0f, 30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
 		return 1;
 	}
+}
+
+int Leveler::openLevelOld(std::string fileName, std::ifstream& iFile, bool directOpen, bool externalOpen)
+{
+	if (!directOpen)
+	{
+		ThinDrawer::object->addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	renderClear();
+	thinDrawer->releaseRenderResources();
+	quitLeveler();
+
+	if (!directOpen)
+	{
+		pushRenderFunctions();
+		ol->pushRenderFunctions();
+	}
+
+	renderInit();
+
+	size_t numObjects;
+
+	iFile.read((char*)&numObjects, sizeof(size_t));
+
+	for (int i = 0; i < ySize; i++)
+	{
+		for (int j = 0; j < xSize; j++)
+		{
+			s_levelGridData& lgd = gridMap[i][j];
+
+			uint8_t gridData;
+			iFile.read((char*)&gridData, sizeof(uint8_t));
+
+			levelObject objectType = (LevelObject)gridData;
+
+			glm::i16vec2 gridPos = glm::i16vec2(j - xSize_H, i - ySize_H);
+
+			switch (objectType)
+			{
+			case WHITE_WALL:
+				addGridSquare_W(gridPos.x, gridPos.y);
+				break;
+			case BLACK_WALL:
+				addGridSquare_B(gridPos.x, gridPos.y);
+				break;
+			case GLASS_WALL:
+				addGridSquare_G(gridPos.x, gridPos.y);
+				break;
+			case FENCE_WALL:
+				addGridSquare_F(gridPos.x, gridPos.y);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	sideUpdate(-200, 200, -200, 200);
+
+	std::vector<s_objectDataGrid*> levelObjects;
+
+	for (int i = 0; i < numObjects; i++)
+	{
+		s_objectDataGrid* objectData = new s_objectDataGrid();
+		levelObjects.push_back(objectData);
+
+		readObjectData(iFile, objectData);
+		int itemIndex = getLevelObjectIndex(objectData->objectType);
+		putObject(ol->items[itemIndex], objectData);
+	}
+
+	size_t numConnections;
+	iFile.read((char*)&numConnections, sizeof(numConnections));
+
+	for (int i = 0; i < numConnections; i++)
+	{
+		s_connection* connection = new s_connection();
+
+		size_t numPaths;
+		iFile.read((char*)&numPaths, sizeof(size_t));
+
+		if (numPaths > 0)
+		{
+			connection->pathPoints.resize(numPaths);
+			iFile.read((char*)connection->pathPoints.data(),
+				sizeof(connection->pathPoints[0]) * connection->pathPoints.size());
+		}
+
+		size_t numrenderPaths;
+		iFile.read((char*)&numrenderPaths, sizeof(size_t));
+		if (numrenderPaths > 0)
+		{
+			connection->renderPathPoints.resize(numrenderPaths);
+			iFile.read((char*)connection->renderPathPoints.data(),
+				sizeof(connection->renderPathPoints[0]) * connection->renderPathPoints.size());
+		}
+
+		int transmitterIndex;
+		int receiverIndex;
+
+		int lineIndex;
+		bool changePolarization;
+
+		iFile.read((char*)&transmitterIndex, sizeof(int));
+		iFile.read((char*)&receiverIndex, sizeof(int));
+
+		iFile.read((char*)&lineIndex, sizeof(lineIndex));
+		iFile.read((char*)&changePolarization, sizeof(changePolarization));
+
+		connection->index = lineIndex;
+		connection->changePolarization = changePolarization;
+
+		s_objectDataGrid* transmitter = levelObjects[transmitterIndex];
+		s_objectDataGrid* receiver = levelObjects[receiverIndex];
+
+		connectObjects(transmitter, receiver, connection);
+		updateConnectionRenderData(connection);
+	}
+
+	iFile.read((char*)&startSquare, sizeof(startSquare));
+	iFile.read((char*)&endSquare, sizeof(endSquare));
+
+	if (!externalOpen)
+	{
+		size_t pos = fileName.find_last_of("/", fileName.size() - 1);
+
+		openLevelName = fileName.substr(pos + 1, fileName.size() - pos - 5);
+
+		for (int i = 0; i < openLevelName.size();)
+		{
+			char charSize = CharDrawer::calculateCharBytes(openLevelName[i]);
+			textSizes.push_back(charSize);
+			i += charSize;
+		}
+	}
+	else
+	{
+		openLevelName = "";
+		textSizes.clear();
+	}
+
+	thinDrawer->wh->cam->pos = glm::vec2(startSquare.x, -startSquare.y);
+
+	return 0;
+}
+
+void Leveler::readHeaderWithFile(std::string fileName, int& version, size_t& numObjects, std::vector<int32_t>& objectCountVec)
+{
+	std::ifstream file;
+
+#ifdef WIN32
+	std::wstring finalName;
+	int wlen = MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, nullptr, 0);
+	if (wlen == 0)
+	{
+		goto err;
+	}
+
+	finalName = std::wstring(wlen, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, &finalName[0], wlen);
+#else
+	std::string finalName = fileName;
+#endif
+
+	file = std::ifstream(finalName, std::ios_base::binary);
+
+	if (file.is_open())
+	{
+		readHeader(file, version, numObjects, objectCountVec);
+		return;
+	}
+	else
+	{
+		goto err;
+	}
+
+err:
+	version = -1;
+	numObjects = 0;
+	objectCountVec.resize(0);
+}
+
+void Leveler::readHeader(std::ifstream& iFile, int& version, size_t& numObjects, std::vector<int32_t>& objectCountVec)
+{
+	objectCountVec.resize(getLevelObjectIndex(PLATFORM) - 3);
+
+	iFile.read((char*)&version, 3);
+
+	iFile.read((char*)&numObjects, sizeof(numObjects));
+
+	iFile.read((char*)&objectCountVec[0], objectCountVec.size() * sizeof(objectCountVec[0]));
+}
+
+int Leveler::openLevelNew(std::string fileName, std::ifstream& iFile, bool directOpen, bool externalOpen)
+{
+	if (!directOpen)
+	{
+		ThinDrawer::object->addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	renderClear();
+	thinDrawer->releaseRenderResources();
+	quitLeveler();
+
+	if (!directOpen)
+	{
+		pushRenderFunctions();
+		ol->pushRenderFunctions();
+	}
+
+	renderInit();
+
+	int version = -1;
+	size_t numObjects = 0;
+	std::vector<int32_t> objectCounts;
+	readHeader(iFile, version, numObjects, objectCounts);
+
+	std::string maker;
+	char makerSize;
+	bool workshopLevel;
+
+	iFile.read((char*)&makerSize, sizeof(makerSize));
+
+	workshopLevel = makerSize & 0x80;
+	makerSize &= 0x7F;
+	maker.resize(makerSize);
+
+	iFile.read((char*)&maker[0], maker.size() * sizeof(maker[0]));
+
+	uint32_t rating;
+	uint64_t ratingCount;
+
+	iFile.read((char*)&rating, sizeof(rating));
+	iFile.read((char*)&ratingCount, sizeof(ratingCount));
+
+	for (int i = 0; i < ySize; i++)
+	{
+		for (int j = 0; j < xSize; j++)
+		{
+			s_levelGridData& lgd = gridMap[i][j];
+
+			uint8_t gridData;
+			iFile.read((char*)&gridData, sizeof(uint8_t));
+
+			levelObject objectType = (LevelObject)gridData;
+
+			glm::i16vec2 gridPos = glm::i16vec2(j - xSize_H, i - ySize_H);
+
+			switch (objectType)
+			{
+			case WHITE_WALL:
+				addGridSquare_W(gridPos.x, gridPos.y);
+				break;
+			case BLACK_WALL:
+				addGridSquare_B(gridPos.x, gridPos.y);
+				break;
+			case GLASS_WALL:
+				addGridSquare_G(gridPos.x, gridPos.y);
+				break;
+			case FENCE_WALL:
+				addGridSquare_F(gridPos.x, gridPos.y);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	sideUpdate(-200, 200, -200, 200);
+
+	std::vector<s_objectDataGrid*> levelObjects;
+
+	for (int i = 0; i < numObjects; i++)
+	{
+		s_objectDataGrid* objectData = new s_objectDataGrid();
+		levelObjects.push_back(objectData);
+
+		readObjectData(iFile, objectData);
+		int itemIndex = getLevelObjectIndex(objectData->objectType);
+		putObject(ol->items[itemIndex], objectData);
+	}
+
+	size_t numConnections;
+	iFile.read((char*)&numConnections, sizeof(numConnections));
+
+	for (int i = 0; i < numConnections; i++)
+	{
+		s_connection* connection = new s_connection();
+
+		size_t numPaths;
+		iFile.read((char*)&numPaths, sizeof(size_t));
+
+		if (numPaths > 0)
+		{
+			connection->pathPoints.resize(numPaths);
+			iFile.read((char*)connection->pathPoints.data(),
+				sizeof(connection->pathPoints[0]) * connection->pathPoints.size());
+		}
+
+		size_t numrenderPaths;
+		iFile.read((char*)&numrenderPaths, sizeof(size_t));
+		if (numrenderPaths > 0)
+		{
+			connection->renderPathPoints.resize(numrenderPaths);
+			iFile.read((char*)connection->renderPathPoints.data(),
+				sizeof(connection->renderPathPoints[0]) * connection->renderPathPoints.size());
+		}
+
+		int transmitterIndex;
+		int receiverIndex;
+
+		int lineIndex;
+		bool changePolarization;
+
+		iFile.read((char*)&transmitterIndex, sizeof(int));
+		iFile.read((char*)&receiverIndex, sizeof(int));
+
+		iFile.read((char*)&lineIndex, sizeof(lineIndex));
+		iFile.read((char*)&changePolarization, sizeof(changePolarization));
+
+		connection->index = lineIndex;
+		connection->changePolarization = changePolarization;
+
+		s_objectDataGrid* transmitter = levelObjects[transmitterIndex];
+		s_objectDataGrid* receiver = levelObjects[receiverIndex];
+
+		connectObjects(transmitter, receiver, connection);
+		updateConnectionRenderData(connection);
+	}
+
+	iFile.read((char*)&startSquare, sizeof(startSquare));
+	iFile.read((char*)&endSquare, sizeof(endSquare));
+
+	if (!externalOpen)
+	{
+		size_t pos = fileName.find_last_of("/", fileName.size() - 1);
+
+		openLevelName = fileName.substr(pos + 1, fileName.size() - pos - 5);
+
+		for (int i = 0; i < openLevelName.size();)
+		{
+			char charSize = CharDrawer::calculateCharBytes(openLevelName[i]);
+			textSizes.push_back(charSize);
+			i += charSize;
+		}
+	}
+	else
+	{
+		openLevelName = "";
+		textSizes.clear();
+	}
+
+	thinDrawer->wh->cam->pos = glm::vec2(startSquare.x, -startSquare.y);
+
+	return 0;
 }
 
 int Leveler::openLevel(std::string fileName, bool directOpen, bool externalOpen)
@@ -242,145 +688,21 @@ int Leveler::openLevel(std::string fileName, bool directOpen, bool externalOpen)
 
 	if (file.is_open())
 	{
-		if (!directOpen)
+		auto time = std::filesystem::last_write_time(finalName);
+		const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(time).time_since_epoch().count();
+		auto now = std::chrono::system_clock::now().time_since_epoch().count();
+		// 17550191110290918
+
+		const auto lastTime = std::chrono::microseconds(17550191110290919).count();
+
+		if (systemTime < lastTime && false)
 		{
-			ThinDrawer::object->addPopText("openSuccess", glm::vec2(0.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		}
-
-		renderClear();
-		thinDrawer->releaseRenderResources();
-		quitLeveler();
-
-		if (!directOpen)
-		{
-			pushRenderFunctions();
-			ol->pushRenderFunctions();
-		}
-
-		renderInit();
-		
-		size_t numObjects;
-
-		file.read((char*)&numObjects, sizeof(size_t));
-
-		for (int i = 0; i < ySize; i++)
-		{
-			for (int j = 0; j < xSize; j++)
-			{
-				s_levelGridData& lgd = gridMap[i][j];
-
-				uint8_t gridData;
-				file.read((char*)&gridData, sizeof(uint8_t));
-
-				levelObject objectType = (LevelObject)gridData;
-
-				glm::i16vec2 gridPos = glm::i16vec2(j - xSize_H, i - ySize_H);
-
-				switch (objectType)
-				{
-				case WHITE_WALL:
-					addGridSquare_W(gridPos.x, gridPos.y);
-					break;
-				case BLACK_WALL:
-					addGridSquare_B(gridPos.x, gridPos.y);
-					break;
-				case GLASS_WALL:
-					addGridSquare_G(gridPos.x, gridPos.y);
-					break;
-				case FENCE_WALL:
-					addGridSquare_F(gridPos.x, gridPos.y);
-					break;
-				default:
-					break;
-				}
-			}
-		}
-
-		sideUpdate(-200, 200, -200, 200);
-
-		std::vector<s_objectDataGrid*> levelObjects;
-
-		for (int i = 0; i < numObjects; i++)
-		{
-			s_objectDataGrid* objectData = new s_objectDataGrid();
-			levelObjects.push_back(objectData);
-
-			readObjectData(file, objectData);
-			int itemIndex = getLevelObjectIndex(objectData->objectType);
-			putObject(ol->items[itemIndex], objectData);
-		}
-
-		size_t numConnections;
-		file.read((char*)&numConnections, sizeof(numConnections));
-
-		for (int i = 0; i < numConnections; i++)
-		{
-			s_connection* connection = new s_connection();
-
-			size_t numPaths;
-			file.read((char*)&numPaths, sizeof(size_t));
-			
-			if (numPaths > 0)
-			{
-				connection->pathPoints.resize(numPaths);
-				file.read((char*)connection->pathPoints.data(),
-					sizeof(connection->pathPoints[0]) * connection->pathPoints.size());
-			}
-
-			size_t numrenderPaths;
-			file.read((char*)&numrenderPaths, sizeof(size_t));
-			if (numrenderPaths > 0)
-			{
-				connection->renderPathPoints.resize(numrenderPaths);
-				file.read((char*)connection->renderPathPoints.data(),
-					sizeof(connection->renderPathPoints[0]) * connection->renderPathPoints.size());
-			}
-
-			int transmitterIndex;
-			int receiverIndex;
-
-			int lineIndex;
-			bool changePolarization;
-
-			file.read((char*)&transmitterIndex, sizeof(int));
-			file.read((char*)&receiverIndex, sizeof(int));
-
-			file.read((char*)&lineIndex, sizeof(lineIndex));
-			file.read((char*)&changePolarization, sizeof(changePolarization));
-
-			connection->index = lineIndex;
-			connection->changePolarization = changePolarization;
-
-			s_objectDataGrid* transmitter = levelObjects[transmitterIndex];
-			s_objectDataGrid* receiver = levelObjects[receiverIndex];
-
-			connectObjects(transmitter, receiver, connection);
-			updateConnectionRenderData(connection);
-		}
-
-		file.read((char*)&startSquare, sizeof(startSquare));
-		file.read((char*)&endSquare, sizeof(endSquare));
-
-		if (!externalOpen)
-		{
-			size_t pos = fileName.find_last_of("/", fileName.size() - 1);
-
-			openLevelName = fileName.substr(pos + 1, fileName.size() - pos - 5);
-
-			for (int i = 0; i < openLevelName.size();)
-			{
-				char charSize = CharDrawer::calculateCharBytes(openLevelName[i]);
-				textSizes.push_back(charSize);
-				i += charSize;
-			}
+			return openLevelOld(fileName, file, directOpen, externalOpen);
 		}
 		else
 		{
-			openLevelName = "";
-			textSizes.clear();
+			return openLevelNew(fileName, file, directOpen, externalOpen);
 		}
-		
-		return 0;
 	}
 	else
 	{
@@ -965,7 +1287,7 @@ void Leveler::renderFunnels(VkCommandBuffer cmdBuff, void* ptr)
 		float diffLen = glm::length(endPoint - startPoint);
 		funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 1.0);
 		funnelUbo->colour2 = glm::vec4(0.0, 0.3, 1.0, 0.0);
-		funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -3.0);
+		funnelUbo->data = glm::vec4(1.75, 0.0, 0.0, -4.0);
 		funnelUbo->data2 = glm::vec4(diffLen + 10.0, diffLen - 1.0, diffLen, 0.0);
 
 		vkUnmapMemory(td->funnelShader->logicalDevice, td->funnelShader->uniformBuffers[0].memory);
@@ -1282,7 +1604,7 @@ void renderPlatforms(VkCommandBuffer cmdBuff, Leveler* leveler)
 		s_platformRectUbo* platformUbo;
 		vkMapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0].memory, td->platformRectangle->numPlatforms * sizeof(s_platformRectUbo),
 			sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
-		platformUbo->posSize = glm::vec4(midX, midY, xSize, ySize);
+		platformUbo->posSize = glm::vec4(midX, midY, xSize + PLATFORM_EXTRA, ySize + PLATFORM_EXTRA);
 		leveler->fillPlatformData(0, platformUbo);
 		vkUnmapMemory(td->logicalDevice, td->platformRectangle->uniformBuffers[0].memory);
 
@@ -1606,6 +1928,16 @@ void renderNone(VkCommandBuffer cmdBuff, Leveler* leveler)
 		vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
 
 		vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, objectData->scale.x * objectData->scale.y, 0, 0);
+
+		if (lgd.objectType & (HAZARDER | FORCE_FIELD))
+		{
+			gsData.positionData[0] = objectData->extraPos.x;
+			gsData.positionData[1] = objectData->extraPos.y;
+
+			vkCmdPushConstants(cmdBuff, td->gridSquare->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(s_gridSquareData), (void*)&gsData);
+
+			vkCmdDraw(cmdBuff, td->wallLight->buffers[0].count, objectData->scale.x * objectData->scale.y, 0, 0);
+		}
 	}
 
 	if (leveler->connecting && leveler->consqClickVec.size() > 0)
@@ -1861,7 +2193,7 @@ bool Leveler::canConnect(glm::ivec2 p0, glm::ivec2 p1)
 	s_objectDataGrid* objectData = (s_objectDataGrid*)lgd.data.ptr;
 	s_objectDataGrid* objectData2 = (s_objectDataGrid*)lgd2.data.ptr;
 
-	if (objectData && objectData2 && (lgd.objectType & (SINGLE_DRAWS | PLATFORM)) && (lgd2.objectType & (SINGLE_DRAWS | PLATFORM)) &&
+	if (objectData && objectData2 && (lgd.objectType & (TRANSMITTERS | RECEIVERS)) && (lgd2.objectType & (TRANSMITTERS | RECEIVERS)) &&
 		(((objectData->objectType & TRANSMITTERS) != 0) ^ ((objectData2->objectType & TRANSMITTERS) != 0)) != 0 &&
 		objectData->connections.size() < 8 && objectData2->connections.size() < 8)
 	{
@@ -2477,7 +2809,7 @@ void Leveler::putPlatform(s_objectDataGrid* inData)
 	s_platformRectUbo* platformUbo;
 	vkMapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory,
 		thinDrawer->platformRectangle->numPlatforms * sizeof(s_platformRectUbo), sizeof(s_platformRectUbo), 0, (void**)&platformUbo);
-	platformUbo->posSize = glm::vec4(platformPos.x, platformPos.y, platformSize.x, platformSize.y);
+	platformUbo->posSize = glm::vec4(platformPos.x, platformPos.y, platformSize.x + PLATFORM_EXTRA, platformSize.y + PLATFORM_EXTRA);
 	fillPlatformData(platformType, platformUbo);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->platformRectangle->uniformBuffers[0].memory);
 
@@ -3390,14 +3722,14 @@ void Leveler::afterPutObject(const s_gridItemData& item, s_objectDataGrid* objec
 			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, 0.0);
 			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, objectData->startActive ? 1.0 : 0.15);
 			funnelUbo->data2 = glm::vec4(std::min(50.0f, diffLen), diffLen - 1.0, diffLen, thinDrawer->gameTime);
-			funnelUbo->data = glm::vec4(1.75, thinDrawer->gameTime, 0.0, 3.0);
+			funnelUbo->data = glm::vec4(1.75, thinDrawer->gameTime, 0.0, 4.0);
 		}
 		else
 		{
 			funnelUbo->colour = glm::vec4(0.0, 0.3, 1.0, objectData->startActive ? 1.0 : 0.15);
 			funnelUbo->colour2 = glm::vec4(1.0, 0.3, 0.0, 0.0);
 			funnelUbo->data2 = glm::vec4(-10.0, diffLen - 1.0, diffLen, thinDrawer->gameTime);
-			funnelUbo->data = glm::vec4(1.75, thinDrawer->gameTime, 0.0, -3.0);
+			funnelUbo->data = glm::vec4(1.75, thinDrawer->gameTime, 0.0, -4.0);
 		}
 
 		vkUnmapMemory(shader->logicalDevice, shader->uniformBuffers[0].memory);
@@ -4153,7 +4485,8 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
 		for (int x = leftX; x <= rightX; x++)
 		{
 			const s_levelGridData& squareData = getSquare(x, y);
-			if ((squareData.objectType & GRID_DRAWS) == 0)
+			const levelObject objectType = (levelObject)(squareData.objectType & GRID_DRAWS);
+			if (objectType == 0)
 			{
 				continue;
 			}
@@ -4169,11 +4502,9 @@ void Leveler::sideUpdate(short minX, short maxX, short minY, short maxY)
 					continue;
 				}
 
-				if ((!(getSquare(xPos, yPos).objectType & (WHITE_WALL | BLACK_WALL)) &&
-					squareData.objectType & (WHITE_WALL | BLACK_WALL))
+				if ((!(getSquare(xPos, yPos).objectType & (WHITE_WALL | BLACK_WALL)) && objectType & (WHITE_WALL | BLACK_WALL))
 					||
-					(!(getSquare(xPos, yPos).objectType & squareData.objectType) &&
-						squareData.objectType & (FENCE_WALL | GLASS_WALL)))
+					(!(getSquare(xPos, yPos).objectType & objectType) && objectType & (FENCE_WALL | GLASS_WALL)))
 				{
 					sideData |= SIDE_ENABLE | (DOWN_LINE << j);
 				}
@@ -4328,7 +4659,7 @@ void Leveler::addGridSquare_F(short x, short y)
 	wallUbo->posSize = glm::vec4(x + 0.5f, y + 0.5f, 1.0f, 1.0f);
 	wallUbo->colour = glm::vec4(0.12, 0.1, 0.1, 1.0);
 	wallUbo->bgColour = glm::vec4(0.12, 0.1, 0.1, 0.0);
-	wallUbo->data = glm::vec4(2.0, 0.2, 1.0, 0.5);
+	wallUbo->data = glm::vec4(2.0, 0.125, 1.0, 0.5);
 	vkUnmapMemory(thinDrawer->logicalDevice, thinDrawer->diagonalLiner->uniformBuffers[0].memory);
 
 	const s_levelGridData& currentGridData = getSquare(x, y);
@@ -4640,7 +4971,7 @@ void Leveler::handleRightClickClick()
 					funnelUbo->data2.x = colorSplitPos;
 					funnelUbo->data2.w = thinDrawer->gameTime;
 
-					funnelUbo->data.w = objectData->startPolarized ? 3.0 : -3.0;
+					funnelUbo->data.w = objectData->startPolarized ? 4.0 : -4.0;
 					funnelUbo->colour.w = objectData->startActive ? 1.0 : 0.15;
 					funnelUbo->colour2.w = objectData->startActive ? 1.0 : 0.15;
 

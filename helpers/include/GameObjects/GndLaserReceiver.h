@@ -8,7 +8,7 @@
 #include <list>
 #include "GameObjects/Transmitter.h"
 
-#define MAX_GND_LASER_RECEIVERS 64
+#define MAX_GND_LASER_RECEIVERS 128
 
 class LaserEmitter;
 

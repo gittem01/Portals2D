@@ -5,8 +5,9 @@
 #include "Gel.h"
 #include "Overlayer.h"
 
-std::vector<LaserEmitter> LaserEmitter::laserEmitters(128);
+std::vector<LaserEmitter> LaserEmitter::laserEmitters(MAX_LASER_EMITTERS);
 int LaserEmitter::numLaserEmitters = 0;
+std::vector<s_simpleRay> LaserEmitter::redirectedLaserRays(0);
 s_perTextureData* LaserEmitter::ptData;
 s_texture* LaserEmitter::tex;
 
@@ -20,7 +21,7 @@ static b2Vec2 bodyOffsets[4] =
 	b2Vec2(0.1f, 0.5f),
 };
 
-static b2Vec2 vertices[2] = { b2Vec2(+0.299f, -0.1f), b2Vec2(0.0f, 0.35f)};
+static b2Vec2 vertices[2] = { b2Vec2(+0.275f, -0.1f), b2Vec2(0.0f, 0.35f)};
 
 static splashData sData;
 
@@ -151,6 +152,19 @@ void LaserEmitter::render(VkCommandBuffer cmdBuff, void* ptr)
 		}
 	}
 
+	for (s_simpleRay& ray : redirectedLaserRays)
+	{
+		s_laserUbo laserData;
+		laserData.points = glm::vec4(ray.startPos.x, ray.startPos.y, ray.endPos.x, ray.endPos.y);
+		laserData.colour = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		laserData.data = glm::vec4(0.4, 11.0, 36.0, 0.0);
+
+		vkCmdPushConstants(cmdBuff, td->laserPshShader->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(s_laserUbo), &laserData);
+
+		vkCmdDraw(cmdBuff, 6, 1, 0, 0);
+	}
+
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, td->splash->pipeline);
 
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -200,7 +214,7 @@ void LaserEmitter::handleGroundReceivers()
 			b2Vec2 bodyPos = glr.body->GetPosition();
 			b2Vec2 upVec = 0.2f * glr.body->GetTransform().q.GetYAxis();
 
-			laserEmitters[0].laserRays.push_back({ bodyPos - upVec, bodyPos + upVec });
+			redirectedLaserRays.push_back({ bodyPos - upVec, bodyPos + upVec });
 
 			if (!gndLaserMasks[pair.first])
 			{
@@ -212,6 +226,8 @@ void LaserEmitter::handleGroundReceivers()
 
 void LaserEmitter::update()
 {
+	redirectedLaserRays.clear();
+
 	for (int i = 0; i < numLaserEmitters; i++)
 	{
 		LaserEmitter& lsr = laserEmitters[i];
@@ -275,7 +291,7 @@ void LaserEmitter::update()
 				{
 					b2Vec2 lastLaserPos = pWorld->rayHandler->rayResult[0].endPos;
 					b2Vec2 bodyCenter = collBody->GetPosition();
-					laserEmitters[0].laserRays.push_back({lastLaserPos, bodyCenter});
+					redirectedLaserRays.push_back({lastLaserPos, bodyCenter});
 
 					LaserCube* lc = (LaserCube*)pData->data;
 					if (lsr.collidedLaserCubes.find(lc->wData) == lsr.collidedLaserCubes.end())
@@ -297,7 +313,7 @@ void LaserEmitter::update()
 							{
 								b2Vec2 p2 = PortalWorld::getRelativePortalPosition_W(lastLaserPos, bcs.connection);
 								bodyCenter = bcs.body->body->GetPosition();
-								laserEmitters[0].laserRays.push_back({p2, bodyCenter});
+								redirectedLaserRays.push_back({p2, bodyCenter});
 
 								if (bcs.connection->portal1->getPointSide(pb->body->GetPosition()) != bcs.connection->side1)
 								{
@@ -357,7 +373,7 @@ void LaserEmitter::update()
 
 				s_simpleRay toCenterRay = { lastPos, recCenter };
 
-				laserEmitters[0].laserRays.push_back(toCenterRay);
+				redirectedLaserRays.push_back(toCenterRay);
 			}
 			else
 			{

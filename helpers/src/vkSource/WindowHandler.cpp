@@ -17,8 +17,8 @@ void WindowHandler::handleMouseData()
     this->mouseData[5] = 0;
     this->trackpadData[0] = 0;
     this->trackpadData[1] = 0;
-    this->mouseData[7] = 0;
-    this->mouseData[8] = 0;
+    this->mouseData[MOUSE_X_REL] = 0;
+    this->mouseData[MOUSE_Y_REL] = 0;
     for (int i = 2; i < 5; i++)
     {
         if (this->mouseData[i] == 2)
@@ -61,8 +61,8 @@ bool WindowHandler::handleEvents()
             mouseData[0] = (int)evnt.motion.x;
             mouseData[1] = (int)evnt.motion.y;
 
-			mouseData[7] = evnt.motion.xrel;
-			mouseData[8] = evnt.motion.yrel;
+			mouseData[MOUSE_X_REL] = evnt.motion.xrel;
+			mouseData[MOUSE_Y_REL] = evnt.motion.yrel;
 
 			lastMouseMovementTime = ThinDrawer::object->gameTime;
             break;
@@ -70,10 +70,16 @@ bool WindowHandler::handleEvents()
             text = std::string(evnt.text.text);
             break;
 		case (SDL_EVENT_MOUSE_BUTTON_DOWN):
-			mouseData[evnt.button.button + 1] = 2;
+            if (evnt.button.button > 0 && evnt.button.button < std::size(mouseData) - 3)
+            {
+			    mouseData[evnt.button.button + 1] = 2;
+            }
 			break;
 		case (SDL_EVENT_MOUSE_BUTTON_UP):
-			mouseData[evnt.button.button + 1] = 0;
+            if (evnt.button.button > 0 && evnt.button.button < std::size(mouseData) - 3)
+            {
+			    mouseData[evnt.button.button + 1] = 0;
+            }
 			break;
 		case (SDL_EVENT_MOUSE_WHEEL):
 			mouseData[5] = evnt.wheel.y;

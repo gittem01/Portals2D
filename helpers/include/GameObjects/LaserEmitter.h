@@ -11,6 +11,8 @@
 
 #define LSR_FILTER_MASK (F_FEDGE | F_GEDGE | F_GND_RECEIVER)
 
+#define MAX_LASER_EMITTERS 256
+
 typedef struct
 {
 	b2Vec2 startPos;
@@ -22,6 +24,7 @@ class LaserEmitter : public Receiver
 public:
 	static std::vector<LaserEmitter> laserEmitters;
 	static int numLaserEmitters;
+	static std::vector<s_simpleRay> redirectedLaserRays;
 	static s_perTextureData* ptData;
 	static s_texture* tex;
 

@@ -632,7 +632,7 @@ void Menu::update()
 	{
 		maxFramerateButton->text.color = glm::vec4(1.0f);
 
-		differ = td->wh->mouseData[7] * 0.1f;
+		differ = td->wh->mouseData[MOUSE_X_REL] * 0.1f;
 	}
 	else if (hoverButton == maxFramerateButton)
 	{

@@ -399,7 +399,7 @@ void Platform::render(VkCommandBuffer cmdBuff, void* ptr)
 		ThinDrawer::object->wallGel->pipelineLayout, 1, 1, &ThinDrawer::object->wallGel->descriptorSets[1], 0, nullptr);
 
 	vkCmdDraw(cmdBuff, 6, platforms.size() * 4, 0, ThinDrawer::object->wallGel->numWallLines +
-		MAX_PLATFORMS * ThinDrawer::object->frameIndex);
+		MAX_PLATFORMS * ThinDrawer::object->frameIndex * 4);
 }
 
 void Platform::memMapFunc(void* ptr)

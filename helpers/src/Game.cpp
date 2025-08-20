@@ -25,7 +25,7 @@
 
 Game* Game::object;
 
-SDL_Scancode Game::jumpKey = SDL_SCANCODE_W;
+SDL_Scancode Game::jumpKey = SDL_SCANCODE_SPACE;
 SDL_Scancode Game::leftKey = SDL_SCANCODE_A;
 SDL_Scancode Game::rightKey = SDL_SCANCODE_D;
 SDL_Scancode Game::downKey = SDL_SCANCODE_S;
@@ -282,7 +282,10 @@ void Game::stateStarterAnimation(float time)
 
 void Game::LevelerState()
 {
-    bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusLevelEditor");
+    if (SteamFriends())
+    {
+        bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusLevelEditor");
+    }
 
     leveler->ol->overlayOverlay = LEVELER;
 
@@ -309,6 +312,8 @@ void Game::LevelerState()
     sounder->addFader(levelerMusic, 0.0f, 0.15f, 1.0f);
 
     runSingleTaskRegistry();
+    
+    thinDrawer->wh->cam->pos = glm::vec2(leveler->startSquare.x + 0.5, -leveler->startSquare.y - 1.0);
 
     lastTime = SDL_GetTicksSec();
     while (!shouldQuit && !leveler->shouldQuit)
@@ -356,7 +361,10 @@ void Game::LevelerState()
 
 void Game::TestState()
 {
-    bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusLevel");
+    if (SteamFriends())
+    {
+        bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusLevel");
+    }
 
     int startLevelIndex = testCase->testCaseItem;
 
@@ -563,7 +571,10 @@ void Game::TestState()
 
 void Game::MenuState()
 {
-    bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusMenu");
+    if (SteamFriends())
+    {
+        bool res = SteamFriends()->SetRichPresence("steam_display", "#StatusMenu");
+    }
 
     menu->initDefaults();
 
