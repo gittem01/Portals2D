@@ -10,6 +10,7 @@ english
 schinese
 koreana
 japanese
+russian
 <langSteamNames>
 
 <local_0>
@@ -18,6 +19,7 @@ Türkçe
 Çince
 Korece
 Japonca
+Rusça
 <local_0>
 
 <local_1>
@@ -26,6 +28,7 @@ English
 Chinese
 Korean
 Japanese
+Russian
 <local_1>
 
 <local_2>
@@ -34,6 +37,7 @@ Japanese
 中文
 韩国人
 日本人
+俄语
 <local_2>
 
 <local_3>
@@ -42,6 +46,7 @@ Japanese
 중국어
 한국어
 일본어
+러시아어
 <local_3>
 
 <local_4>
@@ -50,4 +55,14 @@ Japanese
 中国語
 韓国語
 日本語
+ロシア語
 <local_4>
+
+<local_5>
+Турецкий
+Английский
+Китайский
+Корейский
+Японский
+Русский
+<local_5>

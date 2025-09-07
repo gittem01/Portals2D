@@ -32,6 +32,7 @@ Credits
 鸣谢
 크레딧
 クレジット
+Титры
 <title>
 
 <0_0>
@@ -68,6 +69,13 @@ FoxSynergy - ゲーム内音楽
 pixelsphere.org - レベルエディター音楽
 opengameart.org, remaxim - メインメニュー音楽
 <0_4>
+
+<0_5>
+Музыка
+FoxSynergy - Музыка в игре
+pixelsphere.org - Музыка редактора уровней
+opengameart.org, remaxim - Музыка главного меню
+<0_5>
 
 <1_0>
 Ses Efekti
@@ -149,6 +157,22 @@ freesound.org, shimsewn - レーザーループ効果
 Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - タレットガン効果
 <1_4>
 
+<1_5>
+Звуковые эффекты
+opengameart.org, Michel Baradari - Эффект портальной пушки
+opengameart.org, Michel Baradari - Эффект деактивации портала
+opengameart.org, OptimusDu - Эффект разрушения объекта
+opengameart.org, qubodup - Эффект удара слайдера редактора уровней
+opengameart.org, isaiah658 - Эффект цикла нейтрализатора гравитации
+opengameart.org, rubberduck - Эффект цикла светового моста
+opengameart.org, Umplix - Эффект цикла платформы
+opengameart.org, Bart - Эффект цикла платформы
+opengameart.org, faxcorp - Электрические звуковые эффекты
+freesound.org, ironcross32 - Эффект активации
+freesound.org, shimsewn - Эффект цикла лазера
+Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Эффект оружия турели
+<1_5>
+
 <2_0>
 Oynanış Testi
 Ege Ömerca
@@ -178,6 +202,12 @@ Burak Kukçu
 Ege Ömerca
 Burak Kukçu
 <2_4>
+
+<2_5>
+Тестеры игры
+Ege Ömerca
+Burak Kukçu
+<2_5>
 
 <3_0>
 Yazılım Kütüphaneleri (C++)
@@ -238,3 +268,15 @@ OpenAL
 SDL3
 stb_truetype
 <3_4>
+
+<3_5>
+Библиотеки программного обеспечения (C++)
+Box2D (v2)
+Vulkan
+AudioFile
+GLM
+ImGui
+OpenAL
+SDL3
+stb_truetype
+<3_5>
