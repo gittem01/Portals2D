@@ -9,6 +9,7 @@ turkish
 english
 schinese
 koreana
+japanese
 <langSteamNames>
 
 <local_0>
@@ -16,6 +17,7 @@ Türkçe
 İngilizce
 Çince
 Korece
+Japonca
 <local_0>
 
 <local_1>
@@ -23,6 +25,7 @@ Turkish
 English
 Chinese
 Korean
+Japanese
 <local_1>
 
 <local_2>
@@ -30,6 +33,7 @@ Korean
 英语
 中文
 韩国人
+日本人
 <local_2>
 
 <local_3>
@@ -37,4 +41,13 @@ Korean
 영어
 중국어
 한국어
+일본어
 <local_3>
+
+<local_4>
+トルコ語
+英語
+中国語
+韓国語
+日本語
+<local_4>

@@ -3,4 +3,5 @@ Polarizasyon
 Polarization
 极化
 극성
+極性
 <lang>

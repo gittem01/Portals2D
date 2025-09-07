@@ -19,6 +19,12 @@ Remove Connections
 연결...
 연결 제거
 <3>
+
+<4>
+アイテム削除
+接続...
+接続解除
+<4>
 <linked_options>
 -
 -

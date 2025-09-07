@@ -11,6 +11,10 @@ Remove Item
 <3>
 항목 제거
 <3>
+
+<4>
+アイテム削除
+<4>
 <linked_options>
 -
 <linked_options>

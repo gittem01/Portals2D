@@ -23,6 +23,13 @@
 4 m/s
 8 m/s
 <3>
+
+<4>
+1 m/s
+2 m/s
+4 m/s
+8 m/s
+<4>
 <linked_options>
 -
 -

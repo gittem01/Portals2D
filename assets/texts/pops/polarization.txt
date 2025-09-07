@@ -15,6 +15,11 @@ Change Polarization
 활성화/비활성화
 극성 변경
 <3>
+
+<4>
+有効/無効
+極性変更
+<4>
 <linked_options>
 -
 -

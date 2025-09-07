@@ -20,8 +20,8 @@
 <colour_2>
 
 <colour_3>
-0
-0
+2048
+2048
 2048
 2048
 <colour_3>
@@ -31,6 +31,7 @@ Katkılar
 Credits
 鸣谢
 크레딧
+クレジット
 <title>
 
 <0_0>
@@ -60,6 +61,13 @@ FoxSynergy - 게임 내 음악
 pixelsphere.org - 레벨 에디터 음악
 opengameart.org, remaxim - 메인 메뉴 음악
 <0_3>
+
+<0_4>
+音楽
+FoxSynergy - ゲーム内音楽
+pixelsphere.org - レベルエディター音楽
+opengameart.org, remaxim - メインメニュー音楽
+<0_4>
 
 <1_0>
 Ses Efekti
@@ -125,6 +133,22 @@ freesound.org, shimsewn - 레이저 루프 효과
 Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - 터렛 건 효과
 <1_3>
 
+<1_4>
+音響効果
+opengameart.org, Michel Baradari - ポータルガン効果
+opengameart.org, Michel Baradari - ポータル非活性化効果
+opengameart.org, OptimusDu - オブジェクト破壊効果
+opengameart.org, qubodup - レベルエディタースライダー衝撃効果
+opengameart.org, isaiah658 - 重力無効化ループ効果
+opengameart.org, rubberduck - 光の橋ループ効果
+opengameart.org, Umplix - プラットフォームループ効果
+opengameart.org, Bart - プラットフォームループ効果
+opengameart.org, faxcorp - 電気音響効果
+freesound.org, ironcross32 - 活性化効果
+freesound.org, shimsewn - レーザーループ効果
+Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - タレットガン効果
+<1_4>
+
 <2_0>
 Oynanış Testi
 Ege Ömerca
@@ -148,6 +172,12 @@ Burak Kukçu
 Ege Ömerca
 Burak Kukçu
 <2_3>
+
+<2_4>
+プレイテスター
+Ege Ömerca
+Burak Kukçu
+<2_4>
 
 <3_0>
 Yazılım Kütüphaneleri (C++)
@@ -196,3 +226,15 @@ OpenAL
 SDL3
 stb_truetype
 <3_3>
+
+<3_4>
+ソフトウェアライブラリ (C++)
+Box2D (v2)
+Vulkan
+AudioFile
+GLM
+ImGui
+OpenAL
+SDL3
+stb_truetype
+<3_4>
