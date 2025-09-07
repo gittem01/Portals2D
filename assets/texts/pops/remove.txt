@@ -7,6 +7,10 @@ Remove Item
 <2>
 删除物品
 <2>
+
+<3>
+항목 제거
+<3>
 <linked_options>
 -
 <linked_options>

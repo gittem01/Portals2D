@@ -30,6 +30,7 @@
 Katkılar
 Credits
 鸣谢
+크레딧
 <title>
 
 <0_0>
@@ -52,6 +53,13 @@ FoxSynergy - 游戏内音乐
 pixelsphere.org - 关卡编辑器音乐
 opengameart.org, remaxim - 主菜单音乐
 <0_2>
+
+<0_3>
+음악
+FoxSynergy - 게임 내 음악
+pixelsphere.org - 레벨 에디터 음악
+opengameart.org, remaxim - 메인 메뉴 음악
+<0_3>
 
 <1_0>
 Ses Efekti
@@ -101,6 +109,22 @@ freesound.org, shimsewn - 激光循环效果
 Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - 炮塔枪效果
 <1_2>
 
+<1_3>
+음향 효과
+opengameart.org, Michel Baradari - 포털 건 효과
+opengameart.org, Michel Baradari - 포털 비활성화 효과
+opengameart.org, OptimusDu - 객체 파괴 효과
+opengameart.org, qubodup - 레벨 에디터 슬라이더 타격 효과
+opengameart.org, isaiah658 - 중력 무효화 루프 효과
+opengameart.org, rubberduck - 빛의 다리 루프 효과
+opengameart.org, Umplix - 플랫폼 루프 효과
+opengameart.org, Bart - 플랫폼 루프 효과
+opengameart.org, faxcorp - 전기 음향 효과
+freesound.org, ironcross32 - 활성화 효과
+freesound.org, shimsewn - 레이저 루프 효과
+Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - 터렛 건 효과
+<1_3>
+
 <2_0>
 Oynanış Testi
 Ege Ömerca
@@ -118,6 +142,12 @@ Burak Kukçu
 Ege Ömerca
 Burak Kukçu
 <2_2>
+
+<2_3>
+플레이 테스터
+Ege Ömerca
+Burak Kukçu
+<2_3>
 
 <3_0>
 Yazılım Kütüphaneleri (C++)
@@ -154,3 +184,15 @@ OpenAL
 SDL3
 stb_truetype
 <3_2>
+
+<3_3>
+소프트웨어 라이브러리 (C++)
+Box2D (v2)
+Vulkan
+AudioFile
+GLM
+ImGui
+OpenAL
+SDL3
+stb_truetype
+<3_3>

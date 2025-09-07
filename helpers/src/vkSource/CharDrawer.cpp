@@ -91,9 +91,6 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 {
 	auto languages = IOHelper::loadLines("languages.txt");
 	auto languageMap = IOHelper::mapVector(languages);
-	std::string s = "<" + std::to_string(selectedLanguageIndex) + ">";
-
-	languageName = languageMap[s][0];
 
 	std::string s2 = "<local_" + std::to_string(selectedLanguageIndex) + ">";
 
@@ -101,6 +98,8 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 	{
 		allLanguages.push_back(str);
 	}
+
+	languageName = languageMap[s2][selectedLanguageIndex];
 
 	auto fontFiles = languageMap["<fontFiles>"];
 	fontInfos.resize(fontFiles.size());

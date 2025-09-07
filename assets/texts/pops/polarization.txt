@@ -10,6 +10,11 @@ Change Polarization
 启用/禁用
 更改极化
 <2>
+
+<3>
+활성화/비활성화
+극성 변경
+<3>
 <linked_options>
 -
 -

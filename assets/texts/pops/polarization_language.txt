@@ -2,4 +2,5 @@
 Polarizasyon
 Polarization
 极化
+극성
 <lang>

@@ -2,134 +2,161 @@
 Beyaz Duvar
 White Wall
 白墙
+흰 벽
 <0>
 <1>
 Siyah Duvar
 Black Wall
 黑墙
+검은 벽
 <1>
 <2>
 Cam
 Glass
 玻璃
+유리
 <2>
 <3>
 Çit
 Fence
 栅栏
+울타리
 <3>
 <4>
 Zamanlı Düğme
 Timed Button
 定时按钮
+타이머 버튼
 <4>
 <5>
 Zemin Düğmesi
 Ground Button
 地面按钮
+바닥 버튼
 <5>
 <6>
 Küp Butonu
 Cube Button
 立方体按钮
+큐브 버튼
 <6>
 <7>
 Küre Butonu
 Sphere Button
 球体按钮
+구형 버튼
 <7>
 <8>
 Standart Küp
 Standard Cube
 标准立方体
+표준 큐브
 <8>
 <9>
 Lazer Küpü
 Laser Cube
 激光立方体
+레이저 큐브
 <9>
 <10>
 Küre Top
 Sphere Ball
 球形球
+구형 볼
 <10>
 <11>
 Taret
 Turret
 炮塔
+터렛
 <11>
 <12>
 Laser Yayıcı
 Laser Emitter
 激光发射器
+레이저 발사기
 <12>
 <13>
 Lazer Alıcı Duvar
 Laser Receiver Wall
 激光接收器墙
+레이저 수신기 벽
 <13>
 <14>
 Lazer Alıcı Yer
 Laser Receiver Ground
 激光接收器地面
+레이저 수신기 바닥
 <14>
 <15>
 Zıplangaç Plakası
 Jumper Plate
 跳跃板
+점퍼 플레이트
 <15>
 <16>
 Kütleçekim Sıfırlayıcı
 Gravity Nullifier
 重力消除器
+중력 무효화기
 <16>
 <17>
 Işık Köprüsü
 Light Bridge
 光桥
+빛의 다리
 <17>
 <18>
 Ölümcül Güç Alanı
 Deadly Force Field
 致命力场
+치명적인 포스 필드
 <18>
 <19>
 Elektrik Alanı
 Electricity Field
 电场
+전기장
 <19>
 <20>
 Mavi Jel
 Blue Gel
 蓝色凝胶
+파란 젤
 <20>
 <21>
 Turuncu Jel
 Orange Gel
 橙色凝胶
+오렌지 젤
 <21>
 <22>
 Beyaz Jel
 White Gel
 白色凝胶
+흰 젤
 <22>
 <23>
 Su Jel
 Water Gel
 水凝胶
+물 젤
 <23>
 <24>
 Obje Düşürücü
 Object Dropper
 物体投放器
+객체 드로퍼
 <24>
 <25>
 Platform
 Platform
 平台
+플랫폼
 <25>
 <26>
 Silgi
 Eraser
 橡皮擦
+지우개
 <26>
