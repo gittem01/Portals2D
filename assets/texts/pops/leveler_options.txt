@@ -14,6 +14,14 @@ File Name Cannot Contain These Characters:
 Save As
 Open From File
 <1>
+<2>
+加载
+保存
+L
+文件名不能包含以下字符：
+另存为
+从文件打开
+<2>
 <linked_options>
 -
 -

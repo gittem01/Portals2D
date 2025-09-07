@@ -1,6 +1,5 @@
-<0>
+<lang>
 Polarizasyon
-<0>
-<1>
 Polarization
-<1>
+极化
+<lang>

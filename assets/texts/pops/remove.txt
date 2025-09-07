@@ -4,6 +4,9 @@ Eşyayı Sil
 <1>
 Remove Item
 <1>
+<2>
+删除物品
+<2>
 <linked_options>
 -
 <linked_options>

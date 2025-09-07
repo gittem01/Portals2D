@@ -12,6 +12,13 @@ Sonsuza Kadar
 16 Seconds
 Forever
 <1>
+<2>
+2 秒
+4 秒
+8 秒
+16 秒
+永久
+<2>
 <linked_options>
 -
 -

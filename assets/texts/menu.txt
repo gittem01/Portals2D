@@ -6,6 +6,10 @@ OYNA
 PLAY
 <play_1>
 
+<play_2>
+游玩
+<play_2>
+
 <leveler_0>
 BÖLÜM DÜZENLEYİCİ
 YENİ
@@ -19,6 +23,13 @@ NEW
 LOAD
 COMMUNITY
 <leveler_1>
+
+<leveler_2>
+关卡编辑器
+新建
+加载
+社区
+<leveler_2>
 
 <settings_0>
 AYARLAR
@@ -58,6 +69,25 @@ SELECT LANGUAGE
 SELECT GRAPHICS CARD
 <settings_1>
 
+<settings_2>
+设置
+总音量
+音乐
+音效
+旋转
+跳跃
+抓握
+左
+下
+右
+全屏窗口
+无边框窗口
+垂直同步
+帧率限制
+选择语言
+选择显卡
+<settings_2>
+
 <langset_0>
 DİL DEĞİŞTİRMEK YENİDEN BAŞLATMA GEREKTİRİR
 <langset_0>
@@ -65,6 +95,10 @@ DİL DEĞİŞTİRMEK YENİDEN BAŞLATMA GEREKTİRİR
 <langset_1>
 LANGUAGE CHANGE REQUIRES RESTART
 <langset_1>
+
+<langset_2>
+更改语言需要重启
+<langset_2>
 
 <gpuset_0>
 EKRAN KARTI DEĞİŞTİRMEK YENİDEN BAŞLATMA GEREKTİRİR
@@ -74,6 +108,10 @@ EKRAN KARTI DEĞİŞTİRMEK YENİDEN BAŞLATMA GEREKTİRİR
 GRAPHICS CARD CHANGE REQUIRES RESTART
 <gpuset_1>
 
+<gpuset_2>
+更改显卡需要重启
+<gpuset_2>
+
 <currentGpu_0>
 Çalışan Kart
 <currentGpu_0>
@@ -81,6 +119,10 @@ GRAPHICS CARD CHANGE REQUIRES RESTART
 <currentGpu_1>
 Running Card
 <currentGpu_1>
+
+<currentGpu_2>
+运行中的显卡
+<currentGpu_2>
 
 <credits_0>
 KATKILAR
@@ -90,6 +132,10 @@ KATKILAR
 CREDITS
 <credits_1>
 
+<credits_2>
+鸣谢
+<credits_2>
+
 <exit_0>
 ÇIKIŞ
 <exit_0>
@@ -97,6 +143,10 @@ CREDITS
 <exit_1>
 EXIT
 <exit_1>
+
+<exit_2>
+退出
+<exit_2>
 
 <back_0>
 GERİ
@@ -106,6 +156,10 @@ GERİ
 BACK
 <back_1>
 
+<back_2>
+返回
+<back_2>
+
 <resume_0>
 DEVAM ET
 <resume_0>
@@ -113,6 +167,10 @@ DEVAM ET
 <resume_1>
 RESUME
 <resume_1>
+
+<resume_2>
+继续
+<resume_2>
 
 <restart_0>
 YENİDEN BAŞLA
@@ -122,6 +180,10 @@ YENİDEN BAŞLA
 RESTART
 <restart_1>
 
+<restart_2>
+重新开始
+<restart_2>
+
 <to_menu_0>
 MENÜYE DÖN
 <to_menu_0>
@@ -129,6 +191,10 @@ MENÜYE DÖN
 <to_menu_1>
 RETURN TO MENU
 <to_menu_1>
+
+<to_menu_2>
+返回菜单
+<to_menu_2>
 
 <to_editor_0>
 EDİTÖRE DÖN
@@ -138,52 +204,66 @@ EDİTÖRE DÖN
 RETURN TO EDITOR
 <to_editor_1>
 
+<to_editor_2>
+返回编辑器
+<to_editor_2>
+
 <enterName>
 Bölüm Kayıt Adı
 Level Save Name
+关卡保存名称
 <enterName>
 
 <saveSuccess>
 Kaydetme Başarılı
 Save Successful
+保存成功
 <saveSuccess>
 
 <loading>
 Yükleniyor
 Loading
+加载中
 <loading>
 
 <saveFailure>
 Kaydetme Başarısız
 Save Failed
+保存失败
 <saveFailure>
 
 <openSuccess>
 Bölüm Açma Başarılı
 Level Opened Successfully
+成功打开关卡
 <openSuccess>
 
 <openFailure>
 Bölüm Açma Başarısız
 Level Opening Failed
+打开关卡失败
 <openFailure>
 
 <alreadyExists>
 Dosya Zaten Var
 File Already Exists
+文件已存在
 <alreadyExists>
 
 <startend>
 Bölüm başlangıç ve bitiş noktaları boş olmalıdır
 Level start and end locations must be empty
+关卡起点和终点位置必须为空
 <startend>
 
 <notreachable>
 Bölüm bitiş noktası erişilebilir olmalıdır
 Level ending location must be reachable
+关卡终点位置必须可达
 <notreachable>
 
 <objectlimit>
 Obje sayı limitine ulaşıldı
 Object count reached to limit
+已达到对象数量限制
 <objectlimit>

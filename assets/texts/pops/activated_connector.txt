@@ -10,6 +10,12 @@ Connect to...
 Remove Connections
 Start Active
 <1>
+<2>
+删除物品
+连接到...
+移除连接
+开始时激活
+<2>
 <linked_options>
 -
 -

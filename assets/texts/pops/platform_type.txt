@@ -10,6 +10,12 @@ Non-Portallable
 Glass
 Grid
 <1>
+<2>
+可传送
+不可传送
+玻璃
+网格
+<2>
 <linked_options>
 -
 -

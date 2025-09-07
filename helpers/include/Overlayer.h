@@ -45,7 +45,7 @@ public:
 	std::vector<s_gridItemData> items;
 	std::map<std::string, s_pop> pops;
 	std::vector<s_renderPop> renderPops;
-	std::map<int, std::string> polarizationString;
+	std::vector<std::string> polarizationString;
 
 	const char numX = 4;
 	const char numY = 8;

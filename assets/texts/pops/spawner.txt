@@ -14,6 +14,14 @@ Auto Drop At Start
 Respawn Automatically
 Object Creator Type
 <1>
+<2>
+删除物品
+连接到...
+移除连接
+开始时自动掉落
+自动重新生成
+对象生成器类型
+<2>
 <linked_options>
 -
 -

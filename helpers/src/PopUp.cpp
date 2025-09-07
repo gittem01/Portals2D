@@ -235,13 +235,14 @@ void PopUp::saveRender(VkCommandBuffer cmdBuff, void* ptr)
 
 	vkCmdDraw(cmdBuff, 6, 1, 0, 0);
 
+#ifndef DEMO_RELEASE
 	if (td->wh->keyData[SDL_SCANCODE_RETURN] == 2 && p->renderTexts[0].size() != 0 && !p->noAction)
 	{
 		int res = Leveler::object->saveLevel(IOHelper::assetsFolder + "levelfiles/" + p->renderTexts[0]);
 
 		if (res == 0) setClose(p, &currentButtonData);
 	}
-
+#endif
 	if (td->wh->repeatKeys[SDL_SCANCODE_BACKSPACE] || td->wh->keyData[SDL_SCANCODE_BACKSPACE] == 2)
 	{
 		if (p->renderTexts[0].size() > 0 && !p->noAction)
@@ -372,9 +373,8 @@ noAdd:
 	currentButtonData.posSize.w += 1.5f;
 	currentButtonData.data = glm::vec4(1.0f, 1.25f, 1.2f, 1.0f);
 
-	const bool enableSaving = false;
-
-	if (p->textSizes.size() > 0 && enableSaving)
+#ifndef DEMO_RELEASE
+	if (p->textSizes.size() > 0)
 	{
 		bool hovered = currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords());
 
@@ -389,6 +389,7 @@ noAdd:
 			}
 		}
 	}
+#endif
 
 	float baseW = currentButtonData.colour.w;
 
@@ -412,7 +413,8 @@ noAdd:
 
 	currentButtonData.posSize.x -= 24.0f;
 
-	if (currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()) && enableSaving)
+#ifndef DEMO_RELEASE
+	if (currentButtonData.hoverCheck(Leveler::object->ol->cam.getMouseCoords()))
 	{
 		hoverTimes[1] = td->gameTime;
 		if (td->wh->mouseData[2] == 2 && p->active)
@@ -421,6 +423,7 @@ noAdd:
 			SDL_ShowSaveFileDialog(saveDialogCallBack, p, td->wh->window, filters, std::size(filters), nullptr);
 		}
 	}
+#endif
 
 	hover01 = std::clamp((td->gameTime - hoverTimes[1]) * 4.0f, 0.0, 1.0);
 	currentButtonData.colour = glm::vec4(0.6f, 0.0f, 0.1f, std::clamp(baseW * 0.7f - hover01 * 0.3f, 0.0f, 1.0f));

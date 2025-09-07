@@ -29,6 +29,7 @@
 <title>
 Katkılar
 Credits
+鸣谢
 <title>
 
 <0_0>
@@ -44,6 +45,13 @@ FoxSynergy - In Game Music
 pixelsphere.org - Level Editor Music
 opengameart.org, remaxim - Main Menu Music
 <0_1>
+
+<0_2>
+音乐
+FoxSynergy - 游戏内音乐
+pixelsphere.org - 关卡编辑器音乐
+opengameart.org, remaxim - 主菜单音乐
+<0_2>
 
 <1_0>
 Ses Efekti
@@ -77,6 +85,22 @@ freesound.org, shimsewn - Laser Loop Effect
 Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Turret Gun Effect
 <1_1>
 
+<1_2>
+音效
+opengameart.org, Michel Baradari - 传送门枪效果
+opengameart.org, Michel Baradari - 传送门关闭效果
+opengameart.org, OptimusDu - 物体破坏效果
+opengameart.org, qubodup - 关卡编辑器滑块碰撞效果
+opengameart.org, isaiah658 - 重力消除器循环效果
+opengameart.org, rubberduck - 光桥循环效果
+opengameart.org, Umplix - 平台循环效果
+opengameart.org, Bart - 平台循环效果
+opengameart.org, faxcorp - 电声音效
+freesound.org, ironcross32 - 激活效果
+freesound.org, shimsewn - 激光循环效果
+Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - 炮塔枪效果
+<1_2>
+
 <2_0>
 Oynanış Testi
 Ege Ömerca
@@ -88,6 +112,12 @@ Play Testers
 Ege Ömerca
 Burak Kukçu
 <2_1>
+
+<2_2>
+游戏测试
+Ege Ömerca
+Burak Kukçu
+<2_2>
 
 <3_0>
 Yazılım Kütüphaneleri (C++)
@@ -112,3 +142,15 @@ OpenAL
 SDL3
 stb_truetype
 <3_1>
+
+<3_2>
+软件库 (C++)
+Box2D (v2)
+Vulkan
+AudioFile
+GLM
+ImGui
+OpenAL
+SDL3
+stb_truetype
+<3_2>

@@ -5064,7 +5064,14 @@ bool Leveler::startEndCheck()
 	}
 	else
 	{
-		return true;
+		if (startSquare.x == endSquare.x && abs(startSquare.y - endSquare.y) <= 1)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
 	}
 }
 

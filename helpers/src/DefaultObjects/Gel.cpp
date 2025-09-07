@@ -236,7 +236,7 @@ void Gel::splash(b2Contact* contact, b2Fixture* otherFix)
 {
     if (gelIndex == -1) return;
 
-    ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], gelRadius);
+    ALuint source = Sounder::object->playSound(onHitSoundBuffers[0], gelRadius * 0.25);
     Sounder::object->setSoundPosition(source, glm::vec3(wData->pbIndices[0]->body->GetPosition().x, wData->pbIndices[0]->body->GetPosition().y, 0.0));
 
     int range[2];

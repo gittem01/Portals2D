@@ -102,7 +102,13 @@ CharDrawer::CharDrawer(ThinDrawer* thinDrawer)
 		allLanguages.push_back(str);
 	}
 
-	loadFontFile(languageMap[s][1], fontData, fontInfo);
+	auto fontFiles = languageMap["<fontFiles>"];
+	fontInfos.resize(fontFiles.size());
+
+	for (int i = 0; i < fontFiles.size(); i++)
+	{
+		loadFontFile(fontFiles[i], fontInfos[i].data, fontInfos[i].info);
+	}
 
 	this->thinDrawer = thinDrawer;
 
@@ -216,10 +222,22 @@ std::vector<int> CharDrawer::getRenderData(const std::string& text, int targetHe
 	int renderHeight = ((float)ThinDrawer::object->wh->dpiScaling * thinDrawer->wh->windowSizes.y / creationHeight) * targetHeight;
 	renderHeight = std::max(renderHeight, 8);
 
+	stbtt_fontinfo* fontInfo = &fontInfos[0].info;
+
 	x = 0;
 	float prevX = 0.0;
 	for (uint32_t codepoint : codePoints)
 	{
+		for (int i = 0; i < fontInfos.size(); i++)
+		{
+			stbtt_fontinfo* fInfo = &fontInfos[i].info;
+			if (stbtt_FindGlyphIndex(fInfo, codepoint) != 0)
+			{
+				fontInfo = fInfo;
+				break;
+			}
+		}
+
 		if (codepoint == 32)
 		{
 			rd.push_back(0);
@@ -240,23 +258,23 @@ std::vector<int> CharDrawer::getRenderData(const std::string& text, int targetHe
 			continue;
 		}
 
-		float scale = stbtt_ScaleForPixelHeight(&fontInfo, renderHeight);
+		float scale = stbtt_ScaleForPixelHeight(fontInfo, renderHeight);
 
 		int x0, y0, x1, y1;
-		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
+		stbtt_GetCodepointBitmapBox(fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
 
 		int ascent;
-		stbtt_GetFontVMetrics(&fontInfo, &ascent, 0, 0);
+		stbtt_GetFontVMetrics(fontInfo, &ascent, 0, 0);
 		ascent = roundf(ascent * scale);
 
 		int ax;
 		int lsb;
-		stbtt_GetCodepointHMetrics(&fontInfo, codepoint, &ax, &lsb);
+		stbtt_GetCodepointHMetrics(fontInfo, codepoint, &ax, &lsb);
 
 		int y = ascent + y0;
 
 		// Render the character into the bitmap
-		int glyph = stbtt_FindGlyphIndex(&fontInfo, codepoint);
+		int glyph = stbtt_FindGlyphIndex(fontInfo, codepoint);
 		if (glyph == 0)
 		{
 			codepoint = 0;
@@ -272,7 +290,7 @@ std::vector<int> CharDrawer::getRenderData(const std::string& text, int targetHe
 		}
 
 		stbtt_vertex* rdShape;
-		int numVert = stbtt_GetGlyphShape(&fontInfo, glyph, &rdShape);
+		int numVert = stbtt_GetGlyphShape(fontInfo, glyph, &rdShape);
 
 		if (numVert == 0) continue;
 
@@ -322,7 +340,7 @@ std::vector<int> CharDrawer::getRenderData(const std::string& text, int targetHe
 
 		delete rdBitmap.pixels;
 
-		stbtt_FreeShape(&fontInfo, rdShape);
+		stbtt_FreeShape(fontInfo, rdShape);
 	}
 
 	x += prevX * 0.5;

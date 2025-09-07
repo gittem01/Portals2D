@@ -25,6 +25,12 @@ typedef struct LineRenderData
 	glm::vec4 color;
 } s_lineRenderData;
 
+typedef struct fontInfoData
+{
+	stbtt_fontinfo info;
+	std::vector<unsigned char> data;
+} fontInfoData;
+
 class CharDrawer
 {
 public:
@@ -32,8 +38,7 @@ public:
 	
 	class ThinDrawer* thinDrawer;
 	FontShader* fontShader;
-	std::vector<unsigned char> fontData;
-	stbtt_fontinfo fontInfo;
+	std::vector<fontInfoData> fontInfos;
 	int creationHeight;
 	std::string languageName;
 	std::vector<std::string> allLanguages;
@@ -47,7 +52,7 @@ public:
 	CharDrawer(ThinDrawer* thinDrawer);
 
 	std::vector<int> getRenderData(const std::string& text, int targetHeight, float& x,
-		s_texture* prevTex=nullptr, int prevCodepoint =0);
+		s_texture* prevTex=nullptr, int prevCodepoint=0);
 
 	float calcSize(std::vector<int> rd);
 	static char calculateCharBytes(char ch);

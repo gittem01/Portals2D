@@ -123,16 +123,13 @@ Overlayer::Overlayer(Game* game)
     }
 
     auto polarizations = IOHelper::loadLines("pops/polarization_language.txt");
-    auto polarizationMap = IOHelper::mapVector(polarizations);
+    polarizationString.resize(polarizations.size() - 2);
 
-    for (auto& p : polarizationMap)
+    for (int i = 1; i < polarizations.size() - 1; i++)
     {
-        if (p.first.size() < 2 || p.first[1] < '0' || p.first[1] > '9') continue;
-        std::string subString = p.first.substr(1, p.first.size() - 2);
-        polarizationString[std::stoi(subString)] = p.second[0];
+        polarizationString[i - 1] = polarizations[i];
     }
 
-    s_pop& levelerOptions = pops["leveler_options"];
     const float by = 2.0f;
 
 	topLeftButtons[0].colour = glm::vec4(1.0, 1.0, 1.0, 1.0);

@@ -1,0 +1,142 @@
+// Modes: ADD - UPDATE - FETCH
+// Before adding a new language run it in fetch mode and reopen this file
+
+MODE=FETCH
+ID=1
+LANG_STEAM_API_CODE=english
+
+START
+
+PLAY
+LEVEL EDITOR
+NEW
+LOAD
+COMMUNITY
+SETTINGS
+GENERAL SOUND
+MUSIC
+SOUND EFFECTS
+ROTATE
+JUMP
+HOLD
+LEFT
+DOWN
+RIGHT
+FULLSCREN WINDOW
+BORDERLESS WINDOW
+VERTICAL SYNCHRONIZATION
+FRAMERATE LIMIT
+SELECT LANGUAGE
+SELECT GRAPHICS CARD
+LANGUAGE CHANGE REQUIRES RESTART
+GRAPHICS CARD CHANGE REQUIRES RESTART
+Running Card
+CREDITS
+EXIT
+BACK
+RESUME
+RESTART
+RETURN TO MENU
+RETURN TO EDITOR
+Level Save Name
+Save Successful
+Loading
+Save Failed
+Level Opened Successfully
+Level Opening Failed
+File Already Exists
+Level start and end locations must be empty
+Level ending location must be reachable
+Object count reached to limit
+Siyah Duvar
+Black Wall
+黑墙
+Credits
+Music
+FoxSynergy - In Game Music
+pixelsphere.org - Level Editor Music
+opengameart.org, remaxim - Main Menu Music
+Sound Effect
+opengameart.org, Michel Baradari - Portal Gun Effect
+opengameart.org, Michel Baradari - Portal Deactivation Effect
+opengameart.org, OptimusDu - Object Destruction Effect
+opengameart.org, qubodup - Level Editor Slider Hit Effect
+opengameart.org, isaiah658 - Gravity Nullifier Loop Effect
+opengameart.org, rubberduck - Light Bridge Loop Effect
+opengameart.org, Umplix - Platform Loop Effect
+opengameart.org, Bart - Platform Loop Effect
+opengameart.org, faxcorp - Electric Sound Effects
+freesound.org, ironcross32 - Activation Effect
+freesound.org, shimsewn - Laser Loop Effect
+Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney - Turret Gun Effect
+Play Testers
+Ege Ömerca
+Burak Kukçu
+Software Libraries (C++)
+Box2D (v2)
+Vulkan
+AudioFile
+GLM
+ImGui
+OpenAL
+SDL3
+stb_truetype
+Delete Item
+Connect to...
+Remove Connections
+Start Active
+Delete Item
+Connect to...
+Remove Connections
+Start Active
+Start Polarized
+Delete Item
+Connect to...
+Remove Connections
+2 Seconds
+4 Seconds
+8 Seconds
+16 Seconds
+Forever
+Load
+Save
+L
+File Name Cannot Contain These Characters:
+Save As
+Open From File
+Undo <<
+Redo >>
+Set Start
+Set End
+Standard Cube
+Laser Cube
+Sphere Ball
+Delete Item
+Connect to...
+Remove Connections
+Platform Type
+Start Active
+Loop Mode
+Platform Speed
+1 m/s
+2 m/s
+4 m/s
+8 m/s
+Portallable
+Non-Portallable
+Glass
+Grid
+Enable/Disable
+Change Polarization
+Polarization
+Delete Item
+Connect to...
+Remove Connections
+Active Duration
+Remove Item
+Delete Item
+Connect to...
+Remove Connections
+Auto Drop At Start
+Respawn Automatically
+Object Creator Type

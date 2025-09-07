@@ -10,6 +10,12 @@ Redo >>
 Set Start
 Set End
 <1>
+<2>
+撤销 <<
+重做 >>
+设置起点
+设置终点
+<2>
 <linked_options>
 -
 -

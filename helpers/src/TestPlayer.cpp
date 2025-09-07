@@ -886,7 +886,7 @@ void TestPlayer::jumpEffect()
     {
         jumpPressTime = gameTime;
     }
-    else if (abs(checkXSpeed) > 6.0f && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL] && wh->keyData[Game::downKey])
+    else if (abs(checkXSpeed) > 6.0f && !wh->keyData[SDL_SCANCODE_LCTRL] && !wh->keyData[SDL_SCANCODE_RCTRL] && !wh->keyData[Game::downKey])
     {
         noKeyJump = Gel::bounceAt(wData->pbIndices[0]->body, contactFixture, contactPoint);
     }

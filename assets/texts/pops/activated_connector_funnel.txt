@@ -12,6 +12,13 @@ Remove Connections
 Start Active
 Start Polarized
 <1>
+<2>
+删除物品
+连接到...
+移除连接
+开始时激活
+开始时极化
+<2>
 <linked_options>
 -
 -

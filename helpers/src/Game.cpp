@@ -159,15 +159,13 @@ void Game::loadGameData()
         auto languages = IOHelper::loadLines("languages.txt");
         auto langMap = IOHelper::mapVector(languages);
 
-        auto iter = langMap.find("<local_1>");
-
         if (appid != 0)
         {
             auto currentLang = SteamApps()->GetCurrentGameLanguage();
             int currentLangSize = strlen(currentLang);
 
             int i = 0;
-            for (std::string lang : langMap["<local_1>"])
+            for (std::string lang : langMap["<langSteamNames>"])
             {
                 if (lang.size() != currentLangSize) continue;
 

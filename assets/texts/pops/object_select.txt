@@ -8,6 +8,11 @@ Standard Cube
 Laser Cube
 Sphere Ball
 <1>
+<2>
+标准立方体
+激光立方体
+球形球
+<2>
 <linked_options>
 -
 -
