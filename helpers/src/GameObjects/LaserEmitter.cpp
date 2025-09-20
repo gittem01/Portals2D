@@ -59,7 +59,7 @@ LaserEmitter::LaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
 
 	//fix->GetUserData().pointer = (uintptr_t)fData;
 
-	Sounder::object->putStatOnGrid(&soundData, "laserloop.wav", 0.25f, objData->startActive, true);
+	Sounder::object->putStatOnGrid(&soundData, "laserloop.wav", 0.15f, objData->startActive, true);
 }
 
 LaserEmitter* LaserEmitter::createLaserEmitter(PortalWorld* portalWorld, s_objectDataGrid* objData)
@@ -206,7 +206,7 @@ void LaserEmitter::handleGroundReceivers()
 {
 	for (auto pair : Game::object->pWorld->rayHandler->groundReceivers)
 	{
-		if (pair.second <= Game::object->pWorld->rayHandler->minFraction)
+		if (pair.second <= Game::object->pWorld->rayHandler->distanceTravelled)
 		{
 			enableSet[pair.first] = true;
 			GndLaserReceiver& glr = GndLaserReceiver::gndLaserReceivers[pair.first];
