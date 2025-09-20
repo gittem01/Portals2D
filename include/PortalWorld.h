@@ -133,7 +133,8 @@ public:
 
     // ray fraction of the portal midFixture (collision point on the midFixture)
     float portalFraction = 1.0f;
-    float leftLength = 0.0;
+    float distanceTravelled = 0.0;
+    float rayLength = 0.0;
 
     Portal* closestPortal;
     b2Fixture* closestFixture;

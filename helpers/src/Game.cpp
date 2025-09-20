@@ -167,7 +167,11 @@ void Game::loadGameData()
             int i = 0;
             for (std::string lang : langMap["<langSteamNames>"])
             {
-                if (lang.size() != currentLangSize) continue;
+                if (lang.size() != currentLangSize)
+                {
+                    i++;
+                    continue;
+                }
 
                 bool match = true;
                 for (int j = 0; j < lang.size(); j++)

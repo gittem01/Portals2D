@@ -344,12 +344,15 @@ void PortalRay::prepareRaySend()
     closestPortalFixture = nullptr;
     filterBody = nullptr;
     filterMask = 0;
+    distanceTravelled = 0.0f;
+    rayLength = 0.0f;
 }
 
 #include <ThinDrawer.h>
 void PortalRay::sendRay(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, void* filterBody, uint32_t filterMask, int rayIndex, Portal* rayOutPortal)
 {
     prepareRaySend();
+
     this->filterBody = filterBody;
     this->filterMask = filterMask;
 
@@ -375,6 +378,7 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
     reset();
 
+    this->rayLength = rayLength;
     pWorld->RayCast(this, rayStart, rayEnd);
 
     endHandle();
@@ -383,6 +387,8 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
 
     diff = minFrac * diff;
     b2Vec2 collPoint = rayStart + diff;
+
+	distanceTravelled += rayLength * minFrac;
 
     if (closestFixture != NULL)
     {
@@ -410,8 +416,6 @@ void PortalRay::sendRay_i(b2Vec2 rayStart, b2Vec2 dirVec, float rayLength, int r
     {   
         rayResult.push_back({ closestFixture, rayStart, collPoint, dirVec, rayOutPortal });
     }
-
-    leftLength = rayLength;
 }
 
 float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction)
@@ -449,15 +453,15 @@ float PortalRay::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2
                 if (pc.status < 1 || PortalWorld::isLeft(pc.portal->points[1], pc.portal->points[0], point, 0.000001f) == (pc.side ^ 1))
                 {
                     return minFraction;
-                }
             }
+                }
         }
         else if ((uint32_t)fData->type & filterMask)
         {
             if (fData->type & F_GND_RECEIVER && (filterMask == LSR_FILTER_MASK))
             {
                 GndLaserReceiver* receiver = (GndLaserReceiver*)fData->data;
-                groundReceivers.push_back({ receiver->arrIndex, fraction });
+                groundReceivers.push_back({ receiver->arrIndex, distanceTravelled + fraction * rayLength });
             }
 
             return minFraction;
