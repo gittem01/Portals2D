@@ -1,1 +1,1 @@
-<img width="1423" alt="random portals" src="https://user-images.githubusercontent.com/29559574/187067363-d8da3760-53ea-42e4-abf7-b5ed634c571b.png">
+<img width="3840" height="1240" alt="legend" src="https://github.com/user-attachments/assets/50525ff8-411a-462f-9bc8-33bd554ddda2" />
